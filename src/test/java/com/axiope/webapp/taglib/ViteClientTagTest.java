@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.webapp.filter.ContentSecurityPolicyFilter;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.PageContext;
@@ -58,6 +59,7 @@ public class ViteClientTagTest {
   @Test
   public void emitsViteClientInHmrMode() throws JspException {
     stubPageContext();
+    request.setAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE, "unit-test-nonce");
     ViteClientTag tag =
         new ViteClientTag() {
           @Override
@@ -70,9 +72,12 @@ public class ViteClientTagTest {
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
     assertThat(output.toString())
         .as("Expected /ui/dist/@vite/client script tag, got: " + output)
-        .contains("type=\"module\" src=\"/ui/dist/@vite/client\"");
+        .contains(
+            "<script type=\"module\" src=\"/ui/dist/@vite/client\" "
+                + "nonce=\"unit-test-nonce\"></script>");
     assertThat(output.toString())
-        .as("Expected React refresh preamble, got: " + output)
+        .as("Expected nonced React refresh preamble, got: " + output)
+        .contains("<script type=\"module\" nonce=\"unit-test-nonce\">import RefreshRuntime")
         .contains("/ui/dist/@react-refresh");
     assertThat(output.toString())
         .as("Expected React refresh marker, got: " + output)

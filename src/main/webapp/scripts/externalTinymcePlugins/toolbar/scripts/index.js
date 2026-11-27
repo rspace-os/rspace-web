@@ -34,17 +34,17 @@ var custom_toolbar = {
       var table_row = $(`#row-${row_index}`);
   
       row.forEach((group, group_index) => {
-        table_row.append(`<td class='group-${group_index}' ondrop='toolbar_plugin.drop(event, this)' ondragover='toolbar_plugin.allowDrop(event)'></td>`);
+        table_row.append(`<td class='group-${group_index}' data-toolbar-drop-target></td>`);
         let table_group = $(`#row-${row_index} .group-${group_index}`);
   
         group.forEach(element => {
-           table_group.append(`<img draggable='true' ondragstart='toolbar_plugin.drag(event)' data-toggle='tooltip' title='${ actions[element] }' \
+           table_group.append(`<img draggable='true' data-toolbar-draggable data-toggle='tooltip' title='${ actions[element] }' \
                                     id='${element}' src='/scripts/externalTinymcePlugins/toolbar/img/${element}.png'>`);
         });
       });
-      table_row.append(`<td class='group-${row.length}' ondrop='toolbar_plugin.drop(event, this)' ondragover='toolbar_plugin.allowDrop(event)'><button onclick='toolbar_plugin.appendGroup($(this).parent());'>${RS.msg("legacyjs.tinymce.toolbar.newGroup")}</button></td>`)
+      table_row.append(`<td class='group-${row.length}' data-toolbar-drop-target><button data-toolbar-action='append-group'>${RS.msg("legacyjs.tinymce.toolbar.newGroup")}</button></td>`)
     });
-    $('#current_toolbar tbody').append(`<tr id='row-${current_config.length}'><td><button onclick='toolbar_plugin.appendRow($(this).parent());'>${RS.msg("legacyjs.tinymce.toolbar.newRow")}</button></td></tr>`);
+    $('#current_toolbar tbody').append(`<tr id='row-${current_config.length}'><td><button data-toolbar-action='append-row'>${RS.msg("legacyjs.tinymce.toolbar.newRow")}</button></td></tr>`);
   },
 
   placeUnused() {
@@ -52,7 +52,7 @@ var custom_toolbar = {
     let container = $('#available_tools');
   
     unused.forEach( function(entry) {
-      container.append(`<img draggable='true' ondragstart='toolbar_plugin.drag(event)' data-toggle='tooltip' title='${ actions[entry] }' \
+      container.append(`<img draggable='true' data-toolbar-draggable data-toggle='tooltip' title='${ actions[entry] }' \
                                     id='${entry}' src='/scripts/externalTinymcePlugins/toolbar/img/${entry}.png'>`);
     });
   },
@@ -158,9 +158,9 @@ var custom_toolbar = {
     let generated_id = 'row-' + (parseInt(row_id.replace(/\D/g,'')) + 1);
   
     $('#current_toolbar tbody').append(row.clone().attr('id', generated_id));
-    row.html('<td class="group-0" ondrop="toolbar_plugin.drop(event, this)" ondragover="toolbar_plugin.allowDrop(event)"></td>\
-      <td class="group-1" ondrop="toolbar_plugin.drop(event, this)" ondragover="toolbar_plugin.allowDrop(event)">\
-      <button onclick="toolbar_plugin.appendGroup($(this).parent());">' + RS.msg("legacyjs.tinymce.toolbar.newGroup") + '</button></td>');
+    row.html('<td class="group-0" data-toolbar-drop-target></td>\
+      <td class="group-1" data-toolbar-drop-target>\
+      <button data-toolbar-action="append-group">' + RS.msg("legacyjs.tinymce.toolbar.newGroup") + '</button></td>');
   },
   
   clearContent: function() {
@@ -179,6 +179,22 @@ var custom_toolbar = {
 }
 
 $(function() {
+  $(document).on('dragstart', '[data-toolbar-draggable]', function(event) {
+    toolbar_plugin.drag(event.originalEvent);
+  });
+  $(document).on('dragover', '[data-toolbar-drop-target]', function(event) {
+    toolbar_plugin.allowDrop(event.originalEvent);
+  });
+  $(document).on('drop', '[data-toolbar-drop-target]', function(event) {
+    toolbar_plugin.drop(event.originalEvent, this);
+  });
+  $(document).on('click', '[data-toolbar-action="append-group"]', function() {
+    toolbar_plugin.appendGroup($(this).parent());
+  });
+  $(document).on('click', '[data-toolbar-action="append-row"]', function() {
+    toolbar_plugin.appendRow($(this).parent());
+  });
+
   toolbar_plugin = custom_toolbar.init();
 
   parent.tinymce.activeEditor.on('toolbar-reset', function () {

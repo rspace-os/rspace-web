@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title><spring:message code="inventory:publicIdentifierPage.pageTitle"/></title>
+  <meta property="csp-nonce" nonce="${requestScope.cspNonce}">
   <rst:viteClient />
   <rst:bundle bundle="inventoryRecordIdentifierPublicPage" />
 </head>

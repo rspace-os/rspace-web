@@ -7,8 +7,8 @@
 	<meta name="heading" content="<spring:message code='userProfile.heading'/>" />
 	<meta name="menu" content="UserMenu" />
 	<link rel="stylesheet" href="<rst:assetUrl value='/styles/userform.css'/>" />
-	<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-	<script src="<rst:assetUrl value='/scripts/pages/userform.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/userform.js'/>"></script>
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp"></jsp:include>
 

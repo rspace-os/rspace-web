@@ -27,13 +27,13 @@
 	<!-- Common section -->
 	<table class="bootstrap-custom-flat form" style="width:100%">
 		<rst:hasDeploymentProperty name="standalone" value="false">
-			<script type="text/javascript">
+			<script nonce="${requestScope.cspNonce}" type="text/javascript">
 				alwaysShowPasswordFields = false;
 				togglePasswordField(false);
 			</script>
 		</rst:hasDeploymentProperty>
 		<rst:hasDeploymentProperty name="ldapAuthenticationEnabled" value="true">
-			<script type="text/javascript">
+			<script nonce="${requestScope.cspNonce}" type="text/javascript">
 				alwaysShowPasswordFields = false;
 				togglePasswordField(false);
 			</script>

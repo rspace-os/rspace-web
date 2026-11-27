@@ -1,11 +1,11 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 import createAccentedTheme from "../../accentedTheme";
 import ConfirmProvider from "../../components/ConfirmProvider";
@@ -22,7 +22,7 @@ const theme = createStoichiometryTheme(createAccentedTheme(ACCENT_COLOR));
 
 const StoichiometryDialogRoot = (props: StandaloneDialogInnerProps) => {
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <CssBaseline />
       <ThemeProvider theme={theme}>
         <Analytics>
@@ -37,7 +37,7 @@ const StoichiometryDialogRoot = (props: StandaloneDialogInnerProps) => {
           </ErrorBoundary>
         </Analytics>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 };
 

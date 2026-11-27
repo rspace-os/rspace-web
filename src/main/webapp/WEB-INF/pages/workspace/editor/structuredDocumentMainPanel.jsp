@@ -24,19 +24,19 @@
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/plugins/autocomplete.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/font-awesome/css/font-awesome.min.css'/>" />
 <rst:bundle bundle="tinymceGalleryUtils" />
-<script src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/jwplayer.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/documentView.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jwplayer.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/editor/documentView.js'/>"></script>
     <axt:toolbar hideSearch="true">
       <jsp:attribute name="menu">
         <axt:saveAsTemplate structuredDocument="${structuredDocument}"></axt:saveAsTemplate>
@@ -68,7 +68,7 @@
                     </div>
                 </c:if>
                 <c:if test="${!param.publicDocument}">
-                    <script>
+                    <script nonce="${requestScope.cspNonce}">
                         $(document).ready(function() { setUpEditorBreadcrumbs(); });
                     </script>
                 </c:if>
@@ -173,33 +173,33 @@
 </div>
 <jsp:include page="../../documentAndNotebookTemplates.jsp" />
 <jsp:include page="include/photoswipe.jsp" />
-<script>
-  var editable = '${editStatus}';
-   var isEditable = '${editStatus.editable}';
-    var editor = '${editor}';
-    var hasAutosave = '${hasAutosave}';
-    var modificationDate = '${modificationDate}';
-    var recordId = '${id}';
-    var parentId = '${parentId}';
-    var nameTemplate = '${template}';
-    var fromNotebook = '${fromNotebook}';
+<script nonce="${requestScope.cspNonce}">
+  var editable = '${f:escapeJavaScript(editStatus)}';
+   var isEditable = '${f:escapeJavaScript(editStatus.editable)}';
+    var editor = '${f:escapeJavaScript(editor)}';
+    var hasAutosave = '${f:escapeJavaScript(hasAutosave)}';
+    var modificationDate = '${f:escapeJavaScript(modificationDate)}';
+    var recordId = '${f:escapeJavaScript(id)}';
+    var parentId = '${f:escapeJavaScript(parentId)}';
+    var nameTemplate = '${f:escapeJavaScript(template)}';
+    var fromNotebook = '${f:escapeJavaScript(fromNotebook)}';
     var isDocumentEditor = true;
-    var recordName = "${structuredDocument.editInfo.name}";
-    var recordTags = "${structuredDocument.docTag}";//used to populate the displayed tags text for a document: documentView.js sets this value onto a moustache template as 'tags' look for 'var mdata =' etc)
-    var tagMetaData = "${structuredDocument.tagMetaData}";//this global will be used by coreEditor for tagging
+    var recordName = "${f:escapeJavaScript(structuredDocument.editInfo.name)}";
+    var recordTags = "${f:escapeJavaScript(structuredDocument.docTag)}";//used to populate the displayed tags text for a document: documentView.js sets this value onto a moustache template as 'tags' look for 'var mdata =' etc)
+    var tagMetaData = "${f:escapeJavaScript(structuredDocument.tagMetaData)}";//this global will be used by coreEditor for tagging
     if (recordTags != null && recordTags != undefined) {
         recordTags = recordTags.replace(/\,/g, ", ");
     }
-    var recordType = "${structuredDocument.type}";
+    var recordType = "${f:escapeJavaScript(structuredDocument.type)}";
     var canCopy = false;
     <rs:chkRecordPermssns user="${user}" record="${structuredDocument}" action="COPY">
     canCopy=true;
     </rs:chkRecordPermssns>
-    var settingsKey = "${settingsKey}";
-    var docRevision = "${docRevision}";
-    var versionNumber = !!docRevision ? "${structuredDocument.userVersion.version}" : null;
-    var globalId = "${structuredDocument.oid.idString}" + (versionNumber ? "v" + versionNumber : "");
-    var basicDocument = "${structuredDocument.basicDocument}";
+    var settingsKey = "${f:escapeJavaScript(settingsKey)}";
+    var docRevision = "${f:escapeJavaScript(docRevision)}";
+    var versionNumber = !!docRevision ? "${f:escapeJavaScript(structuredDocument.userVersion.version)}" : null;
+    var globalId = "${f:escapeJavaScript(structuredDocument.oid.idString)}" + (versionNumber ? "v" + versionNumber : "");
+    var basicDocument = "${f:escapeJavaScript(structuredDocument.basicDocument)}";
 
-    var clientUISettingsPref = "${clientUISettingsPref}";
+    var clientUISettingsPref = "${f:escapeJavaScript(clientUISettingsPref)}";
 </script>

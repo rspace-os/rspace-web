@@ -4,16 +4,16 @@
 	<meta name="heading" content="<spring:message code='mainMenu.heading'/>" />
 	<meta name="menu" content="MainMenu" />
 	<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/messaging/dashboard.css'/>" />
-	<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-	<script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
-	<script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
-	<script src="<rst:assetUrl value='/scripts/pages/messaging/myrequests.js'/>"></script>
-	<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/myrequests.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
   <link href="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.css'/>" rel="stylesheet" />
-	<script src="<rst:assetUrl value='/scripts/pages/messaging/dashboard.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/dashboard.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 </head>
 
 <div class="separator"></div>

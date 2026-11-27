@@ -4,13 +4,13 @@
     <title><spring:message code="importExport.import.report.title"/></title>
     <meta name="import Archive" content="import"/>
 
-    <style>
+    <style nonce="${requestScope.cspNonce}">
         .archiveImportResultMsg {
             margin: 10px 0px;
             font-weight: bold;
         }
     </style>
-    <script>
+    <script nonce="${requestScope.cspNonce}">
      $(document).ready(function () {
 	 $.get("/export/ajax/latestImportResults", function (data){
 		 var templateHTML = $('#archiveImportReportData').html();

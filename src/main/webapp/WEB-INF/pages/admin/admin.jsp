@@ -12,8 +12,8 @@
      run before document.ready, which is when the menu init and those callers execute. The standalone
      /admin page still gets its <title> from the head above. --%>
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/admin.css'/>" />
-<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
 
 <div class="separator"></div>
 <div id="menuScrollContainer">

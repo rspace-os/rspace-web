@@ -9,6 +9,7 @@
 <%@ taglib uri="jakarta.tags.sql" prefix="sql" %>
 <%@ taglib uri="http://researchspace.com/tags/shiro" prefix="rs" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
+<%@ taglib uri="http://researchspace.com/functions" prefix="f" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>

@@ -15,9 +15,9 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { produce } from "immer";
 import React from "react";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
@@ -518,7 +518,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />
@@ -529,7 +529,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
             <ShareDialog />
           </Analytics>
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     );
   }
 }

@@ -8,33 +8,6 @@
 <%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
 <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
 
-<style>
-    a,a:link a:active {
-        color: #1465b7;
-        text-decoration: none;
-    }
-    a:visited {
-        color: #1465b7;
-        background-color: transparent;
-    }
-    a:hover {
-        color: #cc0000;
-        text-decoration: none;
-    }
-    a.morOrderBy {
-        position: relative;
-        color: blue;
-        left: 10px;
-    }
-    .messageMoreInfo {
-        margin: 10px 0px;
-        white-space: normal;
-    }
-    .leftInfo {
-        min-width: 200px;
-    }
-</style>
-
 <%-- Reusable tag for incorporating a messages listing dialog into a page. --%>
 
 <div class="bootstrap-custom-flat">

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title><spring:message code="system.communityList.button.label"/></title>
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-  <script>
+  <script nonce="${requestScope.cspNonce}">
     RS.communityId=${community.id};
     var view =${view};
   </script>

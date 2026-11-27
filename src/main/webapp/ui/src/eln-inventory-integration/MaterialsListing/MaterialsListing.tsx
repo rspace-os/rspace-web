@@ -11,10 +11,10 @@ import Paper from "@mui/material/Paper";
 import Popper from "@mui/material/Popper";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
@@ -178,7 +178,7 @@ export const MaterialsListing = observer(({ elnFieldId, canEdit, fabRightPadding
   }, [loading]);
 
   return !loading ? (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <AlwaysNewWindowNavigationContext>
           {materialsStore.fieldLists.has(parseInt(elnFieldId, 10)) && (
@@ -186,7 +186,7 @@ export const MaterialsListing = observer(({ elnFieldId, canEdit, fabRightPadding
           )}
         </AlwaysNewWindowNavigationContext>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   ) : null;
 });
 
@@ -205,7 +205,7 @@ export const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListing
   };
   return (
     <Box sx={{ "@media print": { display: "none" } }}>
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <AlwaysNewWindowNavigationContext>
             <div className="bootstrap-custom-flat">
@@ -231,7 +231,7 @@ export const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListing
             </div>
           </AlwaysNewWindowNavigationContext>
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     </Box>
   );
 });

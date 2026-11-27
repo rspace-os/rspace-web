@@ -12,18 +12,18 @@
     <link media="all" href="<rst:assetUrl value='/styles/public.css'/>" rel="stylesheet" />
     <link href="<rst:assetUrl value='/styles/pages/searchableRecordPicker.css'/>" rel="stylesheet"/>
 
-    <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
-    <script src='<rst:assetUrl value='/scripts/tinymceDialogUtils.js'/>'></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/searchableRecordPicker.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/externalTinymcePlugins/internallink/main.js'/>"></script>
-    <style>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src='<rst:assetUrl value='/scripts/tinymceDialogUtils.js'/>'></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/searchableRecordPicker.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/externalTinymcePlugins/internallink/main.js'/>"></script>
+    <style nonce="${requestScope.cspNonce}">
         body {
             padding: 5px;
         }

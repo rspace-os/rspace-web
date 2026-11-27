@@ -13,7 +13,7 @@
             </div>
             <span class="fieldNotification"></span>
             <div class="fieldHeaderEditButton bootstrap-custom-flat">
-              <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" onclick="editFieldByClassChoice(${field.id})">
+              <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" data-field-edit-action="editFieldByClassChoice" data-field-id="${field.id}">
                 <span class="glyphicon glyphicon-pencil"></span>
               </button>
               <button id="stopEdit_${field.id}" title="<spring:message code='form.field.saveAndViewTitle'/>" class="btn btn-info btn-sm stopEditButton" style="display: none">
@@ -35,7 +35,7 @@
                 <li class='choiceLi ${field.id}'>
                   <input type="checkbox" class="${field.id}" id="${field.id}"
                     name="fieldSelectedChoicesFinal_${field.id}"
-                    value="${fieldChoice}" onchange="checkAndMarkField(this)"
+                    value="${fieldChoice}" data-field-change-action="checkAndMarkField"
                     <c:if test="${isSelected eq 'true'}">checked</c:if>>
                   <input
                     type="hidden" name="fieldChoicesFinal_${field.id}"

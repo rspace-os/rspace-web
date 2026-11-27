@@ -10,10 +10,11 @@ function displayLdapSettings() {
     jqxhr.done(function (resp) {
         $('#mainArea').html(resp);
 
-        if (ldapAuthenticationEnabled) {
+        var $ldapConfigPanel = $('#ldapConfigPanel');
+        if ($ldapConfigPanel.attr('data-ldap-authentication-enabled') === 'true') {
             $('#ldapAuthenticationEnabledMsg').show();
         }
-        if (ldapSidVerificationEnabled) {
+        if ($ldapConfigPanel.attr('data-ldap-sid-verification-enabled') === 'true') {
             $('#ldapSidVerificationEnabledMsg').show();
             $('#sidRetrievalPanel').show();
             $('#runSidRetrieval').click(findUsersForSidRetrieval);

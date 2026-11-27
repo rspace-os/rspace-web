@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import IdentifiersDialog, { type Editor } from "@/tinyMCE/inventory/identifiers";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
@@ -40,13 +40,13 @@ class IdentifiersPlugin {
     const renderDialog = (props: IdentifiersDialogProps, { claim = false } = {}) => {
       (claim ? dialog.open : dialog.update)(
         <I18nRoot namespaces={["workspace", "common"]}>
-          <StyledEngineProvider injectFirst enableCssLayer>
+          <MuiCssLayerProvider>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <Alerts>
                 <IdentifiersDialog editor={editor} open={false} onClose={() => {}} {...props} />
               </Alerts>
             </ThemeProvider>
-          </StyledEngineProvider>
+          </MuiCssLayerProvider>
         </I18nRoot>,
       );
     };

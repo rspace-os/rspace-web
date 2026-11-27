@@ -11,8 +11,8 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
@@ -273,13 +273,13 @@ class StructuredDocumentToolbar extends React.Component<
 
   render() {
     return (
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <Analytics>
             <BaseToolbar content={this.content()} />
           </Analytics>
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     );
   }
 }

@@ -3,9 +3,9 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
-<script src="<rst:assetUrl value='/scripts/tags/useTemplate.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/useTemplate.js'/>"></script>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
     #useTemplateDlgDesc, #useTemplateDlgName {
         margin: 10px 0px;
     }

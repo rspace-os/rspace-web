@@ -2,7 +2,7 @@
 <%@ include file="include/templatePublishShareDlg.jsp"%>
 <head>
   <title><spring:message code="form.manage.title"/></title>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/formlist.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/editor/formlist.js'/>"></script>
   <!-- <script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script> -->
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />

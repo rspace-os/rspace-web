@@ -6,8 +6,8 @@
         <axt:importFromProtocolsIo parentId="${selectedNotebookId}" />
     </c:if>
     <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
-    <script src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/file-saverjs/FileSaver.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/tableexport.js/dist/js/tableexport.js'/>"></script>
     <div class="bootstrap-custom-flat">
         <div class="breadcrumb">
             <div class="container">
@@ -22,14 +22,14 @@
                               <c:if test="${not isPublished}">hidden</c:if>
                     ><label style="cursor:default;" for="publishedStatusImg" <c:if test="${not isPublished}">hidden</c:if>>${documentViewPublishedLabel}</label>
                     </div>
-                    <script>
+                    <script nonce="${requestScope.cspNonce}">
                         $(document).ready(function () {
                             setUpEditorBreadcrumbs();
                         });
                     </script>
                 </c:if>
                 <c:if test="${param.publicDocument}">
-                    <script>
+                    <script nonce="${requestScope.cspNonce}">
                         $(document).ready(function () {
                             makeImageLinksPublic();
                             disableLinkedDocumentsAndLinkedFiles();
@@ -40,7 +40,7 @@
                         });
                     </script>
                 </c:if>
-                <script>
+                <script nonce="${requestScope.cspNonce}">
                     $(document).ready(function () {
                         setUpEditorBreadcrumbs();
                     });

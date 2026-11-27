@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
     input:invalid, select:invalid, .invalidField {
       border: 2px solid #cc0000;
     }

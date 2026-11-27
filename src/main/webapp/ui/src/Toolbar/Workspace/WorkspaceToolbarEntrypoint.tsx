@@ -1,5 +1,6 @@
 import Skeleton from "@mui/material/Skeleton";
 import { createRoot, type Root } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import type { ToolbarUpdate } from "../types";
 import WorkspaceToolbar, { type WorkspaceToolbarProps } from "./Toolbar";
@@ -38,10 +39,12 @@ window.renderToolbar = (newProps?: ToolbarUpdate) => {
     },
   };
   rootNode.render(
-    // content() uses i18n.t() directly, not the hook, so I18nRoot must gate this whole render or labels freeze as raw keys.
-    <I18nRoot namespaces={["workspace", "common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
-      <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
-    </I18nRoot>,
+    <MuiCssLayerProvider container={domContainer.ownerDocument}>
+      {/* content() uses i18n.t() directly, not the hook, so I18nRoot must gate this whole render or labels freeze as raw keys. */}
+      <I18nRoot namespaces={["workspace", "common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
+        <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
+      </I18nRoot>
+    </MuiCssLayerProvider>,
   );
 };
 

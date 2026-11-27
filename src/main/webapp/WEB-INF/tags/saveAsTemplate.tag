@@ -3,9 +3,9 @@
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ attribute name="structuredDocument" required="true" type="com.researchspace.model.record.StructuredDocument" %>
 
-<script src="<rst:assetUrl value='/scripts/tags/saveAsTemplate.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/saveAsTemplate.js'/>"></script>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
     #saveAsTemplateNameDiv {
         margin: 10px;
     }

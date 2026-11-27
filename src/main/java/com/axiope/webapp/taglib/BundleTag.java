@@ -2,6 +2,7 @@ package com.axiope.webapp.taglib;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.webapp.filter.ContentSecurityPolicyFilter;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
@@ -189,7 +190,12 @@ public class BundleTag extends TagSupport {
       return;
     }
 
-    writeTag("<script type=\"module\" src=\"" + escapeHtml(src) + "\"></script>");
+    writeTag(
+        "<script type=\"module\" src=\""
+            + escapeHtml(src)
+            + "\""
+            + nonceAttribute(getRequest())
+            + "></script>");
   }
 
   void renderClassicScriptTag(String src) throws JspException {
@@ -198,7 +204,8 @@ public class BundleTag extends TagSupport {
       return;
     }
 
-    writeTag("<script src=\"" + escapeHtml(src) + "\"></script>");
+    writeTag(
+        "<script src=\"" + escapeHtml(src) + "\"" + nonceAttribute(getRequest()) + "></script>");
   }
 
   void writeTag(String html) throws JspException {
@@ -296,8 +303,10 @@ public class BundleTag extends TagSupport {
     return StringEscapeUtils.escapeHtml4(value);
   }
 
-  static String reactRefreshPreambleHtml() {
-    return "<script type=\"module\">"
+  static String reactRefreshPreambleHtml(HttpServletRequest request) {
+    return "<script type=\"module\""
+        + nonceAttribute(request)
+        + ">"
         + "import RefreshRuntime from \""
         + toDevServerUrlStatic(REACT_REFRESH_PATH)
         + "\";"
@@ -306,6 +315,16 @@ public class BundleTag extends TagSupport {
         + "window.$RefreshSig$ = () => (type) => type;"
         + "window.__vite_plugin_react_preamble_installed__ = true;"
         + "</script>";
+  }
+
+  static String nonceAttribute(HttpServletRequest request) {
+    if (request == null) {
+      return "";
+    }
+    Object nonce = request.getAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE);
+    return nonce instanceof String nonceValue && StringUtils.isNotBlank(nonceValue)
+        ? " nonce=\"" + escapeHtml(nonceValue) + "\""
+        : "";
   }
 
   static String toDevServerUrlStatic(String relativePath) {

@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { createPluginDialog } from "../pluginDialogRoot";
@@ -23,11 +23,11 @@ class PyratPlugin {
     const renderDialog = (props: PyratDialogUpdates, { claim = false } = {}) => {
       (claim ? dialog.open : dialog.update)(
         <I18nRoot namespaces={["apps", "common", "workspace"]}>
-          <StyledEngineProvider injectFirst enableCssLayer>
+          <MuiCssLayerProvider>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <PyratDialog editor={editor} open={false} onClose={() => {}} {...props} />
             </ThemeProvider>
-          </StyledEngineProvider>
+          </MuiCssLayerProvider>
         </I18nRoot>,
       );
     };

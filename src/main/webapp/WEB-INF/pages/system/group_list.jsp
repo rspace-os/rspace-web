@@ -9,8 +9,8 @@
   <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
 
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-  <script src="<rst:assetUrl value='/scripts/pages/system/groupList.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/groupList.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
 </head>
 <div id="topSection" class="bootstrap-custom-flat">
   <jsp:include page="/WEB-INF/pages/system/topBar.jsp"></jsp:include>

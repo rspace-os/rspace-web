@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <title><spring:message code="system.communityList.button.label" /></title>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/system/community.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/system/community_settings_mod.js'/>"></script>
-    <script type="text/javascript">
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/community.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/community_settings_mod.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" type="text/javascript">
         RS.communityId = ${community.id};
         var view = ${view};
     </script>

@@ -532,7 +532,7 @@ function loadBoxSelectScript() {
 	}
 
 	if (!initTinyMCE_cachedBoxSelectRequest) {
-		initTinyMCE_cachedBoxSelectRequest = $.getScript("https://app.box.com/js/static/select.js");
+		initTinyMCE_cachedBoxSelectRequest = RS.loadScriptWithNonce("https://app.box.com/js/static/select.js");
 		initTinyMCE_cachedBoxSelectRequest.fail(function () {
 			initTinyMCE_cachedBoxSelectRequest = null;
 		});
@@ -549,7 +549,7 @@ function loadDropboxScript() {
 	}
 
 	if (!initTinyMCE_cachedDropboxScriptRequest) {
-		initTinyMCE_cachedDropboxScriptRequest = $.getScript("https://www.dropbox.com/static/api/2/dropins.js");
+		initTinyMCE_cachedDropboxScriptRequest = RS.loadScriptWithNonce("https://www.dropbox.com/static/api/2/dropins.js");
 		initTinyMCE_cachedDropboxScriptRequest.fail(function () {
 			initTinyMCE_cachedDropboxScriptRequest = null;
 		});
@@ -565,7 +565,7 @@ function loadOneDriveScript() {
 		return $.Deferred().resolve().promise();
 	}
 	if (!initTinyMCE_cachedOneDriveScriptRequest) {
-		initTinyMCE_cachedOneDriveScriptRequest = $.getScript("https://js.live.net/v7.2/OneDrive.js");
+		initTinyMCE_cachedOneDriveScriptRequest = RS.loadScriptWithNonce("https://js.live.net/v7.2/OneDrive.js");
 		initTinyMCE_cachedOneDriveScriptRequest.fail(function () {
 			initTinyMCE_cachedOneDriveScriptRequest = null;
 		});
@@ -579,8 +579,8 @@ function loadOneDriveScript() {
 function loadGoogleDriveScripts() {
 	if (!initTinyMCE_cachedGoogleDriveScriptsRequest) {
 		initTinyMCE_cachedGoogleDriveScriptsRequest = $.when(
-			$.getScript("https://accounts.google.com/gsi/client"),
-			$.getScript("https://apis.google.com/js/api.js")
+			RS.loadScriptWithNonce("https://accounts.google.com/gsi/client"),
+			RS.loadScriptWithNonce("https://apis.google.com/js/api.js")
 		);
 		initTinyMCE_cachedGoogleDriveScriptsRequest.fail(function () {
 			initTinyMCE_cachedGoogleDriveScriptsRequest = null;
@@ -598,7 +598,7 @@ function loadOwnCloudClientScript() {
 	}
 
 	if (!initTinyMCE_cachedOwnCloudClientRequest) {
-		initTinyMCE_cachedOwnCloudClientRequest = $.getScript("/scripts/bower_components/js-owncloud-client/owncloud.js");
+		initTinyMCE_cachedOwnCloudClientRequest = RS.loadScriptWithNonce("/scripts/bower_components/js-owncloud-client/owncloud.js");
 		initTinyMCE_cachedOwnCloudClientRequest.fail(function () {
 			initTinyMCE_cachedOwnCloudClientRequest = null;
 		});
@@ -615,7 +615,7 @@ function loadNextCloudClientScript() {
 	}
 
 	if (!initTinyMCE_cachedNextCloudClientRequest) {
-		initTinyMCE_cachedNextCloudClientRequest = $.getScript("/scripts/bower_components/js-owncloud-client/nextcloud_owncloud.js");
+		initTinyMCE_cachedNextCloudClientRequest = RS.loadScriptWithNonce("/scripts/bower_components/js-owncloud-client/nextcloud_owncloud.js");
 		initTinyMCE_cachedNextCloudClientRequest.fail(function () {
 			initTinyMCE_cachedNextCloudClientRequest = null;
 		});

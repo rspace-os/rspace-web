@@ -6,7 +6,7 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
-<script src="<rst:assetUrl value='/scripts/tags/formCreateMenuDialog.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/formCreateMenuDialog.js'/>"></script>
 <div id="formListDlg" style="display: none">
 	<p><spring:message code="dialogs.createFromForm.instruction"/></p>
 	<!-- Paginates form listing when there are many forms. Clicking the link will  -->

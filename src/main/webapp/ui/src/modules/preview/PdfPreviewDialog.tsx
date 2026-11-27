@@ -1,8 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import Alerts from "@/components/Alerts/Alerts";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import { CallableAsposePreview, useAsposePreview } from "@/eln/gallery/components/CallableAsposePreview";
 import { CallablePdfPreview, usePdfPreview } from "@/eln/gallery/components/CallablePdfPreview";
 import materialTheme from "@/theme";
@@ -65,7 +65,7 @@ export function PdfPreviewDialogFromGlobalEvent(): React.ReactNode {
 
 export function PdfPreviewDialogWrapper(): React.ReactNode {
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <ErrorBoundary topOfViewport>
           <Alerts>
@@ -77,6 +77,6 @@ export function PdfPreviewDialogWrapper(): React.ReactNode {
           </Alerts>
         </ErrorBoundary>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

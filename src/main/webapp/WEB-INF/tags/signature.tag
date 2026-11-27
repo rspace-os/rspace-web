@@ -1,8 +1,9 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
+<%@ taglib uri="http://researchspace.com/functions" prefix="f" %>
 <%@ attribute name="record" required="true" type="com.researchspace.model.record.BaseRecord"%>
 
-<script>
+<script nonce="${requestScope.cspNonce}">
 	var isSigned;
 	var isWitnessed;
 
@@ -184,7 +185,7 @@
 		signatureResetState();
 
 		<c:if test="${record.signed}">
-			signatureInfoJson = '${signatureInfo.asJSON}';
+			signatureInfoJson = '${f:escapeJavaScript(signatureInfo.asJSON)}';
 			signatureSetFromJSON(JSON.parse(RS.unescape(signatureInfoJson)));
 		</c:if>
 

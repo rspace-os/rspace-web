@@ -5,9 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><spring:message code="apiDocs.title"/></title>
+    <meta property="csp-nonce" nonce="${requestScope.cspNonce}">
     <rst:viteClient />
     <rst:bundle bundle="apiDocs" />
-    <style>
+    <style nonce="${requestScope.cspNonce}">
       html, body { margin: 0; height: 100%; }
     </style>
   </head>

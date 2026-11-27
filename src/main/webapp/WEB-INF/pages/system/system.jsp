@@ -11,8 +11,8 @@
     <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
 
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
   </head>
 
   <body>

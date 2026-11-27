@@ -60,8 +60,3 @@
   <input type="text" name="" id="resultsPerPage" hidden
     value="${numberRecords}">
 </div>
-<script>
-  $(document).ready(function () {
-    makeImageLinksPublic();
-  });
-</script>

@@ -2,17 +2,14 @@
 <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
 
 <rst:hasDeploymentProperty name="cloud" value="true">
-  <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
-  <script src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="https://accounts.google.com/gsi/client?onload=onLoad" async defer></script>
 </rst:hasDeploymentProperty>
 
-<script type="text/javascript">
-  function removeInventoryAuthOnRunAs() {
+<script nonce="${requestScope.cspNonce}">
+  $(document).on('click', '#runAs', function () {
     window.sessionStorage.removeItem("id_token");
-  }
-</script>
-
-<script>
+  });
   $(document).on('click', '#logout', function (e) {
     //RSPAC-987 for case when we have google signout
     e.preventDefault();
@@ -99,7 +96,6 @@
              role="button"
              aria-disabled="false"
              style="padding:0 2px 0 2px;"
-             onclick="removeInventoryAuthOnRunAs()"
           >
             <spring:message code="common:appBar.release"/>
           </a>
@@ -110,14 +106,14 @@
     <div id="app-bar"></div>
     <rst:bundle bundle="appBar" />
 
-    <script type='text/javascript'>
-      var AppContext_Glbal = new String("${pageContext.request.contextPath}");
+    <script nonce="${requestScope.cspNonce}" type='text/javascript'>
+      var AppContext_Glbal = new String("${f:escapeJavaScript(pageContext.request.contextPath)}");
     </script>
 
     <rst:hasDeploymentProperty name="standalone" value="false">
       <c:if test="${empty sessionScope.com_rs_timezone or  sessionScope.firstRequest == true}">
-        <script src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
-        <script type="text/javascript">
+        <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
+        <script nonce="${requestScope.cspNonce}" type="text/javascript">
           $(document).ready(function () {
             // this will be run on 1st pageload in session or
             var tz = jstz.determine(); //Determines the time zone of the browser client
@@ -150,20 +146,20 @@
     </rst:hasDeploymentProperty>
 
     <rst:hasDeploymentProperty name="netFileStoresExportEnabled" value="true">
-      <script>
+      <script nonce="${requestScope.cspNonce}">
         RS.netFileStoresExportEnabled = true;
       </script>
     </rst:hasDeploymentProperty>
 
-    <script>
+    <script nonce="${requestScope.cspNonce}">
       RS.asposeEnabled = ${applicationScope['RS_DEPLOY_PROPS']['asposeEnabled']};
     </script>
 
-    <script>
-      RS.chemistryProvider = "${applicationScope['RS_DEPLOY_PROPS']['chemistryProvider']}";
+    <script nonce="${requestScope.cspNonce}">
+      RS.chemistryProvider = "${f:escapeJavaScript(applicationScope['RS_DEPLOY_PROPS']['chemistryProvider'])}";
     </script>
 
-    <script>
+    <script nonce="${requestScope.cspNonce}">
       $(document).ready(function () {
         var $navbar = $(".rs-navbar");
         var $dropdowns = $navbar.find(".rs-dropdown");

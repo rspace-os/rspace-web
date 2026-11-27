@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import InternalLink, { type RemovableElement } from "@/tinyMCE/InternalLink";
 import type { RevisionIdentifier } from "@/tinyMCE/types";
@@ -40,16 +40,15 @@ document.addEventListener("tinymce-insert-revision", (event: Event): void => {
   container.className = "revision-dialog";
   document.body.appendChild(container);
   const root = createRoot(container);
-  // StyledEngineProvider + ThemeProvider wrapping is required because as of
-  // MUI v5 useStyles cannot be used in the same component as the root
-  // MuiThemeProvider.
+  // The cache provider and ThemeProvider must wrap the MUI components so their
+  // styles use the page nonce and theme.
   root.render(
     <I18nRoot namespaces={["workspace", "common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <InternalLink id={detail.id} version={detail.version} initialEl={normalizeInitialElement(detail.el)} />
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     </I18nRoot>,
   );
 });

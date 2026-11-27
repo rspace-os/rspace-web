@@ -8,10 +8,10 @@ import FormHelperText from "@mui/material/FormHelperText";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { type JSX, useId } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
@@ -134,12 +134,12 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
   };
 
   root.render(
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <I18nRoot>
           <ConfirmationDialog {...payload} handleCloseDialog={handleCloseDialog} />
         </I18nRoot>
       </ThemeProvider>
-    </StyledEngineProvider>,
+    </MuiCssLayerProvider>,
   );
 }

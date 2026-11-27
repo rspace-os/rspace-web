@@ -1,9 +1,9 @@
 <%@ include file="/common/taglibs.jsp" %>
 
-<script >
-    var ssoheader_ssoUsername = '${sessionScope.remoteUserUsername}' || '${remoteUserUsername}';
-    var ssoheader_rspaceUsername = '${sessionScope.userInfo.username}';
-    var ssoheader_rspaceUsernameAlias = '${sessionScope.userInfo.usernameAlias}';
+<script nonce="${requestScope.cspNonce}" >
+    var ssoheader_ssoUsername = '${f:escapeJavaScript(sessionScope.remoteUserUsername)}' || '${f:escapeJavaScript(remoteUserUsername)}';
+    var ssoheader_rspaceUsername = '${f:escapeJavaScript(sessionScope.userInfo.username)}';
+    var ssoheader_rspaceUsernameAlias = '${f:escapeJavaScript(sessionScope.userInfo.usernameAlias)}';
     var ssoheader_operateAs =  "${sessionScope['rs.IS_RUN_AS']}" == 'true';
 
     $(document).ready(function() {
@@ -36,7 +36,7 @@
     
 </script>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
   #ssoDifferentUserHeaderDiv {
     padding: 10px 0px;
     margin-top: 10px;

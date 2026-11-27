@@ -1,13 +1,10 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script>
-    var ldapAuthenticationEnabled = "${ldapAuthenticationEnabled}" === "true";
-    var ldapSidVerificationEnabled = "${ldapSidVerificationEnabled}" === "true";
-</script>
-
 <div class="bootstrap-custom-flat">
 
-  <div id="ldapConfigPanel">
+  <div id="ldapConfigPanel"
+       data-ldap-authentication-enabled="${ldapAuthenticationEnabled}"
+       data-ldap-sid-verification-enabled="${ldapSidVerificationEnabled}">
     <div id="ldapEnabledMsg">
         <span><spring:message code="system.ldap.integrationEnabledMessage"/></span>
     </div>

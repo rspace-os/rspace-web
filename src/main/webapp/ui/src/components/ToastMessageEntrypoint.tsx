@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import Snackbars from "./ToastMessage";
@@ -19,11 +19,11 @@ if (domContainer) {
    */
   root.render(
     <I18nRoot namespaces={["common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <Snackbars />
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     </I18nRoot>,
   );
 }

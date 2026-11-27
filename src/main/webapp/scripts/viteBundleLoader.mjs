@@ -82,6 +82,10 @@ const appendModuleScript = (src) => {
   // Necessary only for TinyMCE
   const scriptLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
+    const nonce = document.querySelector('meta[property="csp-nonce"]')?.nonce;
+    if (nonce) {
+      script.nonce = nonce;
+    }
     script.type = "module";
     script.src = src;
     script.addEventListener(

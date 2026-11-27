@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-	<style>
+	<style nonce="${requestScope.cspNonce}">
 		input, textarea, select, button {
 		  width : 150px;
 		  margin: 0;
@@ -19,8 +19,8 @@
 
 	<link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
     <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
-    <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/rspace/cloudGroupCreation.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/rspace/cloudGroupCreation.js'/>"></script>
 </head>
 	<jsp:include page="/WEB-INF/pages/admin/admin.jsp"></jsp:include>
 	<div class="container">

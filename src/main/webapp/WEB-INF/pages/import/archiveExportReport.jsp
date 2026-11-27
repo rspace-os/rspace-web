@@ -4,7 +4,7 @@
     <title><spring:message code="importExport.export.report.title"/></title>
 </head>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
     .archiveExportSummaryMsg {
         margin: 10px 0px;
         font-weight: bold;
@@ -20,9 +20,9 @@
     
 </style>
 
-<script>
-   var notificationData = JSON.parse(RS.unescape('${notificationDataJson}'));
-   notificationData.creationTime = '${notification.creationTime}';
+<script nonce="${requestScope.cspNonce}">
+   var notificationData = JSON.parse(RS.unescape('${f:escapeJavaScript(notificationDataJson)}'));
+   notificationData.creationTime = '${f:escapeJavaScript(notification.creationTime)}';
 
    $(document).ready(function () {
       processNotificationDataBeforeDisplaying(); 

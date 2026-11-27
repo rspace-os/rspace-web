@@ -6,11 +6,11 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import EmailValidator from "email-validator";
 import React from "react";
 import CreatableSelect from "react-select/creatable";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import materialTheme from "../theme";
 
@@ -130,7 +130,7 @@ class createGroupStep2 extends React.Component<any, any> {
   render() {
     return (
       <Box sx={{ padding: "0 25px 10px 25px" }}>
-        <StyledEngineProvider injectFirst enableCssLayer>
+        <MuiCssLayerProvider>
           <ThemeProvider theme={materialTheme}>
             <h3>{i18n.t("groups:createGroup.step2.heading")}</h3>
             <RadioGroup
@@ -191,7 +191,7 @@ class createGroupStep2 extends React.Component<any, any> {
               </div>
             )}
           </ThemeProvider>
-        </StyledEngineProvider>
+        </MuiCssLayerProvider>
       </Box>
     );
   }

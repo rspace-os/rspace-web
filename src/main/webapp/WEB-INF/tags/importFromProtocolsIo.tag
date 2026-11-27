@@ -4,9 +4,9 @@
 
 <%@ attribute name="parentId" required="true" type="java.lang.Long"%>
 
-<script src="<rst:assetUrl value='/scripts/tags/importFromProtocolsIo.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/importFromProtocolsIo.js'/>"></script>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
 .seamless {
     padding: 0px;
     border: 0px none transparent;

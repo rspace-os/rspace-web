@@ -1,4 +1,4 @@
-import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useContext } from "react";
 import { MemoryRouter } from "react-router";
@@ -6,6 +6,7 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
 import Alerts from "@/components/Alerts/Alerts";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
 import AlertContext, { type Alert } from "@/stores/contexts/Alert";
 import type Result from "@/util/result";
@@ -41,7 +42,7 @@ const GalleryPickerRoot = ({
   onAlertReady?: (addAlert: (alert: Alert) => void) => void;
 }) => (
   <QueryClientProvider client={queryClient}>
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <Alerts>
           <AlertBridge onAlertReady={onAlertReady} />
@@ -57,7 +58,7 @@ const GalleryPickerRoot = ({
           </MemoryRouter>
         </Alerts>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   </QueryClientProvider>
 );
 

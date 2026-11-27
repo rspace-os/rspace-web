@@ -1,14 +1,14 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script>
-    var recordId = "${recordId}"; // the record id of the current workspace view.
+<script nonce="${requestScope.cspNonce}">
+    var recordId = "${f:escapeJavaScript(recordId)}"; // the record id of the current workspace view.
     <c:if test="${not empty searchConfig}">
       var isWorkspaceSearch = true;
     </c:if>
-    var workspaceSettings = $.parseJSON(RS.unescape('${workspaceConfigJson}'));
+    var workspaceSettings = $.parseJSON(RS.unescape('${f:escapeJavaScript(workspaceConfigJson)}'));
     workspaceSettings.resultsPerPage = ${numberRecords};
     workspaceSettings.searchMode = false;
-    var settingsKey = '${settingsKey}';
+    var settingsKey = '${f:escapeJavaScript(settingsKey)}';
     var isSysAdmin = false;
     <shiro:hasAnyRoles name="ROLE_SYSADMIN">
       isSysAdmin = true;
@@ -38,25 +38,25 @@
   <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
 
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/jquery.fancytree-all.min.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/tags/fileTreeBrowser.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/tags/fileTreeBrowserSorter.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/crudops.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTreeSorter.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery.scrollTo/jquery.scrollTo.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/jquery.fancytree-all.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/fileTreeBrowser.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/fileTreeBrowserSorter.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/crudops.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTreeSorter.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
-  <script src="<rst:assetUrl value='/scripts/pages/workspace.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/workspaceSearch.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/workspaceSearch.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
 
-  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/calendarDialog.js'/>"></script>
 
   <!-- Moved to default.jsp -->
   <!-- <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script> -->
@@ -130,7 +130,7 @@
 <jsp:include page="recordInfoPanel.jsp" />
 <form id="createNewFormForm" style="display:none" target='_blank' method='POST' action='/workspace/editor/form/'></form>
 
-<script>
+<script nonce="${requestScope.cspNonce}">
 //Hot patch.
 //It should be moved into workspace.js during integration process.
 $(document).ready(function() {

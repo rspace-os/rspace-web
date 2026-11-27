@@ -16,6 +16,8 @@ var defaultRefresh = function (result) {
     var noOfRows = $("<div/>").html(result).find("#noOfRows").val();
     if (noOfRows > 0) {
       $('#record_list').html(result);
+      processWorkspaceAjaxMessages($('#record_list'));
+      setUpWorkspaceBreadcrumbs();
       $(".rs-working-area, .tabularViewBottom").show();
       $('#record_list').show(effect, effectDuration);
       $("#searchModePanel").removeClass("searchError").addClass("searchSuccess");
@@ -29,6 +31,8 @@ var defaultRefresh = function (result) {
       }
     } else {
       $('#record_list').hide().html(result);
+      processWorkspaceAjaxMessages($('#record_list'));
+      setUpWorkspaceBreadcrumbs();
       $(".rs-working-area, .tabularViewBottom").hide();
       $('#record_list').show(effect, effectDuration);
       $("#searchModePanel").removeClass("searchSuccess").addClass("searchError");

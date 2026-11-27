@@ -8,12 +8,12 @@
   </title>
 
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-  <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/system/createAccount.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/system/batchUserRegistration.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/createAccount.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/batchUserRegistration.js'/>"></script>
 
   <rst:hasDeploymentProperty name="ldapEnabled" value="true">
-    <script type="text/javascript">
+    <script nonce="${requestScope.cspNonce}" type="text/javascript">
       var ldapEnabled = true;
     </script>
   </rst:hasDeploymentProperty>

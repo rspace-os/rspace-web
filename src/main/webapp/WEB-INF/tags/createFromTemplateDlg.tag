@@ -4,7 +4,7 @@
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
-<script src="<rst:assetUrl value='/scripts/tags/createFromTemplateDlg.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/createFromTemplateDlg.js'/>"></script>
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/createFromTemplateDlg.css'/>" />
 
 <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />

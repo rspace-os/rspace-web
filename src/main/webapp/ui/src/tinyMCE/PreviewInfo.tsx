@@ -4,7 +4,6 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect } from "react";
@@ -13,6 +12,7 @@ import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import createAccentedTheme from "../accentedTheme";
 import { useIntegrationIsAllowedAndEnabled } from "../hooks/api/integrationHelpers";
 import * as FetchingData from "../util/fetchingData";
@@ -102,7 +102,7 @@ function PreviewInfoFrame({ children, isTableOnly = false }: { children: React.R
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <CssBaseline />
         <ThemeProvider theme={theme}>
           <Box
@@ -121,7 +121,7 @@ function PreviewInfoFrame({ children, isTableOnly = false }: { children: React.R
             </Stack>
           </Box>
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     </QueryClientProvider>
   );
 }

@@ -141,3 +141,28 @@
 	color:#cc0000;
 	text-decoration:none;
 }
+
+a, a:link, a:active {
+    color: #1465b7;
+    text-decoration: none;
+}
+a:visited {
+    color: #1465b7;
+    background-color: transparent;
+}
+a:hover {
+    color: #cc0000;
+    text-decoration: none;
+}
+a.morOrderBy {
+    position: relative;
+    color: blue;
+    left: 10px;
+}
+.messageMoreInfo {
+    margin: 10px 0;
+    white-space: normal;
+}
+.leftInfo {
+    min-width: 200px;
+}

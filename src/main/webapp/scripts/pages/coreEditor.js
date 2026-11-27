@@ -971,6 +971,7 @@ function applyCodeSampleHighlights($node) {
 }
 
 function setUpEditorBreadcrumbs() {
+  RS.initBreadcrumbTag('editorBcrumb');
   $('#breadcrumbTag_editorBcrumb').find(".breadcrumbLink")
     .attr('href', function () {
       var folderId = $(this).attr('id').split('_')[1];

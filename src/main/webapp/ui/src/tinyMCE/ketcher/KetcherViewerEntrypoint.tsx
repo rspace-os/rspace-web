@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const root = createRoot(wrapperDiv);
       root.render(
         <Analytics>
-          <MuiCssLayerProvider>
+          <MuiCssLayerProvider container={wrapperDiv.ownerDocument}>
             <I18nRoot namespaces={["common"]}>
               <KetcherViewer />
             </I18nRoot>

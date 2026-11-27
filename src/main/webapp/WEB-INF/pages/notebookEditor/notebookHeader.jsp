@@ -22,34 +22,34 @@
 
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/journal.css'/>" />
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/messages.css'/>" />
-    <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
-    <script	src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
-    <script type="text/javascript">
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/plugins/codesample/js/prism.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}"	src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" type="text/javascript">
         var notebookId = ${selectedNotebookId};
         var notebookPath = "<c:url value='/'/>";
         var isEditable = ${canEdit};
         // maybe user can only see selected entry
         var canSeeNotebook = ${canSeeNotebook};
         // where to navigate user after closing the notebook view
-        var workspaceFolderId = '${workspaceFolderId}';
+        var workspaceFolderId = '${f:escapeJavaScript(workspaceFolderId)}';
         // Static is always editable until you can share it
         var editable = "VIEW_MODE";
         // this var is escaped by JSP, so does not need to be ecaped again
-        var notebookName = '${selectedNotebookName}';
-        const publicationSummary= '${publicationSummary}';
-        const publishOnInternet = "${publishOnInternet}";
-        const contactDetails = '${contactDetails}';
-        var settingsKey = '${settingsKey}';
+        var notebookName = '${f:escapeJavaScript(selectedNotebookName)}';
+        const publicationSummary= '${f:escapeJavaScript(publicationSummary)}';
+        const publishOnInternet = "${f:escapeJavaScript(publishOnInternet)}";
+        const contactDetails = '${f:escapeJavaScript(contactDetails)}';
+        var settingsKey = '${f:escapeJavaScript(settingsKey)}';
 
 
         <c:if test="${not empty sessionScope.get(settingsKey)}">
-        var settingsObject = <c:out value="${sessionScope.get(settingsKey).toJson()}" escapeXml="false" />;
+        var settingsObject = JSON.parse('${f:escapeJavaScript(sessionScope.get(settingsKey).toJson())}');
         </c:if>
 
-        var clientUISettingsPref = "${clientUISettingsPref}";
+        var clientUISettingsPref = "${f:escapeJavaScript(clientUISettingsPref)}";
         var isDocumentEditor = false;
         <c:choose>
         <c:when test="${ not empty initialRecordToDisplay}">
@@ -62,7 +62,7 @@
         </c:choose>
         var entryCount = ${entryCount};
     </script>
-    <script src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
     <rst:bundle bundle="tinymceGalleryUtils" />
-    <script	src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/notebookEditor.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}"	src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/notebookEditor.js'/>"></script>

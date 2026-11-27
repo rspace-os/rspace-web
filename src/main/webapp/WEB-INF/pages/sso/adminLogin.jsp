@@ -3,7 +3,7 @@
     <title><spring:message code="adminLogin.title"/></title>
     <meta name="heading" content="<spring:message code='login.heading'/>"/>
 
-    <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
     <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
     <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
@@ -12,7 +12,7 @@
 
     <%-- key icon. FontAwesome doesn't work for some reason. Futher investigation is needed. --%>
     <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
-    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 
 <div class="page">
@@ -94,7 +94,7 @@
   <%-- END: login form --%>
 
   <!-- Remove the inventory JWT token -->
-  <script type="text/javascript">
+  <script nonce="${requestScope.cspNonce}" type="text/javascript">
     window.sessionStorage.removeItem("id_token");
   </script>
 

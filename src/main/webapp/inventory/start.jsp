@@ -8,9 +8,10 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title><spring:message code="inventory:pageTitle"/></title>
+    <meta property="csp-nonce" nonce="${requestScope.cspNonce}">
     <rst:viteClient />
     <rst:bundle bundle="inventoryEntry" />
-    <style>
+    <style nonce="${requestScope.cspNonce}">
       html, body, #app, #app > div, #app > div > div {
         height: 100%;
         overscroll-behavior: none;

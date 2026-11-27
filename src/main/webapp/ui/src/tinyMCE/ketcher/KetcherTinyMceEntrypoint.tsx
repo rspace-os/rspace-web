@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { createRoot, type Root } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import KetcherTinyMce from "@/tinyMCE/ketcher/KetcherTinyMce";
 import Alerts from "../../components/Alerts/Alerts";
@@ -36,15 +37,17 @@ function renderKetcherDialog(): void {
   };
 
   root.render(
-    <ThemeProvider theme={theme}>
-      <Analytics>
-        <Alerts>
-          <I18nRoot namespaces={["common"]}>
-            <KetcherTinyMce onUnmount={unmount} />
-          </I18nRoot>
-        </Alerts>
-      </Analytics>
-    </ThemeProvider>,
+    <MuiCssLayerProvider container={wrapperDiv.ownerDocument}>
+      <ThemeProvider theme={theme}>
+        <Analytics>
+          <Alerts>
+            <I18nRoot namespaces={["common"]}>
+              <KetcherTinyMce onUnmount={unmount} />
+            </I18nRoot>
+          </Alerts>
+        </Analytics>
+      </ThemeProvider>
+    </MuiCssLayerProvider>,
   );
 }
 

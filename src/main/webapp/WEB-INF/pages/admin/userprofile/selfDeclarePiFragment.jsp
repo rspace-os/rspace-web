@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script src="<rst:assetUrl value='/scripts/pages/rspace/selfDeclarePi.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/rspace/selfDeclarePi.js'/>"></script>
 
 <hr/>
 
@@ -8,7 +8,7 @@
   <spring:message code="userProfile.selfDeclarePi.heading"/>
 </div>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
   .piRoleDescription {
     flex-grow: 1;
   }
@@ -16,7 +16,7 @@
 </style>
 
 <div class="profileGreyBlocks" style="display:flex; flex-wrap: wrap">
-  <script>
+  <script nonce="${requestScope.cspNonce}">
     var isUserAllowedPiRole = ${user.allowedPiRole};
     var isUserAPi = ${user.PI};
     var isUserAPiOfSomeGroup = ${user.primaryLabGroupWithPIRole != null};

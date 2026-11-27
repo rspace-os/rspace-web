@@ -3,12 +3,12 @@
 
 <head> 
 <!-- Import React and Toast messages on any page that has a  header -->
-  <script>
+  <script nonce="${requestScope.cspNonce}">
     //if we dont delete id_tokens (Oauth tokens that identify the user) then using the public link can result in actual logged in users being switched
     //for previously logged in users. See JwtService and login.jsp and logout.jsp. The tokens are read in authenticate() method in AbstractApiAuthenticator
     //which is called by the ApiAuthenticationInterceptor preHandle().
     window.sessionStorage.removeItem("id_token");
-    const AppContext_Glbal = new String("${pageContext.request.contextPath}");
+    const AppContext_Glbal = new String("${f:escapeJavaScript(pageContext.request.contextPath)}");
   
   </script>
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
@@ -18,33 +18,33 @@
   <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
   <link href="<rst:assetUrl value='/styles/rs-global.css'/>" rel="stylesheet" />
   
-  <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/jquery.toastmessage.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jquery.toastmessage.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
-  <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
   
-  <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
 </head>
 
 <body>
 
-  <script>
+  <script nonce="${requestScope.cspNonce}">
     var workspaceSettings = {};
-    workspaceSettings.currentUser = "${sessionScope.userInfo.username}";
-    const sharedFolderID = "${sharedFolderID}";
-    const sharingUser = "${sharingUser}";
-    const documentName = "${documentName}"
-    const contactDetails = "${contactDetails}"
-    const publicationSummary = "${publicationSummary}"
+    workspaceSettings.currentUser = window.currentUser || "";
+    const sharedFolderID = "${f:escapeJavaScript(sharedFolderID)}";
+    const sharingUser = "${f:escapeJavaScript(sharingUser)}";
+    const documentName = "${f:escapeJavaScript(documentName)}"
+    const contactDetails = "${f:escapeJavaScript(contactDetails)}"
+    const publicationSummary = "${f:escapeJavaScript(publicationSummary)}"
   </script>
-  <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/public_documentView.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/editor/public_documentView.js'/>"></script>
 
   <div class="mainDocumentView public">
 
@@ -64,10 +64,10 @@
     </jsp:include>
     </div>
   <div id="tempData" style="display: none"></div>
-  <script>
+  <script nonce="${requestScope.cspNonce}">
     $(window).on('load',function() {
-      const publicationSummary = "${publicationSummary}";
-      const publishOnInternet = "${publishOnInternet}";
+      const publicationSummary = "${f:escapeJavaScript(publicationSummary)}";
+      const publishOnInternet = "${f:escapeJavaScript(publishOnInternet)}";
         makeImageLinksPublic();
         disableLinkedDocumentsAndLinkedFiles();
         makeSVGPublic();

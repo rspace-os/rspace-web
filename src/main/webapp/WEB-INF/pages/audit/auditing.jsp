@@ -4,8 +4,8 @@
     <title><spring:message code="audit.title"/></title>
     <meta name="heading" content="<spring:message code='audit.heading'/>"/>
     <meta name="menu" content="MainMenu"/>
-    <script src="<rst:assetUrl value='/scripts/pages/audit.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/audit.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
 	<link rel="stylesheet" href="<rst:assetUrl value='/styles/audit.css'/>" />
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />

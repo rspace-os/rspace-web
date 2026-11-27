@@ -8,9 +8,9 @@
     <!-- moved to default.jsp -->
     <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->
     
-	<script src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
-	<script src="<rst:assetUrl value='/scripts/pages/workspace/revisionHistory.js'/>"></script>
-	<script type="text/javascript">
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqui-multi-dates-picker/jquery-ui.multidatespicker.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/revisionHistory.js'/>"></script>
+	<script nonce="${requestScope.cspNonce}" type="text/javascript">
 		var recordId=${currentDoc.id};
 	</script>
 </head>

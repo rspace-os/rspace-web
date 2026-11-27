@@ -1,10 +1,10 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!-- Loading TinyMCE -->
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/pages/workspace/editor/form.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/dompurify.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/jquery.tinymce.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tinymce/tinymce5109/tinymce.min.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/workspace/editor/form.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/structuredDocument.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/tinymce_rs.css'/>" />
@@ -165,10 +165,10 @@
 	</fieldset>
 </div>
 
-<script>
-	var editable = '${editStatus}';
-	var editor = '${editor}';
+<script nonce="${requestScope.cspNonce}">
+	var editable = '${f:escapeJavaScript(editStatus)}';
+	var editor = '${f:escapeJavaScript(editor)}';
 	var wasAutosaved = false;
-	var modificationDate = '${modificationDate}';
-	var recordId = "${template.id}";
+	var modificationDate = '${f:escapeJavaScript(modificationDate)}';
+	var recordId = "${f:escapeJavaScript(template.id)}";
 </script>

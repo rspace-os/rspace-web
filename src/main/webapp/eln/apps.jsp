@@ -8,6 +8,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=2.0"
     />
     <title><spring:message code="apps:page.title"/></title>
+    <meta property="csp-nonce" nonce="${requestScope.cspNonce}">
     <rst:viteClient />
     <rst:bundle bundle="apps" />
 

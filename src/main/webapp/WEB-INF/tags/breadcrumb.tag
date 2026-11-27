@@ -9,22 +9,5 @@
             <span data-id="${bce.id}" data-home="${bce.home}">${bce.displayname}</span>
         </c:forEach>
     </div>
-    <script>
-        $(document).ready(function() {
-            var $breadcrumbTag = $("#breadcrumbTag_${breadcrumbTagId}");
-            var $breadcrumbData = $breadcrumbTag.children(".breadcrumbData");
-            $breadcrumbData.children("span").each(function() {
-                var $element = $(this);
-                var displayName = $element.data("home")
-                    ? RS.msg("legacyjs.core.breadcrumb.home")
-                    : $element.text();
-                var safeDisplayName = $("<span>").text(displayName).html();
-                RS.addBreadcrumbElement("${breadcrumbTagId}", $element.attr("data-id"), safeDisplayName);
-            });
-            // a hidden copy of each name would otherwise sit beside the rendered breadcrumb
-            $breadcrumbData.remove();
-            RS.refreshBreadcrumbElems("${breadcrumbTagId}");
-        });
-    </script>
     <div class="breadcrumbElems"></div>
 </div>

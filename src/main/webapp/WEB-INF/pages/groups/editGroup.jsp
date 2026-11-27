@@ -8,12 +8,12 @@
   <meta name="menu" content="MainMenu" />
   <meta charset="UTF-8">
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-  <style>
+  <style nonce="${requestScope.cspNonce}">
     .error {
       color: red;
     }
   </style>
-  <script type="text/javascript">
+  <script nonce="${requestScope.cspNonce}" type="text/javascript">
     $(document).ready(function () {
       $('.help').click(function (e) {
         e.preventDefault();

@@ -2,6 +2,7 @@
 <%@ include file="/common/taglibs.jsp" %>
 <html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 	<head>
+		<meta property="csp-nonce" nonce="${requestScope.cspNonce}">
 		<rst:viteClient />
 		<title>
 			<sitemesh:write property='title'/> |
@@ -15,13 +16,13 @@
 		<link media="all" href="<rst:assetUrl value='/styles/simplicity/tools.css'/>" rel="stylesheet" />
 		<link media="all" href="<rst:assetUrl value='/styles/simplicity/layout.css'/>" rel="stylesheet" />
 		<link media="all" href="<rst:assetUrl value='/styles/public.css'/>" rel="stylesheet" />
-		<script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
-		<script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
-		<script src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
+		<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+		<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+		<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jstz-detect/jstz.min.js'/>"></script>
 
 		<link rel="icon" type="image/png" href="<c:url value="/images/favicon.png"/>"/>
 
-		<script>
+		<script nonce="${requestScope.cspNonce}">
 			$(document).ready(function () {
 				var tz = jstz.determine(); //Determines the time zone of the browser client
 				$('#timezone_field').val(tz.name());

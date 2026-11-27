@@ -13,7 +13,7 @@
             </div>
             <span class="fieldNotification"></span>
             <div class="fieldHeaderEditButton bootstrap-custom-flat">
-              <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" onclick="editInputField(${field.id})">
+              <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" data-field-edit-action="editInputField" data-field-id="${field.id}">
                 <span class="glyphicon glyphicon-pencil"></span>
               </button>
               <button id="stopEdit_${field.id}" title="<spring:message code='form.field.saveAndViewTitle'/>" class="btn btn-info btn-sm stopEditButton" style="display: none">
@@ -26,7 +26,7 @@
           <td class="field-value-inner">
             <input class="inputField ${field.id}" id="${field.id}" size="80"
               type="text" name="fieldData" value="${field.fieldData}"
-              oninput="checkAndMarkField(this)" />
+              data-field-input-action="checkAndMarkField" />
             <p class="plainTextField ${field.id} singleLineFieldInDocViewMode" id="plainText_${field.id}">
               ${field.fieldData}
             </p>

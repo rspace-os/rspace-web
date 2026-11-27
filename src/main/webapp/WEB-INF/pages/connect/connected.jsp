@@ -31,7 +31,7 @@
      data-alias="${connectionAlias}"
      data-error="${connectionError}"></div>
 <p><spring:message code="connect.connected.closeWindowNotice"/></p>
-<script>
+<script nonce="${requestScope.cspNonce}">
   window.addEventListener("load", () => {
     const result = document.getElementById("rs-connection-result");
     const d = result ? result.dataset : {};

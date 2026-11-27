@@ -7,13 +7,13 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { DataGrid, type GridRowId, type GridRowSelectionModel } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TitledBox from "@/components/TitledBox";
 import { ErrorReason } from "@/eln/eln-external-workflows/Enums";
 import ErrorView from "@/eln/eln-external-workflows/ErrorView";
@@ -210,7 +210,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
   }
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       {/* base typography, own copy of the rules this page needs from styles/simplicity/typo.css (RSDEV-1227) */}
       <style>{`
         body { text-align: left; font-family: arial, sans-serif; font-size: 76%; color: #444; }
@@ -346,7 +346,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           )}
         </HeadingContext>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }
 

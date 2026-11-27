@@ -5,11 +5,11 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import GenericsearchBar from "../components/GenericsearchBar";
 import materialTheme from "../theme";
@@ -179,7 +179,7 @@ function RoRIntegration(): React.ReactNode {
   const showUnlinkAction = (rorMatchesCandidateRor() || (Boolean(ror) && !candidateRor)) && !errorMessage;
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <div>
           <h1>{t("ror.heading")}</h1>
@@ -288,7 +288,7 @@ function RoRIntegration(): React.ReactNode {
           </Button>
         )}
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }
 

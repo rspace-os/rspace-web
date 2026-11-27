@@ -6,7 +6,7 @@
 <%@ attribute name="isNotebook" required="true" type="java.lang.Boolean"%>
 <%@ attribute name="parentId" required="true" type="java.lang.Long"%>
 
-<script src="<rst:assetUrl value='/scripts/tags/importFromWord.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/importFromWord.js'/>"></script>
 
 <div id="wordDocChooserDlg" style="display: none">
 	<form id="wordImportForm" data-parentid="${parentId}">

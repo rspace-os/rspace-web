@@ -4,7 +4,7 @@
     <title><spring:message code="importExport.title"/></title>
     <meta name="import Archive" content="import"/>
 
-    <style>
+    <style nonce="${requestScope.cspNonce}">
 	.importForm {
 		margin: 0 auto;
             font-size: 1em;
@@ -46,7 +46,7 @@
 	display:inline;
         }
     </style>
-    <script>
+    <script nonce="${requestScope.cspNonce}">
      var maxFileSize = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
      $(document).ready(function (e){
 	 $(document).on('click', '#exportMyWork', function (e){

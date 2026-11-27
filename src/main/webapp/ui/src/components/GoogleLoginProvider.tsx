@@ -1,5 +1,6 @@
 import React from "react";
 import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
+import { applyCspNonce } from "../util/csp";
 import * as FetchingData from "../util/fetchingData";
 import * as Parsers from "../util/parsers";
 
@@ -30,6 +31,7 @@ export default function GoogleLoginProvider(): React.ReactNode {
               script.src = "https://accounts.google.com/gsi/client";
               script.id = scriptId;
               script.async = true;
+              applyCspNonce(script);
               script.onload = () => resolve();
               script.onerror = () => reject(new Error("Failed to load google login script"));
               document.body?.appendChild(script);

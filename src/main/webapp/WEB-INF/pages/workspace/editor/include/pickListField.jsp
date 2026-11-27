@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp" %>
 <link href="<rst:assetUrl value='/scripts/bower_components/select2/dist/css/select2.min.css'/>" rel="stylesheet" />
-<script src="<rst:assetUrl value='/scripts/bower_components/select2/dist/js/select2.min.js' />"></script>
-<script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/select2/dist/js/select2.min.js' />"></script>
+<script nonce="${requestScope.cspNonce}">
 	$(document).ready(function() {
 		const fielID =${field.id};
 		$("#"+fielID).select2();
@@ -16,7 +16,7 @@
 						<div class="fieldHeaderName">${field.name}</div>
 						<span class="fieldNotification"></span>
 						<div class="fieldHeaderEditButton bootstrap-custom-flat">
-							<button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" onclick="editFieldByClassRadio(${field.id})">
+							<button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" data-field-edit-action="editFieldByClassRadio" data-field-id="${field.id}">
 								<span class="glyphicon glyphicon-pencil"></span>
 							</button>
 							<button id="stopEdit_${field.id}" title="<spring:message code='form.field.saveAndViewTitle'/>" class="btn btn-info btn-sm stopEditButton" style="display: none">
@@ -27,7 +27,7 @@
 				</tr>
 				<tr>
 					<td class="field-value-inner" style="font-size: 100%">
-						<select id="${field.id}" class="formPickList ${field.id}" style="width: 80%" name="items" onchange="checkAndMarkField(this)" >
+						<select id="${field.id}" class="formPickList ${field.id}" style="width: 80%" name="items" data-field-change-action="checkAndMarkField" >
 							<c:forEach var="radioItem" items="${field.radioOptionAsList}">
 								<option class= 'radioLi ${field.id}'
 								value="${radioItem}"
