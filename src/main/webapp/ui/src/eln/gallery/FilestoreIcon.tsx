@@ -1,12 +1,17 @@
-import SvgIcon from "@mui/material/SvgIcon";
+import SvgIcon, { type SvgIconProps } from "@mui/material/SvgIcon";
 import type React from "react";
 
 /**
- * A cloud icon for use as a generic icon for filestore.
+ * A cloud icon for use as a generic icon for filestore. Props reach the SvgIcon, so a Chip's
+ * icon class applies; a given `sx` is merged after the defaults.
  */
-export default function FilestoreIcon(): React.ReactNode {
+export default function FilestoreIcon({ sx, ...props }: SvgIconProps): React.ReactNode {
   return (
-    <SvgIcon viewBox="0 0 100 100" sx={{ fontSize: "--var(--fa-width, 1.25em)", ml: "2px" }}>
+    <SvgIcon
+      viewBox="0 0 100 100"
+      {...props}
+      sx={[{ fontSize: "--var(--fa-width, 1.25em)", ml: "2px" }, ...(Array.isArray(sx) ? sx : [sx])]}
+    >
       <g>
         <path d="M50,22.1c13.8,0,23.5,11.2,22.2,27.1,7-.2,17.7,3,17.7,14.9s-6.3,14-14,14H24c-7.7,0-14-6.3-14-14,0-11.2,9.9-15.3,17.7-14.9-.7-16.8,8.8-27.1,22.2-27.1ZM50,14.1c-16,0-29,12.5-29.9,28.3-10.3,1.8-18.1,10.8-18.1,21.6s9.8,22,22,22h51.9c12.1,0,22-9.8,22-22s-7.8-19.7-18.1-21.6c-.8-15.8-13.9-28.3-29.9-28.3Z" />
         <line

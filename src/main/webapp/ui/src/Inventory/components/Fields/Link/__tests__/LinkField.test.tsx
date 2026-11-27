@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { I18nextProvider } from "react-i18next";
@@ -608,7 +608,9 @@ describe("LinkField", () => {
       </I18nextProvider>,
     );
 
-    expect(screen.getByLabelText("Filestore item My S3: /XRD/run.dat")).toHaveTextContent("My S3: /XRD/run.dat");
+    const chip = screen.getByText("Filestore item My S3: /XRD/run.dat").closest('[data-test-id="LinkField-target"]');
+    expect(chip).not.toHaveAttribute("aria-label");
+    expect(within(chip as HTMLElement).getByText("My S3: /XRD/run.dat")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows the path alone with No access to a viewer who does not own the filestore", () => {

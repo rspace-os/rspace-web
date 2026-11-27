@@ -10,6 +10,7 @@ import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -138,8 +139,15 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             <Chip
               size="small"
               icon={<FilestoreIcon />}
-              label={filestoreLabel}
-              aria-label={t("fields.link.field.filestoreTarget", { target: filestoreLabel })}
+              label={
+                // a static chip is a roleless div, where an aria-label is not announced
+                <>
+                  <span aria-hidden="true">{filestoreLabel}</span>
+                  <Box component="span" sx={visuallyHidden}>
+                    {t("fields.link.field.filestoreTarget", { target: filestoreLabel })}
+                  </Box>
+                </>
+              }
               data-test-id="LinkField-target"
             />
           ) : (
