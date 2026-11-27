@@ -25,6 +25,7 @@ import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.AuditManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.awt.Image;
@@ -62,6 +63,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
 
   private User testUser, other;
   private @Autowired EcatImageAnnotationDao imageAnnotationDao;
+  private @Autowired AuditManager auditManager;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -367,6 +369,71 @@ public class ImageControllerMVCIT extends MVCTestBase {
                 .param("revision", revisionNumber)
                 .principal(new MockPrincipal(testUser.getUsername())))
         .andReturn();
+  }
+
+  @Test
+  public void loadAnnotationsAtRevisionBeforeAnnotationExistedReturnsEmptyAnnotation()
+      throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    EcatImageAnnotation annotation =
+        postSaveImageAnnotation("drawn", getImageBytes(), imageId, field.getId());
+    String beforeAnnotation = revisionBeforeCreation(annotation);
+
+    mockMvc
+        .perform(
+            getImageAnnotationStringURL(field, imageId)
+                .param("revision", beforeAnnotation)
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").value(""));
+    mockMvc
+        .perform(
+            getSketchImageAnnotationStringURL(field, annotation.getId())
+                .param("revision", beforeAnnotation)
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").value(""));
+
+    // the annotated image at that revision falls back to the plain Gallery image
+    Field unannotatedField =
+        createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    byte[] galleryImage =
+        fetchBytes(
+            get("/image/getImage/{id}/{unused}", unannotatedField.getId() + "-" + imageId, "1"));
+    assertThat(galleryImage).isNotEmpty();
+    assertArrayEquals(
+        galleryImage,
+        fetchBytes(getAnnotatedImageURL(annotation).param("revision", beforeAnnotation)));
+
+    // a sketch at a revision before it existed falls back to the current sketch
+    EcatImageAnnotation sketch = addSketchToField(field, testUser);
+    assertArrayEquals(
+        doInTransaction(() -> imageAnnotationDao.get(sketch.getId()).getData()),
+        fetchBytes(
+            get("/image/getImageSketch/{id}/{unused}", sketch.getId(), "1")
+                .param("revision", revisionBeforeCreation(sketch))));
+  }
+
+  private String revisionBeforeCreation(EcatImageAnnotation annotation) {
+    int created =
+        auditManager
+            .getRevisionsForEntity(EcatImageAnnotation.class, annotation.getId())
+            .get(0)
+            .getRevision()
+            .intValue();
+    // Envers revision numbers are global and increasing, so the one before an entity's first
+    // revision predates it
+    return (created - 1) + "";
+  }
+
+  private byte[] fetchBytes(MockHttpServletRequestBuilder request) throws Exception {
+    return mockMvc
+        .perform(request.principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().is2xxSuccessful())
+        .andReturn()
+        .getResponse()
+        .getContentAsByteArray();
   }
 
   private String getRevisionNumberofAnnotation(final Field fld) {

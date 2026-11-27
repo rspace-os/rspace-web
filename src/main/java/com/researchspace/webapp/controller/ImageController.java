@@ -432,10 +432,9 @@ public class ImageController extends BaseController {
       ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
       ecatImageCurrent = ecatImageAnnotation;
     } else {
-      ecatImageAnnotation =
-          auditManager
-              .getLinkableElementForRevision(EcatImageAnnotation.class, sketchId, revision)
-              .getEntity();
+      AuditedEntity<EcatImageAnnotation> audited =
+          auditManager.getLinkableElementForRevision(EcatImageAnnotation.class, sketchId, revision);
+      ecatImageAnnotation = audited == null ? null : audited.getEntity();
       // failover for case where there is no audit table pre 0.8
       if (ecatImageAnnotation == null) {
         ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
@@ -467,12 +466,15 @@ public class ImageController extends BaseController {
     EcatImageAnnotation annotation =
         ecatImageAnnotationManager.getByParentIdAndImageId(parentId, imageId, subject);
     if (revision != null && annotation != null) {
-      annotation =
-          auditManager
-              .getObjectForRevision(EcatImageAnnotation.class, annotation.getId(), revision)
-              .getEntity();
+      annotation = getAnnotationAtRevision(annotation.getId(), revision);
     }
     return returnAnnotationData(annotation, subject);
+  }
+
+  private EcatImageAnnotation getAnnotationAtRevision(long annotationId, Integer revision) {
+    AuditedEntity<EcatImageAnnotation> audited =
+        auditManager.getObjectForRevision(EcatImageAnnotation.class, annotationId, revision);
+    return audited == null ? null : audited.getEntity();
   }
 
   /**
@@ -503,10 +505,7 @@ public class ImageController extends BaseController {
         return returnAnnotationData(null, u);
       }
     } else {
-      ecatImageAnnotation =
-          auditManager
-              .getObjectForRevision(EcatImageAnnotation.class, sketchId, revision)
-              .getEntity();
+      ecatImageAnnotation = getAnnotationAtRevision(sketchId, revision);
     }
     return returnAnnotationData(ecatImageAnnotation, u);
   }
