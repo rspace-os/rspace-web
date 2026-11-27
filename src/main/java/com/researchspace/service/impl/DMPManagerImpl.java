@@ -62,9 +62,10 @@ public class DMPManagerImpl extends GenericManagerImpl<DMPUser, Long> implements
     try {
       // the read's own transaction must not write the row as well
       dmpDao.detach(plan);
-      plan.adoptSourceIfUnknown(detected);
       newTransaction.executeWithoutResult(
           status -> dmpDao.get(plan.getId()).adoptSourceIfUnknown(detected));
+      // only once saved, so the export screen promises what write-back will read
+      plan.adoptSourceIfUnknown(detected);
     } catch (RuntimeException e) {
       log.warn("Couldn't save the detected source {} of plan {}", detected, plan.getId(), e);
     }

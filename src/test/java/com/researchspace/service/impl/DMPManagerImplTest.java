@@ -85,7 +85,7 @@ class DMPManagerImplTest {
   }
 
   @Test
-  void failedSaveDoesNotThrowAndPlanStillCarriesDetectedSource() {
+  void failedSaveDoesNotThrowAndPlanKeepsItsSavedSource() {
     DMPUser plan = plan(1L, DMPSource.UNKNOWN);
     givenPlans(plan);
     when(detector.detect(plan)).thenReturn(DMPSource.DMP_TOOL);
@@ -93,7 +93,7 @@ class DMPManagerImplTest {
         .thenThrow(new IllegalStateException("database down"));
 
     assertDoesNotThrow(() -> manager.detectMissingSources(user));
-    assertEquals(DMPSource.DMP_TOOL, plan.getSource());
+    assertEquals(DMPSource.UNKNOWN, plan.getSource());
   }
 
   @Test
