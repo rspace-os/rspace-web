@@ -60,11 +60,8 @@ it.each(["create", "rotate", "revoke"] as const)(
       await user.click(
         screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
       );
-      if (action === "create") {
-        await user.click(
-          await screen.findByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.create" }),
-        );
-      } else {
+      // Opening the popover creates a missing link.
+      if (action !== "create") {
         const name = action === "rotate" ? "replace" : "disconnect";
         await user.click(
           await screen.findByRole("button", { name: `booking:bookableItemDetails.calendarSubscription.${name}` }),
@@ -74,7 +71,7 @@ it.each(["create", "rotate", "revoke"] as const)(
         );
       }
       if (action === "revoke") {
-        await screen.findByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.create" });
+        await screen.findByText("booking:bookableItemDetails.calendarSubscription.disconnected");
       } else {
         await waitFor(() =>
           expect(
