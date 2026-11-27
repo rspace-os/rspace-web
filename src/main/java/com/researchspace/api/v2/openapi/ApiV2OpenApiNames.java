@@ -66,7 +66,7 @@ final class ApiV2OpenApiNames {
 
   static String operationId(ResourceOperation operation, String component, String singular) {
     return switch (operation) {
-      case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+      case RUNTIME_FIELDS, RUNTIME_FIELD_SEARCH -> throw runtimeFieldsDocumentedElsewhere();
       case LIST -> "list" + component;
       case COUNT -> "count" + component;
       case READ -> "get" + singular;
@@ -86,7 +86,7 @@ final class ApiV2OpenApiNames {
     boolean archives = archives(registration);
     Key key =
         switch (operation) {
-          case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+          case RUNTIME_FIELDS, RUNTIME_FIELD_SEARCH -> throw runtimeFieldsDocumentedElsewhere();
           case LIST -> Key.LIST_SUMMARY;
           case COUNT -> Key.COUNT_SUMMARY;
           case READ -> Key.READ_SUMMARY;
@@ -107,7 +107,7 @@ final class ApiV2OpenApiNames {
     boolean archives = archives(registration);
     Key key =
         switch (operation) {
-          case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+          case RUNTIME_FIELDS, RUNTIME_FIELD_SEARCH -> throw runtimeFieldsDocumentedElsewhere();
           case LIST -> Key.LIST_DESCRIPTION;
           case COUNT -> Key.COUNT_DESCRIPTION;
           case READ -> Key.READ_DESCRIPTION;
@@ -130,7 +130,7 @@ final class ApiV2OpenApiNames {
   static String success(ResourceOperation operation, ApiV2OpenApiText text) {
     Key key =
         switch (operation) {
-          case RUNTIME_FIELDS -> throw runtimeFieldsDocumentedElsewhere();
+          case RUNTIME_FIELDS, RUNTIME_FIELD_SEARCH -> throw runtimeFieldsDocumentedElsewhere();
           case LIST -> Key.LIST_SUCCESS;
           case COUNT -> Key.COUNT_SUCCESS;
           case READ -> Key.READ_SUCCESS;

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
@@ -17,10 +18,20 @@ vi.hoisted(() => vi.resetModules());
 
 vi.mock("./generated/valibot/operations", async () => {
   const v = await import("valibot");
+  const { Temporal } = await import("@js-temporal/polyfill");
   const response = { "200": { "application/json": v.object({ id: v.number() }) } };
+  // The shape Orval's formatType generates for `format: date-time`.
+  const instant = v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  );
+  const dated = v.object({ id: v.number(), createdBy: v.object({ createdAt: instant }) });
   return {
     apiV2Operations: {
       read: { responses: response },
+      dated: { responses: { "200": { "application/json": dated } } },
+      datedWrite: { request: v.object({ start: instant }), responses: response },
       publicRead: { public: true, responses: response },
       sessionRead: { session: true, responses: response },
       write: { request: v.object({ name: v.string() }), responses: response },
@@ -111,6 +122,35 @@ describe("API v2 transport", () => {
     expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
     expect(error).toMatchObject({ reason: "invalidBody", status: 200, media: "application/json" });
     expect(error).toHaveProperty("cause", expect.any(v.ValiError));
+  });
+  it("decodes declared date-times in place and keeps extension data beside them", async () => {
+    respond(() =>
+      HttpResponse.json({
+        id: 1,
+        createdBy: { createdAt: "2026-03-01T10:00:00.123Z", lastSeen: "2026-03-01T11:00:00Z" },
+        extension: { at: "2026-03-01T12:00:00Z" },
+      }),
+    );
+    expect(await apiV2Fetch("/resource", options("dated"))).toEqual({
+      id: 1,
+      createdBy: { createdAt: Temporal.Instant.from("2026-03-01T10:00:00.123Z"), lastSeen: "2026-03-01T11:00:00Z" },
+      extension: { at: "2026-03-01T12:00:00Z" },
+    });
+  });
+  it("wraps a date-time that does not exist as invalidBody", async () => {
+    respond(() => HttpResponse.json({ id: 1, createdBy: { createdAt: "2025-02-30T12:00:00Z" } }));
+    const error = await apiV2Fetch("/resource", options("dated")).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
+    expect(error).toMatchObject({ reason: "invalidBody", cause: expect.any(RangeError) });
+  });
+  it("rejects a request date-time that does not exist before sending", async () => {
+    const body = JSON.stringify({ start: "2025-02-30T12:00:00Z" });
+    await expect(apiV2Fetch("/resource", options("datedWrite", { method: "POST", body }))).rejects.toMatchObject({
+      status: 400,
+      code: "errors.api.v2.invalidRequest",
+      problem: { invalidParams: [{ name: "body", reason: i18n.t("common:apiErrors.apiV2.invalidDateTime") }] },
+    });
+    expect(requests).toHaveLength(0);
   });
   it("rejects an undeclared status or media type", async () => {
     respond(() => HttpResponse.html("<html></html>"));

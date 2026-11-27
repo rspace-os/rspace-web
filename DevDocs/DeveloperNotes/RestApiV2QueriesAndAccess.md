@@ -87,6 +87,10 @@ A collection can publish caller-specific fields that cannot appear in OpenAPI. E
 namespace, provider, identity scheme, and catalog route: `/api/v2/{resource}/fields/{namespace}`.
 Use `q` for free-text catalog search. The document publishes these namespaces and routes in
 `x-rspace-runtime-fields`. Clients must use the published routes instead of constructing them.
+`GET /api/v2/{resource}/fields?namespace=a&namespace=b&q=term` searches several of the collection's
+own namespaces at once and returns `{catalogs: {a: <page 1>, b: <page 1>}}` in request order. It
+requires a non-blank `q` and distinct published namespaces as repeated parameters, validates the
+whole request before reading any catalog (400 otherwise), and applies `limit` per namespace.
 
 Instruments publish two:
 

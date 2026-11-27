@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -293,22 +294,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void runtimeFieldResponsesUseCanonicalOperatorsAndCannotBeStored() throws Exception {
-    var builder =
-        ApiV2ResourceSpec.builder(
-                maintenance.description(), maintenance.operations(), maintenance.idParser())
-            .mutationErrors(maintenance.createErrorKey(), maintenance.updateErrorKey())
-            .expose(maintenance.exposedOperations())
-            .mutationLimits(maintenance.mutationLimits())
-            .runtimeFields(List.of(new CatalogRuntimeFields()));
-    maintenance.operationDocumentation().forEach(builder::documentation);
-    maintenance.errorMappings().forEach(builder::errorMappings);
-    var withRuntimeFields = builder.build();
-    MockMvc runtimeMvc =
-        MockMvcBuilders.standaloneSetup(
-                new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(withRuntimeFields))))
-            .setControllerAdvice(problemAdvice())
-            .setValidator(validator)
-            .build();
+    MockMvc runtimeMvc = runtimeMvc(new CatalogRuntimeFields("customFields", false));
 
     runtimeMvc
         .perform(
@@ -326,28 +312,143 @@ class ApiV2CrudControllerTest {
                     allOf(containsString("no-store"), containsString("private"))));
   }
 
+  @Test
+  void runtimeFieldSearchReturnsEachNamespaceFirstPageInRequestOrder() throws Exception {
+    CatalogRuntimeFields custom = new CatalogRuntimeFields("customFields", true);
+    CatalogRuntimeFields extra = new CatalogRuntimeFields("extraFields", false);
+    MockMvc runtimeMvc = runtimeMvc(custom, extra);
+
+    String body =
+        runtimeMvc
+            .perform(
+                get(ENDPOINT + "/fields")
+                    .param("namespace", "extraFields", "customFields")
+                    .param("q", " own ")
+                    .param("limit", "20")
+                    .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
+            .andExpect(status().isOk())
+            .andExpect(
+                jsonPath("$.catalogs.extraFields.fields[0].selector").value("extraFields.SF1"))
+            .andExpect(
+                jsonPath("$.catalogs.customFields.fields[0].selector").value("customFields.SF1"))
+            .andExpect(jsonPath("$.catalogs.customFields.hasMore").value(true))
+            .andExpect(jsonPath("$.catalogs.customFields.totalFields").doesNotExist())
+            .andExpect(jsonPath("$.catalogs.customFields.page").value(1))
+            .andExpect(jsonPath("$.catalogs.customFields.limit").value(20))
+            .andExpect(jsonPath("$.catalogs.extraFields.hasMore").value(false))
+            .andExpect(jsonPath("$.catalogs.extraFields.totalFields").value(1))
+            .andExpect(
+                header()
+                    .string(
+                        HttpHeaders.CACHE_CONTROL,
+                        allOf(containsString("no-store"), containsString("private"))))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    assertTrue(body.indexOf("\"extraFields\":") < body.indexOf("\"customFields\":"));
+    assertEquals(List.of("own"), custom.searches);
+    assertEquals(List.of("own"), extra.searches);
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      delimiter = '|',
+      value = {
+        "customFields,customFields | own | 50 | errors.api.v2.runtimeFields.namespaces.invalid",
+        "- | own | 50 | errors.api.v2.runtimeFields.namespaces.invalid",
+        "'' | own | 50 | errors.api.v2.runtimeFields.namespaces.invalid",
+        "privateFields | own | 50 | errors.api.v2.runtimeFields.namespaces.invalid",
+        "customFields | '' | 50 | errors.api.v2.runtimeFields.search.required",
+        "customFields | '   ' | 50 | errors.api.v2.runtimeFields.search.required",
+        "customFields | own | 0 | errors.api.v2.runtimeFields.query.invalid",
+        "customFields | own | 201 | errors.api.v2.runtimeFields.query.invalid"
+      })
+  void runtimeFieldSearchRejectsInvalidRequestsBeforeAnyCatalogLookup(
+      String namespaces, String q, String limit, String code) throws Exception {
+    CatalogRuntimeFields custom = new CatalogRuntimeFields("customFields", false);
+    CatalogRuntimeFields extra = new CatalogRuntimeFields("extraFields", false);
+    var request =
+        get(ENDPOINT + "/fields")
+            .param("q", q)
+            .param("limit", limit)
+            .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user));
+    if (!namespaces.equals("-")) {
+      request.param("namespace", namespaces.split(",", -1));
+    }
+
+    runtimeMvc(custom, extra)
+        .perform(request)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value(code));
+    assertEquals(List.of(), custom.searches);
+    assertEquals(List.of(), extra.searches);
+  }
+
+  @Test
+  void runtimeFieldSearchRequiresTheSearchParameter() throws Exception {
+    CatalogRuntimeFields custom = new CatalogRuntimeFields("customFields", false);
+
+    runtimeMvc(custom)
+        .perform(
+            get(ENDPOINT + "/fields")
+                .param("namespace", "customFields")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.runtimeFields.search.required"));
+    assertEquals(List.of(), custom.searches);
+  }
+
+  @SafeVarargs
+  private MockMvc runtimeMvc(RuntimeCollectionFields<ScheduledMaintenance>... providers) {
+    var builder =
+        ApiV2ResourceSpec.builder(
+                maintenance.description(), maintenance.operations(), maintenance.idParser())
+            .mutationErrors(maintenance.createErrorKey(), maintenance.updateErrorKey())
+            .expose(maintenance.exposedOperations())
+            .mutationLimits(maintenance.mutationLimits())
+            .runtimeFields(List.of(providers));
+    maintenance.operationDocumentation().forEach(builder::documentation);
+    maintenance.errorMappings().forEach(builder::errorMappings);
+    return MockMvcBuilders.standaloneSetup(
+            new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(builder.build()))))
+        .setControllerAdvice(problemAdvice())
+        .setValidator(validator)
+        .build();
+  }
+
+  /** One page of one field; a truncated page reports more and no exact total. */
   private static final class CatalogRuntimeFields
       implements RuntimeCollectionFields<ScheduledMaintenance> {
 
+    private final String namespace;
+    private final boolean truncated;
+    private final List<String> searches = new ArrayList<>();
+
+    CatalogRuntimeFields(String namespace, boolean truncated) {
+      this.namespace = namespace;
+      this.truncated = truncated;
+    }
+
     @Override
     public String namespace() {
-      return "customFields";
+      return namespace;
     }
 
     @Override
     public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
+      searches.add(String.valueOf(query.search()));
       return new RuntimeFieldCatalogPage(
           List.of(
               new RuntimeFieldDefinition(
                   "SF1",
-                  "customFields.SF1",
+                  namespace + ".SF1",
                   "Owner",
                   RuntimeFieldValueType.TEXT,
                   "maintenance",
                   "Maintenance",
                   List.of())),
-          1L,
-          false);
+          truncated ? null : 1L,
+          truncated);
     }
 
     @Override

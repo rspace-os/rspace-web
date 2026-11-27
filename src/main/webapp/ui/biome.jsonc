@@ -55,6 +55,88 @@
   },
   "overrides": [
     {
+      // Shared test start-up stays feature-neutral: a feature's catalogs and fixtures load from the spec, story or fixture that uses them.
+      // See DevDocs/DeveloperNotes/GettingStarted/FrontendTests.md#shared-test-setup.
+      "includes": ["src/__tests__/setup.ts", "src/__tests__/browserSetup.ts", ".storybook/preview.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  // Override options replace the global ones, so the two global groups repeat here.
+                  {
+                    "group": ["@fortawesome/free-*", "!@fortawesome/free-*/*"],
+                    "message": "Import individual icons from a deep path, not the whole @fortawesome/free-* package (tree-shaking)."
+                  },
+                  {
+                    "group": ["@mui/material", "@mui/icons-material"],
+                    "message": "Import from the deep path (e.g. @mui/material/Button), not the @mui barrel package (tree-shaking)."
+                  },
+                  {
+                    "group": [
+                      "@/modules/**",
+                      "../src/modules/**",
+                      "../modules/**",
+                      // The i18n singleton, the REST API v2 token provider and the global styles are shared start-up, not feature code.
+                      "!@/modules/common/i18n",
+                      "!@/modules/common/api/v2/tokenProvider",
+                      "!../src/modules/common/api/v2/tokenProvider",
+                      "!../src/modules/common/i18n/I18nRoot",
+                      "!../src/modules/common/styles/index.css"
+                    ],
+                    "message": "Shared test setup must stay feature-neutral. Import a feature's catalog or fixtures from the spec, story or fixture that needs them."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      // Feature modules debounce with TanStack Pacer. Override options replace the global ones, so the two global
+      // groups repeat here.
+      "includes": ["src/modules/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@/hooks/ui/useDebounce": "Debounce with TanStack Pacer (@tanstack/react-pacer).",
+                  "es-toolkit": {
+                    "importNames": ["debounce"],
+                    "message": "Debounce with TanStack Pacer (@tanstack/react-pacer)."
+                  },
+                  "es-toolkit/compat": {
+                    "importNames": ["debounce"],
+                    "message": "Debounce with TanStack Pacer (@tanstack/react-pacer)."
+                  },
+                  "es-toolkit/function": {
+                    "importNames": ["debounce"],
+                    "message": "Debounce with TanStack Pacer (@tanstack/react-pacer)."
+                  }
+                },
+                "patterns": [
+                  {
+                    "group": ["@fortawesome/free-*", "!@fortawesome/free-*/*"],
+                    "message": "Import individual icons from a deep path, not the whole @fortawesome/free-* package (tree-shaking)."
+                  },
+                  {
+                    "group": ["@mui/material", "@mui/icons-material"],
+                    "message": "Import from the deep path (e.g. @mui/material/Button), not the @mui barrel package (tree-shaking)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       // Bundle entries mount React at load; a component defined here breaks Fast Refresh and re-mounts on HMR.
       "includes": ["**/*Entrypoint.tsx"],
       "linter": {

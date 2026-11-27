@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { isPlainObject } from "es-toolkit";
 import { and, cmp, eq, escapeValue, inList, ne, Operation, or, outList } from "rsql-builder";
 import type { RequireAtLeastOne } from "type-fest";
@@ -52,7 +53,7 @@ type Condition<S extends Selector> =
  * @example
  * const where: ApiV2WhereObject<"Users"> = {
  *   or: [{ email: { contains: "smith" } }, { lastName: { matches: "Sm*" } }],
- *   createdAt: { greaterThanOrEqual: new Date("2026-01-01") },
+ *   createdAt: { greaterThanOrEqual: Temporal.Instant.from("2026-01-01T00:00:00Z") },
  * };
  */
 export type ApiV2WhereObject<R extends ApiV2FilterResource> = {
@@ -70,10 +71,10 @@ type NonEmptyWhere<R extends ApiV2FilterResource> = RequireAtLeastOne<ApiV2Where
 /** What generated collection operations accept as `where`: a typed object or an already built filter. */
 export type ApiV2Where<R extends ApiV2FilterResource> = ApiV2WhereObject<R> | RsqlWhere<R>;
 
-type Scalar = string | number | boolean | Date;
+type Scalar = string | number | boolean | Temporal.Instant;
 export type RsqlOperand = string | number | boolean;
 const scalar = (value: unknown, location: string): RsqlOperand => {
-  if (value instanceof Date) return value.toISOString();
+  if (value instanceof Temporal.Instant) return value.toString({ fractionalSecondDigits: 3 });
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
   throw new TypeError(`${location}: Unsupported filter value ${String(value)}`);
 };

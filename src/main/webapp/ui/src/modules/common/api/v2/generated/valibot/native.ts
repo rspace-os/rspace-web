@@ -5,6 +5,8 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.
  * OpenAPI spec version: 2.0.0
  */
+import { Temporal } from "@js-temporal/polyfill";
+
 import * as v from "valibot";
 
 export const AuditAction = v.picklist([
@@ -65,7 +67,11 @@ export const ApiV2AuditEvent = v.object({
   fullName: v.nullable(v.string()),
   payload: v.record(v.string(), v.unknown()),
   target: v.nullable(v.pipe(v.string(), v.description("Stable audited resource identifier"))),
-  timestamp: v.pipe(v.string(), v.isoTimestamp()),
+  timestamp: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   username: v.string(),
 });
 
@@ -118,7 +124,14 @@ export const ApiV2CurrentUserSession = v.object({
   ),
   canOverrideFeatureFlags: v.pipe(v.boolean(), v.description("Whether the user may override feature flags.")),
   canUseDevtools: v.pipe(v.boolean(), v.description("Whether the feature-flag developer tools are available.")),
-  lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp(), v.description("Previous successful login instant."))),
+  lastSession: v.nullable(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+      v.description("Previous successful login instant."),
+    ),
+  ),
   operatedAs: v.pipe(v.boolean(), v.description("Whether a system administrator is operating as another user.")),
 });
 
@@ -178,6 +191,10 @@ export const ApiV2RuntimeFieldCatalog = v.object({
   limit: v.pipe(v.number(), v.integer()),
   page: v.pipe(v.number(), v.integer()),
   totalFields: v.optional(v.pipe(v.number(), v.integer())),
+});
+
+export const ApiV2RuntimeFieldSearch = v.object({
+  catalogs: v.record(v.string(), ApiV2RuntimeFieldCatalog),
 });
 
 export const ApiV2UiToken = v.object({
@@ -296,7 +313,14 @@ export const MaintenancesRead = v.object({
       ),
     ),
   ),
-  endDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("End of the maintenance window."))),
+  endDate: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+      v.description("End of the maintenance window."),
+    ),
+  ),
   id: v.pipe(v.number(), v.integer(), v.description("Stable maintenance identifier.")),
   message: v.nullish(
     v.pipe(
@@ -308,11 +332,19 @@ export const MaintenancesRead = v.object({
       v.description("User-facing maintenance message."),
     ),
   ),
-  startDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Beginning of the maintenance window."))),
+  startDate: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+      v.description("Beginning of the maintenance window."),
+    ),
+  ),
   stopUserLoginDate: v.nullish(
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
       ),
@@ -326,7 +358,12 @@ export const MaintenancesBulkResult = v.object({
 });
 
 export const MaintenancesCreate = v.object({
-  endDate: v.pipe(v.string(), v.isoTimestamp(), v.description("End of the maintenance window.")),
+  endDate: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+    v.description("End of the maintenance window."),
+  ),
   message: v.nullish(
     v.pipe(
       v.string(),
@@ -337,11 +374,17 @@ export const MaintenancesCreate = v.object({
       v.description("User-facing maintenance message."),
     ),
   ),
-  startDate: v.pipe(v.string(), v.isoTimestamp(), v.description("Beginning of the maintenance window.")),
+  startDate: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+    v.description("Beginning of the maintenance window."),
+  ),
   stopUserLoginDate: v.nullish(
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
       ),
@@ -355,7 +398,14 @@ export const MaintenancesReference = v.object({
 });
 
 export const MaintenancesUpdate = v.object({
-  endDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("End of the maintenance window."))),
+  endDate: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+      v.description("End of the maintenance window."),
+    ),
+  ),
   message: v.nullish(
     v.pipe(
       v.string(),
@@ -366,11 +416,19 @@ export const MaintenancesUpdate = v.object({
       v.description("User-facing maintenance message."),
     ),
   ),
-  startDate: v.optional(v.pipe(v.string(), v.isoTimestamp(), v.description("Beginning of the maintenance window."))),
+  startDate: v.optional(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+      v.description("Beginning of the maintenance window."),
+    ),
+  ),
   stopUserLoginDate: v.nullish(
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.",
       ),
@@ -454,7 +512,14 @@ export const ResourceGranteeDirectoryDocument = v.object({
 });
 
 export const UsersRead = v.object({
-  createdAt: v.nullish(v.pipe(v.string(), v.isoTimestamp(), v.description("Time at which the resource was created."))),
+  createdAt: v.nullish(
+    v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+      v.description("Time at which the resource was created."),
+    ),
+  ),
   email: v.optional(v.pipe(v.string(), v.description("User's email address."))),
   firstName: v.optional(v.pipe(v.string(), v.description("User's given name."))),
   id: v.pipe(v.number(), v.integer(), v.description("Stable user identifier.")),
@@ -649,6 +714,7 @@ export const ListContainerAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description("Inclusive earliest event time. The server limits the range to 183 days."),
     ),
   ),
@@ -656,6 +722,7 @@ export const ListContainerAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
       ),
@@ -678,9 +745,17 @@ export const ListContainerAuditEventsQueryParams = v.object({
 
 export const ListContainerAuditEventsResponse = v.object({
   docs: v.array(ApiV2AuditEvent),
-  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  endExclusive: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  start: v.pipe(v.string(), v.isoTimestamp()),
+  start: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   truncated: v.boolean(),
 });
 
@@ -893,6 +968,7 @@ export const ListFeatureFlagAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description("Inclusive earliest event time. The server limits the range to 183 days."),
     ),
   ),
@@ -900,6 +976,7 @@ export const ListFeatureFlagAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
       ),
@@ -922,9 +999,17 @@ export const ListFeatureFlagAuditEventsQueryParams = v.object({
 
 export const ListFeatureFlagAuditEventsResponse = v.object({
   docs: v.array(ApiV2AuditEvent),
-  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  endExclusive: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  start: v.pipe(v.string(), v.isoTimestamp()),
+  start: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   truncated: v.boolean(),
 });
 
@@ -1048,6 +1133,25 @@ export const CountInstrumentsQueryParams = v.object({
 
 export const CountInstrumentsResponse = ApiV2CountResult;
 
+/**
+ * Searches several runtime field catalogs of instruments with one term and returns the first page of each, keyed by namespace in request order. The literal fields segment takes precedence over an item identifier.
+ * @summary Search runtime fields of instruments
+ */
+export const SearchInstrumentRuntimeFieldsQueryParams = v.object({
+  namespace: v.pipe(
+    v.array(v.picklist(["customFields", "extraFields"])),
+    v.minLength(1),
+    v.description("Distinct runtime field namespaces to search. Repeat the parameter for each namespace."),
+  ),
+  q: v.pipe(v.string(), v.minLength(1), v.description("Search text. Must not be blank.")),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(200), v.description("Page size for each namespace.")),
+    50,
+  ),
+});
+
+export const SearchInstrumentRuntimeFieldsResponse = ApiV2RuntimeFieldSearch;
+
 export const GetInstrumentRuntimeFieldsParams = v.object({
   namespace: v.pipe(v.picklist(["customFields", "extraFields"]), v.description("Runtime field namespace.")),
 });
@@ -1121,6 +1225,7 @@ export const ListInstrumentAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description("Inclusive earliest event time. The server limits the range to 183 days."),
     ),
   ),
@@ -1128,6 +1233,7 @@ export const ListInstrumentAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
       ),
@@ -1150,9 +1256,17 @@ export const ListInstrumentAuditEventsQueryParams = v.object({
 
 export const ListInstrumentAuditEventsResponse = v.object({
   docs: v.array(ApiV2AuditEvent),
-  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  endExclusive: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  start: v.pipe(v.string(), v.isoTimestamp()),
+  start: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   truncated: v.boolean(),
 });
 
@@ -1611,6 +1725,7 @@ export const ListUserAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description("Inclusive earliest event time. The server limits the range to 183 days."),
     ),
   ),
@@ -1618,6 +1733,7 @@ export const ListUserAuditEventsQueryParams = v.object({
     v.pipe(
       v.string(),
       v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
       v.description(
         "Requested upper bound used to select the latest completed UTC day. The effective end is returned as endExclusive, exclusive. For compatibility, a bound at the final millisecond of a UTC day includes that day.",
       ),
@@ -1640,8 +1756,16 @@ export const ListUserAuditEventsQueryParams = v.object({
 
 export const ListUserAuditEventsResponse = v.object({
   docs: v.array(ApiV2AuditEvent),
-  endExclusive: v.pipe(v.string(), v.isoTimestamp()),
+  endExclusive: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  start: v.pipe(v.string(), v.isoTimestamp()),
+  start: v.pipe(
+    v.string(),
+    v.isoTimestamp(),
+    v.transform((value) => Temporal.Instant.from(value)),
+  ),
   truncated: v.boolean(),
 });

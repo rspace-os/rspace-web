@@ -34,7 +34,8 @@ export default defineConfig({
   },
   // `pnpm run i18n:types` regenerates these after any key change.
   types: {
-    input: ["src/modules/common/i18n/locales/en-US/*.json"],
+    // Test-only example catalogs live in each feature's __tests__/i18n/ folder and are typed too, so fixtures use checked keys.
+    input: ["src/modules/common/i18n/locales/en-US/*.json", "src/modules/**/__tests__/i18n/*.json"],
     output: "src/modules/common/i18n/i18next.d.ts",
     resourcesFile: "src/modules/common/i18n/resources.d.ts",
   },

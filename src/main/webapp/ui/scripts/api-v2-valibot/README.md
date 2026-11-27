@@ -1,7 +1,7 @@
 # API v2 Valibot adapter
 
 `pnpm generate:api-v2` generates the HTTP client, then Orval's reusable Valibot
-output, then runs `generate.ts`, `resources.ts` and `filters.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
+output, then runs `generate.ts`, `resources.ts`, `filters.ts` and `tableMetadata.ts` with Node, which runs TypeScript directly. Both Orval projects read the committed API v2
 OpenAPI document. The adapter reads `generated/valibot/native.ts` unchanged
 and writes `schemas.ts` and `operations.ts` beside it. Biome then checks and formats all three
 files, as Orval does for its own output. No schema translator is retained.
@@ -29,6 +29,17 @@ model for a `where` parameter that carries `x-rspace-filter` to `ApiV2Where<"<Fi
 changes. This is the adapter's only rewrite of Orval output. `orval.config.ts` gives the same
 operations `apiV2SerializeQuery` as Orval's `paramsSerializer`, so a `where` object reaches the server as RSQL.
 
+The table metadata step (`tableMetadata.ts`) reads each LIST operation's sort, filter, limit, field and runtime-field
+extensions. It takes each filter's selectors from `filterCatalog` in `filters.ts`, so the typed `where` objects and the
+table list classify a selector the same way; enum selectors keep their published `values`. It validates the rest with
+the Valibot schemas in `src/modules/common/table-list/api-v2/metadataSchemas.ts`, and writes
+`generated/tableListMetadata.ts` for the table list, so the browser never fetches or parses the OpenAPI document for
+it. It fails generation on metadata the table list cannot use, such as an unknown operator, a non-positive limit, a
+default sort on an unsortable field, or a runtime-field catalog that is not a RUNTIME_FIELDS route. Like every step,
+it imports only relative `.ts` modules, bare packages and types, because plain `node` does not resolve `@/`. The
+modules it shares with the app (`metadataSchemas.ts`, `schemaPrimitives.ts`, `utils/sortRuleFromToken.ts` and
+`collection/relationshipFilterPicker.ts`) follow the same rule.
+
 The schema-only preflight rejects unsupported keywords, formats, references and
 inline schemas, including errors and headers. New schema constructs require an
 explicit extension of the supported subset and tests; Orval accepting a construct
@@ -49,10 +60,19 @@ Because native output selects one body and one response schema, distinct JSON
 request media schemas or distinct JSON success schemas fail with a request for
 synthetic operations. They must never silently map to a single native schema.
 
-Objects retain Orval's native parsing behavior. The transport validates and
-returns the original JSON, preserving extension members and runtime metadata even
-when a schema's parsed output strips them. Projection code keeps its existing
-schema exports and can still pick and require object members.
+Objects retain Orval's native parsing behavior. `orval.config.ts` maps `format: date-time` to `Temporal.Instant`
+through `formatType`, so each date-time schema ends in a `Temporal.Instant.from` transform. The transport validates
+the original JSON and returns it with only those date-times replaced by the decoded instants (`withDecoded.ts`),
+preserving extension members and runtime metadata even when a schema's parsed output strips them. Projection code
+keeps its existing schema exports and can still pick and require object members.
+
+Decode once: transport output is never parsed again with a schema that decodes, because the schema's leading
+`v.string()` rejects the instant it produced. The table-list adapter turns instants back into text first
+(`encodeInstants`), and other code that re-parses transport output wraps its schema in `withoutDecoding`, which fails
+`tsc` once that schema gains a date-time. An `allOf` whose members share a date-time field would fail Valibot's
+intersect merge, because two decoded instants are distinct objects; no such schema exists today. Query keys hash
+instants by value through `toJSON`, but React Query's partial key matching walks own keys, which an instant lacks, so
+it treats any two instants as equal: invalidate by operation (path) keys, not by keys that contain instant parameters.
 
 Fragment tests generate native schemas through the pinned Orval installation and
 exercise their behavior through the adapter. Type tests compare the schemas with HTTP models that

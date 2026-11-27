@@ -3,21 +3,36 @@ import type * as React from "react";
 
 import { cn } from "@/modules/common/utils/cn";
 
+const alertTones = {
+  default: "bg-card text-card-foreground",
+  destructive: "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
+  success:
+    "border-success/40 bg-[color-mix(in_oklab,var(--success)_10%,var(--card))] text-foreground *:data-[slot=alert-description]:text-foreground",
+  warning:
+    "border-warning/50 bg-[color-mix(in_oklab,var(--warning)_12%,var(--card))] text-foreground *:data-[slot=alert-description]:text-foreground",
+} as const;
+
 const alertVariants = cva(
   "group/alert relative grid w-full gap-0.5 rounded-sm border px-4 py-3 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
   {
-    variants: {
-      variant: {
-        default: "bg-card text-card-foreground",
-        destructive:
-          "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
-      },
-    },
+    variants: { variant: alertTones },
     defaultVariants: {
       variant: "default",
     },
   },
 );
+
+/**
+ * The colours of each alert tone without the `Alert` layout, for alert-like surfaces such as the table-list alert
+ * stack. Every tone is also a public table-list alert tone. The `*:data-[slot=...]` and `*:[svg]` classes only act
+ * inside an `Alert` and are inert on other elements.
+ */
+const alertToneVariants = cva("", {
+  variants: { variant: alertTones },
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 function Alert({ className, variant, ...props }: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
   return <div data-slot="alert" role="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
@@ -53,4 +68,4 @@ function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="alert-action" className={cn("absolute top-2.5 right-3", className)} {...props} />;
 }
 
-export { Alert, AlertAction, AlertDescription, AlertTitle };
+export { Alert, AlertAction, AlertDescription, AlertTitle, alertToneVariants };

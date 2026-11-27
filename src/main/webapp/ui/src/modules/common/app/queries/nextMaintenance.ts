@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
@@ -6,20 +7,20 @@ import {
 } from "@/modules/common/api/v2/generated/maintenances/maintenances";
 import type { ListMaintenances200 } from "@/modules/common/api/v2/generated/models/listMaintenances200";
 
-export type NextMaintenance = { startDate: Date };
+export type NextMaintenance = { startDate: Temporal.Instant };
 const REQUEST_TIMEOUT_MS = 10_000;
 const REFETCH_INTERVAL_MS = 5 * 60 * 1000;
 
 function parameters() {
   return {
-    where: { endDate: { greaterThan: new Date().toISOString() } },
+    where: { endDate: { greaterThan: Temporal.Now.instant() } },
     limit: 1,
     fields: { maintenances: "startDate" },
   };
 }
 function nextMaintenance(result: ListMaintenances200): NextMaintenance | null {
   const start = result.docs[0]?.startDate;
-  return start ? { startDate: new Date(start) } : null;
+  return start ? { startDate: start } : null;
 }
 
 export async function getNextMaintenance(): Promise<NextMaintenance | null> {

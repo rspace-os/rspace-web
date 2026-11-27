@@ -13,7 +13,9 @@ public enum ResourceOperation {
   /**
    * Runtime catalog routes are derived from registered providers, outside the CRUD operation set.
    */
-  RUNTIME_FIELDS("GET");
+  RUNTIME_FIELDS("GET"),
+  /** Searches several runtime catalogs of one collection at once; also outside the CRUD set. */
+  RUNTIME_FIELD_SEARCH("GET");
 
   private final String httpMethod;
 

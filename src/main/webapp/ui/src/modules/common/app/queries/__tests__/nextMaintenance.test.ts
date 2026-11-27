@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
@@ -25,7 +26,7 @@ describe("getNextMaintenance", () => {
 
     const result = await getNextMaintenance();
 
-    expect(result).toEqual({ startDate: new Date("2999-07-01T09:00:00.000Z") });
+    expect(result).toEqual({ startDate: Temporal.Instant.from("2999-07-01T09:00:00.000Z") });
     const requestUrl = new URL(capturedRequest?.url ?? "");
     expect(requestUrl.pathname).toBe("/api/v2/maintenances");
     expect(requestUrl.searchParams.get("limit")).toBe("1");

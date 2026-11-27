@@ -156,7 +156,7 @@ function valueType({ kind, values }: FilterCatalogSelector): string {
     case "enum":
       return (values ?? []).map((value) => JSON.stringify(value)).join(" | ");
     case "dateTime":
-      return "string | Date";
+      return "string | Temporal.Instant";
     default:
       return kind;
   }
@@ -164,17 +164,21 @@ function valueType({ kind, values }: FilterCatalogSelector): string {
 
 /** Emits per-resource selector metadata types from `components.x-rspace-filters`. */
 export function generateFilterTypes(document: OpenApiDocument): string {
-  const entries = Object.entries(filterCatalog(document)).map(([filter, selectors]) => {
-    // A selector with no operators is listed for documentation but cannot be filtered on.
-    const fields = Object.entries(selectors)
-      .filter(([, selector]) => selector.operators.length)
-      .map(
-        ([name, selector]) =>
-          `    ${JSON.stringify(name)}: { operators: ${selector.operators.map((operator) => JSON.stringify(operator)).join(" | ")}; value: ${valueType(selector)} };`,
-      );
+  // A selector with no operators is listed for documentation but cannot be filtered on.
+  const emitted = Object.entries(filterCatalog(document)).map(
+    ([filter, selectors]) =>
+      [filter, Object.entries(selectors).filter(([, selector]) => selector.operators.length)] as const,
+  );
+  const usesInstant = emitted.some(([, selectors]) => selectors.some(([, selector]) => selector.kind === "dateTime"));
+  const imports = usesInstant ? 'import type { Temporal } from "@js-temporal/polyfill";\n' : "";
+  const entries = emitted.map(([filter, selectors]) => {
+    const fields = selectors.map(
+      ([name, selector]) =>
+        `    ${JSON.stringify(name)}: { operators: ${selector.operators.map((operator) => JSON.stringify(operator)).join(" | ")}; value: ${valueType(selector)} };`,
+    );
     return `  ${filter}: {\n${fields.join("\n")}\n  };`;
   });
-  return `${header}/** Filterable selectors per REST API v2 filter, with their allowed RSQL operators and value types. */\nexport interface ApiV2FilterFields {\n${entries.join("\n")}\n}\n`;
+  return `${header}${imports}/** Filterable selectors per REST API v2 filter, with their allowed RSQL operators and value types. */\nexport interface ApiV2FilterFields {\n${entries.join("\n")}\n}\n`;
 }
 
 /** Narrows Orval's `export type <Name>Parameter = string;` model to the filter's \`ApiV2Where\` type. */

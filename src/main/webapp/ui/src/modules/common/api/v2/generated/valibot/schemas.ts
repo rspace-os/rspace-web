@@ -17,6 +17,7 @@ export const ApiV2ProblemInvalidParamSchema = native.ApiV2ProblemInvalidParam;
 export const ApiV2RuntimeFieldCatalogSchema = native.ApiV2RuntimeFieldCatalog;
 export const ApiV2RuntimeFieldCatalogEntrySchema = native.ApiV2RuntimeFieldCatalogEntry;
 export const ApiV2RuntimeFieldCatalogSourceSchema = native.ApiV2RuntimeFieldCatalogSource;
+export const ApiV2RuntimeFieldSearchSchema = native.ApiV2RuntimeFieldSearch;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
 export const ContainersReadSchema = native.ContainersRead;
@@ -108,6 +109,10 @@ export type SchemaModelTypeChecks = {
   ApiV2RuntimeFieldCatalogSource: [
     Assert<Extends<v.InferOutput<typeof ApiV2RuntimeFieldCatalogSourceSchema>, Models.ApiV2RuntimeFieldCatalogSource>>,
     Assert<Extends<Models.ApiV2RuntimeFieldCatalogSource, v.InferOutput<typeof ApiV2RuntimeFieldCatalogSourceSchema>>>,
+  ];
+  ApiV2RuntimeFieldSearch: [
+    Assert<Extends<v.InferOutput<typeof ApiV2RuntimeFieldSearchSchema>, Models.ApiV2RuntimeFieldSearch>>,
+    Assert<Extends<Models.ApiV2RuntimeFieldSearch, v.InferOutput<typeof ApiV2RuntimeFieldSearchSchema>>>,
   ];
   ApiV2UiToken: [
     Assert<Extends<v.InferOutput<typeof ApiV2UiTokenSchema>, Models.ApiV2UiToken>>,
