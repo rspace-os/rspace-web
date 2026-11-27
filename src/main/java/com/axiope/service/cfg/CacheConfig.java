@@ -59,8 +59,9 @@ public class CacheConfig {
     }
   }
 
+  /** Puts and evictions through this resolver wait for the surrounding transaction to commit. */
   @Bean
-  public CacheResolver userPreferenceCacheResolver(CacheManager cacheManager) {
+  public CacheResolver transactionAwareCacheResolver(CacheManager cacheManager) {
     return new SimpleCacheResolver(new TransactionAwareCacheManagerProxy(cacheManager));
   }
 

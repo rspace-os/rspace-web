@@ -387,7 +387,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @Cacheable(
       value = CacheNames.USER_PREFERENCE,
       key = "#user.username + #preference.name()",
-      cacheResolver = "userPreferenceCacheResolver")
+      cacheResolver = "transactionAwareCacheResolver")
   public UserPreference getPreferenceForUser(User user, Preference preference) {
     user = get(user.getId());
     return user.getValueForPreference(preference);

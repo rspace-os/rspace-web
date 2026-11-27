@@ -191,7 +191,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   @Cacheable(
       value = INTEGRATION_INFO,
       key = "#user.username + #integrationName.toUpperCase(T(java.util.Locale).ROOT)",
-      cacheResolver = "userPreferenceCacheResolver")
+      cacheResolver = "transactionAwareCacheResolver")
   public IntegrationInfo getIntegration(User user, String integrationName) {
     integrationName = integrationName.toUpperCase(Locale.ROOT);
     checkValidIntegration(integrationName);

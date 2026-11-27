@@ -208,4 +208,12 @@ public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> imple
             .uniqueResult();
     return count > 0;
   }
+
+  @Override
+  public void lockMembershipChanges() {
+    getSession()
+        .createNativeQuery("SELECT id FROM Community WHERE id = :id FOR UPDATE", Long.class)
+        .setParameter("id", Community.DEFAULT_COMMUNITY_ID)
+        .list();
+  }
 }

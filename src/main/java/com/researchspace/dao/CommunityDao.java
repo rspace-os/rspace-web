@@ -58,4 +58,11 @@ public interface CommunityDao extends GenericDao<Community, Long> {
   Community getWithAdmins(Long id);
 
   boolean hasCommunity(User admin);
+
+  /**
+   * Locks the default community's row until the transaction ends. Community deletion and lab group
+   * moves take this lock before reading any membership, so they run one at a time and each sees the
+   * memberships the others committed.
+   */
+  void lockMembershipChanges();
 }

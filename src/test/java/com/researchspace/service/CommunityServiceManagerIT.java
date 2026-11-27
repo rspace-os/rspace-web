@@ -20,10 +20,17 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestGroup;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
 
@@ -76,6 +83,121 @@ public class CommunityServiceManagerIT extends RealTransactionSpringTestBase {
     assertEquals(initialTotal, getCommunityCount(pgcrit, admin));
     // admin should be available again
     assertThat(userMgr.getAvailableAdminUsers()).contains(admin);
+  }
+
+  @Test
+  public void removeCommunityMovesLabGroupsToDefaultCommunity() throws IllegalAddChildOperation {
+    TestGroup testGroup = createTestGroup(0);
+    User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Constants.ADMIN_ROLE);
+    initUsers(admin);
+    Long groupId = testGroup.getGroup().getId();
+    Long piId = testGroup.getPi().getId();
+    Long communityId =
+        createTestCommunity(TransformerUtils.toSet(testGroup), admin).getCommunity().getId();
+    assertThat(communityMgr.listCommunitiesForUser(piId))
+        .extracting(Community::getId)
+        .containsExactly(communityId);
+
+    logoutAndLoginAsSysAdmin();
+    assertTrue(communityMgr.removeCommunity(communityId).isSucceeded());
+
+    Group grp = grpMgr.getGroupWithCommunities(groupId);
+    assertEquals(Community.DEFAULT_COMMUNITY_ID, grp.getCommunity().getId());
+    assertEquals(Community.DEFAULT_COMMUNITY_ID, grp.getCommunityId());
+    assertThat(
+            communityMgr
+                .getCommunityWithAdminsAndGroups(Community.DEFAULT_COMMUNITY_ID)
+                .getLabGroups())
+        .extracting(Group::getId)
+        .contains(groupId);
+    assertThat(communityMgr.listCommunitiesForUser(piId))
+        .extracting(Community::getId)
+        .containsExactly(Community.DEFAULT_COMMUNITY_ID);
+  }
+
+  @Test
+  public void groupAssignedWhileTheCommunityIsBeingRemovedIsMovedToDefaultCommunity()
+      throws Exception {
+    User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Constants.ADMIN_ROLE);
+    initUsers(admin);
+    Long communityId =
+        createTestCommunity(TransformerUtils.toSet(createTestGroup(0)), admin)
+            .getCommunity()
+            .getId();
+    Long lateGroupId = createTestGroup(0).getGroup().getId();
+
+    // the assignment runs as the community admin and stays uncommitted while the removal starts
+    logoutAndLoginAs(admin);
+    ExecutorService pool = Executors.newSingleThreadExecutor();
+    TransactionStatus assignment = openTransaction();
+    try {
+      communityMgr.addGroupToCommunity(lateGroupId, communityId, admin);
+      Future<Boolean> removal =
+          pool.submit(() -> communityMgr.removeCommunity(communityId).isSucceeded());
+      Thread.sleep(1000);
+      assertFalse(removal.isDone(), "removal should wait for the assignment to commit");
+
+      getTxMger().commit(assignment);
+      assertTrue(removal.get(30, TimeUnit.SECONDS));
+    } finally {
+      if (!assignment.isCompleted()) {
+        getTxMger().rollback(assignment);
+      }
+      pool.shutdownNow();
+    }
+
+    Group lateGroup = grpMgr.getGroupWithCommunities(lateGroupId);
+    assertEquals(Community.DEFAULT_COMMUNITY_ID, lateGroup.getCommunity().getId());
+    assertEquals(Community.DEFAULT_COMMUNITY_ID, lateGroup.getCommunityId());
+  }
+
+  @Test
+  public void communityListReadBeforeTheRemovalCommitsIsNotCachedAfterIt() throws Exception {
+    TestGroup testGroup = createTestGroup(0);
+    User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Constants.ADMIN_ROLE);
+    initUsers(admin);
+    Long piId = testGroup.getPi().getId();
+    Long communityId =
+        createTestCommunity(TransformerUtils.toSet(testGroup), admin).getCommunity().getId();
+
+    CountDownLatch removed = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    ExecutorService pool = Executors.newSingleThreadExecutor();
+    try {
+      Future<?> removal =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          tx -> {
+                            communityMgr.removeCommunity(communityId);
+                            removed.countDown();
+                            awaitQuietly(release);
+                          }));
+      assertTrue(removed.await(30, TimeUnit.SECONDS));
+      // reads the committed membership, which still has the community, and caches it
+      assertThat(communityMgr.listCommunitiesForUser(piId))
+          .extracting(Community::getId)
+          .containsExactly(communityId);
+
+      release.countDown();
+      removal.get(30, TimeUnit.SECONDS);
+    } finally {
+      release.countDown();
+      pool.shutdownNow();
+    }
+
+    assertThat(communityMgr.listCommunitiesForUser(piId))
+        .extracting(Community::getId)
+        .containsExactly(Community.DEFAULT_COMMUNITY_ID);
+  }
+
+  private static void awaitQuietly(CountDownLatch latch) {
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   private void setASystemPropertyForCommunity(Community community, User subject) {
