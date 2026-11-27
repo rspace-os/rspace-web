@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-26-rsdev1400-dedupe-group-memberships" context="run" author="tchoi">
+    <comment>Remove duplicate group memberships created by concurrent adds (RSDEV-1400). Keeps the
+      lowest-id UserGroup row for each group and user unchanged (the row the application loads
+      and edits) and deletes the others, then deletes duplicate live links to group shared
+      folders, group shared-snippet folders and members' home folders, keeping the lowest id.
+      Every deleted row is copied first to RSDEV1400_RemovedUserGroup or
+      RSDEV1400_RemovedRecordToFolder with the id of the row kept; these backup tables are kept
+      on purpose for a manual restore. Each statement can be rerun.</comment>
+    <sql>
+      CREATE TABLE IF NOT EXISTS RSDEV1400_RemovedUserGroup (
+        id BIGINT NOT NULL,
+        kept_id BIGINT NOT NULL,
+        includePermissions BIT(1) NOT NULL,
+        roleInGroup INT DEFAULT NULL,
+        group_id BIGINT DEFAULT NULL,
+        user_id BIGINT DEFAULT NULL,
+        adminViewDocsEnabled BIT(1) NOT NULL,
+        piCanEditWork TINYINT(1) NOT NULL,
+        autoshareEnabled BIT(1) DEFAULT NULL,
+        autoShareFolder_id BIGINT DEFAULT NULL,
+        permissionStrings MEDIUMTEXT DEFAULT NULL,
+        removedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+      CREATE TABLE IF NOT EXISTS RSDEV1400_RemovedRecordToFolder (
+        id BIGINT NOT NULL,
+        kept_id BIGINT NOT NULL,
+        recordInFolderDeleted BIT(1) DEFAULT NULL,
+        userName VARCHAR(255) DEFAULT NULL,
+        folder_id BIGINT DEFAULT NULL,
+        record_id BIGINT DEFAULT NULL,
+        deletedDate DATETIME DEFAULT NULL,
+        removedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+      INSERT IGNORE INTO RSDEV1400_RemovedUserGroup (id, kept_id, includePermissions, roleInGroup,
+          group_id, user_id, adminViewDocsEnabled, piCanEditWork, autoshareEnabled,
+          autoShareFolder_id, permissionStrings)
+      SELECT r.id, r.kept_id, r.includePermissions, r.roleInGroup, r.group_id, r.user_id,
+          r.adminViewDocsEnabled, r.piCanEditWork, r.autoshareEnabled, r.autoShareFolder_id,
+          r.permissionStrings
+      FROM (SELECT ug.*, MIN(ug.id) OVER (PARTITION BY ug.group_id, ug.user_id) AS kept_id
+            FROM UserGroup ug
+            WHERE ug.group_id IS NOT NULL AND ug.user_id IS NOT NULL) r
+      WHERE r.id &lt;&gt; r.kept_id;
+
+      DELETE ug FROM UserGroup ug JOIN RSDEV1400_RemovedUserGroup r ON r.id = ug.id;
+
+      INSERT IGNORE INTO RSDEV1400_RemovedRecordToFolder (id, kept_id, recordInFolderDeleted,
+          userName, folder_id, record_id, deletedDate)
+      SELECT r.id, r.kept_id, r.recordInFolderDeleted, r.userName, r.folder_id, r.record_id,
+          r.deletedDate
+      FROM (SELECT rf.*, MIN(rf.id) OVER (PARTITION BY rf.folder_id, rf.record_id) AS kept_id
+            FROM RecordToFolder rf
+            WHERE COALESCE(rf.recordInFolderDeleted, 0) = 0
+              AND rf.folder_id IS NOT NULL
+              AND rf.record_id IN (
+                SELECT communalGroupFolderId FROM rsGroup WHERE communalGroupFolderId IS NOT NULL
+                UNION SELECT sharedSnippetGroupFolderId FROM rsGroup
+                  WHERE sharedSnippetGroupFolderId IS NOT NULL
+                UNION SELECT rootFolder_id FROM User WHERE rootFolder_id IS NOT NULL)) r
+      WHERE r.id &lt;&gt; r.kept_id;
+
+      DELETE rf FROM RecordToFolder rf JOIN RSDEV1400_RemovedRecordToFolder r ON r.id = rf.id;
+    </sql>
+    <rollback/>
+  </changeSet>
+
+  <changeSet id="2026-11-26-rsdev1400-check-usergroup-unique-key" context="run" author="tchoi">
+    <preConditions onFail="HALT"
+      onFailMessage="UserGroup has an index named uk_UserGroup_group_user that is not a unique key on exactly (group_id, user_id); drop or rename it, then restart.">
+      <sqlCheck expectedResult="0">
+        SELECT COUNT(*) FROM (
+          SELECT 1 FROM information_schema.STATISTICS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'UserGroup'
+            AND INDEX_NAME = 'uk_UserGroup_group_user'
+          HAVING COUNT(*) &gt; 0 AND NOT (
+            COUNT(*) = 2 AND SUM(NON_UNIQUE) = 0 AND SUM(SUB_PART IS NOT NULL) = 0
+            AND SUM(SEQ_IN_INDEX = 1 AND COLUMN_NAME = 'group_id') = 1
+            AND SUM(SEQ_IN_INDEX = 2 AND COLUMN_NAME = 'user_id') = 1)) incompatible
+      </sqlCheck>
+    </preConditions>
+    <comment>Stop the upgrade if an index named uk_UserGroup_group_user exists but is not a unique
+      key on exactly (group_id, user_id) (RSDEV-1400).</comment>
+  </changeSet>
+
+  <changeSet id="2026-11-26-rsdev1400-usergroup-unique-key" context="run" author="tchoi">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="UserGroup" indexName="uk_UserGroup_group_user"/>
+      </not>
+    </preConditions>
+    <comment>One membership row per group and user (RSDEV-1400). Runs after the dedupe changeset.</comment>
+    <addUniqueConstraint tableName="UserGroup" columnNames="group_id, user_id"
+      constraintName="uk_UserGroup_group_user"/>
+    <rollback>
+      <dropUniqueConstraint tableName="UserGroup" constraintName="uk_UserGroup_group_user"/>
+    </rollback>
+  </changeSet>
+
+</databaseChangeLog>

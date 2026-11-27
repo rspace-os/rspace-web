@@ -10,9 +10,11 @@ import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
 import com.researchspace.model.dtos.GroupSearchCriteria;
 import com.researchspace.model.sort.GroupSort;
 import com.researchspace.model.views.UserView;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Repository;
 
 @Repository("groupDao")
@@ -34,6 +37,34 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
 
   public GroupDaoHibernateImpl() {
     super(Group.class);
+  }
+
+  @Override
+  public Group getForUpdate(Long id) {
+    Group group =
+        getSession()
+            .createQuery("from Group where id = :id", Group.class)
+            .setParameter("id", id)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .uniqueResult();
+    if (group == null) {
+      throw new ObjectRetrievalFailureException(Group.class, id);
+    }
+    return group;
+  }
+
+  @Override
+  public boolean hasMembership(Long groupId, Long userId) {
+    return !getSession()
+        .createQuery(
+            "from UserGroup ug where ug.group.id = :groupId and ug.user.id = :userId",
+            UserGroup.class)
+        .setParameter("groupId", groupId)
+        .setParameter("userId", userId)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .setMaxResults(1)
+        .list()
+        .isEmpty();
   }
 
   @Override

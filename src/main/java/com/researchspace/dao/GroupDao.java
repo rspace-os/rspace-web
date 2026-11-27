@@ -55,4 +55,24 @@ public interface GroupDao extends GenericDao<Group, Long> {
    * @return a
    */
   List<Group> getGroups(Collection<Long> groupIds);
+
+  /**
+   * Gets a group and locks its row until the transaction ends, so concurrent membership changes to
+   * the same group run one after another.
+   *
+   * @param id a group id
+   * @return the group
+   * @throws org.springframework.orm.ObjectRetrievalFailureException if not found
+   */
+  Group getForUpdate(Long id);
+
+  /**
+   * Whether a membership row exists for this group and user. Uses a locking read, so it sees rows
+   * committed by a transaction this one waited for.
+   *
+   * @param groupId a group id
+   * @param userId a user id
+   * @return <code>true</code> if the user has a membership row in the group
+   */
+  boolean hasMembership(Long groupId, Long userId);
 }

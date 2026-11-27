@@ -13,8 +13,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
@@ -37,6 +39,11 @@ import org.slf4j.LoggerFactory;
  * relations properly. This class is an entity solely to make Hibernate mapping simpler.
  */
 @Entity
+@Table(
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_UserGroup_group_user",
+            columnNames = {"group_id", "user_id"}))
 @XmlType
 @XmlAccessorType(XmlAccessType.NONE)
 @Cacheable
