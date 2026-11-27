@@ -18,6 +18,7 @@ import com.researchspace.Constants;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.hibernate.CommunicationDaoHibernateImpl;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -733,6 +734,41 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
             assertStatementCountIndependentOfPageSize(
                 () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
                 pc -> dao.getSentRequests(sender, pc)));
+  }
+
+  @Test
+  public void allResultsListingFetchesRecipientsInBatches() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    int messageCount = CommunicationDaoHibernateImpl.RECIPIENT_FETCH_BATCH_SIZE + 1;
+    for (int i = 0; i < messageCount; i++) {
+      saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, null);
+    }
+    flushAndClear();
+    // as requested by MessageArchiveDataHandler when exporting a user's messages
+    PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
+    pc.setGetAllResults();
+
+    Statistics stats = sessionFactory.getStatistics();
+    boolean wasEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    try {
+      List<MessageOrRequest> listed =
+          dao.getAllSentAndReceivedSimpleMessagesForUser(recipient, pc).getResults();
+      assertThat(listed)
+          .hasSize(messageCount)
+          .allMatch(mor -> Hibernate.isInitialized(mor.getRecipients()));
+      String recipientFetch =
+          List.of(stats.getQueries()).stream()
+              .filter(hql -> hql.contains("join fetch mor.recipients"))
+              .findFirst()
+              .orElseThrow();
+      assertEquals(2, stats.getQueryStatistics(recipientFetch).getExecutionCount());
+    } finally {
+      stats.clear();
+      stats.setStatisticsEnabled(wasEnabled);
+    }
   }
 
   private <P> void assertStatementCountIndependentOfPageSize(
