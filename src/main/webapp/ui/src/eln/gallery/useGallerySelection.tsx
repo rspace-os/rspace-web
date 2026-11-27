@@ -87,14 +87,22 @@ const SelectionContext: React.Context<Selection> = React.createContext(DEFAULT_S
 /**
  * A provider component for scoping the selection of the GalleryFiles to a
  * section of the UI.
+ *
+ * The selection is created once, when the provider mounts, so that it
+ * survives re-renders of the component that renders the provider. As a
+ * result, `onlyAllowSingleSelection` is read only on mount; to change it,
+ * remount the provider (for example with a `key`).
  */
 export const GallerySelection = ({
   children,
-  ...rest
+  onlyAllowSingleSelection,
 }: {
   children: React.ReactNode;
   onlyAllowSingleSelection?: boolean;
-}): React.ReactNode => <SelectionContext.Provider value={new Selection(rest)}>{children}</SelectionContext.Provider>;
+}): React.ReactNode => {
+  const [selection] = React.useState(() => new Selection({ onlyAllowSingleSelection }));
+  return <SelectionContext.Provider value={selection}>{children}</SelectionContext.Provider>;
+};
 
 /**
  * Hook for getting the nearest Selection.
