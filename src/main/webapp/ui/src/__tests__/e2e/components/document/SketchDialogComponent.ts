@@ -1,6 +1,6 @@
 import type { FrameLocator, Locator, Page } from "@playwright/test";
 
-export type SketchImageNode = { id: number; url: string; x: number; y: number };
+export type SketchImageNode = { id: number; url: string; x: number; y: number; scaleX: number };
 
 type Zwibbler = {
   save(format: string): string;
@@ -9,6 +9,7 @@ type Zwibbler = {
   createNode(type: string, properties: Record<string, unknown>): number;
   translateNode(id: number, x: number, y: number): void;
   commitTransaction(): void;
+  getScreenCoordinates(x: number, y: number): { x: number; y: number };
 };
 
 /** Image nodes showing url in a drawing saved in Zwibbler's "zwibbler3" format, with their top-left position. */
@@ -21,7 +22,13 @@ export function imageNodesIn(saved: string, url: string): SketchImageNode[] {
   }[];
   return nodes
     .filter((node) => node.type === "ImageNode" && node.url === url && Array.isArray(node.matrix))
-    .map((node) => ({ id: node.id, url, x: node.matrix?.[4] ?? 0, y: node.matrix?.[5] ?? 0 }));
+    .map((node) => ({
+      id: node.id,
+      url,
+      x: node.matrix?.[4] ?? 0,
+      y: node.matrix?.[5] ?? 0,
+      scaleX: node.matrix?.[0] ?? 1,
+    }));
 }
 
 /** The legacy Zwibbler Sketch tool, a TinyMCE URL dialog hosting `sketch/iframe.html`. */
@@ -91,5 +98,27 @@ export class SketchDialogComponent {
       },
       { url, x, y },
     );
+  }
+
+  /** Where the drawing's point (x, y) is on the page, for mouse actions. */
+  async pagePoint(x: number, y: number): Promise<{ x: number; y: number }> {
+    const box = await this.iframe.boundingBox();
+    const inFrame = await this.iframe.evaluate(
+      (iframe: HTMLIFrameElement, point) =>
+        (iframe.contentWindow as unknown as { context: Zwibbler }).context.getScreenCoordinates(point.x, point.y),
+      { x, y },
+    );
+    return { x: (box?.x ?? 0) + inFrame.x, y: (box?.y ?? 0) + inFrame.y };
+  }
+
+  /** Drags with the mouse from the drawing's point from to its point to. */
+  async drag(from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
+    const page = this.root.page();
+    const start = await this.pagePoint(from.x, from.y);
+    const end = await this.pagePoint(to.x, to.y);
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(end.x, end.y, { steps: 5 });
+    await page.mouse.up();
   }
 }

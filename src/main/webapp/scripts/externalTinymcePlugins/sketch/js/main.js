@@ -10,6 +10,7 @@ var sketchDialog = {
     var prefix = tinymceDialogUtils.getContextPath();
 
     sketchDialog.addZwibblerButtons();
+    sketchDialog.trackPointer();
 
     var ZwibblerOptions = {
       "showMenu": false,
@@ -301,18 +302,26 @@ var sketchDialog = {
   },
 
   /*
-   * Zwibbler loads a node's image separately; until then it draws an empty
-   * box, so this resolves once the node has the image's size, once
-   * isSameNode() is false, or after 5s.
+   * True once Zwibbler has the node's image and has laid the node out with
+   * it, which is what save("png") draws; until then it draws an empty box.
+   * Zwibbler has no public API for this, so it reads the ImageNode's loaded
+   * image (Ia) and laid-out size (Tb), see dd in zwibbler2.js.
    */
-  waitForNodeImage: function (id, image, isSameNode) {
+  nodeImageReady: function (id) {
+    var doc = context.ja && context.ja.view && context.ja.view.ia;
+    var node = doc && doc.sa && doc.sa[id];
+    return Boolean(node && node.Ia && node.Tb &&
+      node.Tb.width === node.Ia.width && node.Tb.height === node.Ia.height);
+  },
+
+  /*
+   * Polls until done() is true or timeoutMs has passed, then resolves.
+   */
+  pollUntil: function (done, timeoutMs) {
     return new Promise(function (resolve) {
-      var deadline = Date.now() + 5000;
+      var deadline = Date.now() + timeoutMs;
       var check = function () {
-        var rect = isSameNode() ? context.getBoundingRectangle([id]) : null;
-        var drawn = rect && Math.abs(rect.width - image.naturalWidth) < 1 &&
-          Math.abs(rect.height - image.naturalHeight) < 1;
-        if (!rect || drawn || Date.now() > deadline) {
+        if (done() || Date.now() > deadline) {
           resolve();
         } else {
           setTimeout(check, 50);
@@ -322,23 +331,60 @@ var sketchDialog = {
     });
   },
 
-  /* gallery images still downloading, so Insert can wait for them to render */
+  /*
+   * Gallery images dropped but not yet drawn, as functions that are true
+   * while their node is still in the sketch, so Insert can wait for them.
+   */
   pendingImageLoads: new Set(),
 
   /*
-   * Resolves once no dropped Gallery image is still loading, including any
-   * dropped while waiting, or after 15s so a stalled download cannot block
-   * Insert for good.
+   * Resolves once every dropped Gallery image still in the sketch has been
+   * drawn, including any dropped while waiting, or after 15s so a stalled
+   * download cannot block Insert for good. Undone or deleted images do not
+   * count.
    */
   whenImagesDrawn: function () {
-    var waitForPending = function () {
-      var pending = Array.from(sketchDialog.pendingImageLoads);
-      return pending.length ? Promise.allSettled(pending).then(waitForPending) : Promise.resolve();
-    };
-    var timeout = new Promise(function (resolve) {
-      setTimeout(resolve, 15000);
+    return sketchDialog.pollUntil(function () {
+      return !Array.from(sketchDialog.pendingImageLoads).some(function (isInSketch) {
+        return isInSketch();
+      });
+    }, 15000);
+  },
+
+  /*
+   * Zwibbler puts a node back where it was at pointer down when a drag ends,
+   * so a node moved during a drag is moved back. This resolves once no
+   * pointer is down in the sketch.
+   */
+  whenPointerUp: function () {
+    if (!sketchDialog.pointerDown) {
+      return Promise.resolve();
+    }
+    return new Promise(function (resolve) {
+      sketchDialog.afterPointerUp.push(resolve);
     });
-    return Promise.race([waitForPending(), timeout]);
+  },
+
+  pointerDown: false,
+  afterPointerUp: [],
+
+  trackPointer: function () {
+    document.addEventListener("pointerdown", function () {
+      sketchDialog.pointerDown = true;
+    }, true);
+    var up = function () {
+      sketchDialog.pointerDown = false;
+      var callbacks = sketchDialog.afterPointerUp;
+      sketchDialog.afterPointerUp = [];
+      // after Zwibbler's own mouseup handling has committed the drag
+      setTimeout(function () {
+        callbacks.forEach(function (callback) {
+          callback();
+        });
+      }, 0);
+    };
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", up, true);
   },
 
   /* drop token per node id, see addGalleryImageTool */
@@ -412,12 +458,19 @@ var sketchDialog = {
           context.getNodeProperty(id, "url") === imageUrl;
       };
       // then centre it on the drop point; irreversible keeps adding it one undo step
-      var load = sketchDialog.loadImage(imageUrl).then(function (image) {
+      sketchDialog.pendingImageLoads.add(isThisNode);
+      sketchDialog.loadImage(imageUrl).then(function (image) {
+        return sketchDialog.whenPointerUp().then(function () {
+          return image;
+        });
+      }).then(function (image) {
         if (isThisNode()) {
           context.beginTransaction();
           context.translateNode(id, -image.naturalWidth / 2, -image.naturalHeight / 2);
           context.commitIrreversibleTransaction();
-          return sketchDialog.waitForNodeImage(id, image, isThisNode);
+          return sketchDialog.pollUntil(function () {
+            return !isThisNode() || sketchDialog.nodeImageReady(id);
+          }, 5000);
         }
       }).catch(function (error) {
         console.error(error);
@@ -425,9 +478,8 @@ var sketchDialog = {
         if (sketchDialog.pendingCentring[id] === token) {
           delete sketchDialog.pendingCentring[id];
         }
-        sketchDialog.pendingImageLoads.delete(load);
+        sketchDialog.pendingImageLoads.delete(isThisNode);
       });
-      sketchDialog.pendingImageLoads.add(load);
       /** 
        * After adding gallery image to the sketch, the system will show the template 
        * section by default. Remove following line if we don't want this behaviour. 
