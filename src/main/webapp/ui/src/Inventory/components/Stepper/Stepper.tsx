@@ -131,24 +131,6 @@ function _Stepper({
     </Stack>
   );
 
-  const FooterActions = observer(() => (
-    <>
-      {state === "create" && (
-        <StepperActions
-          onSubmit={() => {
-            void (async () => {
-              await activeResult.create();
-              navigate(generateUrlFromCoreFetcherArgs(activeResult.showNewlyCreatedRecordSearchParams), {
-                modifyVisiblePanel: false,
-              });
-            })();
-          }}
-        />
-      )}
-      {state === "edit" && <CommonEditActions editableObject={activeResult} />}
-    </>
-  ));
-
   // Scroll to top when the record or its state changed
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -159,7 +141,19 @@ function _Stepper({
       <Toolbar title={Title} record={activeResult} recordType={activeResult.recordType} stickyAlert={stickyAlert} />
       <Box sx={{ position: "relative", minHeight: 0, overflowY: "auto" }}>
         <HeadingContext level={3}>{children}</HeadingContext>
-        <FooterActions />
+        {state === "create" && (
+          <StepperActions
+            onSubmit={() => {
+              void (async () => {
+                await activeResult.create();
+                navigate(generateUrlFromCoreFetcherArgs(activeResult.showNewlyCreatedRecordSearchParams), {
+                  modifyVisiblePanel: false,
+                });
+              })();
+            }}
+          />
+        )}
+        {state === "edit" && <CommonEditActions editableObject={activeResult} />}
         {state === "preview" && <MoreInfoSidebar factory={factory || null} />}
       </Box>
     </>

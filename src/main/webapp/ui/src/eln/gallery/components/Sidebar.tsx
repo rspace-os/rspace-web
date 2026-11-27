@@ -14,7 +14,6 @@ import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import { paperClasses } from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
-import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { Suspense } from "react";
 import { useTranslation } from "react-i18next";
@@ -360,11 +359,6 @@ const Sidebar = ({
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const { t } = useTranslation(["gallery", "common"]);
-  React.useEffect(() => {
-    autorun(() => {
-      if (viewport.isViewportSmall) setDrawerOpen(false);
-    });
-  }, [viewport]);
   const showFilestores = FetchingData.getSuccessValue(filestoresEnabled)
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)

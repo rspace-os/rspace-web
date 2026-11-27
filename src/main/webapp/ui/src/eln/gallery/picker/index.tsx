@@ -81,6 +81,14 @@ const Picker = observer(
     );
     const [smallViewportSidebarOpenState, setSmallViewportSidebarOpenState] = React.useState(false);
     /*
+     * On a small viewport the drawer floats over the page, so it starts closed
+     * whenever the viewport becomes small. This closes the small-viewport state
+     * directly, never the larger-viewport preference, so it cannot persist it.
+     */
+    React.useEffect(() => {
+      if (viewport.isViewportSmall) setSmallViewportSidebarOpenState(false);
+    }, [viewport.isViewportSmall]);
+    /*
      * On the Gallery page, the sidebar is open on any viewport size that
      * isn't small -- on the smaller viewport sizes the sidebar is floating
      * instead of being persistent. However, in the picker dialog there is

@@ -1,4 +1,4 @@
-import { action, makeObservable, observable } from "mobx";
+import { action, makeObservable, observable, runInAction } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
 import { tokenRefreshDelayMs } from "@/modules/common/utils/auth";
@@ -62,9 +62,7 @@ export default class AuthStore {
       authenticate: action,
       signOut: action,
       synchronizeWithSessionStorage: action,
-      getSystemSettings: action,
       setSystemSettings: action,
-      fetchPidinstEnabled: action,
     });
     this.rootStore = rootStore;
   }
@@ -181,7 +179,9 @@ export default class AuthStore {
   async fetchPidinstEnabled(): Promise<void> {
     try {
       const { data } = await InvApiService.get<boolean>("identifiers/pidinstEnabled", "");
-      this.pidinstEnabled = data;
+      runInAction(() => {
+        this.pidinstEnabled = data;
+      });
     } catch {
       // Non-critical — leave pidinstEnabled as false if the call fails
     }
