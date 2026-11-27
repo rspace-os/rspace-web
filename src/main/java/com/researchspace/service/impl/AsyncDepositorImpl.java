@@ -614,7 +614,13 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   // DMPonline saves the plan's dmp object, DMPTool its API response holding the plan
   private static Optional<String> extractUrlFromDmpFile(JsonNode dmpFile) {
     JsonNode dmp = dmpFile.has("dmp_id") ? dmpFile : dmpFile.path("items").path(0).path("dmp");
-    String url = dmp.path("dmp_id").path("identifier").asText().replace("/api/v1", "");
+    // DMPonline stores its API address; the browser-facing plan page drops the API segment
+    String url =
+        dmp.path("dmp_id")
+            .path("identifier")
+            .asText()
+            .replace("/api/v1", "")
+            .replace("/api/v2", "");
     return new UrlValidator().isValid(url) ? Optional.of(url) : Optional.empty();
   }
 

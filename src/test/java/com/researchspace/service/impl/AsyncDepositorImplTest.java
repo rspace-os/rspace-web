@@ -916,6 +916,7 @@ public class AsyncDepositorImplTest {
   @CsvSource({
     "DMP_TOOL, dmptool-plan.json, https://doi.org/10.48321/D1X",
     "DMP_ONLINE, dmponline-plan.json, https://dmponline.dcc.ac.uk/plans/12345",
+    "DMP_ONLINE, dmponline-plan-v2.json, https://dmponline.dcc.ac.uk/plans/12345",
     "ARGOS, argos-plan.json, 10.5281/zenodo.123",
   })
   void planIdentifierIsReadByThePlansOwnPlatformWhateverIsSwitchedOn(
