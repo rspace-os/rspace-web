@@ -33,7 +33,7 @@ type FilterLimits = v.InferOutput<typeof metadataFilterSchema> & {
 };
 export type ApiV2FilterLimits = { readonly [K in keyof FilterLimits]: FilterLimits[K] };
 
-export type ApiV2RuntimeFieldNamespace = Readonly<Omit<v.InferOutput<typeof runtimeNamespaceSchema>, "viaResource">>;
+export type ApiV2RuntimeFieldNamespace = Readonly<v.InferOutput<typeof runtimeNamespaceSchema>>;
 
 export type ApiV2StructuredField = {
   readonly type: StructuredFieldType;

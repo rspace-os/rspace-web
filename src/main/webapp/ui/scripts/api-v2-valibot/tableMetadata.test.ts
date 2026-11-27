@@ -261,8 +261,9 @@ describe("tableListMetadata", () => {
       maximumProjections: 0,
       viaResource: "instruments",
     };
-    const { viaResource: _viaResource, ...emitted } = hopped;
-    expect(records(withRuntimeFields(runtimeNamespace, hopped)).runtimeFields).toEqual([runtimeNamespace, emitted]);
+    const emitted = records(withRuntimeFields(runtimeNamespace, hopped)).runtimeFields;
+    expect(emitted).toEqual([runtimeNamespace, hopped]);
+    expect(emitted[1]).toHaveProperty("viaResource", "instruments");
   });
 
   it("rejects duplicate runtime namespaces", () => {
