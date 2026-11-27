@@ -83,6 +83,9 @@ live in `apiV2Fetch.ts` and share the default transport authentication and error
   header must be on that list or on its ETag exclusion list, or generation fails. Exclude an operation only when
   callers read its version some other way, such as a `version` body field.
 
+Notification editors cache the body and headers together and send the baseline `ETag` in `If-Match`; a 412 reloads
+the latest state.
+
 `apiV2Fetch.ts` exports `BodyType<B> = B` and `ErrorType<E>` for Orval. Generated hooks do not expose
 separate error types for each status. Transport and token failures extend `ApiV2Error`, which carries an optional
 HTTP `status` and the standard `cause`:

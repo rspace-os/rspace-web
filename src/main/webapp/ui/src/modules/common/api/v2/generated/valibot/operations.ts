@@ -76,6 +76,13 @@ export const apiV2Operations: Record<
   listBookingConfigurationAuditEvents: {
     responses: { "200": { "application/json": native.ListBookingConfigurationAuditEventsResponse } },
   },
+  getMyBookingNotificationSubscription: {
+    responses: { "200": { "application/json": native.GetMyBookingNotificationSubscriptionResponse } },
+  },
+  replaceMyBookingNotificationSubscription: {
+    request: native.ReplaceMyBookingNotificationSubscriptionBody,
+    responses: { "200": { "application/json": native.ReplaceMyBookingNotificationSubscriptionResponse } },
+  },
   getBookingSettings: { responses: { "200": { "application/json": native.GetBookingSettingsResponse } } },
   getAdminBookingSettings: { responses: { "200": { "application/json": native.GetAdminBookingSettingsResponse } } },
   patchAdminBookingSettings: {
@@ -170,6 +177,20 @@ export const apiV2Operations: Record<
   },
   rotateUserBookingCalendarSubscription: {
     responses: { "200": { "application/json": native.RotateUserBookingCalendarSubscriptionResponse } },
+  },
+  getMyBookingNotificationPreferences: {
+    responses: { "200": { "application/json": native.GetMyBookingNotificationPreferencesResponse } },
+  },
+  replaceMyBookingNotificationPreferences: {
+    request: native.ReplaceMyBookingNotificationPreferencesBody,
+    responses: { "200": { "application/json": native.ReplaceMyBookingNotificationPreferencesResponse } },
+  },
+  unsubscribeMyBookingNotifications: {
+    responses: { "200": { "application/json": native.UnsubscribeMyBookingNotificationsResponse } },
+  },
+  lookupMyBookingNotificationSubscriptions: {
+    request: native.LookupMyBookingNotificationSubscriptionsBody,
+    responses: { "200": { "application/json": native.LookupMyBookingNotificationSubscriptionsResponse } },
   },
   resetMyBookingPreferences: { responses: {} },
   getMyBookingPreferences: { responses: { "200": { "application/json": native.GetMyBookingPreferencesResponse } } },

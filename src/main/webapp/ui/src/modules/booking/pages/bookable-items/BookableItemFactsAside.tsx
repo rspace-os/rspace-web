@@ -54,11 +54,7 @@ export function BookableItemFactsAside({
   ];
 
   return (
-    <aside
-      data-slot="bookable-item-facts"
-      aria-labelledby={headingId}
-      className="min-w-0 @2xl:sticky @2xl:top-4 @2xl:self-start"
-    >
+    <aside data-slot="bookable-item-facts" aria-labelledby={headingId} className="min-w-0">
       <Card size="sm">
         <CardHeader>
           <CardTitle id={headingId}>{t("bookableItemDetails.about")}</CardTitle>

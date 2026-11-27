@@ -21,6 +21,8 @@ const mutatorOverrides = deriveMutatorOverrides(spec, {
     "getUserBookingCalendarSubscription",
     "createUserBookingCalendarSubscription",
     "rotateUserBookingCalendarSubscription",
+    "getMyBookingNotificationSubscription",
+    "replaceMyBookingNotificationSubscription",
   ],
   // These take If-Match from the body `version` instead of the ETag header.
   etagExclusions: [

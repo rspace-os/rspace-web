@@ -208,6 +208,10 @@
             "length": "Purpose must not exceed {0, number} characters.",
             "lengthTitle": "The purpose is too long."
           }
+        },
+        "bookingNotifications": {
+          "ifMatchRequired": "The current notification subscription ETag is required.",
+          "subscriptionConflict": "Your notification subscription changed. Refresh it and try again."
         }
       },
       "pagination": {
