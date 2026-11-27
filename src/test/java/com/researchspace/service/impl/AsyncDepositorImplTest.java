@@ -571,6 +571,23 @@ public class AsyncDepositorImplTest {
   }
 
   @Test
+  void dryadEditLinkIsMadePublicWhateverCaseTheRequestUsesForDryad() throws Exception {
+    URL landing = new URL("https://datadryad.org/dataset/" + DRYAD_DOI);
+    when(dmpUpdateHandler.report(Mockito.any(), Mockito.eq(anyUser), Mockito.eq(List.of(1L))))
+        .thenReturn(List.of());
+
+    depositor.postDeposit(
+        dryadResult("https://datadryad.org/edit/" + DRYAD_DOI + "/editCode"),
+        new App(App.APP_DRYAD, "Dryad", true),
+        anyUser,
+        null,
+        configWithPlans(App.APP_DRYAD.toUpperCase(), 1L));
+
+    Mockito.verify(dmpUpdateHandler)
+        .report(new DepositReport("Dryad", null, landing), anyUser, List.of(1L));
+  }
+
+  @Test
   void planNotificationHasNoDoiParagraphWithoutDoi() throws Exception {
     URL landing = new URL("https://dv.example/ds");
     when(dmpUpdateHandler.report(

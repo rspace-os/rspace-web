@@ -248,7 +248,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     DepositReport deposit;
     List<PlanReportResult> planResults;
     try {
-      deposit = buildDepositReport(result, app.getLabel(), repoDepositConfig.getAppName());
+      deposit = buildDepositReport(result, app.getLabel(), app.getName());
       planResults = dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
     } catch (RuntimeException e) {
       log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
@@ -257,9 +257,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     }
     try {
       URL repositoryLink =
-          deposit.identifier() == null
-              ? null
-              : repositoryLink(result, repoDepositConfig.getAppName());
+          deposit.identifier() == null ? null : repositoryLink(result, app.getName());
       notifyDmpUpdateComplete(planResults, deposit, repositoryLink, subject);
     } catch (RuntimeException e) {
       log.error("Notifying the plan updates after a deposit to {} failed", app.getLabel(), e);
