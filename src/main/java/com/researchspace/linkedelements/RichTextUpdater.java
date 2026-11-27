@@ -507,9 +507,9 @@ public class RichTextUpdater {
           if (src.startsWith("/thumbnail/data")) {
             el.attr("src", withThumbnailParentId(src, newFld));
           } else if (legacyAnnoId != null) {
-            el.attr(DATA_ID, "" + legacyAnnoId);
+            // as an explicit link to the source annotation, which is mapped to its copy below
+            el.attr(DATA_ID, "" + legacyOldAnnoId);
             el.attr(DATA_TYPE, DATA_TYPE_ANNOTATION);
-            el.attr("src", GET_ANNOTATION_URL + legacyAnnoId + "/" + randomGenerator.nextLong());
           } else {
             el.attr(
                 "src", GET_IMAGE_URL + newFld + "-" + oldImg + "/" + randomGenerator.nextLong());
