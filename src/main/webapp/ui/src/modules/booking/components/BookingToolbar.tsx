@@ -1,19 +1,13 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
-import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { pickerDate, plainDateFromPicker } from "@/modules/booking/bookingDates";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
-
-function dateInTimeZone(date: string, timeZone: string): Date {
-  const [year, month, day] = date.split("-").map(Number);
-  return new TZDate(year, month - 1, day, timeZone);
-}
 
 export function BookingDateControls({
   date,
@@ -46,7 +40,7 @@ export function BookingDateControls({
 }) {
   const { i18n, t } = useTranslation("booking");
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
-  const selectedDate = dateInTimeZone(date, timeZone);
+  const selectedDate = pickerDate(Temporal.PlainDate.from(date), timeZone);
 
   return (
     <fieldset className={cn("flex min-w-0 flex-wrap items-center gap-2", className)}>
@@ -96,7 +90,7 @@ export function BookingDateControls({
             noonSafe
             onSelect={(selected) => {
               if (!selected) return;
-              onDateChange(todayInTimeZone(timeZone, Temporal.Instant.fromEpochMilliseconds(selected.getTime())));
+              onDateChange(plainDateFromPicker(selected, timeZone).toString());
               setDatePickerOpen(false);
             }}
           />

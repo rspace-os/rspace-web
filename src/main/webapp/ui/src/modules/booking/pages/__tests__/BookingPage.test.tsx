@@ -18,10 +18,11 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { currentUser as currentUserFixture } from "@/__tests__/helpers/currentUserFixture";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
-import BookingPage, { BookingDashboard } from "@/modules/booking/pages/BookingPage";
+import BookingPage from "@/modules/booking/pages/BookingPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { ownerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import BookingDashboardPage from "@/modules/booking/pages/dashboard/BookingDashboardPage";
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import type { ApiV2CurrentUser } from "@/modules/common/api/v2/generated/models/apiV2CurrentUser";
@@ -74,7 +75,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
     context: { tokenProvider: getApiV2TokenProvider() },
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
-        createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboard }),
+        createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboardPage }),
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/calendar/",
