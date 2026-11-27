@@ -1,6 +1,7 @@
 package com.researchspace.dao.customliquibaseupdates;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -88,24 +89,35 @@ public class IndexFilestoreLinksInFieldsIT extends RealTransactionSpringTestBase
   }
 
   @Test
-  public void anAutosaveCopyIsNotIndexed() throws Exception {
+  public void aLinkOnlyInAPendingAutosaveIsIndexedOnItsDocumentField() throws Exception {
     User u = loggedInUser();
     NfsFileStore store = committedS3Store(u);
-    StructuredDocument doc = createDocumentLinking(u, store.getId(), "/run.dat");
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(u, "saved text");
     Field field = doc.getFields().get(0);
-    // same link, so the autosave itself does not reindex the field
-    recordMgr.saveTemporaryDocument(field.getId(), u, field.getFieldData() + "<p>pending</p>");
+    String pendingLink =
+        "<a href=\"#\" class=\"nfs_file mceNonEditable\" data-linktype=\"file\""
+            + " data-nfsid=\"42\" rel=\""
+            + store.getId()
+            + ":/run.dat\">run.dat</a>";
+    recordMgr.saveTemporaryDocument(field.getId(), u, "saved text" + pendingLink);
     openTransaction();
     Long autosaveCopyId = fieldMgr.get(field.getId(), u).orElseThrow().getTempField().getId();
+    // an upgraded database has no rows for the autosave the live code would have indexed
+    nfsDao.getFieldLinks(field.getId()).forEach(nfsDao::deleteFieldLink);
     commitTransaction();
-    assertNoLinksIndexed(field.getId());
 
     IndexFilestoreLinksInFields task = new IndexFilestoreLinksInFields();
     task.setUp();
     task.execute(null);
 
     openTransaction();
-    assertThat(nfsDao.getFieldLinks(field.getId())).hasSize(1);
+    assertThat(nfsDao.getFieldLinks(field.getId()))
+        .singleElement()
+        .satisfies(
+            row -> {
+              assertEquals("/run.dat", row.getRelPath());
+              assertEquals(42L, row.getNfsId());
+            });
     assertThat(nfsDao.getFieldLinks(autosaveCopyId)).isEmpty();
     commitTransaction();
   }

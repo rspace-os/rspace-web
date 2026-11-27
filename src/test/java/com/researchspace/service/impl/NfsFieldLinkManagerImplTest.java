@@ -94,6 +94,23 @@ class NfsFieldLinkManagerImplTest {
   }
 
   @Test
+  void reindexReplacesARowWhoseLinkNowNamesAnotherFilestoreObject() {
+    NfsFieldLink moved = new NfsFieldLink(field, store, "/a.dat", 7L);
+    when(nfsDao.getFieldLinks(5L)).thenReturn(List.of(moved));
+    NfsElement link = new NfsElement(1L, "/a.dat");
+    link.setNfsId(8L);
+    stubParse("html", link);
+    when(nfsDao.getNfsFileStore(1L)).thenReturn(store);
+
+    manager.reindex(field, "html");
+
+    verify(nfsDao).deleteFieldLink(moved);
+    ArgumentCaptor<NfsFieldLink> saved = ArgumentCaptor.forClass(NfsFieldLink.class);
+    verify(nfsDao).saveFieldLink(saved.capture());
+    assertEquals(8L, saved.getValue().getNfsId());
+  }
+
+  @Test
   void reindexKeepsRowsStillInContentAndCollapsesRepeatedLinks() {
     when(nfsDao.getFieldLinks(5L)).thenReturn(List.of(new NfsFieldLink(field, store, "/a.dat")));
     stubParse("html", new NfsElement(1L, "/a.dat"), new NfsElement(1L, "/a.dat"));

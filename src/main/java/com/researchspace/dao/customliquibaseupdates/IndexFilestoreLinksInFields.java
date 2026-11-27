@@ -47,7 +47,10 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
         fieldTransaction.executeWithoutResult(
             status -> {
               Field field = fMger.get(fieldId, null).orElseThrow();
-              nfsFieldLinkManager.reindex(field, field.getFieldData());
+              // as a live autosave does, the rows follow the pending autosave when there is one
+              Field pending = field.getTempField();
+              nfsFieldLinkManager.reindex(
+                  field, pending != null ? pending.getFieldData() : field.getFieldData());
             });
         indexed++;
       } catch (RuntimeException e) {
@@ -70,13 +73,17 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
         .isEmpty();
   }
 
-  /** Ids only, so the run holds no field entities; autosave copies have no document. */
+  /**
+   * Ids only, so the run holds no field entities. Autosave copies have no document, so they are
+   * reached through the field they belong to, including when only the copy links a filestore.
+   */
   List<Long> candidateFieldIds() {
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "select f.id from Field f where f.structuredDocument is not null"
-                + " and f.rtfData like :link",
+            "select f.id from Field f left join f.tempField t"
+                + " where f.structuredDocument is not null"
+                + " and (f.rtfData like :link or t.rtfData like :link)",
             Long.class)
         .setParameter("link", "%" + FieldParserConstants.NET_FS_CLASSNAME + "%")
         .list();
