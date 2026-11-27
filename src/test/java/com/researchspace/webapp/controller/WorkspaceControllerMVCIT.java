@@ -57,6 +57,7 @@ import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.dtos.WorkspaceSettings.WorkspaceViewMode;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Breadcrumb;
@@ -77,6 +78,7 @@ import com.researchspace.service.PostLoginHandler;
 import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.UserContentUpdater;
 import com.researchspace.session.SessionAttributeUtils;
@@ -523,27 +525,90 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     GroupSetUp gs = setUpDocumentGroupForPIUserAndShareRecord(false);
     assertFalse(userHasRecordSharedWithAnonymous(piUser, "summary", true));
 
-    ShareConfigCommand shareConfigCommand = new ShareConfigCommand();
+    ShareConfigCommand shareConfigCommand = createPublishCommand(gs.structuredDocument.getId());
+    String previousPublicSharingValue = allowPublicSharing();
+    try {
+      RSpaceTestUtils.logoutCurrUserAndLoginAs(piUser.getUsername(), TESTPASSWD);
+      AjaxReturnObject<SharingResult> result =
+          workspaceController.shareRecord(
+              shareConfigCommand, new MockPrincipal(piUser.getUsername()));
+      assertNotNull(result.getData());
+      assertThat(result.getData().getSharedIds()).hasSize(1);
+      assertThat(result.getData().getPublicLinks()).hasSize(1);
+      assertThat(result.getData().getPublicLinks().get(0))
+          .startsWith("Untitled document_&_&_/public/publishedView/document/");
+      assertFalse(result.getErrorMsg().hasErrorMessages());
+      boolean sharedWithAnonymous = userHasRecordSharedWithAnonymous(piUser, "summary", true);
+      if (!sharedWithAnonymous) {
+        fail("publication must share record with anonymous user");
+      }
+    } finally {
+      restorePublicSharing(previousPublicSharingValue);
+    }
+  }
+
+  @Test
+  public void publishRecordTestShouldReturnServiceAuthorizationErrorInOuterError()
+      throws Exception {
+    GroupSetUp gs = setUpDocumentGroupForPIUserAndShareRecord(false);
+    ShareConfigCommand shareConfigCommand = createPublishCommand(gs.structuredDocument.getId());
+    String previousPublicSharingValue = allowPublicSharing();
+    try {
+      RSpaceTestUtils.logoutCurrUserAndLoginAs(gs.user.getUsername(), TESTPASSWD);
+      AjaxReturnObject<SharingResult> result =
+          workspaceController.shareRecord(
+              shareConfigCommand, new MockPrincipal(gs.user.getUsername()));
+
+      assertThat(result.getData().getSharedIds()).isEmpty();
+      assertThat(result.getErrorMsg().getErrorMessages())
+          .containsExactly(gs.user.getUsername() + " made unauthorised attempt to share a record");
+      assertThat(recShareMgr.getRecordSharingInfo(gs.structuredDocument.getId())).isEmpty();
+    } finally {
+      restorePublicSharing(previousPublicSharingValue);
+    }
+  }
+
+  @Test
+  public void publishRecordTestShouldRejectRequestWhenPublicSharingIsDisabled() throws Exception {
+    GroupSetUp gs = setUpDocumentGroupForPIUserAndShareRecord(false);
+    ShareConfigCommand shareConfigCommand = createPublishCommand(gs.structuredDocument.getId());
+    String previousPublicSharingValue =
+        sysPropMgr.findByName(SystemPropertyName.PUBLIC_SHARING).getValue();
+    try {
+      sysPropMgr.save(
+          SystemPropertyName.PUBLIC_SHARING, HierarchicalPermission.DENIED, getSysAdminUser());
+      RSpaceTestUtils.logoutCurrUserAndLoginAs(piUser.getUsername(), TESTPASSWD);
+      AjaxReturnObject<SharingResult> result =
+          workspaceController.shareRecord(
+              shareConfigCommand, new MockPrincipal(piUser.getUsername()));
+
+      assertThat(result.getData().getSharedIds()).isEmpty();
+      assertThat(result.getData().getPublicLinks()).isEmpty();
+      assertThat(result.getErrorMsg().getErrorMessages())
+          .containsExactly(workspaceController.getText("publishIsDisabled.disabledNotice"));
+      assertThat(recShareMgr.getRecordSharingInfo(gs.structuredDocument.getId())).isEmpty();
+    } finally {
+      restorePublicSharing(previousPublicSharingValue);
+    }
+  }
+
+  private ShareConfigCommand createPublishCommand(Long recordId) {
     ShareConfigElement existingAnonymousShareConfig = new ShareConfigElement();
     existingAnonymousShareConfig.setPublicationSummary("summary");
     existingAnonymousShareConfig.setDisplayContactDetails(true);
-    shareConfigCommand.setValues(new ShareConfigElement[] {existingAnonymousShareConfig});
-    shareConfigCommand.setIdsToShare(new Long[] {gs.structuredDocument.getId()});
-    shareConfigCommand.setPublish(true);
-    RSpaceTestUtils.logoutCurrUserAndLoginAs(piUser.getUsername(), TESTPASSWD);
-    AjaxReturnObject<SharingResult> result =
-        workspaceController.shareRecord(
-            shareConfigCommand, new MockPrincipal(piUser.getUsername()));
-    assertNotNull(result.getData());
-    assertThat(result.getData().getSharedIds()).hasSize(1);
-    assertThat(result.getData().getPublicLinks()).hasSize(1);
-    assertThat(result.getData().getPublicLinks().get(0))
-        .startsWith("Untitled document_&_&_/public/publishedView/document/");
-    assertFalse(result.getErrorMsg().hasErrorMessages());
-    boolean sharedWithAnonymous = userHasRecordSharedWithAnonymous(piUser, "summary", true);
-    if (!sharedWithAnonymous) {
-      fail("publication must share record with anonymous user");
-    }
+    return new ShareConfigCommand(
+        new Long[] {recordId}, new ShareConfigElement[] {existingAnonymousShareConfig}, true);
+  }
+
+  private String allowPublicSharing() {
+    String previousValue = sysPropMgr.findByName(SystemPropertyName.PUBLIC_SHARING).getValue();
+    sysPropMgr.save(
+        SystemPropertyName.PUBLIC_SHARING, HierarchicalPermission.ALLOWED, getSysAdminUser());
+    return previousValue;
+  }
+
+  private void restorePublicSharing(String value) {
+    sysPropMgr.save(SystemPropertyName.PUBLIC_SHARING, value, getSysAdminUser());
   }
 
   private boolean userHasRecordSharedWithAnonymous(

@@ -86,7 +86,8 @@ public interface RecordSharingManager {
 
   /**
    * Shares a record under the control of <code>sharing</code> with 1 or more users or groups.<br>
-   * This user should have permission to share the record. This method will:
+   * This user should have permission to share the record. A PI publishing to the anonymous user
+   * must instead have permission to publish the record. This method will:
    *
    * <ul>
    *   <li>Add the record to the list of shared records in {@link RecordGroupSharing}
@@ -98,8 +99,10 @@ public interface RecordSharingManager {
    * @param recordToShareId
    * @param sharingConfigs An array of ShareConfigElement
    * @return result of the share operation with created RecordGroupSharing entities
-   * @throws IllegalAddChildOperation, AuthorizationException if an attempt is made by non-owner to
-   *     share, or if the recordToShareId is not a notebook or document.
+   * @throws IllegalAddChildOperation if the share would add a record to an unsupported folder
+   * @throws AuthorizationException if the user lacks the required share or publish permission, an
+   *     attempt is made by a non-owner who is not a PI publishing, or the recordToShareId is not a
+   *     notebook or document
    */
   ServiceOperationResult<List<RecordGroupSharing>> shareRecord(
       User sharing, Long recordToShareId, ShareConfigElement[] sharingConfigs)

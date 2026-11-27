@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.EcatDocumentFile;
@@ -33,6 +35,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import java.io.FileNotFoundException;
 import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -209,6 +212,42 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
         sharingMgr.listPublishedRecordsOwnedByUserOrGroupMembersPlusRecordsPublishedByUser(
             pi, PaginationCriteria.createDefaultForClass(RecordGroupSharing.class));
     assertNotNull(rgsPI.getFirstResult().getPublicLink());
+  }
+
+  @Test
+  public void ungroupedPiCanPublishAndUnpublishOwnedDocumentButNotAnotherUsersDocument()
+      throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    initUser(pi);
+    User otherUser = createAndSaveUser(getRandomAlphabeticString("otherUser"));
+    initUser(otherUser);
+
+    logoutAndLoginAs(pi);
+    StructuredDocument ownedDocument =
+        createBasicDocumentInRootFolderWithText(pi, "owned by ungrouped PI");
+    publishDocumentForUser(pi, ownedDocument.getId());
+
+    List<RecordGroupSharing> publications = sharingMgr.getRecordSharingInfo(ownedDocument.getId());
+    assertThat(publications)
+        .singleElement()
+        .extracting(RecordGroupSharing::getPublicLink)
+        .isNotNull();
+
+    ShareConfigElement unpublishConfig = new ShareConfigElement(publications.get(0), "read");
+    unpublishConfig.setAutoshare(true);
+    sharingMgr.unshareRecord(pi, ownedDocument.getId(), new ShareConfigElement[] {unpublishConfig});
+    assertThat(sharingMgr.getRecordSharingInfo(ownedDocument.getId())).isEmpty();
+
+    logoutAndLoginAs(otherUser);
+    StructuredDocument otherUsersDocument =
+        createBasicDocumentInRootFolderWithText(otherUser, "owned by another user");
+
+    AuthorizationException exception =
+        assertThrows(
+            AuthorizationException.class,
+            () -> publishDocumentForUser(pi, otherUsersDocument.getId()));
+    assertThat(exception)
+        .hasMessage(pi.getUsername() + " made unauthorised attempt to share a record");
   }
 
   @Test
