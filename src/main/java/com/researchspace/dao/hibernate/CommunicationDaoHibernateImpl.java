@@ -49,7 +49,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         findPageOfIds(
             "mor.id",
             fromWhere,
-            buildOrderBy(pgCrit, "mor"),
+            "mor",
             pgCrit,
             query ->
                 query
@@ -71,7 +71,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         findPageOfIds(
             "mor.id",
             activeMessageOrRequestFromWhere(filter),
-            buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+            COMMUNICATION_TARGET_ALIAS,
             pgCrit,
             activeMessageOrRequestParams(user, filter));
     return findPageOfMessageOrRequestForIds(ids, pgCrit);
@@ -111,7 +111,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         findPageOfIds(
             "n.id",
             NEW_NOTIFICATION_FROM_WHERE,
-            buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+            COMMUNICATION_TARGET_ALIAS,
             pgCrit,
             query ->
                 query
@@ -314,7 +314,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         findPageOfIds(
             "mor.id",
             fromWhere,
-            buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS),
+            COMMUNICATION_TARGET_ALIAS,
             pgCrit,
             query ->
                 query
@@ -419,14 +419,14 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
 
   /**
    * Counts the distinct ids matching {@code fromWhere}, then fetches only the requested page of
-   * them in {@code orderBy} order. The page query is skipped when the page starts past the last
-   * match, which also covers callers asking for every result with an {@code Integer.MAX_VALUE} page
-   * size.
+   * them, sorted as {@link #buildOrderBy} describes for {@code sortAlias}. The page query is
+   * skipped when the page starts past the last match, which also covers callers asking for every
+   * result with an {@code Integer.MAX_VALUE} page size or an out-of-range page number.
    */
   private IdPage findPageOfIds(
       String idPath,
       String fromWhere,
-      String orderBy,
+      String sortAlias,
       PaginationCriteria<?> pgCrit,
       Consumer<Query<?>> bindParameters) {
     Query<Long> countQuery =
@@ -434,13 +434,18 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     bindParameters.accept(countQuery);
     long total = countQuery.uniqueResult();
 
-    long firstResult = pgCrit.getPageNumber() * (long) pgCrit.getResultsPerPage();
-    if (firstResult >= total) {
+    long pageSize = pgCrit.getResultsPerPage();
+    long pageCount = pageSize == 0 ? 0 : (total + pageSize - 1) / pageSize;
+    if (pgCrit.getPageNumber() >= pageCount) {
       return new IdPage(Collections.emptyList(), total);
     }
+    long firstResult = pgCrit.getPageNumber() * pageSize;
+    String hql =
+        "select %s %s group by %s".formatted(idPath, fromWhere, idPath)
+            + buildOrderBy(pgCrit, sortAlias, idPath);
     Query<Long> pageQuery =
         getSession()
-            .createQuery("select distinct " + idPath + " " + fromWhere + orderBy, Long.class)
+            .createQuery(hql, Long.class)
             .setFirstResult((int) firstResult)
             .setMaxResults(pgCrit.getResultsPerPage());
     bindParameters.accept(pageQuery);
@@ -448,10 +453,13 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   /**
-   * Order clause for the queries above. The {@code mor} alias is the MessageOrRequest itself; the
-   * {@code ct} alias is a CommunicationTarget whose {@code communication} is the message.
+   * Order clause for the id page query above, which groups the joined rows by {@code idPath}. The
+   * {@code mor} alias is the MessageOrRequest itself; the {@code ct} alias is a CommunicationTarget
+   * whose {@code communication} is the message. A communication can join several target rows (one
+   * per recipient, or duplicates for one recipient) with different status update times, so each
+   * communication sorts by its latest one, then by id.
    */
-  private String buildOrderBy(PaginationCriteria<?> pgCrit, String alias) {
+  private String buildOrderBy(PaginationCriteria<?> pgCrit, String alias, String idPath) {
     if (pgCrit == null) {
       return "";
     }
@@ -475,6 +483,6 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         break;
     }
     String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";
-    return " order by " + path + " " + direction + ", " + messagePath + ".id " + direction;
+    return " order by max(" + path + ") " + direction + ", " + idPath + " " + direction;
   }
 }
