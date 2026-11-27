@@ -1,7 +1,12 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
-import { ApiV2Error, ApiV2ProblemError, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import {
+  ApiV2Error,
+  ApiV2ProblemError,
+  ApiV2SessionEndedError,
+  ApiV2UnexpectedResponseError,
+} from "@/modules/common/api/v2/ApiV2ProblemError";
 import { type ApiV2Selected, apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
   createBooking as generatedCreateBooking,
@@ -39,8 +44,7 @@ function mapParentContainer(input: InstrumentsRead["parentContainer"]) {
     },
   };
 }
-type MappedInstrument = Omit<Partial<InstrumentsRead>, "id" | "name" | "deleted" | "parentContainer"> & {
-  id: number;
+type MappedInstrument = Omit<InstrumentsRead, "name" | "deleted" | "parentContainer"> & {
   name: string;
   deleted: boolean;
   parentContainer?: ReturnType<typeof mapParentContainer>;
@@ -109,7 +113,7 @@ function mapIdentity<TTarget>(input: MappedBooking, target: TTarget) {
     id: input.id,
     version: input.version,
     target,
-    timezone: required(input.timezone, "timezone"),
+    timezone: input.timezone,
     start: input.start,
     end: input.end,
     state: input.state,
@@ -122,8 +126,8 @@ function mapIdentity<TTarget>(input: MappedBooking, target: TTarget) {
 export function mapBookingSummary(input: MappedBooking) {
   const summary = {
     id: input.id,
-    target: mapBookingTarget(input.target),
-    timezone: required(input.timezone, "timezone"),
+    target: input.target === null ? null : mapBookingTarget(input.target),
+    timezone: input.timezone,
     start: input.start,
     end: input.end,
     state: input.state,
@@ -186,13 +190,18 @@ function mapReadIdentity(input: MappedBooking) {
   return identity;
 }
 export function mapBookingDetails(input: MappedBooking) {
-  const privacy = mapPrivacy(input);
-  if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
-  return {
-    ...mapReadIdentity(input),
-    ...privacy,
-    canViewConfiguration: input.canViewConfiguration,
-  };
+  try {
+    const privacy = mapPrivacy(input);
+    if (privacy.privacy !== "full") throw new BookingUnavailableError("Booking details are unavailable");
+    return {
+      ...mapReadIdentity(input),
+      ...privacy,
+      canViewConfiguration: input.canViewConfiguration,
+    };
+  } catch (error) {
+    if (error instanceof BookingUnavailableError) throw error;
+    throw new BookingUnavailableError("Booking details are unavailable", { cause: error });
+  }
 }
 export function mapBookingListDocument(input: MappedBooking) {
   if (input.requester === undefined) throw new BookingUnavailableError("Booking requester is unavailable");
@@ -252,11 +261,23 @@ const readParameters = {
   },
 };
 
-/** Reads a booking with `BOOKING_READ_FIELDS`, asserting its guaranteed fields at the fetch boundary. */
+/**
+ * Reads a booking with `BOOKING_READ_FIELDS`, asserting its guaranteed fields at the fetch boundary. A body that fails
+ * its schema or is not JSON means the details are unavailable, which is not retried; every other failure is rethrown.
+ */
 async function requestBookingDetails(id: number, signal?: AbortSignal): Promise<SelectedBooking> {
-  const document = await getBooking(id, readParameters, { signal });
-  assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
-  return document;
+  try {
+    const document = await getBooking(id, readParameters, { signal });
+    assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
+    return document;
+  } catch (error) {
+    if (
+      error instanceof ApiV2UnexpectedResponseError &&
+      (error.reason === "invalidBody" || error.reason === "malformedJson")
+    )
+      throw new BookingUnavailableError("Booking details are unavailable", { cause: error });
+    throw error;
+  }
 }
 export async function fetchBooking(id: number, signal?: AbortSignal): Promise<BookingDetails> {
   return mapBookingDetails(await requestBookingDetails(id, signal));

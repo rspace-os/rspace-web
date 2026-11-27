@@ -196,3 +196,22 @@ it("requests the booking configuration read fields in a fixed order", () => {
     "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth",
   );
 });
+
+it("preserves projected runtime fields on the configuration and its instrument", () => {
+  const customFields = { "17": "Screening" };
+  const extraFields = { "19": { type: "Text", value: "Floor 2" } };
+  const mapped = mapBookingConfiguration({
+    ...decodedConfiguration,
+    state: "ACTIVE",
+    "target.customFields": customFields,
+    target: {
+      ...configuration.target,
+      relationTo: "instruments",
+      value: { ...configuration.target.value, parentContainer: null, customFields, extraFields },
+    },
+  });
+  expect(mapped).toMatchObject({
+    "target.customFields": customFields,
+    target: { value: { customFields, extraFields } },
+  });
+});

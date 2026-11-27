@@ -104,7 +104,7 @@ export function BookingBreadcrumbs() {
   ];
 
   return (
-    <nav aria-label={t("breadcrumbs.label")} className="-mb-2 px-4 pt-4 text-sm sm:-mb-4 sm:px-8 sm:pt-8">
+    <nav aria-label={t("breadcrumbs.label")} className="-mb-2 px-4 pt-4 text-sm sm:-mb-4 sm:px-8">
       <ol className="flex flex-wrap items-center gap-1.5">
         {items.map((item, index) => (
           <Fragment key={item.key}>

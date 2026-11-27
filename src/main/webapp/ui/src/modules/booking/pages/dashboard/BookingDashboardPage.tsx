@@ -10,7 +10,7 @@ import { AtAGlanceWidget } from "./AtAGlanceWidget";
 import { DashboardQuickActions } from "./DashboardQuickActions";
 import { UpcomingBookingsWidget } from "./UpcomingBookingsWidget";
 
-const dashboardPagePadding = "space-y-8 p-4 sm:p-8";
+const dashboardPagePadding = "space-y-8 p-4 sm:px-8 sm:pb-8";
 
 function DashboardSkeleton() {
   const { t } = useTranslation("common");

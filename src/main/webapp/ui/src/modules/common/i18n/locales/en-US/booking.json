@@ -308,6 +308,7 @@
       "restored": "Booking configuration restored.",
       "saved": "Booking configuration saved."
     },
+    "view": "View configuration",
     "viewInventory": "View {name} in Inventory",
     "yes": "Yes"
   },
@@ -455,6 +456,7 @@
       "title": "Booking details",
       "unavailableDescription": "This booking does not exist or you do not have access to it.",
       "unavailableTitle": "Booking unavailable",
+      "unknownItemDescription": "This item no longer exists, or you no longer have permission to view this item.",
       "viewItem": "View bookable item {globalId}",
       "when": "When"
     },
@@ -488,6 +490,11 @@
       "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
       "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
       "overlap": "This period overlaps another booking or a maintenance event.",
+      "overlapBooking": "Booking #{id}",
+      "overlapMaintenance": "Maintenance event #{id}",
+      "overlapReserved": "Reserved booking #{id}",
+      "overlapSummary": "This period overlaps:",
+      "startInPast": "The booking starts in the past and cannot be created.",
       "targetUnavailable": "This bookable item is unavailable.",
       "window": "Enter a start in the future and an end after the start.",
       "windowRequired": "Enter a valid start and end."
@@ -534,6 +541,7 @@
       "submit": "Book",
       "submitMaintenance": "Create maintenance event",
       "time": "Time",
+      "timezone": "Times shown in {timezone}.",
       "type": "Booking type",
       "typeBlockout": "Maintenance blockout",
       "typeBooking": "Booking"
@@ -577,7 +585,8 @@
     "feed": {
       "booking": "Booking",
       "maintenance": "Maintenance",
-      "myBookings": "My RSpace bookings"
+      "myBookings": "My RSpace bookings",
+      "unknownItem": "Unknown item"
     },
     "fields": {
       "bookedBy": "Booked by",
@@ -600,6 +609,10 @@
       "label": ".ics file",
       "preparing": "Preparing the calendar file for {item}, {period}."
     },
+    "filterGroups": {
+      "events": "Booking events",
+      "items": "Bookable items"
+    },
     "grid": "Calendar grid",
     "item": "Bookable item",
     "jumpToDate": "Jump to date",
@@ -619,12 +632,18 @@
     },
     "periodNavigation": "Calendar period navigation",
     "previousPeriod": "Previous {period}",
+    "privacy": {
+      "busy": "Busy only",
+      "full": "Full details"
+    },
     "quickFilters": {
       "legend": "Booking event quick filters",
-      "mine": "My calendar"
+      "mine": "My Bookings",
+      "myItems": "Owned Items"
     },
     "resourceSchedule": "Resource booking schedule",
     "retry": "Retry",
+    "rowAvailabilityUnavailable": "Availability could not be checked. Retry before adding a booking from a resource row.",
     "title": "Calendar",
     "today": "Today",
     "toolbar": "Calendar controls",
@@ -839,12 +858,13 @@
   "preferences": {
     "actions": {
       "reset": "Reset to global defaults",
-      "save": "Save"
+      "save": "Save",
+      "saved": "Saved"
     },
     "availabilityWindow": {
       "description": "The times shown on each day's availability bars and timelines.",
       "end": "End time",
-      "endOfDay": "End of day (24:00)",
+      "endOfDay": "00:00 means midnight at the end of the day.",
       "legend": "Default availability window",
       "start": "Start time"
     },
@@ -909,7 +929,7 @@
       "incrementWholeMinutes": "The increment must be a whole number of minutes.",
       "maximumDuration": "Use 0, or a multiple of the time increment ({increment}). The system limit is {limit}.",
       "maximumDurationDays": "The maximum must be 0 or at least {minutes, number} elapsed minutes for this {days, plural, one {#-day} other {#-day}} increment.",
-      "openingHours": "Use an opening start before the end, or select Open all day.",
+      "openingHours": "Use an opening start before the end. Enter 00:00 to close at midnight.",
       "save": "RSpace could not save the booking settings. Try again.",
       "stale": "These settings changed after you opened this page. Reload the page and try again."
     },
@@ -919,7 +939,6 @@
       "bufferAfter": "Gap after (minutes)",
       "bufferBefore": "Gap before (minutes)",
       "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
-      "fullDay": "Open all day",
       "granularity": "Time increment",
       "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
       "incrementDays": "Days",
@@ -932,6 +951,7 @@
       "maximumDurationDescription": "Use 0 for no item limit. A day is 24 elapsed hours. The system limit is 366 days.",
       "maximumDurationUnit": "Maximum duration unit",
       "openingEnd": "Opening end",
+      "openingEndDescription": "Enter 00:00 to close at midnight (the end of the day).",
       "openingStart": "Opening start"
     },
     "openingHours": {
@@ -943,14 +963,12 @@
       "openAllDay": "Open all day",
       "openAllDaySelected": "Open all day selected."
     },
-    "saved": "Booking settings saved.",
     "title": "Booking Settings"
   },
   "sidebar": {
     "addBooking": "Add Booking",
     "administration": "Administration",
     "allItems": "All items",
-    "approvalQueue": "Approval Queue",
     "bookableItems": "Bookable Items",
     "calendar": "Calendar",
     "dashboard": "Dashboard",
