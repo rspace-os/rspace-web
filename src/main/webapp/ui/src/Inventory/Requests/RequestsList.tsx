@@ -21,6 +21,7 @@ import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobal
 import { paginationOptions } from "@/util/table";
 import { isoToLocale } from "@/util/Util";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { RightPanelToggle } from "../components/Layout/Layout2x1";
 import FilterDropdown, { type FilterOption } from "./FilterDropdown";
 import { useSampleRequestsListQuery } from "./queries";
 import RequestsSearchbar from "./RequestsSearchbar";
@@ -181,6 +182,7 @@ export default function RequestsList({
           }}
         />
         <HelpLinkIcon link={helpDocsArticleUrl("sampleRequests")} title={t("requestsManagement.helpTitle")} />
+        <RightPanelToggle />
       </Stack>
       <Grid container direction="row" spacing={1} sx={{ pt: 1 }}>
         <FilterDropdown

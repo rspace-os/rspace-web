@@ -3,7 +3,9 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useContext, useEffect, useState } from "react";
+import type React from "react";
+import { type ReactNode, useContext, useEffect } from "react";
+import { clampToLines, mergeSx } from "@/modules/common/utils/styles";
 import { HeadingContext } from "../../../components/DynamicHeadingLevel";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import NavigateContext from "../../../stores/contexts/Navigate";
@@ -66,64 +68,20 @@ function _Stepper({
   const { state } = activeResult ?? {};
 
   /*
-   * We pin the header that includes the Title, a Global Id link, and the
-   * record type label at the top of the viewport so that they are always able
-   * to quickly check what it is that they're viewing/editing. However, long
-   * record names would end up covering half the screen on smaller viewports so
-   * as the user begins to scroll we truncate the Title.
-   *
-   * This logic is designed in a way that allows the react-code to re-render
-   * only once the thrsehold for truncating has been met, whilst having a
-   * minimal impact on the scroll performance. For more information, see the
-   * MDN article on the scroll event:
-   * https://developer.mozilla.org/en-US/docs/Web/API/Document/scroll_event
+   * The header holding the Title, Global Id link, and record type label is pinned to the top so
+   * the user can always see what they are viewing/editing; in a single-column layout the title is
+   * clamped so that long record names cannot cover most of the screen. Long names with no spaces
+   * break mid-word, in either layout, rather than overflowing the header.
    */
-
-  const [needsTruncating, setNeedsTruncating] = useState<boolean>(false);
-
-  let lastKnownScrollPosition = 0;
-  let ticking = false;
-
-  const handleScroll = (scrollPosition: number) => {
-    if (isSingleColumnLayout) {
-      setNeedsTruncating(scrollPosition > 50);
-    }
-  };
-
-  const onScroll = () => {
-    lastKnownScrollPosition = window.scrollY;
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        handleScroll(lastKnownScrollPosition);
-        ticking = false;
-      });
-      ticking = true;
-    }
-  };
-  React.useEffect(() => {
-    window.addEventListener("scroll", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [onScroll]);
-
   const Title = (
     <Stack direction="row" spacing={1}>
       <Typography
         variant="h5"
         component="h2"
-        sx={{
-          mr: 0.75,
-          color: "unset !important",
-          ...(needsTruncating
-            ? {
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                fontSize: "20px",
-              }
-            : {}),
-        }}
+        sx={mergeSx(
+          { mr: 0.75, minWidth: 0, color: "unset !important", overflowWrap: "anywhere" },
+          isSingleColumnLayout ? clampToLines(2) : undefined,
+        )}
       >
         {titleText}
       </Typography>

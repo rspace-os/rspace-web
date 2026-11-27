@@ -228,7 +228,10 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
         </Box>
       )}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("sample.requestMaterialSection.dialogTitle", { sampleName: activeResult.name })}</DialogTitle>
+        {/* Breaks at spaces where it can, and mid-word only when a word alone is too wide to fit. */}
+        <DialogTitle sx={{ overflowWrap: "anywhere" }}>
+          {t("sample.requestMaterialSection.dialogTitle", { sampleName: activeResult.name })}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <Typography variant="body2">
