@@ -104,6 +104,11 @@ export function useRelationshipOptionAvailability({
   };
 }
 
+/** Identifies a selected value within its source, for matching it to its resolve and cache queries. */
+function optionKey(sourceId: string, canonical: string): string {
+  return JSON.stringify([sourceId, canonical]);
+}
+
 const MAX_RESOLVE_BATCH_SIZE = 100;
 /** How long a resolved option stays fresh; the batch query and the per-value cache check share it. */
 const OPTION_STALE_TIME_MS = 15_000;
@@ -163,47 +168,45 @@ export function useSelectedRelationshipOptions({
   };
   const resolveQueries: ResolveQuery[] = [];
   for (const candidate of candidates) {
+    if (candidate.resolveMany === undefined) continue;
+    const resolveMany = candidate.resolveMany;
     const uniqueValues = [...(canonicalValuesBySource.get(candidate) ?? [])].sort();
-
-    if (candidate.resolveMany !== undefined) {
-      const resolveMany = candidate.resolveMany;
-      const requestedSize = candidate.batchSize ?? MAX_RESOLVE_BATCH_SIZE;
-      const batchSize = Number.isFinite(requestedSize)
-        ? clamp(Math.floor(requestedSize), 1, MAX_RESOLVE_BATCH_SIZE)
-        : MAX_RESOLVE_BATCH_SIZE;
-      for (const batch of chunk(uniqueValues, batchSize)) {
-        const queryKey = relationshipPickerQueryKeys.optionBatch(candidate.id, scope, batch);
-        resolveQueries.push({
-          owner: candidate,
-          values: batch,
-          queryKey,
-          run: async (signal) => {
-            const state = queryClient.getQueryState(queryKey);
-            const forceRefresh = state?.isInvalidated === true && state.dataUpdatedAt > 0;
-            const valuesToResolve = forceRefresh
-              ? batch
-              : batch.filter(
-                  (canonical) =>
-                    !cacheEntryIsFresh(queryClient, relationshipPickerQueryKeys.option(candidate.id, scope, canonical)),
-                );
-            if (valuesToResolve.length > 0) {
-              const documents = await resolveMany(valuesToResolve, signal);
-              for (const canonical of valuesToResolve) {
-                queryClient.setQueryData(
-                  relationshipPickerQueryKeys.option(candidate.id, scope, canonical),
-                  Object.hasOwn(documents, canonical) ? (documents[canonical] ?? null) : null,
-                );
-              }
+    const requestedSize = candidate.batchSize ?? MAX_RESOLVE_BATCH_SIZE;
+    const batchSize = Number.isFinite(requestedSize)
+      ? clamp(Math.floor(requestedSize), 1, MAX_RESOLVE_BATCH_SIZE)
+      : MAX_RESOLVE_BATCH_SIZE;
+    for (const batch of chunk(uniqueValues, batchSize)) {
+      const queryKey = relationshipPickerQueryKeys.optionBatch(candidate.id, scope, batch);
+      resolveQueries.push({
+        owner: candidate,
+        values: batch,
+        queryKey,
+        run: async (signal) => {
+          const state = queryClient.getQueryState(queryKey);
+          const forceRefresh = state?.isInvalidated === true && state.dataUpdatedAt > 0;
+          const valuesToResolve = forceRefresh
+            ? batch
+            : batch.filter(
+                (canonical) =>
+                  !cacheEntryIsFresh(queryClient, relationshipPickerQueryKeys.option(candidate.id, scope, canonical)),
+              );
+          if (valuesToResolve.length > 0) {
+            const documents = await resolveMany(valuesToResolve, signal);
+            for (const canonical of valuesToResolve) {
+              queryClient.setQueryData(
+                relationshipPickerQueryKeys.option(candidate.id, scope, canonical),
+                Object.hasOwn(documents, canonical) ? (documents[canonical] ?? null) : null,
+              );
             }
-            return Object.fromEntries(
-              batch.map((canonical) => [
-                canonical,
-                queryClient.getQueryData(relationshipPickerQueryKeys.option(candidate.id, scope, canonical)) ?? null,
-              ]),
-            );
-          },
-        });
-      }
+          }
+          return Object.fromEntries(
+            batch.map((canonical) => [
+              canonical,
+              queryClient.getQueryData(relationshipPickerQueryKeys.option(candidate.id, scope, canonical)) ?? null,
+            ]),
+          );
+        },
+      });
     }
   }
 
@@ -230,12 +233,12 @@ export function useSelectedRelationshipOptions({
   const queryByValue = new Map<string, (typeof queries)[number]>();
   resolveQueries.forEach((resolveQuery, index) => {
     for (const canonical of resolveQuery.values) {
-      queryByValue.set(JSON.stringify([resolveQuery.owner.id, canonical]), queries[index]);
+      queryByValue.set(optionKey(resolveQuery.owner.id, canonical), queries[index]);
     }
   });
   const cacheQueryByValue = new Map<string, (typeof cacheQueries)[number]>();
   cacheSubscriptions.forEach((subscription, index) => {
-    cacheQueryByValue.set(JSON.stringify([subscription.candidate.id, subscription.canonical]), cacheQueries[index]);
+    cacheQueryByValue.set(optionKey(subscription.candidate.id, subscription.canonical), cacheQueries[index]);
   });
 
   return values.map((value, index) => {
@@ -253,8 +256,8 @@ export function useSelectedRelationshipOptions({
       return { value, label: value, sourceId: owner.id, restoreStatus: "invalid" };
     }
 
-    const query = queryByValue.get(JSON.stringify([owner.id, canonical]));
-    const cacheQuery = cacheQueryByValue.get(JSON.stringify([owner.id, canonical]));
+    const query = queryByValue.get(optionKey(owner.id, canonical));
+    const cacheQuery = cacheQueryByValue.get(optionKey(owner.id, canonical));
     const document =
       cacheQuery?.data !== undefined
         ? cacheQuery.data

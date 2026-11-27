@@ -3,7 +3,7 @@ import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/co
 import { serializeRsqlExpression } from "../rsql";
 import type { CollectionQueryState, FilterExpression } from "../types";
 import { nonDefaultColumns, nonDefaultSorting, serializeFilters, serializeSorting } from "../utils/queryString";
-import type { RawTableView } from "../utils/viewStorage";
+import type { ParsedTableView, RawTableView } from "../utils/viewStorage";
 import type { TableViewStore } from "./useTableViewStore";
 
 export type TableListFeatureSelection = {
@@ -20,6 +20,16 @@ export type ResolvedTableView<TDocument> = {
   sorting?: readonly SortRule<TDocument>[];
   visibleFields?: readonly FieldName<TDocument>[];
 };
+
+/** A parsed view's members to adopt: an invalid (`null`) member, like an absent one, falls back to the base view. */
+export function resolvedFromParsed<TDocument>(parsed: ParsedTableView<TDocument>): ResolvedTableView<TDocument> {
+  return {
+    search: parsed.search,
+    expression: parsed.where ?? undefined,
+    sorting: parsed.sort ?? undefined,
+    visibleFields: parsed.columns ?? undefined,
+  };
+}
 
 type ViewState<TDocument> = {
   /** The raw view signature this state belongs to. */

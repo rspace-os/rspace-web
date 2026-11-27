@@ -61,6 +61,11 @@ export type RuntimeFieldSearch = {
   readonly request: (params: RuntimeFieldSearchParams, options?: ApiV2RequestOptions) => Promise<unknown>;
 };
 
+/** The filter and column selector of a runtime field: its selector namespace, a dot, then its catalog ID. */
+export function runtimeFieldSelector(namespace: string, id: string): string {
+  return `${namespace}.${id}`;
+}
+
 /** The catalog namespace named by a selector namespace's metadata entry, such as `target.customFields`. */
 export function runtimeFieldCatalogNamespace(namespace: string): string {
   return namespace.slice(namespace.lastIndexOf(".") + 1);
@@ -109,16 +114,19 @@ export function bindRuntimeFieldSearch<N extends string>(
   };
 }
 
+/** The registered resource with this name, if any. */
+function registeredResource(name: string | undefined) {
+  return Object.values(apiV2Resources).find((resource) => resource.name === name);
+}
+
 /** The registered resource's catalog for a namespace, if that resource publishes the namespace's route. */
 export function registeredRuntimeFieldCatalog(
   namespace: RuntimeFieldCatalogNamespace,
 ): RuntimeFieldCatalog | undefined {
-  const name = catalogResourceName(namespace);
-  for (const resource of Object.values(apiV2Resources)) {
-    if (resource.name === name && "runtimeFields" in resource)
-      return bindRuntimeFieldCatalog(resource, namespace.namespace);
-  }
-  return undefined;
+  const resource = registeredResource(catalogResourceName(namespace));
+  return resource !== undefined && "runtimeFields" in resource
+    ? bindRuntimeFieldCatalog(resource, namespace.namespace)
+    : undefined;
 }
 
 /**
@@ -129,19 +137,17 @@ export function registeredRuntimeFieldSearches<S extends RuntimeFieldCatalogName
   sources: readonly S[],
 ): readonly { search: RuntimeFieldSearch; sources: readonly S[] }[] {
   return [...Map.groupBy(sources, catalogResourceName)].flatMap(([name, group]) => {
-    for (const resource of Object.values(apiV2Resources)) {
-      if (resource.name !== name || !("runtimeFieldSearch" in resource)) continue;
-      const search = bindRuntimeFieldSearch(
-        resource,
-        group.map((source) => source.namespace),
-      );
-      if (!search) return [];
-      const answered = group.filter((source) =>
-        search.namespaces.includes(runtimeFieldCatalogNamespace(source.namespace)),
-      );
-      return [{ search, sources: answered }];
-    }
-    return [];
+    const resource = registeredResource(name);
+    if (resource === undefined || !("runtimeFieldSearch" in resource)) return [];
+    const search = bindRuntimeFieldSearch(
+      resource,
+      group.map((source) => source.namespace),
+    );
+    if (!search) return [];
+    const answered = group.filter((source) =>
+      search.namespaces.includes(runtimeFieldCatalogNamespace(source.namespace)),
+    );
+    return [{ search, sources: answered }];
   });
 }
 
@@ -228,11 +234,7 @@ export async function fetchRuntimeFieldCatalog(
     ...(request.limit === undefined ? {} : { limit: request.limit }),
   };
   const body = await catalog.request(params, { signal: request.signal, redirect: "error" });
-  return mapRuntimeFieldCatalog(body);
-}
-
-/** UI catalog policy requires complete definitions and supported filter operators. */
-export function mapRuntimeFieldCatalog(body: unknown): RuntimeFieldCatalogPage {
+  // UI catalog policy requires complete definitions and supported filter operators.
   return parseOrThrow(catalogSchema, body);
 }
 

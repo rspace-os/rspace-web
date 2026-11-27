@@ -114,6 +114,12 @@ export async function generateResources(
   const imports = files.map((file, index) => `import * as resource${index} from ${JSON.stringify(file)};`);
   const filters = filteredWhereOperations(document);
   const checks: string[] = [];
+  // The operation types the emitted assertions name, recorded as each assertion is emitted.
+  const assertedTypes = new Set<string>();
+  const assertion = (type: string, check: string) => {
+    assertedTypes.add(type);
+    return check;
+  };
   const entries = sortBy([...resources], [([name]) => name]).map(([name, operations]) => {
     const listId = operations.get("list")?.id;
     const filterResource = listId === undefined ? undefined : filters.get(listId);
@@ -123,15 +129,28 @@ export async function generateResources(
       throw new Error(`${name}: RUNTIME_FIELD_SEARCH operation needs a RUNTIME_FIELDS operation`);
     const entry = `(typeof apiV2Resources)[${JSON.stringify(name)}]`;
     const assertions = [
-      ...(filterResource ? [`Assert<Extends<${entry}["list"], ApiV2ListOperation<${entry}["filterResource"]>>>`] : []),
+      ...(filterResource
+        ? [
+            assertion(
+              "ApiV2ListOperation",
+              `Assert<Extends<${entry}["list"], ApiV2ListOperation<${entry}["filterResource"]>>>`,
+            ),
+          ]
+        : []),
       ...(namespaces
         ? [
-            `Assert<Extends<${entry}["runtimeFields"], ApiV2RuntimeFieldsOperation<${entry}["runtimeFieldNamespaces"][number]>>>`,
+            assertion(
+              "ApiV2RuntimeFieldsOperation",
+              `Assert<Extends<${entry}["runtimeFields"], ApiV2RuntimeFieldsOperation<${entry}["runtimeFieldNamespaces"][number]>>>`,
+            ),
           ]
         : []),
       ...(operations.has("runtimeFieldSearch")
         ? [
-            `Assert<Extends<${entry}["runtimeFieldSearch"], ApiV2RuntimeFieldSearchOperation<${entry}["runtimeFieldNamespaces"][number]>>>`,
+            assertion(
+              "ApiV2RuntimeFieldSearchOperation",
+              `Assert<Extends<${entry}["runtimeFieldSearch"], ApiV2RuntimeFieldSearchOperation<${entry}["runtimeFieldNamespaces"][number]>>>`,
+            ),
           ]
         : []),
     ];
@@ -157,11 +176,9 @@ export async function generateResources(
   const types = [
     "ApiV2OperationSet",
     "ApiV2ResourceEntry",
-    ...(checks.some((check) => check.includes("ApiV2ListOperation")) ? ["ApiV2ListOperation"] : []),
-    ...(checks.some((check) => check.includes("ApiV2RuntimeFieldsOperation")) ? ["ApiV2RuntimeFieldsOperation"] : []),
-    ...(checks.some((check) => check.includes("ApiV2RuntimeFieldSearchOperation"))
-      ? ["ApiV2RuntimeFieldSearchOperation"]
-      : []),
+    ...["ApiV2ListOperation", "ApiV2RuntimeFieldsOperation", "ApiV2RuntimeFieldSearchOperation"].filter((type) =>
+      assertedTypes.has(type),
+    ),
   ];
   // Each list, runtime-field catalog and runtime-field search must accept the shared operation shape, so a divergent resource fails tsc here.
   const assertions = checks.length

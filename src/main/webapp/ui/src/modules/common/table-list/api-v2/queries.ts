@@ -10,6 +10,7 @@ import {
   fetchRuntimeFieldDefinitions,
   type RuntimeFieldDefinition,
   registeredRuntimeFieldCatalog,
+  runtimeFieldSelector,
 } from "./runtimeFieldCatalog";
 
 type Selection = { namespace: string; definition: RuntimeFieldDefinition };
@@ -52,7 +53,7 @@ export function useApiV2RuntimeFields<TDocument, TEntry extends ApiV2CollectionR
     .filter((name) => namespaces.some((namespace) => isRuntimeFieldInNamespace(name, namespace.namespace)))
     .sort();
   const unresolved = requested.filter(
-    (name) => !selected.some((entry) => name === `${entry.namespace}.${entry.definition.id}`),
+    (name) => !selected.some((entry) => name === runtimeFieldSelector(entry.namespace, entry.definition.id)),
   );
   // Plain useQuery: runtime-field definitions are optional; callers show pending, error and retry inline.
   const hydrated = useQuery<RuntimeFieldCatalogForNamespace[], ErrorType<unknown>>({
@@ -113,7 +114,7 @@ export function useApiV2RuntimeFields<TDocument, TEntry extends ApiV2CollectionR
       : requested.filter(
           (name) =>
             !runtimeFields.some((entry) =>
-              entry.definitions.some((field) => name === `${entry.namespace}.${field.id}`),
+              entry.definitions.some((field) => name === runtimeFieldSelector(entry.namespace, field.id)),
             ),
         );
   return { metadata, runtimeFields, selectRuntimeField, pending, error, missing, scope, retry: hydrated.refetch };

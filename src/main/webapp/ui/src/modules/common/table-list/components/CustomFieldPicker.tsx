@@ -1,8 +1,9 @@
 import { useDebouncedState } from "@tanstack/react-pacer";
 import { useQuery } from "@tanstack/react-query";
+import type { Namespace, TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { RelationshipLabel, RuntimeNamespaceSummary } from "@/modules/common/collection/config";
+import type { LabelText, RelationshipLabel, RuntimeNamespaceSummary } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import {
   type RuntimeFieldCatalogForNamespace,
@@ -10,6 +11,7 @@ import {
   type RuntimeFieldOption,
   registeredRuntimeFieldSearches,
   runtimeFieldSearchQueryOptions,
+  runtimeFieldSelector,
   soleRuntimeFieldSearch,
 } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import {
@@ -21,6 +23,7 @@ import {
   ComboboxList,
   ComboboxStatus,
 } from "@/modules/common/ui/combobox";
+import type { TableListRuntimeFields } from "../types";
 
 const SEARCH_LIMIT = 20;
 const MINIMUM_TERM = 2;
@@ -42,6 +45,29 @@ export function groupRuntimeFieldSources(
     via: group.find((source) => source.via !== undefined)?.via,
     sources: group,
   }));
+}
+
+/**
+ * The groups of a table's runtime-field sources that offer `capability`; none when the table takes no runtime fields.
+ */
+export function offeredRuntimeFieldGroups(
+  sources: readonly RuntimeNamespaceSummary[] | undefined,
+  runtimeFields: TableListRuntimeFields | undefined,
+  capability: "filterable" | "columnSelectable",
+): readonly RuntimeFieldSourceGroup[] {
+  if (runtimeFields === undefined) return [];
+  return groupRuntimeFieldSources((sources ?? []).filter((source) => source[capability]));
+}
+
+/** The label of a group's custom-field option: plain for the document's own fields, else naming the relationship. */
+export function customFieldOptionLabel(
+  via: RelationshipLabel | undefined,
+  t: TFunction<Namespace>,
+  text: (label: LabelText) => string,
+): string {
+  return via === undefined
+    ? t("tableList.filters.customField.option")
+    : t("tableList.filters.customField.optionVia", { via: text(via.label) });
 }
 
 /** The group serving a runtime field's namespace, or null for a field without one. */
@@ -89,7 +115,9 @@ export function CustomFieldPicker({
     isDefinitionAvailable(definition),
   );
   const selected =
-    [...loaded, ...results].find((item) => `${item.namespace}.${item.definition.id}` === chosenSelector) ?? null;
+    [...loaded, ...results].find(
+      (item) => runtimeFieldSelector(item.namespace, item.definition.id) === chosenSelector,
+    ) ?? null;
   const typeLabels = {
     text: t("tableList.filters.customField.types.text"),
     number: t("tableList.filters.customField.types.number"),

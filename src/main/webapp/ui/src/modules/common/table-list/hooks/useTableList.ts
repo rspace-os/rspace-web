@@ -15,7 +15,7 @@ import type {
   TableListStatus,
 } from "../types";
 import { parseRawTableView } from "../utils/viewStorage";
-import { type TableListFeatureSelection, useTableViewState } from "./useTableViewState";
+import { resolvedFromParsed, type TableListFeatureSelection, useTableViewState } from "./useTableViewState";
 import { type TableViewStore, useLocalTableView, useUrlTableView } from "./useTableViewStore";
 
 export type UseTableListOptions<TDocument extends Record<string, unknown>> = {
@@ -201,12 +201,7 @@ function useClientTableList<TDocument extends Record<string, unknown>>(
     base,
     store,
     features,
-    resolved: {
-      search: parsed.search,
-      expression: parsed.where ?? undefined,
-      sorting: parsed.sort ?? undefined,
-      visibleFields: parsed.columns ?? undefined,
-    },
+    resolved: resolvedFromParsed(parsed),
   });
   const query = useTableListQuery(config, view.state, options.dataSource);
   return tableListResult(options, view, query, persistence);

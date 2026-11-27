@@ -7,16 +7,19 @@ import { NuqsTestingAdapter, type OnUrlUpdateFunction } from "nuqs/adapters/test
 import { type ComponentProps, Suspense, useState } from "react";
 import * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createTestQueryClient, queryClientWrapper } from "@/__tests__/helpers/testQueryClient";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
-import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useApiV2RuntimeFields } from "../api-v2/queries";
-import { useApiV2TableList, usePersistedApiV2TableList } from "../hooks/useApiV2TableList";
+import { useApiV2TableList, usePersistedApiV2TableList, withApiV2Status } from "../hooks/useApiV2TableList";
 import { tableViewDescriptor } from "../persistence";
 import { TableList } from "../TableList";
 import { tableViewRouteOptions } from "../tableViewRoute";
+import type { TableListProps } from "../types";
 import { RuntimeFieldProjectionLimitError } from "../utils/errors";
+import { metadataFixture } from "./fixtures/apiV2Metadata";
 import { fakeCollectionResource } from "./fixtures/apiV2Resources";
 import { hazardClassDefinition } from "./fixtures/tableList";
 
@@ -48,7 +51,7 @@ const config = {
   ],
 };
 
-const metadata: ApiV2CollectionMetadata<Instrument> = {
+const metadata = metadataFixture<Instrument>({
   resourceName: "instruments",
   fields: ["id", "name", "target"],
   sorting: { fields: ["name"], default: [{ field: "name", direction: "asc" }], maximumFields: 5 },
@@ -61,13 +64,6 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
         fieldType: "text",
         picker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
       },
-    },
-    limits: {
-      maximumComparisons: 50,
-      maximumLikeComparisons: 10,
-      maximumNesting: 10,
-      maximumArguments: 100,
-      maximumWhereLength: 4096,
     },
   },
   runtimeFields: [
@@ -85,8 +81,7 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
       via: "",
     },
   ],
-  pagination: { defaultLimit: 20, maximumLimit: 100 },
-};
+});
 
 const instrumentsTable = tableViewDescriptor(config, "issue");
 const storageKey = "rspace.tableList.instruments.view";
@@ -114,7 +109,7 @@ const harness: {
   table?: { setFilters: (filters: never) => void; setPage: (page: { pageIndex: number; pageSize: number }) => void };
 } = {};
 function Providers({ children, searchParams = "" }: { children: React.ReactNode; searchParams?: string }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const [client] = useState(createTestQueryClient);
   return (
     <QueryClientProvider client={client}>
       <NuqsTestingAdapter hasMemory searchParams={searchParams}>
@@ -135,25 +130,28 @@ function renderHarness(searchParams = "", props: ComponentProps<typeof Harness> 
     ),
   });
   const router = createRouter({ routeTree: rootRoute, history });
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={client}>
-      <Suspense fallback={<p>{"Loading metadata"}</p>}>
-        <RouterProvider router={router} />
-      </Suspense>
-    </QueryClientProvider>,
+    <Suspense fallback={<p>{"Loading metadata"}</p>}>
+      <RouterProvider router={router} />
+    </Suspense>,
+    { wrapper: queryClientWrapper() },
   );
   return { history };
 }
 
-function collectionHandler(requests: string[]) {
-  return http.get("/api/v2/instruments", ({ request }) => {
-    requests.push(new URL(request.url).searchParams.get("where") ?? "");
-    return HttpResponse.json({
-      ...v2ListEnvelope([{ id: 1, name: "Centrifuge" }], new URL(request.url).searchParams.get("totals") === "true"),
-      limit: 20,
-    });
-  });
+/** Answers collection requests with one instrument and returns the `where` of each, in order. */
+function recordCollectionRequests(): string[] {
+  const requests: string[] = [];
+  server.use(
+    http.get("/api/v2/instruments", ({ request }) => {
+      requests.push(new URL(request.url).searchParams.get("where") ?? "");
+      return HttpResponse.json({
+        ...v2ListEnvelope([{ id: 1, name: "Centrifuge" }], new URL(request.url).searchParams.get("totals") === "true"),
+        limit: 20,
+      });
+    }),
+  );
+  return requests;
 }
 const catalog = (fields = [hazardClassDefinition]) => HttpResponse.json({ fields, hasMore: false, page: 1, limit: 50 });
 const where = "customFields.SF104==hazardous";
@@ -163,7 +161,8 @@ afterEach(() => window.localStorage.clear());
 
 describe("API v2 row validation", () => {
   it("reports an error instead of rows when validateRows rejects the page", async () => {
-    server.use(collectionHandler([]));
+    recordCollectionRequests();
+    const QueryWrapper = queryClientWrapper();
     const { result } = renderHook(
       () =>
         useApiV2TableList({
@@ -179,9 +178,9 @@ describe("API v2 row validation", () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <QueryWrapper>
             <Suspense fallback={null}>{children}</Suspense>
-          </QueryClientProvider>
+          </QueryWrapper>
         ),
       },
     );
@@ -210,7 +209,8 @@ describe("API v2 optional totals", () => {
         });
       }),
     );
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const client = createTestQueryClient();
+    const QueryWrapper = queryClientWrapper(client);
     const { result } = renderHook(
       () =>
         useApiV2TableList({
@@ -221,9 +221,9 @@ describe("API v2 optional totals", () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={client}>
+          <QueryWrapper>
             <Suspense fallback={null}>{children}</Suspense>
-          </QueryClientProvider>
+          </QueryWrapper>
         ),
       },
     );
@@ -337,12 +337,11 @@ describe("API v2 saved views", () => {
   });
 
   it("keeps the stored rule in step with the URL while navigation hydrates an unavailable field", async () => {
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     const missing = "customFields.SF999==missing";
     const requestedMissing = vi.fn();
     const { promise: pending, resolve: finish } = Promise.withResolvers<void>();
     server.use(
-      collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", async ({ request }) => {
         if (new URL(request.url).searchParams.get("ids") === "SF999") {
           requestedMissing();
@@ -368,8 +367,7 @@ describe("API v2 saved views", () => {
   });
 
   it("supports disabled persistence without a Nuqs provider", async () => {
-    const requests: string[] = [];
-    server.use(collectionHandler(requests));
+    const requests = recordCollectionRequests();
     function Unpersisted() {
       const table = useApiV2TableList({
         resource: resource,
@@ -393,8 +391,7 @@ describe("API v2 saved views", () => {
   });
 
   it("fetches when a saved sort is disabled for the table", async () => {
-    const requests: string[] = [];
-    server.use(collectionHandler(requests));
+    const requests = recordCollectionRequests();
     const searchParams = new URLSearchParams({ "instruments.sort": "-name" }).toString();
     render(
       <Providers searchParams={searchParams}>
@@ -406,10 +403,9 @@ describe("API v2 saved views", () => {
   });
 
   it("hydrates new fields on back and forward navigation without broad requests", async () => {
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     const second = "customFields.SF108==cold";
     server.use(
-      collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", ({ request }) => {
         const id = new URL(request.url).searchParams.get("ids") ?? "";
         return catalog([{ ...hazardClassDefinition, id, selector: `customFields.${id}` }]);
@@ -424,13 +420,11 @@ describe("API v2 saved views", () => {
       ),
     });
     const router = createRouter({ routeTree: rootRoute, history });
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <QueryClientProvider client={client}>
-        <Suspense fallback={null}>
-          <RouterProvider router={router} />
-        </Suspense>
-      </QueryClientProvider>,
+      <Suspense fallback={null}>
+        <RouterProvider router={router} />
+      </Suspense>,
+      { wrapper: queryClientWrapper() },
     );
     await waitFor(() => expect(requests).toContain(second));
     await act(async () => {
@@ -445,12 +439,9 @@ describe("API v2 saved views", () => {
   });
 
   it("never broadens a valid local-storage filter during URL restoration", async () => {
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     window.localStorage.setItem(storageKey, JSON.stringify({ v: 1, search: null, where, columns: null, sort: null }));
-    server.use(
-      collectionHandler(requests),
-      http.get("/api/v2/instruments/fields/customFields", () => catalog()),
-    );
+    server.use(http.get("/api/v2/instruments/fields/customFields", () => catalog()));
     renderHarness();
     await screen.findByRole("cell", { name: "Centrifuge" });
     expect(requests.length).toBeGreaterThan(0);
@@ -458,11 +449,10 @@ describe("API v2 saved views", () => {
   });
 
   it("waits for runtime definitions before requesting the filtered collection", async () => {
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     const { promise: pending, resolve: finish } = Promise.withResolvers<void>();
     const requested = vi.fn();
     server.use(
-      collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", async () => {
         requested();
         await pending;
@@ -489,12 +479,9 @@ describe("API v2 saved views", () => {
     },
   ])("preserves $label and only fetches after explicit reset", async ({ searchParams, rule, stored, emptyCatalog }) => {
     const user = userEvent.setup();
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     if (stored) window.localStorage.setItem(storageKey, stored);
-    server.use(
-      collectionHandler(requests),
-      ...(emptyCatalog ? [http.get("/api/v2/instruments/fields/customFields", () => catalog([]))] : []),
-    );
+    if (emptyCatalog) server.use(http.get("/api/v2/instruments/fields/customFields", () => catalog([])));
     renderHarness(searchParams);
     expect(await screen.findByRole("alert")).toMatchTextContent(rule);
     expect(requests).toEqual([]);
@@ -507,10 +494,9 @@ describe("API v2 saved views", () => {
 
   it("retries a failed catalog without losing the saved rule", async () => {
     const user = userEvent.setup();
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     let fail = true;
     server.use(
-      collectionHandler(requests),
       http.get("/api/v2/instruments/fields/customFields", () =>
         fail ? new HttpResponse(null, { status: 503 }) : catalog(),
       ),
@@ -526,9 +512,8 @@ describe("API v2 saved views", () => {
 
   it("shows a URL view over a filter limit as invalid instead of throwing", async () => {
     const user = userEvent.setup();
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     const tooManyPatterns = Array.from({ length: 11 }, (_, index) => `name=contains=a${index}`).join(";");
-    server.use(collectionHandler(requests));
     renderHarness(params(tooManyPatterns));
     expect(await screen.findByRole("alert")).toMatchTextContent(tooManyPatterns);
     expect(requests).toEqual([]);
@@ -538,9 +523,8 @@ describe("API v2 saved views", () => {
   });
 
   it("preserves malformed stored views and blocks collection requests", async () => {
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     window.localStorage.setItem(storageKey, "{broken");
-    server.use(collectionHandler(requests));
     renderHarness();
     await screen.findByRole("alert");
     expect(requests).toEqual([]);
@@ -548,10 +532,9 @@ describe("API v2 saved views", () => {
   });
 
   it("shows a stored view whose filter is not RSQL as an issue instead of restoring it", async () => {
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     const invalid = JSON.stringify({ v: 1, search: "Ada", where: "not valid rsql", columns: null, sort: null });
     window.localStorage.setItem(storageKey, invalid);
-    server.use(collectionHandler(requests));
     const { history } = renderHarness();
     await screen.findByRole("alert");
     expect(history.location.search).toBe("");
@@ -561,9 +544,8 @@ describe("API v2 saved views", () => {
 
   it("shows the defaults after a shared URL replaces malformed storage and its last filter is cleared", async () => {
     const user = userEvent.setup();
-    const requests: string[] = [];
+    const requests = recordCollectionRequests();
     window.localStorage.setItem(storageKey, "{broken");
-    server.use(collectionHandler(requests));
     renderHarness(params("name==Centrifuge"));
     await screen.findByRole("cell", { name: "Centrifuge" });
 
@@ -611,11 +593,9 @@ describe("API v2 saved views", () => {
 });
 
 it("shows the custom-column limit for an edit over it, without requesting or throwing", async () => {
-  const requests: string[] = [];
-  server.use(collectionHandler(requests));
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const requests = recordCollectionRequests();
   const { result } = renderHook(() => useApiV2TableList({ resource, config, documentSchema, metadata }), {
-    wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    wrapper: queryClientWrapper(),
   });
   await waitFor(() => expect(result.current.tableProps.rows[0]?.name).toBe("Centrifuge"));
   const definitions = ["SF104", "SF105", "SF106"].map((id) => ({
@@ -635,8 +615,7 @@ it("shows the custom-column limit for an edit over it, without requesting or thr
 });
 
 it("keeps the last valid URL and the toolbar when a persisted edit exceeds a limit", async () => {
-  const requests: string[] = [];
-  server.use(collectionHandler(requests));
+  const requests = recordCollectionRequests();
   const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
   const captured: { setFilters?: (filters: unknown) => void } = {};
   function EditHarness() {
@@ -653,13 +632,12 @@ it("keeps the last valid URL and the toolbar when a persisted edit exceeds a lim
   }
   const valid = "name=contains=a0";
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <NuqsTestingAdapter hasMemory searchParams={params(valid)} onUrlUpdate={onUrlUpdate}>
-        <Suspense fallback={null}>
-          <EditHarness />
-        </Suspense>
-      </NuqsTestingAdapter>
-    </QueryClientProvider>,
+    <NuqsTestingAdapter hasMemory searchParams={params(valid)} onUrlUpdate={onUrlUpdate}>
+      <Suspense fallback={null}>
+        <EditHarness />
+      </Suspense>
+    </NuqsTestingAdapter>,
+    { wrapper: queryClientWrapper() },
   );
   await screen.findByRole("cell", { name: "Centrifuge" });
   expect(requests).toEqual([valid, valid]);
@@ -701,8 +679,7 @@ describe("a rejected edit", () => {
   const reject = () => act(() => harness.table?.setFilters(overLimitFilters as never));
 
   it("stays rejected when the same handler also returns to the first page", async () => {
-    const requests: string[] = [];
-    server.use(collectionHandler(requests));
+    recordCollectionRequests();
     const { history } = renderHarness(params("name=contains=a0"));
     await screen.findByRole("cell", { name: "Centrifuge" });
 
@@ -716,8 +693,7 @@ describe("a rejected edit", () => {
   });
 
   it("is dropped by Back and Forward", async () => {
-    const requests: string[] = [];
-    server.use(collectionHandler(requests));
+    const requests = recordCollectionRequests();
     const { history } = renderHarness(params("name=contains=a0"));
     await screen.findByRole("cell", { name: "Centrifuge" });
     await act(async () => {
@@ -740,8 +716,7 @@ describe("a rejected edit", () => {
   });
 
   it("does not come back after navigating to a blocked view and back", async () => {
-    const requests: string[] = [];
-    server.use(collectionHandler(requests));
+    const requests = recordCollectionRequests();
     const { history } = renderHarness(params("name=contains=a0"));
     await screen.findByRole("cell", { name: "Centrifuge" });
     reject();
@@ -781,7 +756,6 @@ it("does not validate a previous page against newly selected columns", async () 
       });
     }),
   );
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const { result } = renderHook(
     () =>
       useApiV2TableList({
@@ -791,7 +765,7 @@ it("does not validate a previous page against newly selected columns", async () 
         metadata: { ...metadata, runtimeFields: [] },
         query: { keepPreviousData: true },
       }),
-    { wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider> },
+    { wrapper: queryClientWrapper() },
   );
   try {
     await waitFor(() => expect(result.current.tableProps.rows[0]?.name).toBe("Centrifuge"));
@@ -803,4 +777,36 @@ it("does not validate a previous page against newly selected columns", async () 
   } finally {
     continueRequest.resolve();
   }
+});
+
+describe("API v2 table status", () => {
+  const props: TableListProps<Instrument> = {
+    config: resolveCollectionConfig(config),
+    rows: [],
+    getRowId: (row) => String(row.id),
+    features: {
+      filtering: { value: { search: "", expression: null }, onChange: () => undefined },
+      sorting: { value: [], onChange: () => undefined },
+      columns: { value: ["name"], onChange: () => undefined },
+      pagination: { value: { pageIndex: 0, pageSize: 20 }, rowCount: 21, onChange: () => undefined },
+    },
+  };
+  const requestError = new Error("Over the comparison limit");
+  const restoredViewIssue = { kind: "invalid" as const, encoded: "name==x", remove: () => undefined };
+
+  it("keeps a request error under loading, and replaces every feature while runtime fields are pending", () => {
+    const status = withApiV2Status(props, { requestError, pending: true, restoredViewIssue });
+    expect(status).toMatchObject({ status: "loading", error: requestError });
+    expect(status.features).toEqual({ filtering: false, columns: false, sorting: false, pagination: false });
+    expect(status.restoredViewIssue).toBeUndefined();
+  });
+
+  it("keeps a request error under a restored-view issue", () => {
+    expect(withApiV2Status(props, { requestError, pending: false, restoredViewIssue })).toMatchObject({
+      status: "error",
+      error: requestError,
+      restoredViewIssue,
+      features: props.features,
+    });
+  });
 });

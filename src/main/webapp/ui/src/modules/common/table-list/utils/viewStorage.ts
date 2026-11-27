@@ -4,7 +4,7 @@ import { isRsqlSyntaxValid, parseRsqlExpression, type StaleFieldPolicy } from ".
 import type { FilterExpression } from "../types";
 import { parseColumns, parseSorting, serializeColumns } from "./queryString";
 
-export const tableViewStateSchema = v.object({
+const tableViewStateSchema = v.object({
   v: v.literal(1),
   search: v.nullable(v.string()),
   where: v.nullable(v.string()),
@@ -31,6 +31,9 @@ export type RawTableView = {
 export const rawTableViewKeys = ["search", "where", "columns", "sort"] as const;
 
 export const emptyRawTableView: RawTableView = { search: null, where: null, columns: null, sort: null };
+
+/** An empty parameter counts as absent. */
+const presentOrNull = (value: string | null | undefined): string | null => value || null;
 
 const serializeColumnList = (fields: readonly string[]) => serializeColumns<Record<string, unknown>>(fields);
 
@@ -76,10 +79,10 @@ export function readRawTableView(
   if (columns !== null && defaults === undefined) return "malformed";
   if (where && !isRsqlSyntaxValid(where)) return "malformed";
   return {
-    search: search || null,
-    where: where || null,
+    search: presentOrNull(search),
+    where: presentOrNull(where),
     columns: columns && defaults !== undefined ? mergedColumns(columns, defaults, defaultColumns) : null,
-    sort: sort || null,
+    sort: presentOrNull(sort),
   };
 }
 
@@ -101,10 +104,10 @@ export function removeStoredTableView(key: string): void {
 
 /** Stores the raw view, or removes the stored view when every value is empty. */
 export function writeRawTableView(key: string, raw: RawTableView, defaultColumns: readonly string[]): void {
-  const search = raw.search || null;
-  const where = raw.where || null;
-  const columns = raw.columns || null;
-  const sort = raw.sort || null;
+  const search = presentOrNull(raw.search);
+  const where = presentOrNull(raw.where);
+  const columns = presentOrNull(raw.columns);
+  const sort = presentOrNull(raw.sort);
   if (search === null && where === null && columns === null && sort === null) {
     removeStoredTableView(key);
     return;

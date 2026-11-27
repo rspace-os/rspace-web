@@ -21,6 +21,9 @@ export type ApiV2ParsedSelector = {
   readonly values?: readonly (string | number)[];
 };
 
+/** What a selector accepts in a filter: its operators and whether its values may hold wildcards. */
+export type ApiV2SelectorContract = Pick<ApiV2ParsedSelector, "operators" | "wildcards">;
+
 type ApiV2FilterSelector = Omit<ApiV2ParsedSelector, "fieldType"> & {
   readonly fieldType?: ApiV2ParsedSelector["fieldType"];
 };

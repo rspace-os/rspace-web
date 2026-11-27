@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import type { ApiV2CollectionParams } from "@/modules/common/api/v2/apiV2Resources";
+import type { ApiV2CollectionParams, ApiV2ListOperation } from "@/modules/common/api/v2/apiV2Resources";
 import type { ApiV2FilterResource } from "@/modules/common/api/v2/apiV2Where";
 import type {
   CollectionConfig,
@@ -21,9 +21,9 @@ import {
 import type { ApiV2DocumentMapping, ApiV2DocumentSchema } from "../api-v2/schema";
 import type { TableViewDescriptor } from "../persistence";
 import { rsqlSelectors } from "../rsql";
-import type { CollectionQueryState, FilterExpression } from "../types";
+import type { CollectionQueryState, FilterExpression, TableListProps, TableListRestoredViewIssue } from "../types";
 import { columnSelectors } from "../utils/queryString";
-import { parseRawTableView } from "../utils/viewStorage";
+import { type ParsedTableView, parseRawTableView, type RawTableView } from "../utils/viewStorage";
 import {
   initialQueryState,
   tableListResult,
@@ -31,7 +31,7 @@ import {
   type UseTableListResult,
   useTableListQuery,
 } from "./useTableList";
-import { useTableViewState } from "./useTableViewState";
+import { resolvedFromParsed, useTableViewState } from "./useTableViewState";
 import { type TableViewStore, useLocalTableView, useUrlTableView } from "./useTableViewStore";
 
 type TableOptions<TRow extends Record<string, unknown>> = Omit<UseTableListOptions<TRow>, "config" | "dataSource">;
@@ -43,6 +43,88 @@ function collectFilterFields<TDocument>(expression: FilterExpression<TDocument> 
     return;
   }
   for (const child of expression.children) collectFilterFields(child, into);
+}
+
+/**
+ * The selectors an encoded view and the initial state name, whose runtime fields must be discovered before the view is
+ * parsed, so unresolved fields never erase saved rules.
+ */
+function discoverySelectors<TRow extends Record<string, unknown>>(
+  raw: Pick<RawTableView, "where" | "columns">,
+  initialState: TableOptions<TRow>["initialState"],
+): string[] {
+  const selectors = new Set([
+    ...(raw.where === null ? [] : rsqlSelectors(raw.where)),
+    ...(raw.columns === null ? [] : columnSelectors(raw.columns)),
+  ]);
+  for (const name of initialState?.visibleFields ?? []) selectors.add(String(name));
+  collectFilterFields(initialState?.filters?.expression ?? null, selectors);
+  return [...selectors];
+}
+
+type ApiV2TableListQueryOptions = {
+  staleTime?: number;
+  gcTime?: number;
+  retry?: boolean | number;
+  refetchInterval?: number | false;
+  keepPreviousData?: boolean;
+};
+
+/**
+ * The total row count that labels pagination. Count identity excludes paging and projection, and prefix invalidation
+ * after writes refreshes it along with the current page. `parameters` is only called while `enabled`.
+ */
+function useApiV2Totals<R extends ApiV2FilterResource>({
+  list,
+  enabled,
+  parameters,
+  selectRowCount,
+  query,
+}: {
+  list: ApiV2ListOperation<R>;
+  enabled: boolean;
+  parameters: () => ApiV2CollectionParams<R>;
+  selectRowCount: (body: unknown) => number;
+  query: Pick<ApiV2TableListQueryOptions, "gcTime" | "refetchInterval" | "retry"> | undefined;
+}): number | undefined {
+  // Plain useQuery: the optional total only labels pagination; the table owns loading and errors.
+  const totals = useQuery({
+    queryKey: enabled ? list.queryKey(parameters()) : list.queryKey(),
+    enabled,
+    staleTime: Infinity,
+    gcTime: query?.gcTime,
+    refetchInterval: query?.refetchInterval,
+    retry: query?.retry,
+    queryFn: ({ signal }) => list.request(parameters(), { signal }),
+    select: selectRowCount,
+  });
+  return totals.data;
+}
+
+/**
+ * The table props with the API v2 status applied in order. A request the query codec rejects is an error. Pending
+ * runtime fields then show loading with every control off, replacing `features`; otherwise a restored view that cannot
+ * be used shows its issue. A later status keeps an earlier `error`.
+ */
+export function withApiV2Status<TRow extends Record<string, unknown>>(
+  props: TableListProps<TRow>,
+  {
+    requestError,
+    pending,
+    restoredViewIssue,
+  }: { requestError: unknown; pending: boolean; restoredViewIssue: TableListRestoredViewIssue | undefined },
+): TableListProps<TRow> {
+  const withRequestError: TableListProps<TRow> =
+    requestError === null ? props : { ...props, status: "error", error: requestError };
+  if (pending) {
+    return {
+      ...withRequestError,
+      status: "loading",
+      features: { filtering: false, columns: false, sorting: false, pagination: false },
+    };
+  }
+  if (restoredViewIssue !== undefined) return { ...withRequestError, status: "error", restoredViewIssue };
+  return withRequestError;
 }
 
 export type UseApiV2TableListOptions<
@@ -59,13 +141,7 @@ export type UseApiV2TableListOptions<
   /** Recover page-owned presets after parsing, before queries or saved-view validation. */
   normalizeFilterExpression?: (expression: FilterExpression<TDocument> | null) => FilterExpression<TDocument> | null;
   table?: TableOptions<CollectionRow<TDocument, TId | TTitle>>;
-  query?: {
-    staleTime?: number;
-    gcTime?: number;
-    retry?: boolean | number;
-    refetchInterval?: number | false;
-    keepPreviousData?: boolean;
-  };
+  query?: ApiV2TableListQueryOptions;
 } & ApiV2DocumentMapping<TDocument, TSchema, TEntry>;
 
 export type UseApiV2TableListResult<
@@ -112,16 +188,9 @@ function useApiV2TableListFromStore<
   const featureEnabled = (feature: "filtering" | "sorting" | "columns") => table?.features?.[feature] !== false;
 
   const { raw } = store;
-  // Discover runtime fields from the encoded view before parsing, so unresolved fields never erase saved rules.
-  const selectors = new Set([
-    ...(raw.where === null ? [] : rsqlSelectors(raw.where)),
-    ...(raw.columns === null ? [] : columnSelectors(raw.columns)),
-  ]);
-  for (const name of table?.initialState?.visibleFields ?? []) selectors.add(String(name));
-  collectFilterFields(table?.initialState?.filters?.expression ?? null, selectors);
   const fields = useApiV2RuntimeFields({
     resource,
-    selectors: [...selectors],
+    selectors: discoverySelectors(raw, table?.initialState),
     request,
     metadata: suppliedMetadata,
   });
@@ -163,26 +232,25 @@ function useApiV2TableListFromStore<
     }
   };
   const parsed = parseRawTableView(raw, rowConfig);
-  const resolvedView = {
+  const resolvedView: ParsedTableView<Row> = {
     search: featureEnabled("filtering") ? parsed.search : undefined,
-    expression: featureEnabled("filtering") ? parsed.where : undefined,
-    sorting: featureEnabled("sorting") ? parsed.sort : undefined,
-    visibleFields: featureEnabled("columns") ? parsed.columns : undefined,
+    where: featureEnabled("filtering") ? parsed.where : undefined,
+    sort: featureEnabled("sorting") ? parsed.sort : undefined,
+    columns: featureEnabled("columns") ? parsed.columns : undefined,
   };
-  const unresolved =
-    resolvedView.expression === null || resolvedView.sorting === null || resolvedView.visibleFields === null;
+  const unresolved = resolvedView.where === null || resolvedView.sort === null || resolvedView.columns === null;
   const restoredState = (): CollectionQueryState<Row> => {
     const filters = {
       search: resolvedView.search ?? base.filters.search,
-      expression: resolvedView.expression === undefined ? base.filters.expression : resolvedView.expression,
+      expression: resolvedView.where === undefined ? base.filters.expression : resolvedView.where,
     };
     return {
       filters: {
         ...filters,
         expression: normalizeExpression ? normalizeExpression(filters.expression) : filters.expression,
       },
-      sorting: resolvedView.sorting ?? base.sorting,
-      visibleFields: resolvedView.visibleFields ?? base.visibleFields,
+      sorting: resolvedView.sort ?? base.sorting,
+      visibleFields: resolvedView.columns ?? base.visibleFields,
       page: { pageIndex: 0, pageSize: 1 },
     };
   };
@@ -199,14 +267,7 @@ function useApiV2TableListFromStore<
     features: table?.features,
     normalizeFilterExpression: normalizeExpression,
     reject: requestError,
-    resolved: blocked
-      ? null
-      : {
-          search: resolvedView.search,
-          expression: resolvedView.expression ?? undefined,
-          sorting: resolvedView.sorting ?? undefined,
-          visibleFields: resolvedView.visibleFields ?? undefined,
-        },
+    resolved: blocked ? null : resolvedFromParsed(resolvedView),
   });
   const stateError = view.blocked ? null : requestError(view.state);
   const ready = (state: CollectionQueryState<Row>) => !view.blocked && requestError(state) === null;
@@ -248,66 +309,48 @@ function useApiV2TableListFromStore<
     useTableListQuery(rowConfig, view.state, tableOptions.dataSource),
     persistence,
   );
-  // Count identity excludes paging and projection. Prefix invalidation after writes
-  // refreshes this active query along with the current page.
-  const totalsReady = !view.blocked && stateError === null;
-  const totalsParameters = () => parametersFor(totalState(view.state), true);
-  // Plain useQuery: the optional total only labels pagination; the table owns loading and errors.
-  const totals = useQuery({
-    queryKey: totalsReady ? resource.list.queryKey(totalsParameters()) : resource.list.queryKey(),
-    enabled: totalsReady,
-    staleTime: Infinity,
-    gcTime: query?.gcTime,
-    refetchInterval: query?.refetchInterval,
-    retry: query?.retry,
-    queryFn: ({ signal }) => resource.list.request(totalsParameters(), { signal }),
-    select: (body) => {
+  const totalRows = useApiV2Totals({
+    list: resource.list,
+    enabled: !view.blocked && stateError === null,
+    parameters: () => parametersFor(totalState(view.state), true),
+    selectRowCount: (body) => {
       const { rowCount } = parsePage(body, totalState(view.state));
       if (rowCount === undefined) throw new Error("API V2 totals response omitted totalDocs");
       return rowCount;
     },
+    query,
   });
   // A rejected edit shows the table's error state and keeps the last valid view in the URL and storage,
   // so the toolbar stays usable; the next valid edit writes and fetches again.
-  return {
-    ...result,
-    tableProps: {
+  const features = result.tableProps.features;
+  const tableProps = withApiV2Status(
+    {
       ...result.tableProps,
       features: {
-        ...result.tableProps.features,
-        pagination:
-          result.tableProps.features.pagination === false
-            ? false
-            : {
-                ...result.tableProps.features.pagination,
-                rowCount: totals.data,
-              },
+        ...features,
+        pagination: features.pagination === false ? false : { ...features.pagination, rowCount: totalRows },
       },
-      ...(stateError === null ? {} : { status: "error" as const, error: stateError }),
-      ...(fields.pending
-        ? {
-            status: "loading" as const,
-            features: {
-              filtering: false as const,
-              columns: false as const,
-              sorting: false as const,
-              pagination: false as const,
-            },
-          }
-        : {}),
-      ...(!fields.pending && (invalid || fields.error)
-        ? {
-            status: "error" as const,
-            restoredViewIssue: {
-              kind: fields.error ? ("network" as const) : ("invalid" as const),
+    },
+    {
+      requestError: stateError,
+      pending: fields.pending,
+      restoredViewIssue:
+        invalid || fields.error
+          ? {
+              kind: fields.error ? "network" : "invalid",
               encoded: raw.where ?? raw.columns ?? "",
               retry: () => {
                 void fields.retry();
               },
               remove: store.remove,
-            },
-          }
-        : {}),
+            }
+          : undefined,
+    },
+  );
+  return {
+    ...result,
+    tableProps: {
+      ...tableProps,
       runtimeFields: { definitions: runtimeFields, onSelect: selectRuntimeField },
       authScope: fields.scope,
     },

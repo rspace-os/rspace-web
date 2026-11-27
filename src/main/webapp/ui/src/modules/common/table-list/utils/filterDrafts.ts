@@ -4,6 +4,7 @@ import type { FilterOperator } from "@/modules/common/collection/filterOperators
 import { instantToWire } from "@/modules/common/time/instant";
 import { valueBehaviourOf } from "../fieldValueBehaviour";
 import type { FilterExpression, FilterScalar, FilterValue } from "../types";
+import { allOf } from "./expressions";
 
 export type DraftRule<TDocument> = {
   id: number;
@@ -15,13 +16,20 @@ export type DraftRule<TDocument> = {
   pickingGroup?: string;
 };
 
+/** The nodes the panel lists: an AND's children, or the expression itself. */
+export function topLevelNodes<TDocument>(
+  expression: FilterExpression<TDocument> | null,
+): readonly FilterExpression<TDocument>[] {
+  if (expression?.kind === "and") return expression.children;
+  if (expression) return [expression];
+  return [];
+}
+
 export function comparisonNodes<TDocument>(
   expression: FilterExpression<TDocument> | null,
   config: ResolvedCollectionConfig<TDocument>,
 ): readonly DraftRule<TDocument>[] {
-  if (!expression) return [];
-  const nodes = expression.kind === "and" ? expression.children : [expression];
-  return nodes.flatMap((node, index) =>
+  return topLevelNodes(expression).flatMap((node, index) =>
     node.kind === "comparison"
       ? [
           {
@@ -104,8 +112,34 @@ export function defaultOperator<TDocument>(field: ResolvedFieldConfig<TDocument>
 }
 
 export function topLevelFilterCount<TDocument>(expression: FilterExpression<TDocument> | null): number {
-  if (!expression) return 0;
-  return expression.kind === "and" ? expression.children.length : 1;
+  return topLevelNodes(expression).length;
+}
+
+/** A blank rule for `field`, numbered after the existing rules. */
+export function newDraftRule<TDocument>(
+  rules: readonly DraftRule<TDocument>[],
+  field: ResolvedFieldConfig<TDocument>,
+): DraftRule<TDocument> {
+  return {
+    id: Math.max(0, ...rules.map((rule) => rule.id)) + 1,
+    field: field.name,
+    operator: defaultOperator(field),
+    value: "",
+  };
+}
+
+/** The filter the panel applies: its active rules as comparisons, then the nested groups it kept, all ANDed. */
+export function draftExpression<TDocument>(
+  rules: readonly DraftRule<TDocument>[],
+  fields: readonly ResolvedFieldConfig<TDocument>[],
+  savedGroups: readonly FilterExpression<TDocument>[],
+): FilterExpression<TDocument> | null {
+  const comparisons: FilterExpression<TDocument>[] = rules.filter(isActive).map((rule) => {
+    const field = fields.find((candidate) => candidate.name === rule.field);
+    if (!field) throw new Error(`Unknown filter field ${rule.field}`);
+    return { kind: "comparison", field: rule.field, operator: rule.operator, value: parsedValue(rule, field) };
+  });
+  return allOf([...comparisons, ...savedGroups]);
 }
 
 export type DraftValue = string | readonly string[];

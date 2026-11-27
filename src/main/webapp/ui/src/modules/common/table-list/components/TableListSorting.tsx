@@ -2,7 +2,7 @@ import { closestCenter, DndContext, type DragEndEvent, type UniqueIdentifier } f
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { Namespace } from "i18next";
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
@@ -10,6 +10,7 @@ import { Button } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/modules/common/ui/menu";
 import { useTableListDragAccessibility } from "../hooks/useTableListDragAccessibility";
 import { useTableListDragSensors } from "../hooks/useTableListDragSensors";
+import { ControlPanelSection } from "./ControlPanelSection";
 import { SortRuleRow } from "./SortRuleRow";
 
 export function TableListSorting<TDocument>({
@@ -45,19 +46,12 @@ export function TableListSorting<TDocument>({
   };
 
   return (
-    <section
-      id={controlPanelId}
-      aria-labelledby={`${controlPanelId}-title`}
-      className="rounded-sm border bg-popover p-4"
+    <ControlPanelSection
+      controlPanelId={controlPanelId}
+      title={t("tableList.sorting.title")}
+      closeLabel={t("tableList.actions.closeSorting")}
+      onClose={onClose}
     >
-      <div className="flex items-start justify-between gap-4">
-        <h2 id={`${controlPanelId}-title`} className="font-heading text-sm font-medium">
-          {t("tableList.sorting.title")}
-        </h2>
-        <Button aria-label={t("tableList.actions.closeSorting")} size="icon-xs" variant="ghost" onClick={onClose}>
-          <XIcon aria-hidden="true" />
-        </Button>
-      </div>
       {sorting.length === 0 ? (
         <p className="mt-4 text-xs text-muted-foreground">{t("tableList.sorting.empty")}</p>
       ) : (
@@ -124,6 +118,6 @@ export function TableListSorting<TDocument>({
           ))}
         </MenuContent>
       </Menu>
-    </section>
+    </ControlPanelSection>
   );
 }

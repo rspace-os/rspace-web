@@ -10,11 +10,12 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { isEqual } from "es-toolkit";
 import type { Namespace } from "i18next";
-import { GripVerticalIcon, XIcon } from "lucide-react";
+import { GripVerticalIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
+import { runtimeFieldSelector } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { useTableListDragAccessibility } from "../hooks/useTableListDragAccessibility";
@@ -22,7 +23,8 @@ import { useTableListDragSensors } from "../hooks/useTableListDragSensors";
 import type { TableListRuntimeFields } from "../types";
 import { ColumnChip } from "./ColumnChip";
 import { ColumnDropZone, type ColumnPlacement, columnDropZoneIds } from "./ColumnDropZone";
-import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
+import { ControlPanelSection } from "./ControlPanelSection";
+import { CustomFieldPicker, customFieldOptionLabel, offeredRuntimeFieldGroups } from "./CustomFieldPicker";
 
 type Layout<TDocument> = Record<ColumnPlacement, readonly FieldName<TDocument>[]>;
 
@@ -37,6 +39,34 @@ function dropSection<TDocument>(layout: Layout<TDocument>, over: DragOverEvent["
   if (section === "shown" || section === "hidden") return section;
   if (!over) return null;
   return sectionOf(layout, over.id);
+}
+
+/** `layout` with `field` moved from `source` to `target`, before the field at `overId` there, else at its end. */
+function moveAcrossSections<TDocument>(
+  layout: Layout<TDocument>,
+  field: FieldName<TDocument>,
+  source: ColumnPlacement,
+  target: ColumnPlacement,
+  overId: UniqueIdentifier,
+): Layout<TDocument> {
+  const sourceFields = layout[source].filter((candidate) => candidate !== field);
+  const targetFields = [...layout[target]];
+  const targetIndex = targetFields.indexOf(overId as FieldName<TDocument>);
+  targetFields.splice(targetIndex < 0 ? targetFields.length : targetIndex, 0, field);
+  return { ...layout, [source]: sourceFields, [target]: targetFields };
+}
+
+/** `layout` with the field at `activeId` moved to the position of `overId` in `section`; unchanged if either is absent. */
+function reorderWithinSection<TDocument>(
+  layout: Layout<TDocument>,
+  section: ColumnPlacement,
+  activeId: UniqueIdentifier,
+  overId: UniqueIdentifier,
+): Layout<TDocument> {
+  const sourceIndex = layout[section].indexOf(activeId as FieldName<TDocument>);
+  const targetIndex = layout[section].indexOf(overId as FieldName<TDocument>);
+  if (sourceIndex < 0 || targetIndex < 0) return layout;
+  return { ...layout, [section]: arrayMove([...layout[section]], sourceIndex, targetIndex) };
 }
 
 function activeFieldLabel<TDocument>(
@@ -67,9 +97,7 @@ export function TableListColumns<TDocument>({
   const { t } = useTranslation<Namespace>("common");
   const { text, fieldLabel, fieldOptionLabel } = useFieldLabels();
   const availableFields = config.fields.filter((field) => field.list !== false);
-  const runtimeSources =
-    runtimeFields === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.columnSelectable);
-  const runtimeSourceGroups = groupRuntimeFieldSources(runtimeSources);
+  const runtimeSourceGroups = offeredRuntimeFieldGroups(config.runtimeSources, runtimeFields, "columnSelectable");
   const shown = visibleFields.filter((name) => availableFields.some((field) => field.name === name));
   const propsLayout: Layout<TDocument> = {
     shown,
@@ -98,12 +126,10 @@ export function TableListColumns<TDocument>({
       const source = sectionOf(layout, active.id);
       const target = dropSection(layout, over);
       if (!source || !target || source === target) return current;
-      const field = active.id as FieldName<TDocument>;
-      const sourceFields = layout[source].filter((candidate) => candidate !== field);
-      const targetFields = [...layout[target]];
-      const targetIndex = targetFields.indexOf(over.id as FieldName<TDocument>);
-      targetFields.splice(targetIndex < 0 ? targetFields.length : targetIndex, 0, field);
-      return { ...current, layout: { ...layout, [source]: sourceFields, [target]: targetFields } };
+      return {
+        ...current,
+        layout: moveAcrossSections(layout, active.id as FieldName<TDocument>, source, target, over.id),
+      };
     });
   };
 
@@ -113,17 +139,10 @@ export function TableListColumns<TDocument>({
     const section = sectionOf(draft, event.active.id);
     const target = dropSection(draft, event.over);
     if (!event.over || !section || !target) return;
-    let next = draft;
-    if (section === target && event.active.id !== event.over.id) {
-      const sourceIndex = draft[section].indexOf(event.active.id as FieldName<TDocument>);
-      const targetIndex = draft[section].indexOf(event.over.id as FieldName<TDocument>);
-      if (sourceIndex >= 0 && targetIndex >= 0) {
-        next = {
-          ...draft,
-          [section]: arrayMove([...draft[section]], sourceIndex, targetIndex),
-        };
-      }
-    }
+    const next =
+      section === target && event.active.id !== event.over.id
+        ? reorderWithinSection(draft, section, event.active.id, event.over.id)
+        : draft;
     if (!isEqual(next.shown, drag.origin.shown)) onChange(next.shown);
   };
 
@@ -145,21 +164,12 @@ export function TableListColumns<TDocument>({
   };
 
   return (
-    <section
-      id={controlPanelId}
-      aria-labelledby={`${controlPanelId}-title`}
-      className="rounded-sm border bg-popover p-4"
+    <ControlPanelSection
+      controlPanelId={controlPanelId}
+      title={t("tableList.columns.title")}
+      closeLabel={t("tableList.actions.closeColumns")}
+      onClose={onClose}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 id={`${controlPanelId}-title`} className="font-heading text-sm font-medium">
-            {t("tableList.columns.title")}
-          </h2>
-        </div>
-        <Button aria-label={t("tableList.actions.closeColumns")} size="icon-xs" variant="ghost" onClick={onClose}>
-          <XIcon aria-hidden="true" />
-        </Button>
-      </div>
       <DndContext
         accessibility={dragAccessibility}
         sensors={sensors}
@@ -206,16 +216,12 @@ export function TableListColumns<TDocument>({
             <CustomFieldPicker
               key={group.key}
               sources={group.sources}
-              ariaLabel={
-                group.via === undefined
-                  ? t("tableList.filters.customField.option")
-                  : t("tableList.filters.customField.optionVia", { via: text(group.via.label) })
-              }
+              ariaLabel={customFieldOptionLabel(group.via, t, text)}
               known={runtimeFields.definitions}
               isDefinitionAvailable={(definition) => definition.columnSelectable}
               onSelect={(namespace, definition) => {
                 runtimeFields.onSelect(namespace, definition);
-                const selector = `${namespace}.${definition.id}` as FieldName<TDocument>;
+                const selector = runtimeFieldSelector(namespace, definition.id) as FieldName<TDocument>;
                 if (!draft.shown.includes(selector)) onChange([...draft.shown, selector]);
               }}
             />
@@ -227,6 +233,6 @@ export function TableListColumns<TDocument>({
           {t("tableList.actions.resetColumns")}
         </Button>
       </div>
-    </section>
+    </ControlPanelSection>
   );
 }

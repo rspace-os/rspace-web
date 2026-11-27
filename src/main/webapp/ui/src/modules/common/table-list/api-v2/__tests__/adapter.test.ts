@@ -3,6 +3,7 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import type { InstrumentsRead } from "@/modules/common/api/v2/generated/models/instrumentsRead";
+import { metadataFixture } from "../../__tests__/fixtures/apiV2Metadata";
 import { runtimeDocumentSchema as documentSchema } from "../../__tests__/fixtures/schema";
 import { hazardClassDefinition } from "../../__tests__/fixtures/tableList";
 import type { CollectionQueryState } from "../../types";
@@ -34,19 +35,12 @@ const config = {
   ],
 };
 
-const metadata: ApiV2CollectionMetadata<Instrument> = {
+const metadata = metadataFixture<Instrument>({
   resourceName: "instruments",
   fields: ["id", "name"],
   sorting: { fields: ["name"], default: [{ field: "name", direction: "asc" }], maximumFields: 5 },
   filtering: {
     selectors: { name: { operators: ["==", "=contains="], wildcards: true, fieldType: "text" } },
-    limits: {
-      maximumComparisons: 50,
-      maximumLikeComparisons: 10,
-      maximumNesting: 10,
-      maximumArguments: 100,
-      maximumWhereLength: 4096,
-    },
   },
   runtimeFields: [
     {
@@ -63,8 +57,7 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
       via: "",
     },
   ],
-  pagination: { defaultLimit: 20, maximumLimit: 100 },
-};
+});
 
 const temperature: RuntimeFieldDefinition = {
   ...hazardClassDefinition,
@@ -413,22 +406,7 @@ it("validates sparse wire fields before mapping them to domain rows", () => {
       mapped++;
       return { id: document.id, title: document.title ?? "Unavailable" };
     },
-    metadata: {
-      resourceName: "mapped",
-      fields: ["id", "title", "owner"],
-      sorting: { fields: [], default: [], maximumFields: 5 },
-      filtering: {
-        selectors: {},
-        limits: {
-          maximumComparisons: 50,
-          maximumLikeComparisons: 10,
-          maximumNesting: 10,
-          maximumArguments: 100,
-          maximumWhereLength: 4096,
-        },
-      },
-      pagination: { defaultLimit: 20, maximumLimit: 100 },
-    },
+    metadata: metadataFixture({ resourceName: "mapped", fields: ["id", "title", "owner"] }),
   });
   expect(adapter.parseResponse({ docs: [{ id: "1", title: "One" }] }, ["id", "title"]).rows).toEqual([
     { id: "1", title: "One" },
@@ -468,22 +446,7 @@ it("re-parses a decoded date-time and an expanded relationship with the generate
       mapped.push(document);
       return document;
     },
-    metadata: {
-      resourceName: "mapped",
-      fields: ["id", "start", "owner"],
-      sorting: { fields: [], default: [], maximumFields: 5 },
-      filtering: {
-        selectors: {},
-        limits: {
-          maximumComparisons: 50,
-          maximumLikeComparisons: 10,
-          maximumNesting: 10,
-          maximumArguments: 100,
-          maximumWhereLength: 4096,
-        },
-      },
-      pagination: { defaultLimit: 20, maximumLimit: 100 },
-    },
+    metadata: metadataFixture({ resourceName: "mapped", fields: ["id", "start", "owner"] }),
   });
   const start = Temporal.Instant.from("2026-01-01T00:00:00.123456789Z");
   const expected = { id: "1", start, owner: { id: 7, name: "Ada" } };

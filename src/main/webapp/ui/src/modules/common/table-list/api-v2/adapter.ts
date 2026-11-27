@@ -59,6 +59,25 @@ function readSchemaFor(resourceName: string): v.ObjectSchema<v.ObjectEntries, un
   return schema;
 }
 
+/** Each declared field is a published response field the document schema carries, or a filter-only selector. */
+function validateDeclaredFields<TDocument>(
+  config: CollectionConfig<TDocument>,
+  metadata: ApiV2CollectionMetadata<TDocument>,
+  documentSchema: v.ObjectSchema<v.ObjectEntries, undefined>,
+): void {
+  const allowedFields = new Set(metadata.fields);
+  for (const field of config.fields) {
+    // Filter-only members are published selectors without a response projection.
+    if (!allowedFields.has(field.name) && metadata.filtering.selectors[field.name] && field.form === false) continue;
+    if (!allowedFields.has(field.name)) throw new Error(`Collection config references unknown API field ${field.name}`);
+    // The response projection picks these names out of the schema, so a name that the schema does
+    // not carry must fail here rather than inside the parser.
+    if (!(field.name in documentSchema.entries)) {
+      throw new Error(`Collection config references field ${field.name}, which the document schema does not declare`);
+    }
+  }
+}
+
 function validateSearchSelectors<TDocument>(
   config: CollectionConfig<TDocument>,
   metadata: ApiV2CollectionMetadata<TDocument>,
@@ -92,8 +111,7 @@ export function createApiV2CollectionAdapter<
 >(
   definition: ApiV2CollectionDefinition<TDocument, TSchema, TEntry>,
 ): ApiV2CollectionAdapter<TDocument, ApiV2FilterResourceOf<TEntry>> {
-  const { config, metadata, runtimeFields, documentSchema, mapDocument } = definition;
-  return buildApiV2CollectionAdapter({ config, metadata, runtimeFields, documentSchema, mapDocument });
+  return buildApiV2CollectionAdapter(definition);
 }
 
 /** Builds an adapter from a definition whose mapping arm its caller already type-checked. */
@@ -106,17 +124,7 @@ export function buildApiV2CollectionAdapter<TDocument, R extends ApiV2FilterReso
 }: ApiV2ResolvedCollectionDefinition<TDocument>): ApiV2CollectionAdapter<TDocument, R> {
   const documentSchema: v.ObjectSchema<v.ObjectEntries, undefined> =
     suppliedSchema ?? readSchemaFor(metadata.resourceName);
-  const allowedFields = new Set(metadata.fields);
-  for (const field of sourceConfig.fields) {
-    // Filter-only members are published selectors without a response projection.
-    if (!allowedFields.has(field.name) && metadata.filtering.selectors[field.name] && field.form === false) continue;
-    if (!allowedFields.has(field.name)) throw new Error(`Collection config references unknown API field ${field.name}`);
-    // The response projection picks these names out of the schema, so a name that the schema does
-    // not carry must fail here rather than inside the parser.
-    if (!(field.name in documentSchema.entries)) {
-      throw new Error(`Collection config references field ${field.name}, which the document schema does not declare`);
-    }
-  }
+  validateDeclaredFields(sourceConfig, metadata, documentSchema);
   validateSearchSelectors(sourceConfig, metadata);
   const runtimeNamespaces = metadata.runtimeFields ?? [];
   const projectableFields = new Set(Object.keys(documentSchema.entries) as FieldName<TDocument>[]);
@@ -127,13 +135,6 @@ export function buildApiV2CollectionAdapter<TDocument, R extends ApiV2FilterReso
     projectableFields,
   });
   const fields = filterFields.fields;
-  // A caller's own field may carry the derived markers; only derived fields count as runtime selectors or need depth.
-  const declared = new Set(sourceConfig.fields.map((field) => field.name));
-  const derivedFields = fields.filter((field) => !declared.has(field.name));
-  const runtimeSelectors = new Set(
-    derivedFields.filter((field) => field.origin?.kind === "runtimeField").map((field) => field.name),
-  );
-  const relationshipFields = new Set<FieldName<TDocument>>();
   for (const field of fields) {
     const source = field.list === false ? undefined : field.list?.valueSource;
     if (source?.kind !== "relationshipTarget") continue;
@@ -144,7 +145,6 @@ export function buildApiV2CollectionAdapter<TDocument, R extends ApiV2FilterReso
         `Target field ${String(field.name)} is not declared on the expanded value of relationship \`${String(source.owner)}\``,
       );
     }
-    if (!declared.has(field.name)) relationshipFields.add(field.name);
   }
   const configInput: CollectionConfig<TDocument> = {
     ...sourceConfig,
@@ -160,7 +160,7 @@ export function buildApiV2CollectionAdapter<TDocument, R extends ApiV2FilterReso
   const isRuntimeSelector = (name: string) =>
     runtimeNamespaces.some((namespace) => isRuntimeFieldInNamespace(name, namespace.namespace));
   const runtimeProjection = (state: CollectionQueryState<TDocument>) =>
-    state.visibleFields.filter((name) => runtimeSelectors.has(name));
+    state.visibleFields.filter((name) => filterFields.runtimeSelectorNames.has(name));
 
   return {
     config,
@@ -174,7 +174,8 @@ export function buildApiV2CollectionAdapter<TDocument, R extends ApiV2FilterReso
         .map((namespace) => namespace.responseField as FieldName<TDocument>);
       return namespaces.length === 0 ? selected : [...selected, ...namespaces];
     },
-    requiredDepth: (state) => (state.visibleFields.some((field) => relationshipFields.has(field)) ? 1 : 0),
+    requiredDepth: (state) =>
+      state.visibleFields.some((field) => filterFields.expandedTargetNames.has(field)) ? 1 : 0,
     toRequestParams: (state) =>
       collectionQueryParams<TDocument, R>(state, config, metadata, filterFields.virtualFields, projectableFields, {
         projection: runtimeProjection(state),

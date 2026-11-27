@@ -15,7 +15,7 @@ import type { FilterOperatorToken } from "@/modules/common/collection/filterOper
 import { filterOperatorsByToken as semanticOperators } from "@/modules/common/collection/filterOperators";
 import type { RelationshipFilterPicker } from "@/modules/common/collection/relationshipFilterPicker";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import type { ApiV2CollectionMetadata, ApiV2PrimitiveFieldType } from "./metadata";
+import type { ApiV2CollectionMetadata, ApiV2PrimitiveFieldType, ApiV2SelectorContract } from "./metadata";
 import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
 export type ApiV2FilterFieldsDefinition<TDocument> = {
@@ -41,17 +41,16 @@ export type ApiV2FilterFields<TDocument> = {
   /** The published selectors merged with the runtime-field selectors, for serialising a filter. */
   selectors: ApiV2CollectionMetadata<TDocument>["filtering"]["selectors"];
   runtimeSources: readonly RuntimeNamespaceSummary[];
+  /** The derived runtime-field selectors, as opposed to a caller's own field that carries the same markers. */
+  runtimeSelectorNames: ReadonlySet<FieldName<TDocument>>;
+  /** The derived relationship-target columns, whose values need the owner expanded (request depth 1). */
+  expandedTargetNames: ReadonlySet<FieldName<TDocument>>;
 };
 
 function capabilitiesForSelector<TDocument>(
   field: FieldConfig<TDocument>,
   metadata: ApiV2CollectionMetadata<TDocument>,
-  selector:
-    | {
-        operators: readonly FilterOperatorToken[];
-        wildcards: boolean;
-      }
-    | undefined,
+  selector: ApiV2SelectorContract | undefined,
 ): NonNullable<FieldConfig<TDocument>["capabilities"]> {
   return {
     sortable: metadata.sorting.fields.includes(field.name),
@@ -166,9 +165,17 @@ function primitiveField<TDocument>(
   }
 }
 
+/** The label of the relationship a derived field is reached through: its configured label, else the catalog's. */
+function relationshipVia<TDocument>(
+  relationships: ReturnType<typeof relationshipIndex<TDocument>>,
+  name: string,
+): RelationshipLabel {
+  return relationships.get(name)?.via ?? { name, label: ownerLabel(name) };
+}
+
 function runtimeVia<TDocument>(relationships: ReturnType<typeof relationshipIndex<TDocument>>, via: string) {
   if (via === "") return undefined;
-  return relationships.get(via)?.via ?? { name: via, label: ownerLabel(via) };
+  return relationshipVia(relationships, via);
 }
 
 function identityField<TDocument>(
@@ -204,7 +211,7 @@ function targetField<TDocument>(
 ): FieldConfig<TDocument> {
   const relationship = relationships.get(ownerName);
   const owner = (relationship?.field.name ?? ownerName) as FieldName<TDocument>;
-  const via = relationship?.via ?? { name: ownerName, label: ownerLabel(ownerName) };
+  const via = relationshipVia(relationships, ownerName);
   const common = {
     name: selector as FieldName<TDocument>,
     derivedLabel: targetFieldLabel(targetField),
@@ -392,6 +399,8 @@ export function createApiV2FilterFields<TDocument>({
       ),
     },
     runtimeSources,
+    runtimeSelectorNames: new Set(runtimeDerivedFields.map(({ field }) => field.name)),
+    expandedTargetNames: new Set(targetFields.filter((field) => field.list !== false).map((field) => field.name)),
   };
 }
 

@@ -5,11 +5,11 @@ import {
   getListInstrumentsQueryKey,
   getListInstrumentsUrl,
 } from "@/modules/common/api/v2/generated/instruments/instruments";
+import { metadataFixture } from "../../__tests__/fixtures/apiV2Metadata";
 import { expandedTargetDocumentSchema, runtimeDocumentSchema, testRecordSchema } from "../../__tests__/fixtures/schema";
 import { hazardClassDefinition, config as recordConfig, type TestRecord } from "../../__tests__/fixtures/tableList";
 import type { CollectionQueryState } from "../../types";
 import { createApiV2CollectionAdapter } from "../adapter";
-import type { ApiV2CollectionMetadata } from "../metadata";
 import { apiV2CollectionRequestParams } from "../requestParams";
 import type { ApiV2DocumentSchema } from "../schema";
 
@@ -19,19 +19,12 @@ type Instrument = {
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
 
-const metadata: ApiV2CollectionMetadata<Instrument> = {
+const metadata = metadataFixture<Instrument>({
   resourceName: "instruments",
   fields: ["id", "name"],
   sorting: { fields: ["name"], default: [{ field: "name", direction: "asc" }], maximumFields: 5 },
   filtering: {
     selectors: { name: { operators: ["==", "=contains="], wildcards: true, fieldType: "text" } },
-    limits: {
-      maximumComparisons: 50,
-      maximumLikeComparisons: 10,
-      maximumNesting: 10,
-      maximumArguments: 100,
-      maximumWhereLength: 4096,
-    },
   },
   runtimeFields: [
     {
@@ -48,8 +41,7 @@ const metadata: ApiV2CollectionMetadata<Instrument> = {
       via: "",
     },
   ],
-  pagination: { defaultLimit: 20, maximumLimit: 100 },
-};
+});
 
 const config = {
   slug: "instruments",
@@ -77,7 +69,7 @@ const recordedHashKey =
 const recordAdapter = createApiV2CollectionAdapter({
   config: recordConfig,
   documentSchema: testRecordSchema,
-  metadata: {
+  metadata: metadataFixture<TestRecord>({
     resourceName: "records",
     fields: ["id", "title", "owner", "score", "enabled", "modifiedAt", "capability"],
     sorting: { fields: ["title", "modifiedAt"], default: [], maximumFields: 5 },
@@ -86,16 +78,9 @@ const recordAdapter = createApiV2CollectionAdapter({
         title: { operators: ["=contains="], wildcards: false },
         owner: { operators: ["=contains="], wildcards: false },
       },
-      limits: {
-        maximumComparisons: 50,
-        maximumLikeComparisons: 10,
-        maximumNesting: 10,
-        maximumArguments: 100,
-        maximumWhereLength: 4096,
-      },
     },
     pagination: { defaultLimit: 2, maximumLimit: 100 },
-  },
+  }),
 });
 
 describe("apiV2CollectionRequestParams", () => {
@@ -123,24 +108,15 @@ describe("apiV2CollectionRequestParams", () => {
         ],
       },
       documentSchema: expandedTargetDocumentSchema,
-      metadata: {
+      metadata: metadataFixture({
         resourceName: "bookings",
         fields: ["id", "target"],
-        sorting: { fields: [], default: [], maximumFields: 5 },
         filtering: {
           selectors: {
             "target.name": { operators: ["=contains="], wildcards: false, fieldType: "text" },
           },
-          limits: {
-            maximumComparisons: 50,
-            maximumLikeComparisons: 10,
-            maximumNesting: 10,
-            maximumArguments: 100,
-            maximumWhereLength: 4096,
-          },
         },
-        pagination: { defaultLimit: 20, maximumLimit: 100 },
-      },
+      }),
     });
     const params = apiV2CollectionRequestParams(
       bookingAdapter,

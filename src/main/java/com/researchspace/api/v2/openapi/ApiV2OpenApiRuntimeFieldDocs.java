@@ -41,17 +41,8 @@ final class ApiV2OpenApiRuntimeFieldDocs {
     if (namespaces.isEmpty()) {
       return;
     }
-    Map<String, Object> responses = new LinkedHashMap<>();
-    responses.put(
-        "200",
-        ordered(
-            "description",
-            text.get(Key.RUNTIME_FIELDS_SUCCESS),
-            "headers",
-            Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
-            "content",
-            content(APPLICATION_JSON_VALUE, ref("ApiV2RuntimeFieldCatalog"))));
-    putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
+    Map<String, Object> responses =
+        cachedJsonResponses(Key.RUNTIME_FIELDS_SUCCESS, "ApiV2RuntimeFieldCatalog");
     paths.put(
         "/api/v2/" + resource.resourceName() + "/fields/{namespace}",
         Map.of(
@@ -97,20 +88,7 @@ final class ApiV2OpenApiRuntimeFieldDocs {
                         false,
                         Map.of("type", "integer", "minimum", 1, "default", 1),
                         text.get(Key.RUNTIME_FIELDS_PAGE)),
-                    parameter(
-                        "limit",
-                        "query",
-                        false,
-                        Map.of(
-                            "type",
-                            "integer",
-                            "minimum",
-                            1,
-                            "maximum",
-                            RuntimeFieldCatalogQuery.MAX_LIMIT,
-                            "default",
-                            RuntimeFieldCatalogQuery.DEFAULT_LIMIT),
-                        text.get(Key.RUNTIME_FIELDS_LIMIT))))));
+                    limitParameter(Key.RUNTIME_FIELDS_LIMIT)))));
   }
 
   /**
@@ -123,17 +101,8 @@ final class ApiV2OpenApiRuntimeFieldDocs {
     if (namespaces.isEmpty()) {
       return;
     }
-    Map<String, Object> responses = new LinkedHashMap<>();
-    responses.put(
-        "200",
-        ordered(
-            "description",
-            text.get(Key.RUNTIME_FIELD_SEARCH_SUCCESS),
-            "headers",
-            Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
-            "content",
-            content(APPLICATION_JSON_VALUE, ref("ApiV2RuntimeFieldSearch"))));
-    putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
+    Map<String, Object> responses =
+        cachedJsonResponses(Key.RUNTIME_FIELD_SEARCH_SUCCESS, "ApiV2RuntimeFieldSearch");
     Map<String, Object> namespace =
         parameter(
             "namespace",
@@ -181,20 +150,44 @@ final class ApiV2OpenApiRuntimeFieldDocs {
                         true,
                         ordered("type", "string", "minLength", 1),
                         text.get(Key.RUNTIME_FIELD_SEARCH_TERM)),
-                    parameter(
-                        "limit",
-                        "query",
-                        false,
-                        Map.of(
-                            "type",
-                            "integer",
-                            "minimum",
-                            1,
-                            "maximum",
-                            RuntimeFieldCatalogQuery.MAX_LIMIT,
-                            "default",
-                            RuntimeFieldCatalogQuery.DEFAULT_LIMIT),
-                        text.get(Key.RUNTIME_FIELD_SEARCH_LIMIT))))));
+                    limitParameter(Key.RUNTIME_FIELD_SEARCH_LIMIT)))));
+  }
+
+  /**
+   * The responses of a cacheable catalog read: a JSON success with a {@code Cache-Control} header,
+   * then the standard errors.
+   */
+  private Map<String, Object> cachedJsonResponses(Key description, String schemaRef) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            text.get(description),
+            "headers",
+            Map.of("Cache-Control", Map.of("schema", Map.of("type", "string"))),
+            "content",
+            content(APPLICATION_JSON_VALUE, ref(schemaRef))));
+    putStandardResponses(responses, "400", "401", "403", "404", "406", "429", "500");
+    return responses;
+  }
+
+  /** The optional page size of a catalog read, bounded by the catalog query limits. */
+  private Map<String, Object> limitParameter(Key description) {
+    return parameter(
+        "limit",
+        "query",
+        false,
+        Map.of(
+            "type",
+            "integer",
+            "minimum",
+            1,
+            "maximum",
+            RuntimeFieldCatalogQuery.MAX_LIMIT,
+            "default",
+            RuntimeFieldCatalogQuery.DEFAULT_LIMIT),
+        text.get(description));
   }
 
   void applyRuntimeProjectionSchemas(

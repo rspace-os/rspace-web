@@ -2,6 +2,7 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import type { SearchSelector } from "@/modules/common/collection/config";
+import { metadataFixture } from "../../__tests__/fixtures/apiV2Metadata";
 import {
   bookingRelationshipsSchema as documentSchema,
   ownerlessDocumentSchema as ownerlessSchema,
@@ -48,10 +49,9 @@ const config = {
   ],
 };
 
-const metadata: ApiV2CollectionMetadata<Booking> = {
+const metadata = metadataFixture<Booking>({
   resourceName: "bookingConfigurations",
   fields: ["id", "target", "room"],
-  sorting: { fields: [], default: [], maximumFields: 5 },
   filtering: {
     selectors: {
       "target.name": {
@@ -72,16 +72,9 @@ const metadata: ApiV2CollectionMetadata<Booking> = {
       "target.relationTo": { operators: ["=="], wildcards: false },
       "unrelated.thing": { operators: ["=contains="], wildcards: false },
     },
-    limits: {
-      maximumComparisons: 50,
-      maximumLikeComparisons: 10,
-      maximumNesting: 10,
-      maximumArguments: 100,
-      maximumWhereLength: 4096,
-    },
   },
   pagination: { defaultLimit: 10, maximumLimit: 100 },
-};
+});
 
 function state(overrides: Partial<CollectionQueryState<Booking>> = {}): CollectionQueryState<Booking> {
   return {

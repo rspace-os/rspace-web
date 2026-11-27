@@ -1,4 +1,5 @@
 import { uniqBy } from "es-toolkit";
+import type { TFunction } from "i18next";
 import { type FocusEventHandler, type Ref, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RelationshipOptionAvailabilitySource } from "@/modules/common/relationship-picker/types";
@@ -33,6 +34,45 @@ function splitValue(value: string, sources: readonly RelationshipSource[]): read
 
 function sameOption(option: RelationshipOptionWithSource, other: RelationshipOptionWithSource) {
   return option.sourceId === other.sourceId && option.value === other.value;
+}
+
+/**
+ * How optional availability shows: which options are disabled, the note under an option, and the actions for
+ * unavailable options above the list.
+ */
+function availabilityView(
+  availability: ReturnType<typeof useRelationshipOptionAvailability>,
+  availabilitySource: RelationshipOptionAvailabilitySource | undefined,
+  t: TFunction<"common">,
+) {
+  const unavailableStatus = (option: RelationshipOptionWithSource) => availability.unavailable[String(option.value)];
+  const actions = (options: readonly RelationshipOptionWithSource[]) => {
+    if (availabilitySource?.renderAction === undefined) return null;
+    const rendered = options.flatMap((option) => {
+      const status = unavailableStatus(option);
+      return status === undefined
+        ? []
+        : [
+            <div key={`${option.sourceId}:${option.value}`} className="text-xs">
+              {availabilitySource.renderAction?.(option, status)}
+            </div>,
+          ];
+    });
+    return rendered.length === 0 ? null : <div className="mb-2 space-y-1">{rendered}</div>;
+  };
+  return {
+    isDisabled: (option: RelationshipOptionWithSource) =>
+      availabilitySource !== undefined &&
+      (availability.checking || availability.failed || unavailableStatus(option) !== undefined),
+    details: (option: RelationshipOptionWithSource) => {
+      if (availability.checking) return t("relationshipPicker.availabilityChecking");
+      if (availability.failed) return t("relationshipPicker.availabilityFailed");
+      const status = unavailableStatus(option);
+      if (status === undefined) return null;
+      return availabilitySource?.renderUnavailable(option, status);
+    },
+    actions,
+  };
 }
 
 /**
@@ -159,19 +199,10 @@ export function RelationshipPicker({
 
     setTerm(isClearAction ? "" : nextTerm);
   };
-  const unavailableStatus = (option: RelationshipOptionWithSource) => availability.unavailable[String(option.value)];
-  const optionIsDisabled = (option: RelationshipOptionWithSource) =>
-    availabilitySource !== undefined &&
-    (availability.checking || availability.failed || unavailableStatus(option) !== undefined);
-  const availabilityDetails = (option: RelationshipOptionWithSource) => {
-    if (availability.checking) return t("relationshipPicker.availabilityChecking");
-    if (availability.failed) return t("relationshipPicker.availabilityFailed");
-    const status = unavailableStatus(option);
-    if (status === undefined) return null;
-    return availabilitySource?.renderUnavailable(option, status);
-  };
+  const availabilityPresentation = availabilityView(availability, availabilitySource, t);
+  const optionIsDisabled = availabilityPresentation.isDisabled;
   const optionContent = (option: RelationshipOptionWithSource) => {
-    const details = availabilityDetails(option);
+    const details = availabilityPresentation.details(option);
     return (
       <div className="min-w-0 flex-1">
         {option.content ?? option.label}
@@ -202,21 +233,7 @@ export function RelationshipPicker({
       <ComboboxEmpty>{optionsAreLoading ? null : emptyMessage}</ComboboxEmpty>
     </>
   );
-  const availabilityActions =
-    availabilitySource?.renderAction === undefined
-      ? []
-      : options.flatMap((option) => {
-          const status = unavailableStatus(option);
-          return status === undefined
-            ? []
-            : [
-                <div key={`${option.sourceId}:${option.value}`} className="text-xs">
-                  {availabilitySource.renderAction?.(option, status)}
-                </div>,
-              ];
-        });
-  const actionRegion =
-    availabilityActions.length === 0 ? null : <div className="mb-2 space-y-1">{availabilityActions}</div>;
+  const actionRegion = availabilityPresentation.actions(options);
 
   const common = {
     id,
@@ -233,18 +250,22 @@ export function RelationshipPicker({
     onBlur,
   };
 
+  const comboboxProps = {
+    items,
+    filter: null,
+    disabled,
+    onInputValueChange: handleInputValueChange,
+    isItemEqualToValue: sameOption,
+    itemToStringLabel: (option: RelationshipOptionWithSource) => option.label,
+  };
+
   if (!multiple) {
     return (
       <>
         {actionRegion}
         <Combobox<RelationshipOptionWithSource>
-          items={items}
-          filter={null}
+          {...comboboxProps}
           value={selected[0] ?? null}
-          disabled={disabled}
-          onInputValueChange={handleInputValueChange}
-          isItemEqualToValue={sameOption}
-          itemToStringLabel={(option: RelationshipOptionWithSource) => option.label}
           onValueChange={(option: RelationshipOptionWithSource | null) => {
             if (option === null) {
               onChange("");
@@ -273,14 +294,9 @@ export function RelationshipPicker({
     <>
       {actionRegion}
       <Combobox<RelationshipOptionWithSource, true>
-        items={items}
-        filter={null}
+        {...comboboxProps}
         multiple
         value={selected}
-        disabled={disabled}
-        onInputValueChange={handleInputValueChange}
-        isItemEqualToValue={sameOption}
-        itemToStringLabel={(option: RelationshipOptionWithSource) => option.label}
         onValueChange={(next: RelationshipOptionWithSource[]) => {
           if (!next.some(optionIsDisabled)) {
             onChange(next.map((option) => String(option.value)).join(","));

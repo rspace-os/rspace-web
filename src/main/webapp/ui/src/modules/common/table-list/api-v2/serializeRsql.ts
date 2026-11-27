@@ -2,11 +2,9 @@ import { apiV2WhereOperators, type RsqlOperand } from "@/modules/common/api/v2/a
 import type { FilterOperatorToken } from "@/modules/common/collection/filterOperators";
 import { normalizeRsqlList, normalizeRsqlScalar, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
-import type { ApiV2FilterLimits } from "./metadata";
+import type { ApiV2FilterLimits, ApiV2SelectorContract } from "./metadata";
 
-type SelectorContract = Readonly<
-  Record<string, { operators: readonly FilterOperatorToken[]; wildcards: boolean } | undefined>
->;
+type SelectorContract = Readonly<Record<string, ApiV2SelectorContract | undefined>>;
 
 type Counts = { comparisons: number; likeComparisons: number; arguments: number };
 

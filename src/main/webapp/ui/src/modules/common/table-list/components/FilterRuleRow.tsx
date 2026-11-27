@@ -4,12 +4,14 @@ import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig, ResolvedFieldConfig, SearchSelector } from "@/modules/common/collection/config";
 import type { FilterOperator } from "@/modules/common/collection/filterOperators";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
+import { runtimeFieldSelector } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Button } from "@/modules/common/ui/button";
 import type { TableListRuntimeFields } from "../types";
 import { type DraftRule, defaultOperator, valueForOperator } from "../utils/filterDrafts";
 import { CustomFieldPicker, type RuntimeFieldSourceGroup, runtimeFieldGroupKey } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
 import { FilterValueInput } from "./FilterValueInput";
+import { customFieldOptionGroup, customFieldOptionValue } from "./filterFieldOptions";
 import { SortableControlRow } from "./SortableControlRow";
 
 const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${FilterOperator}`> = {
@@ -25,18 +27,6 @@ const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${Filter
   matches: "tableList.filters.operators.matches",
   exists: "tableList.filters.operators.exists",
 };
-
-// Selector names match [A-Za-z][A-Za-z0-9_-]* (dotted for related fields), so a value with ":" is never a field.
-const CUSTOM_FIELD_OPTION_PREFIX = "customField:";
-
-/** The field select's value for a runtime-field group's "Custom field…" option. */
-export function customFieldOptionValue(groupKey: string): string {
-  return `${CUSTOM_FIELD_OPTION_PREFIX}${groupKey}`;
-}
-
-function customFieldOptionGroup(value: string): string | null {
-  return value.startsWith(CUSTOM_FIELD_OPTION_PREFIX) ? value.slice(CUSTOM_FIELD_OPTION_PREFIX.length) : null;
-}
 
 export function FilterRuleRow<TDocument>({
   rule,
@@ -125,7 +115,7 @@ export function FilterRuleRow<TDocument>({
       known={runtimeFields.definitions}
       onSelect={(namespace, definition) => {
         runtimeFields.onSelect(namespace, definition);
-        const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
+        const selector = runtimeFieldSelector(namespace, definition.id) as SearchSelector<TDocument>;
         onChange({ field: selector, operator: "equals", value: "", pickingGroup: undefined });
       }}
     />
