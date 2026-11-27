@@ -21,6 +21,7 @@ export const ApiV2RuntimeFieldSearchSchema = native.ApiV2RuntimeFieldSearch;
 export const ApiV2UiTokenSchema = native.ApiV2UiToken;
 export const AuditActionSchema = native.AuditAction;
 export const BookingAdminSettingsDocumentSchema = native.BookingAdminSettingsDocument;
+export const BookingCalendarEventsPageSchema = native.BookingCalendarEventsPage;
 export const BookingCatalogueCapabilitySchema = native.BookingCatalogueCapability;
 export const BookingCatalogueFacetsSchema = native.BookingCatalogueFacets;
 export const BookingCatalogueItemDocumentSchema = native.BookingCatalogueItemDocument;
@@ -160,6 +161,10 @@ export type SchemaModelTypeChecks = {
   BookingAdminSettingsDocument: [
     Assert<Extends<v.InferOutput<typeof BookingAdminSettingsDocumentSchema>, Models.BookingAdminSettingsDocument>>,
     Assert<Extends<Models.BookingAdminSettingsDocument, v.InferOutput<typeof BookingAdminSettingsDocumentSchema>>>,
+  ];
+  BookingCalendarEventsPage: [
+    Assert<Extends<v.InferOutput<typeof BookingCalendarEventsPageSchema>, Models.BookingCalendarEventsPage>>,
+    Assert<Extends<Models.BookingCalendarEventsPage, v.InferOutput<typeof BookingCalendarEventsPageSchema>>>,
   ];
   BookingCatalogueCapability: [
     Assert<Extends<v.InferOutput<typeof BookingCatalogueCapabilitySchema>, Models.BookingCatalogueCapability>>,

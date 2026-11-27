@@ -35,6 +35,10 @@ import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
 
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: () => false,
+}));
+
 vi.mock("../Sample/Content/SubsampleListing", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -76,6 +80,9 @@ vi.mock("../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       savedSearches: [{ name: "Dummy saved search", query: "foo" }],
+    },
+    peopleStore: {
+      currentUser: null,
     },
     uiStore: {
       addAlert: () => {},

@@ -22,6 +22,10 @@ import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSectio
 import InstrumentForm from "../Instrument/Form";
 import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: () => false,
+}));
+
 vi.mock("../Container/Content/Content", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -56,6 +60,9 @@ vi.mock("../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       savedSearches: [{ name: "Dummy saved search", query: "foo" }],
+    },
+    peopleStore: {
+      currentUser: null,
     },
     uiStore: {
       addAlert: () => {},

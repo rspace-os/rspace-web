@@ -787,6 +787,43 @@ export default interface Resources {
         }
       }
     },
+    "availabilityBar": {
+      "current": {
+        "available": "Available",
+        "availableUntil": "Available until {time}",
+        "notAvailable": "Not available",
+        "notAvailableFrom": "Not available · Available from {time}"
+      },
+      "emptyWindow": "This display window contains no time on this date because the clocks change.",
+      "fullAvailable": "Available for the full period.",
+      "label": "{itemName} availability",
+      "now": "Current time: {time}.",
+      "nowAfterWindow": "Current time {time} is after the displayed window.",
+      "nowBeforeWindow": "Current time {time} is before the displayed window.",
+      "ranges": {
+        "available": "Available: {ranges}.",
+        "blockout": "Blocked out: {ranges}.",
+        "booking": "Booked: {ranges}.",
+        "gap": "Gap before or after a booking: {ranges}.",
+        "overlap": "Booked and blocked out: {ranges}."
+      },
+      "slice": {
+        "count": "{count, plural, one {# event} other {# events}}",
+        "details": "Details",
+        "sources": {
+          "booking": "Booking",
+          "openingHours": "Outside opening hours"
+        },
+        "states": {
+          "blockout": "Blocked out",
+          "booking": "Booked",
+          "overlap": "Booked and blocked out"
+        },
+        "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
+      },
+      "summary": "Availability period: {period}. {states}",
+      "timezone": "Time zone: {timezone}"
+    },
     "bookableItemDetails": {
       "about": "About this item",
       "actions": {
@@ -1052,7 +1089,138 @@ export default interface Resources {
         "label": "Instrument"
       }
     },
+    "bookings": {
+      "details": {
+        "noneProvided": "None provided"
+      },
+      "form": {
+        "end": "End",
+        "start": "Start",
+        "time": "Time",
+        "typeBlockout": "Maintenance blockout",
+        "typeBooking": "Booking"
+      },
+      "maintenanceLabel": "Maintenance blockout"
+    },
+    "calendar": {
+      "actions": {
+        "addForItem": "Add booking for {item}",
+        "edit": "Edit",
+        "label": "Booking actions",
+        "viewDetails": "View details"
+      },
+      "agenda": "Booking agenda",
+      "availability": "Availability",
+      "availabilityLoading": "Loading availability",
+      "availabilityUnavailable": "Availability unavailable",
+      "busy": "Busy",
+      "date": "Date",
+      "dateControls": "Calendar date controls",
+      "datesInRange": "Dates in range",
+      "description": "Browse booking events by day, week, or month.",
+      "displayControls": "Calendar display controls",
+      "event": "Booking event",
+      "feed": {
+        "bookedBy": "Booked by: {0}",
+        "createdBy": "Created by: {0}",
+        "itemSummary": "{0} — {1}",
+        "maintenance": "Maintenance blockout",
+        "myBookings": "My RSpace bookings",
+        "purpose": "Purpose: {0}"
+      },
+      "fields": {
+        "bookedBy": "Booked by",
+        "createdAt": "Created",
+        "editable": "Editable",
+        "end": "Ends",
+        "id": "ID",
+        "privacy": "Privacy",
+        "purpose": "Purpose",
+        "requester": "Requester",
+        "start": "Starts",
+        "state": "State",
+        "target": "Bookable item",
+        "timezone": "Time zone",
+        "updatedAt": "Updated"
+      },
+      "file": {
+        "accessibleLabel": ".ics file for {item}, {period}",
+        "downloaded": "Downloaded {filename}. No subscription was created or changed.",
+        "failed": "The calendar file for {item}, {period} could not be downloaded. Nothing was saved; try again.",
+        "label": ".ics file",
+        "preparing": "Preparing the calendar file for {item}, {period}."
+      },
+      "grid": "Calendar grid",
+      "item": "Bookable item",
+      "jumpToDate": "Jump to date",
+      "layout": {
+        "agenda": "Agenda",
+        "legend": "Layout",
+        "resources": "Resources",
+        "time-grid": "Time grid"
+      },
+      "loading": "Loading booking events.",
+      "nextPeriod": "Next {period}",
+      "period": {
+        "day": "Day",
+        "legend": "Period",
+        "month": "Month",
+        "week": "Week"
+      },
+      "periodNavigation": "Calendar period navigation",
+      "previousPeriod": "Previous {period}",
+      "quickFilters": {
+        "legend": "Booking event quick filters",
+        "mine": "My calendar"
+      },
+      "resourceSchedule": "Resource booking schedule",
+      "retry": "Retry",
+      "title": "Calendar",
+      "today": "Today",
+      "toolbar": "Calendar controls",
+      "unavailable": "Booking events are unavailable."
+    },
+    "dayTimeline": {
+      "event": {
+        "busy": "Busy",
+        "hideDetails": "Hide details for {title}, {period}",
+        "label": "{title}, {period}",
+        "labelWithNotes": "{title}, {period}. {notes}",
+        "showDetails": "Show details for {title}, {period}",
+        "titleWithBooker": "{title} · {booker}"
+      },
+      "expanded": {
+        "bookedBy": "Booked by",
+        "createdBy": "Created by",
+        "dateTime": "{date} · {time}",
+        "duration": "{hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
+        "item": "Item",
+        "notes": "Notes",
+        "openItem": "Open inventory record {globalId}",
+        "purpose": "Purpose"
+      },
+      "itemScrollLabel": "24-hour calendar for {itemName} on {date} in {timezone}",
+      "now": {
+        "afterWindow": "Now {time}, after visible window",
+        "current": "Now {time}"
+      },
+      "scrollLabel": "24-hour calendar for {date} in {timezone}",
+      "zoom": {
+        "in": "Zoom in",
+        "legend": "Timeline zoom",
+        "out": "Zoom out"
+      }
+    },
     "myBookings": {
+      "fields": {
+        "end": "End",
+        "id": "ID",
+        "kind": "Event type",
+        "purpose": "Purpose",
+        "start": "Start",
+        "target": "Bookable item",
+        "timezone": "Time zone"
+      },
       "timezone": "Times are shown in {timezone}."
     },
     "preferences": {
@@ -1142,10 +1310,14 @@ export default interface Resources {
     "sidebar": {
       "administration": "Administration",
       "bookableItems": "Bookable Items",
+      "calendar": "Calendar",
       "dashboard": "Dashboard",
       "label": "Booking",
       "preferences": "Preferences",
       "settings": "Settings"
+    },
+    "toolbar": {
+      "jumpToDateAccessible": "{label}, {date}"
     }
   },
   "collectionFormExamples": {
@@ -4544,6 +4716,19 @@ export default interface Resources {
       "setAsTarget": "Set as Target"
     },
     "instrument": {
+      "booking": {
+        "configured": {
+          "book": "Book",
+          "description": "Open Booking to view this instrument's calendar and booking configuration.",
+          "open": "Open booking page",
+          "title": "Booking configured"
+        },
+        "notConfigured": {
+          "action": "Set up booking",
+          "description": "Set up booking to make this instrument available in Booking.",
+          "title": "Booking has not been set up"
+        }
+      },
       "createOptions": {
         "location": {
           "label": "Location",
@@ -6505,6 +6690,7 @@ export default interface Resources {
             "depth": "Relationship expansion depth. At depth 0, the response is the canonical update reference object and value is the readable target ID. At greater depth, value is the expanded read document; relationTo and globalId remain stable. A missing or unreadable target is null at every depth.",
             "exclude": "Fields to exclude by resource type. Uses square-bracket keys and comma-separated nested field paths, for example exclude[{0}]=id,name.",
             "fields": "Fields to include by resource type. Uses square-bracket keys and comma-separated nested field paths, for example fields[{0}]=id,name. A requested field is omitted when the caller is not allowed to read it.",
+            "genericFieldset": "Comma-separated nested field paths by resource type, using square-bracket keys such as {0}[resource]=id,name.",
             "id": "Resource identifier.",
             "idempotencyKey": "Creator-scoped request identity, retained for the resource lifetime.",
             "ifMatch": "Strong entity tag containing the current resource version.",
