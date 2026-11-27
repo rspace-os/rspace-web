@@ -12,7 +12,7 @@ import Switch from "@mui/material/Switch";
 import { observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DEFAULT_STATE } from "@/Export/constants";
@@ -136,6 +136,11 @@ function ExportRepo({
   fetchTags,
 }: ExportRepoArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
+  // coming back to this step remounts the form, so start from the saved request
+  const savedOtherProperties: Record<string, unknown> = repoDetails.meta.otherProperties ?? {};
+  const savedLicense = (repoList[repoDetails.repoChoice]?.license.licenses ?? []).findIndex(
+    (license) => license.licenseDefinition.name === repoDetails.meta.licenseName,
+  );
   const [state] = useState(
     observable({
       inputValidations: STANDARD_VALIDATIONS,
@@ -144,17 +149,18 @@ function ExportRepo({
       title: repoDetails.meta.title,
       description: repoDetails.meta.description,
       subject: repoDetails.meta.subject,
-      license: 0,
+      license: Math.max(savedLicense, 0),
       publish: repoDetails.meta.publish,
       authors: repoDetails.meta.authors,
       contacts: repoDetails.meta.contacts,
-      otherProperties: {},
+      otherProperties: savedOtherProperties,
       linkDMP: repoDetails.selectedDMPs.length > 0,
       selectedPlans: repoDetails.selectedDMPs,
       crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
       tags: [] as Array<Tag>,
-      metadataLanguage: "",
+      metadataLanguage:
+        typeof savedOtherProperties.metadataLanguage === "string" ? savedOtherProperties.metadataLanguage : "",
       exportToRaid: upstreamState.repositoryConfig.exportToRaid,
     }),
   );
@@ -231,18 +237,9 @@ function ExportRepo({
     };
   };
 
-  // the form restarts with default values when the user comes back to this step
-  const lastSentConfig = useRef<RepoDetails>(repoDetails);
-
   const updateRemoteConfig = () => {
     const params = getParams();
-    lastSentConfig.current = params;
     updateRepoConfig(params);
-  };
-
-  const updatePlansInConfig = () => {
-    lastSentConfig.current = { ...lastSentConfig.current, selectedDMPs: plansToSend() };
-    updateRepoConfig(lastSentConfig.current);
   };
 
   const handleChange = <Key extends keyof typeof state>(event: {
@@ -360,12 +357,7 @@ function ExportRepo({
       <Grid>
         {repo.repoName === "app.dryad" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-              onSelectionChange={updatePlansInConfig}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DryadRepo
               repo={repo}
               handleChange={handleChange}
@@ -382,12 +374,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.dataverse" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-              onSelectionChange={updatePlansInConfig}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DataverseRepo
               repo={repo}
               handleChange={handleChange}
@@ -415,12 +402,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.figshare" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-              onSelectionChange={updatePlansInConfig}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <FigshareRepo
               repo={repo}
               handleChange={handleChange}
@@ -439,12 +421,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.zenodo" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-              onSelectionChange={updatePlansInConfig}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <ZenodoRepo
               handleChange={handleChange}
               inputValidations={state.inputValidations}
@@ -464,12 +441,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.digitalCommonsData" && (
           <>
-            <DmpSelector
-              state={state}
-              handleSwitch={handleSwitch}
-              repo={repo}
-              onSelectionChange={updatePlansInConfig}
-            />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DigitalCommonsDataRepo
               handleChange={handleChange}
               inputValidations={state.inputValidations}
