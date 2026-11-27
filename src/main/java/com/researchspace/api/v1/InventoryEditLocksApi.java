@@ -4,6 +4,7 @@
  */
 package com.researchspace.api.v1;
 
+import com.researchspace.api.v1.controller.AllowedWithExpiredLicense;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.model.User;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +17,7 @@ public interface InventoryEditLocksApi {
   @PostMapping(value = "/{globalId}")
   ApiInventoryEditLock lockItemForEdit(String globalId, User user);
 
+  @AllowedWithExpiredLicense
   @DeleteMapping(value = "/{globalId}")
   void unlockItemAfterEdit(String globalId, User user);
 }

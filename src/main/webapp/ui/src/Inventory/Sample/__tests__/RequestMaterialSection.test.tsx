@@ -23,10 +23,10 @@ const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
 const OWNER_USERNAME = "sample-owner";
 const REQUESTER_USERNAME = "sample-requester";
 
-function setCurrentUser(username: string) {
+function setCurrentUser(username: string, { licenseActive = true }: { licenseActive?: boolean } = {}) {
   const { peopleStore } = getRootStore();
   runInAction(() => {
-    peopleStore.currentUser = new PersonModel(personAttrs({ username }));
+    peopleStore.currentUser = new PersonModel(personAttrs({ username, licenseActive }));
   });
 }
 
@@ -116,6 +116,17 @@ describe("RequestableSwitch", () => {
 
     await user.click(toggle);
     expect(sample.requestable).toBe(false);
+  });
+
+  test("the switch is disabled while Inventory is read-only.", () => {
+    setCurrentUser(OWNER_USERNAME, { licenseActive: false });
+    const sample = makeOwnedSample({
+      permittedActions: ["READ", "UPDATE", "CHANGE_OWNER", "CHANGE_REQUESTABLE"],
+    });
+    sample.setEditable(new Set(["requestable"]), true);
+    renderWithProviders(<RequestableSwitch activeResult={sample} />);
+
+    expect(screen.getByRole("switch", { name: "inventory:sample.requestsSection.switchLabel" })).toBeDisabled();
   });
 
   test("a PI of the owner's group can also toggle requestable, not just the owner.", async () => {
@@ -211,6 +222,16 @@ describe("RequestMaterialSection", () => {
       ).toBeInTheDocument(),
     );
     expect(container).not.toBeEmptyDOMElement();
+  });
+
+  test("the request button is disabled while Inventory is read-only.", async () => {
+    setCurrentUser(REQUESTER_USERNAME, { licenseActive: false });
+    const sample = makeOwnedSample({ requestable: true, permittedActions: ["READ"] });
+    renderWithProviders(<RequestMaterialSection activeResult={sample} />);
+
+    expect(
+      await screen.findByRole("button", { name: "inventory:sample.requestMaterialSection.requestSampleButton" }),
+    ).toBeDisabled();
   });
 
   test("shows the request form, not nothing, for a sysadmin who can transfer ownership but cannot otherwise edit the sample.", async () => {

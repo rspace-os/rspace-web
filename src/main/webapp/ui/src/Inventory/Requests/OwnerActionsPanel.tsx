@@ -56,8 +56,8 @@ export default function OwnerActionsPanel({
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Button
             variant="outlined"
-            disabled={!isActionableState}
-            sx={isActionableState ? rejectButtonSx(theme) : undefined}
+            disabled={!isActionableState || isProcessingAction}
+            sx={isActionableState && !isProcessingAction ? rejectButtonSx(theme) : undefined}
             onClick={onReject}
           >
             {t("requestsManagement.detail.rejectButton")}
@@ -90,8 +90,8 @@ export default function OwnerActionsPanel({
           </Button>
           <Button
             variant="outlined"
-            disabled={status !== "APPROVED"}
-            sx={status === "APPROVED" ? markAsFulfilledButtonSx(theme) : undefined}
+            disabled={status !== "APPROVED" || isProcessingAction}
+            sx={status === "APPROVED" && !isProcessingAction ? markAsFulfilledButtonSx(theme) : undefined}
             onClick={onMarkFulfilled}
           >
             {t("requestsManagement.detail.markAsFulfilledButton")}

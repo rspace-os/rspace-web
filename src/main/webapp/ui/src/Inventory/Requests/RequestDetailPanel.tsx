@@ -98,7 +98,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // radio route into this dialog) means the dialog acts on request.sample exactly as before.
   const [wizardCreatedSample, setWizardCreatedSample] = useState<OperationResult | null>(null);
   const currentUser = useWhoAmI();
-  const { uiStore } = useStores();
+  const { uiStore, peopleStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
@@ -182,7 +182,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     isProcessingAction: isProcessingMutation,
     showActionError,
   } = useRequestActions();
-  const isProcessingAction = isProcessingMutation || isLaunchingWizard;
+  const isProcessingAction = isProcessingMutation || isLaunchingWizard || Boolean(peopleStore.inventoryReadOnlyReason);
 
   const comment = status ? latestStatusChange(statusChanges, status)?.reason : undefined;
 

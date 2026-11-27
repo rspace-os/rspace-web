@@ -289,7 +289,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const theme = useTheme();
   const editable = activeResult.isFieldEditable("identifiers");
   const { addAlert } = useContext(AlertContext);
-  const { uiStore } = useStores();
+  const { uiStore, peopleStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
 
@@ -559,7 +559,8 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                         id.linked ||
                         id.state === "registered" ||
                         (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)) ||
-                        Boolean(activeResult.historicalVersion)
+                        Boolean(activeResult.historicalVersion) ||
+                        Boolean(peopleStore.inventoryReadOnlyReason)
                       }
                     >
                       {deletable
@@ -704,6 +705,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const {
     searchStore: { activeResult },
     authStore,
+    peopleStore,
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
@@ -713,6 +715,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
   const { pidinstEnabled } = authStore;
+  const readOnly = Boolean(peopleStore.inventoryReadOnlyReason);
 
   return (
     <>
@@ -722,7 +725,7 @@ const IdentifiersCard = observer((): ReactNode => {
           <Button
             color="primary"
             variant="outlined"
-            disabled={isInstrument && !pidinstEnabled}
+            disabled={(isInstrument && !pidinstEnabled) || readOnly}
             onClick={() => void activeResult.addIdentifier()}
           >
             {t("fields.identifiers.card.createNew", { identifierLabel })}
@@ -732,6 +735,7 @@ const IdentifiersCard = observer((): ReactNode => {
               <Button
                 color="primary"
                 variant="outlined"
+                disabled={readOnly}
                 onClick={() => {
                   setAssignDialogOpen(true);
                   trackEvent("user:open:assign-existing-igsn-dialog");

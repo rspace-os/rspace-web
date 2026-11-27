@@ -20,7 +20,7 @@ const REFRESHABLE_B2INST_STATES: ReadonlyArray<PublishingState> = ["draft", "cre
 function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.ReactNode {
   const [refreshing, setRefreshing] = React.useState(false);
   const { t } = useTranslation("inventory");
-  const { uiStore } = useStores();
+  const { uiStore, peopleStore } = useStores();
 
   /*
    * B2INST only: refreshIdentifier makes no provider call for a DataCite identifier, whose state
@@ -43,7 +43,7 @@ function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.React
          * button alone leaves the user with no sign that anything is happening.
          */
         loading={refreshing}
-        disabled={refreshing || disabled}
+        disabled={refreshing || disabled || Boolean(peopleStore.inventoryReadOnlyReason)}
         onClick={() => {
           void (async () => {
             try {

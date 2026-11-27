@@ -644,11 +644,11 @@ export default class InventoryBaseRecord
   }
 
   get canEdit(): boolean {
-    return this.permittedActions.has("UPDATE");
+    return this.permittedActions.has("UPDATE") && !getRootStore().peopleStore.inventoryReadOnlyReason;
   }
 
   get canTransfer(): boolean {
-    return this.permittedActions.has("CHANGE_OWNER");
+    return this.permittedActions.has("CHANGE_OWNER") && !getRootStore().peopleStore.inventoryReadOnlyReason;
   }
 
   get readAccessLevel(): ReadAccessLevel {

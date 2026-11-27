@@ -46,7 +46,8 @@ export default function PIDINSTB2InstCard({
   >(null);
 
   const [savingInFlight, setSavingInFlight] = useState(false);
-  const { authStore } = useStores();
+  const { authStore, peopleStore } = useStores();
+  const readOnly = Boolean(peopleStore.inventoryReadOnlyReason);
   const { t } = useTranslation(["inventory", "common"]);
 
   const settingsLabels: Record<VisibleB2InstField, string> = {
@@ -119,7 +120,7 @@ export default function PIDINSTB2InstCard({
                     placeholder={t("settings.pidinst.b2inst.placeholder", { label: settingsLabels[field] })}
                     requiredError={t("settings.pidinst.b2inst.fieldRequiredError")}
                     required={required}
-                    disabled={savingInFlight}
+                    disabled={savingInFlight || readOnly}
                   />
                 </Grid>
               </Grid>
@@ -132,7 +133,7 @@ export default function PIDINSTB2InstCard({
             control={
               <Switch
                 checked={updatedSettings.enabled === "true"}
-                disabled={savingInFlight}
+                disabled={savingInFlight || readOnly}
                 onChange={({ target: { checked } }) => {
                   const newEnabled: IntegrationState = checked ? "true" : "false";
                   setUpdatedSettings({ ...updatedSettings, enabled: newEnabled });
@@ -199,7 +200,7 @@ export default function PIDINSTB2InstCard({
         </Button>
         <SubmitSpinnerButton
           label={t("common:actions.save")}
-          disabled={!unsavedChanges || savingInFlight || isConflict || missingRequired}
+          disabled={readOnly || !unsavedChanges || savingInFlight || isConflict || missingRequired}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}
         />

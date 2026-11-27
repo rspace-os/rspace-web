@@ -43,6 +43,7 @@ function SavedList<T extends SavedItem>({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [index, setIndex] = useState(0);
+  const basketsReadOnly = itemType === "baskets" && Boolean(peopleStore.inventoryReadOnlyReason);
 
   const leaveDeletedBasketListing = () => {
     if (peopleStore.currentUser) {
@@ -95,6 +96,7 @@ function SavedList<T extends SavedItem>({
                 <CustomTooltip title={t("search.savedList.editName")}>
                   <IconButton
                     aria-label={t("search.savedList.editLabel")}
+                    disabled={basketsReadOnly}
                     onClick={(e) => {
                       e.stopPropagation();
                       setIndex(i);
@@ -115,6 +117,7 @@ function SavedList<T extends SavedItem>({
                   <IconButton
                     edge="end"
                     aria-label={t("search.savedList.deleteLabel")}
+                    disabled={basketsReadOnly}
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleDelete(item);

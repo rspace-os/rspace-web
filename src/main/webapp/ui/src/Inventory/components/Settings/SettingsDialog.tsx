@@ -35,7 +35,7 @@ type SettingsDialogArgs = {
 type PidinstProvider = "datacite" | "b2inst";
 
 function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode {
-  const { authStore } = useStores();
+  const { authStore, peopleStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
 
   const [fetchingSystemSettings, setFetchingSystemSettings] = useState<
@@ -169,6 +169,11 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode 
         )}
         {fetchingSystemSettings?.state === "loaded" ? (
           <>
+            {peopleStore.inventoryReadOnlyReason && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {peopleStore.inventoryReadOnlyReason}
+              </Alert>
+            )}
             <Tabs
               value={activeTab}
               onChange={(_, newValue: number) => setActiveTab(newValue)}

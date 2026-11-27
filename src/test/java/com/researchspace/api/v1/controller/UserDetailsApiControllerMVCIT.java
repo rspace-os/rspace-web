@@ -56,6 +56,7 @@ public class UserDetailsApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(retrievedUser.getWorkbenchId());
     assertFalse(retrievedUser.getHasPiRole());
     assertFalse(retrievedUser.getHasSysAdminRole());
+    assertTrue(retrievedUser.getLicenseActive());
   }
 
   /**

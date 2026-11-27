@@ -14,6 +14,7 @@ import CreateDialog from "../CreateDialog";
 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
+    peopleStore: {},
     unitStore: {
       getUnit: () => ({ label: "ml" }),
     },

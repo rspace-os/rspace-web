@@ -37,7 +37,8 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
   >(null);
 
   const [savingInFlight, setSavingInFlight] = useState(false);
-  const { authStore } = useStores();
+  const { authStore, peopleStore } = useStores();
+  const readOnly = Boolean(peopleStore.inventoryReadOnlyReason);
   const { t } = useTranslation(["inventory", "common"]);
   const settingsLabels: Record<keyof SystemSettings["igsnDatacite"], string> = {
     enabled: t("settings.datacite.labels.enabled"),
@@ -96,7 +97,7 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
           </FormHelperText>
           <RadioField
             name={t("settings.datacite.formLabel")}
-            disabled={savingInFlight}
+            disabled={savingInFlight || readOnly}
             value={updatedSettings.enabled}
             onChange={({ target }) => {
               if (target.value !== null && typeof target.value !== "undefined") {
@@ -139,14 +140,14 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
                     required={required}
                     // the other fields stay editable while IGSN is disabled: disabling them would
                     // also disable Clear, the only way to remove a stored password
-                    disabled={savingInFlight || field === "serverUrl"}
+                    disabled={savingInFlight || readOnly || field === "serverUrl"}
                   />
                 </Grid>
                 {field === "serverUrl" && (
                   <Grid sx={{ width: "200px" }}>
                     <RadioField
                       name={t("settings.datacite.serverUrlLabel")}
-                      disabled={savingInFlight}
+                      disabled={savingInFlight || readOnly}
                       value={updatedSettings.serverUrl}
                       onChange={({ target }) => {
                         if (target.value !== null && typeof target.value !== "undefined") {
@@ -212,7 +213,7 @@ export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: D
         </Button>
         <SubmitSpinnerButton
           label={t("common:actions.save")}
-          disabled={!unsavedChanges || savingInFlight || missingRequired}
+          disabled={readOnly || !unsavedChanges || savingInFlight || missingRequired}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}
         />

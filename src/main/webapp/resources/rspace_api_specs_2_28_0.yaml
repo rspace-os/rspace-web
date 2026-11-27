@@ -2584,6 +2584,9 @@ paths:
       summary: Get details of current user
       description: |
         Retrieves basic information about the current user.
+        The response also has `licenseActive`, which is `false` when the RSpace
+        license has expired. Inventory is then read-only: requests other than
+        GET, CSV export and edit lock release are rejected with status 403.
       tags:
         - User Details
       responses:

@@ -8,6 +8,7 @@ import { makeMockSubSample } from "../SubSampleModel/mocking";
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
+    peopleStore: {},
     unitStore: {
       getUnit: () => ({ label: "ml" }),
     },

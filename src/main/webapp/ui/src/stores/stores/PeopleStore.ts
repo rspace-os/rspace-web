@@ -1,4 +1,5 @@
-import { action, makeObservable, observable, runInAction } from "mobx";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
@@ -25,7 +26,17 @@ export default class PeopleStore {
       groupMembers: observable,
       currentUsersGroups: observable,
       fetchCurrentUsersGroups: action,
+      inventoryReadOnlyReason: computed,
     });
+  }
+
+  /**
+   * Why Inventory is read-only for the current user, or null when it is not.
+   * Inventory is read-only while the RSpace license has expired; the server
+   * rejects writes either way, so a failed whoami does not disable anything.
+   */
+  get inventoryReadOnlyReason(): string | null {
+    return this.currentUser?.licenseActive === false ? i18n.t("inventory:licenseExpired.readOnly") : null;
   }
 
   async fetchCurrentUser(): Promise<PersonModel | undefined> {

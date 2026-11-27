@@ -186,6 +186,20 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   }
 
   // 403
+  @ExceptionHandler(InventoryReadOnlyException.class)
+  public ResponseEntity<Object> handleInventoryReadOnly(
+      final InventoryReadOnlyException ex, final WebRequest request) {
+    log.warn("Write refused as the license has expired: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.FORBIDDEN,
+            ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
+            messages.getMessage("errors.inventory.licenseExpired"),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 403
   @ExceptionHandler({FilestoreOperationForbiddenException.class})
   public ResponseEntity<Object> handleFilestoreOperationForbidden(
       final FilestoreOperationForbiddenException ex, final WebRequest request) {

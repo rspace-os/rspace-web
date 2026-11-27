@@ -1,4 +1,5 @@
 import PrintIcon from "@mui/icons-material/Print";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
@@ -196,7 +197,7 @@ const ActionsBar = observer(
     onOpenStandalone: () => void;
     canEdit: boolean;
   }) => {
-    const { moveStore, materialsStore } = useStores();
+    const { moveStore, materialsStore, peopleStore } = useStores();
     const { t } = useTranslation("inventory");
     const anyDataInList = (currentList?.materials.length ?? -1) > 0;
     const originalList = materialsStore.originalList;
@@ -244,7 +245,7 @@ const ActionsBar = observer(
             onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => {
               currentList?.setEditingMode(!editingMode);
             })}
-            disabled={!canEditQuantities}
+            disabled={!canEditQuantities || !canEdit}
           >
             {editingMode
               ? t("materialsListing.actions.closeQuantityEditor")
@@ -262,6 +263,7 @@ const ActionsBar = observer(
             }}
             loading={moveStore.submitting === "TO-OTHER"}
             validationResult={moveAllToBenchValidation()}
+            disabled={Boolean(peopleStore.inventoryReadOnlyReason)}
             color="primary"
           >
             {t("materialsListing.actions.moveAllToBench")}
@@ -303,7 +305,7 @@ type DialogArgs = {
 };
 
 function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs): React.ReactNode {
-  const { materialsStore } = useStores();
+  const { materialsStore, peopleStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
   const isSingleColumn = useIsSingleColumnLayout();
   const fullScreen = isSingleColumn || standalonePage;
@@ -319,7 +321,8 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
   const isListValid = materialsStore.isListValid;
   const isListLoading = currentList?.loading ?? true;
   const isUnchanged = materialsStore.isCurrentListUnchanged;
-  const canEdit = Boolean(currentList?.canEdit);
+  const readOnlyReason = peopleStore.inventoryReadOnlyReason;
+  const canEdit = Boolean(currentList?.canEdit) && !readOnlyReason;
 
   const [exportOptions, setExportOptions] = useState<ExportOptions>(
     defaultExportOptions(
@@ -429,6 +432,11 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
               >
                 <Grid container>
                   <Grid sx={disableBackgroundSx(openSlide)} size={12}>
+                    {readOnlyReason && (
+                      <Alert severity="warning" sx={{ mb: 1 }}>
+                        {readOnlyReason}
+                      </Alert>
+                    )}
                     {isSingleColumn && (
                       <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={isSingleColumn} />
                     )}
@@ -568,6 +576,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                       }}
                       loading={isListLoading}
                       validationResult={materialsStore.cantSaveCurrentList}
+                      disabled={Boolean(readOnlyReason)}
                     >
                       {t("common:actions.save")}
                     </ValidatingSubmitButton>
