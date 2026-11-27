@@ -34,6 +34,7 @@ import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
+import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
@@ -45,6 +46,7 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfiguration;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.model.field.Field;
@@ -67,6 +69,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
+import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -87,6 +90,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1199,6 +1203,171 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         findDeletedUsersSubfolder(galleryImagesFolder, userToDelete, sysadmin);
     assertThat(folderMgr.getFolderChildrenIds(galleryUserFolder)).contains(image.getId());
   }
+
+  @Test
+  public void deletingImageOwnerPreservesImageInsertedFromUnsharedSnippet() throws Exception {
+    SnippetImageFixture fixture = insertImageFromUnsharedSnippet(false);
+    deleteOwnerAndCleanFilestore(fixture, createInitializedSysadmin());
+    assertRecipientCanReadSnippetImage(fixture);
+  }
+
+  @Test
+  public void deletingImageOwnerPreservesEditedSnippetImageWhenOriginalIsDeleted()
+      throws Exception {
+    SnippetImageFixture fixture = insertImageFromUnsharedSnippet(true);
+    EcatImage retainedImage = deleteOwnerAndCleanFilestore(fixture, createInitializedSysadmin());
+    assertNull(retainedImage.getOriginalImage());
+    assertEquals(1L, retainedImage.getOriginalImageVersion());
+    assertRecipientCanReadSnippetImage(fixture);
+  }
+
+  @Test
+  public void deletingImageOwnerPreservesSnippetImageWithSoftDeletedFieldLink() throws Exception {
+    SnippetImageFixture fixture = insertImageFromUnsharedSnippet(false);
+    logoutAndLoginAs(fixture.recipient());
+    Long fieldId = fixture.destination().getId();
+    Long documentId = fixture.destination().getStructuredDocument().getId();
+    User recipient = fixture.recipient();
+    recordMgr.requestRecordEdit(documentId, recipient, anySessionTracker());
+    recordMgr.saveTemporaryDocument(fieldId, recipient, "Recipient removed the image.");
+    recordMgr.saveStructuredDocument(documentId, recipient.getUsername(), true, null);
+    assertSnippetImageFieldLink(fixture, true);
+
+    deleteOwnerAndCleanFilestore(fixture, createInitializedSysadmin());
+
+    logoutAndLoginAs(recipient);
+    assertThat(fieldMgr.get(fieldId, recipient).orElseThrow().getFieldData())
+        .doesNotContain(fixture.insertedContent());
+    assertSnippetImageFieldLink(fixture, true);
+  }
+
+  @Test
+  public void invalidFilestoreListRollsBackSnippetImageTransfer() throws Exception {
+    SnippetImageFixture fixture = insertImageFromUnsharedSnippet(false);
+    User sysadmin = createInitializedSysadmin();
+    logoutAndLoginAs(sysadmin);
+
+    FileProperty unusedFile = fixture.unusedImage().getFileProperty();
+    String originalPath = unusedFile.getRelPath();
+    // Point at the existing parent directory to fail validation after the transfer.
+    String directoryPath = Path.of(originalPath).getParent().toString();
+    jdbcTemplate.update(
+        "UPDATE FileProperty SET relPath = ? WHERE id = ?", directoryPath, unusedFile.getId());
+    try {
+      ServiceOperationResult<User> result =
+          userDeletionMgr.removeUser(
+              fixture.owner().getId(), unrestrictedDeletionPolicy(), sysadmin);
+      assertFalse(result.isSucceeded());
+      assertEquals(
+          "List of filestore resource marked for deletion seem incorrect", result.getMessage());
+      assertEquals(fixture.owner(), userMgr.get(fixture.owner().getId()));
+      EcatImage image = recordMgr.getEcatImage(fixture.image().getId(), false);
+      assertEquals(fixture.owner(), image.getOwner());
+      assertEquals(fixture.owner().getUsername(), image.getFileProperty().getFileOwner());
+    } finally {
+      jdbcTemplate.update(
+          "UPDATE FileProperty SET relPath = ? WHERE id = ?", originalPath, unusedFile.getId());
+    }
+  }
+
+  private SnippetImageFixture insertImageFromUnsharedSnippet(boolean edited) throws Exception {
+    TestGroup group = createTestGroup(1);
+    User imageOwner = group.u1();
+    User recipient = group.getPi();
+
+    logoutAndLoginAs(imageOwner);
+    Field source = createBasicDocumentInRootFolderWithText(imageOwner, "Source").getFields().get(0);
+    EcatImage unusedImage = addImageToGallery(imageOwner);
+    EcatImage image;
+    if (edited) {
+      EcatImage original = updateImageInGallery(unusedImage.getId(), imageOwner);
+      image = editImageInGallery(original.getId(), imageOwner);
+      assertThat(image.getOriginalImageVersion()).isGreaterThan(1);
+    } else {
+      image = addImageToGallery(imageOwner);
+    }
+    addImageToField(source, imageOwner, image);
+    Snippet snippet = recordMgr.createSnippet("Shared image", source.getFieldData(), imageOwner);
+    sharingMgr.shareRecord(
+        imageOwner,
+        snippet.getId(),
+        new ShareConfigElement[] {new ShareConfigElement(group.getGroup().getId(), "read")});
+
+    logoutAndLoginAs(recipient);
+    Field destination =
+        createBasicDocumentInRootFolderWithText(recipient, "Recipient").getFields().get(0);
+    String insertedContent =
+        recordMgr.copySnippetIntoField(snippet.getId(), destination.getId(), recipient);
+    appendContentToField(destination, insertedContent, recipient);
+
+    logoutAndLoginAs(imageOwner);
+    unshareRecordORNotebookWithGroup(imageOwner, snippet, group.getGroup(), "read");
+
+    return new SnippetImageFixture(
+        imageOwner, recipient, image, unusedImage, destination, insertedContent);
+  }
+
+  private User createInitializedSysadmin() {
+    User sysadmin =
+        createAndSaveUser(getRandomAlphabeticString("sysadmin"), Role.SYSTEM_ROLE.getName());
+    initUser(sysadmin);
+    return sysadmin;
+  }
+
+  private EcatImage deleteOwnerAndCleanFilestore(SnippetImageFixture fixture, User sysadmin)
+      throws Exception {
+    logoutAndLoginAs(sysadmin);
+    User imageOwner = fixture.owner();
+    Long imageId = fixture.image().getId();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(imageOwner.getId(), unrestrictedDeletionPolicy(), sysadmin);
+    assertTrue(result.isSucceeded(), result.getMessage());
+    assertUserNotExist(imageOwner);
+    assertThrows(
+        ObjectRetrievalFailureException.class, () -> recordMgr.get(fixture.unusedImage().getId()));
+
+    assertTrue(
+        userDeletionMgr
+            .deleteRemovedUserFilestoreResources(imageOwner.getId(), true, sysadmin)
+            .isSucceeded());
+    EcatImage transferredImage = recordMgr.getEcatImage(imageId, false);
+    assertEquals(sysadmin, transferredImage.getOwner());
+    assertEquals(sysadmin.getUsername(), transferredImage.getFileProperty().getFileOwner());
+    assertThat(new File(new URI(transferredImage.getFileUri()))).exists();
+
+    Folder images =
+        recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, sysadmin);
+    assertThat(
+            folderMgr.getFolderChildrenIds(findDeletedUsersSubfolder(images, imageOwner, sysadmin)))
+        .contains(imageId);
+    return transferredImage;
+  }
+
+  private void assertRecipientCanReadSnippetImage(SnippetImageFixture fixture) {
+    User recipient = fixture.recipient();
+    Long imageId = fixture.image().getId();
+    logoutAndLoginAs(recipient);
+    assertThat(fieldMgr.get(fixture.destination().getId(), recipient).orElseThrow().getFieldData())
+        .contains(fixture.insertedContent());
+    assertSnippetImageFieldLink(fixture, false);
+    assertEquals(imageId, mediaMgr.getImage(imageId, recipient, true).getId());
+  }
+
+  private void assertSnippetImageFieldLink(SnippetImageFixture fixture, boolean deleted) {
+    assertThat(fieldMgr.getFieldAttachments(fixture.destination().getId()))
+        .anyMatch(
+            attachment ->
+                attachment.isDeleted() == deleted
+                    && attachment.getMediaFile().getId().equals(fixture.image().getId()));
+  }
+
+  private record SnippetImageFixture(
+      User owner,
+      User recipient,
+      EcatImage image,
+      EcatImage unusedImage,
+      Field destination,
+      String insertedContent) {}
 
   @Test
   public void testDeleteUserWithBothSharedFormAndTemplateTransfersBothToSysadmin()

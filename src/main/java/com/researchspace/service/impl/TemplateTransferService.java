@@ -14,7 +14,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
-import com.researchspace.service.TransferService;
+import com.researchspace.service.TemplateAndGalleryTransferService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TemplateTransferService implements TransferService {
+public class TemplateTransferService implements TemplateAndGalleryTransferService {
 
   public static final String DELETED_USER_TEMPLATES_FOLDER =
       "templates.transfer.folder.deletedUsers";
@@ -81,7 +81,10 @@ public class TemplateTransferService implements TransferService {
           messageSource.getMessage(DELETED_USER_NAME, new Object[] {originalOwner.getUsername()});
       recordManager.transferTemplates(originalOwner, newOwner, templateIds, deletedUserName);
 
-      transferGalleryItemsForTemplates(originalOwner, newOwner, templateIds);
+      transferGalleryItems(
+          originalOwner,
+          newOwner,
+          recordManager.getGalleryItemsForTemplates(templateIds, originalOwner));
 
       String description =
           messageSource.getMessage(
@@ -94,14 +97,9 @@ public class TemplateTransferService implements TransferService {
     }
   }
 
-  // Transfers all gallery items that are linked from the given templates, to the
-  // new owner.  The gallery items are moved to a "Deleted Users" folder in the
-  // appropriate subfolder of the new owner's gallery (e.g. "Images", "Videos", etc.),
-  // in a folder named for the original owner's username.
-  private void transferGalleryItemsForTemplates(
-      User originalOwner, User newOwner, List<Long> templateIds) {
-    List<EcatMediaFile> galleryItems =
-        recordManager.getGalleryItemsForTemplates(templateIds, originalOwner);
+  @Override
+  public void transferGalleryItems(
+      User originalOwner, User newOwner, List<EcatMediaFile> galleryItems) {
     if (galleryItems.isEmpty()) {
       return;
     }
