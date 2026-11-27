@@ -1,4 +1,4 @@
-import type { QueryKey } from "@tanstack/react-query";
+import { type QueryKey, queryOptions, skipToken } from "@tanstack/react-query";
 import { chunk, uniq } from "es-toolkit";
 import type * as v from "valibot";
 import type {
@@ -50,7 +50,7 @@ export type RuntimeFieldSearchResource<N extends string> = {
   readonly runtimeFieldSearch: ApiV2RuntimeFieldSearchOperation<N>;
 };
 
-type RuntimeFieldSearchParams = { q: string; limit?: number };
+export type RuntimeFieldSearchParams = { q: string; limit?: number };
 
 /** Several catalogs of one resource, searched in one request. */
 export type RuntimeFieldSearch = {
@@ -172,6 +172,41 @@ export function mapRuntimeFieldSearch(
       return [namespace, catalog] as const;
     }),
   );
+}
+
+/** A runtime field offered by a picker, with the selector namespace it is chosen under. */
+export type RuntimeFieldOption = {
+  namespace: string;
+  definition: RuntimeFieldDefinition;
+};
+
+/**
+ * The search for runtime fields matching `params` across a picker's sources, each result under every source whose
+ * catalog holds it. It runs only when `enabled` and a search is available.
+ */
+export function runtimeFieldSearchQueryOptions(
+  runtimeSearch: { search: RuntimeFieldSearch; sources: readonly { namespace: string }[] } | undefined,
+  params: RuntimeFieldSearchParams,
+  enabled: boolean,
+) {
+  return queryOptions({
+    queryKey: runtimeSearch?.search.queryKey(params) ?? ["runtimeFieldSearch", "unavailable"],
+    queryFn:
+      runtimeSearch && enabled
+        ? ({ signal }) => runtimeSearch.search.request(params, { signal, redirect: "error" })
+        : skipToken,
+    select: (body): readonly RuntimeFieldOption[] => {
+      if (!runtimeSearch) return [];
+      const catalogs = mapRuntimeFieldSearch(body, runtimeSearch.search.namespaces);
+      return runtimeSearch.sources.flatMap((source) =>
+        (catalogs.get(runtimeFieldCatalogNamespace(source.namespace))?.fields ?? []).map((definition) => ({
+          namespace: source.namespace,
+          definition,
+        })),
+      );
+    },
+    staleTime: 60_000,
+  });
 }
 
 function selectionParams(request: RuntimeFieldCatalogRequest) {

@@ -23,20 +23,17 @@ export function CollectionSearchInput({
   if (pending !== current) setPending(current);
   const draft = current?.text ?? value;
 
-  const commit = (next: string) => {
-    if (next !== value) onCommit(next);
-  };
   // Pacer runs the latest render's function, so a scheduled commit only commits a draft that is still current.
   const debouncer = useDebouncer(
     () => {
-      if (current) commit(current.text);
+      if (current && current.text !== value) onCommit(current.text);
     },
     { wait: debounceMs },
   );
 
   const commitNow = (next: string) => {
     debouncer.cancel();
-    commit(next);
+    if (next !== value) onCommit(next);
   };
 
   const change = (next: string) => {

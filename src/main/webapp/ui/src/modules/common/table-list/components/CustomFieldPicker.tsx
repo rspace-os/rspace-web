@@ -1,15 +1,15 @@
 import { useDebouncedState } from "@tanstack/react-pacer";
-import { skipToken, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RelationshipLabel, RuntimeNamespaceSummary } from "@/modules/common/collection/config";
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import {
-  mapRuntimeFieldSearch,
   type RuntimeFieldCatalogForNamespace,
   type RuntimeFieldDefinition,
+  type RuntimeFieldOption,
   registeredRuntimeFieldSearches,
-  runtimeFieldCatalogNamespace,
+  runtimeFieldSearchQueryOptions,
   soleRuntimeFieldSearch,
 } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import {
@@ -53,11 +53,6 @@ export function runtimeFieldGroupKey(
   return groups.find((group) => group.sources.some((source) => source.namespace === namespace))?.key ?? null;
 }
 
-type RuntimeFieldOption = {
-  namespace: string;
-  definition: RuntimeFieldDefinition;
-};
-
 export function CustomFieldPicker({
   sources,
   ariaLabel,
@@ -83,25 +78,8 @@ export function CustomFieldPicker({
 
   const runtimeSearch = soleRuntimeFieldSearch(registeredRuntimeFieldSearches(sources));
   const params = { q: term.trim(), limit: SEARCH_LIMIT };
-  // Not a suspense query, so a new term does not suspend the input.
-  const query = useQuery({
-    queryKey: runtimeSearch?.search.queryKey(params) ?? ["runtimeFieldSearch", "unavailable"],
-    queryFn:
-      runtimeSearch && open && narrowed
-        ? ({ signal }) => runtimeSearch.search.request(params, { signal, redirect: "error" })
-        : skipToken,
-    select: (body): readonly RuntimeFieldOption[] => {
-      if (!runtimeSearch) return [];
-      const catalogs = mapRuntimeFieldSearch(body, runtimeSearch.search.namespaces);
-      return runtimeSearch.sources.flatMap((source) =>
-        (catalogs.get(runtimeFieldCatalogNamespace(source.namespace))?.fields ?? []).map((definition) => ({
-          namespace: source.namespace,
-          definition,
-        })),
-      );
-    },
-    staleTime: 60_000,
-  });
+  // Plain useQuery: a new term keeps the input interactive while results load.
+  const query = useQuery(runtimeFieldSearchQueryOptions(runtimeSearch, params, open && narrowed));
 
   const sourceNames = new Set(sources.map((source) => source.namespace));
   const loaded = known

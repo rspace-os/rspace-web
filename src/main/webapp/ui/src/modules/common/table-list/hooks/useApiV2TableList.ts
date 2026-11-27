@@ -250,9 +250,9 @@ function useApiV2TableListFromStore<
   );
   // Count identity excludes paging and projection. Prefix invalidation after writes
   // refreshes this active query along with the current page.
-  // Plain useQuery: the optional total only labels pagination; the table owns loading and errors.
   const totalsReady = !view.blocked && stateError === null;
   const totalsParameters = () => parametersFor(totalState(view.state), true);
+  // Plain useQuery: the optional total only labels pagination; the table owns loading and errors.
   const totals = useQuery({
     queryKey: totalsReady ? resource.list.queryKey(totalsParameters()) : resource.list.queryKey(),
     enabled: totalsReady,

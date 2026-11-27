@@ -1,4 +1,4 @@
-import { type QueryClient, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, skipToken, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { chunk, clamp, uniq } from "es-toolkit";
 import {
   canonicalValue,
@@ -9,7 +9,6 @@ import {
 import type {
   RelationshipOption,
   RelationshipOptionAvailabilitySource,
-  UnavailableRelationshipOption,
 } from "@/modules/common/relationship-picker/types";
 
 /**
@@ -88,13 +87,14 @@ export function useRelationshipOptionAvailability({
 }) {
   const scope = authScope ?? null;
   const values = uniq(options.map((option) => String(option.value))).sort();
-  const query = useQuery<Readonly<Record<string, UnavailableRelationshipOption>>>({
+  // Plain useQuery: optional availability only annotates options already shown.
+  const query = useQuery({
     queryKey: [...(availabilitySource?.queryKey ?? []), sourceId, scope, ...values],
-    enabled: availabilitySource !== undefined && values.length > 0,
+    enabled: values.length > 0,
     staleTime: 15_000,
     gcTime: 5 * 60_000,
-    queryFn: ({ signal }) =>
-      availabilitySource === undefined ? {} : availabilitySource.loadUnavailable(values, signal),
+    queryFn:
+      availabilitySource === undefined ? skipToken : ({ signal }) => availabilitySource.loadUnavailable(values, signal),
   });
 
   return {
