@@ -5,8 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarCurrentAccessDao;
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
@@ -35,6 +39,9 @@ class BookingItemPermissionsTest {
   @Mock private InventoryPermissionUtils inventoryPermissions;
   @Mock private InstrumentDao instruments;
   @Mock private BookingInstrumentQueryDao bookingInstruments;
+  @Mock private BookingCalendarSubscriptionDao subscriptions;
+  @Mock private BookingCalendarCurrentAccessDao currentAccess;
+  @Mock private BookingCalendarPermissionGateDao permissionGate;
   @Mock private User subject;
   @Mock private User itemOwner;
   @Mock private Instrument instrument;
@@ -46,7 +53,13 @@ class BookingItemPermissionsTest {
   void setUp() {
     permissions =
         new BookingItemPermissions(
-            inventoryPermissions, instruments, bookingInstruments, new BookingResourceRoleScheme());
+            inventoryPermissions,
+            instruments,
+            bookingInstruments,
+            new BookingResourceRoleScheme(),
+            subscriptions,
+            currentAccess,
+            permissionGate);
     configuration = new BookingConfiguration();
     configuration.setId(23L);
     configuration.replaceTarget(
@@ -131,9 +144,15 @@ class BookingItemPermissionsTest {
   }
 
   @Test
-  void mutationResolvesTheTargetItemsCurrentPermission() {
+  void mutationUsesCurrentScalarAccessUnderTheSharedGate() {
+    when(subject.getId()).thenReturn(5L);
+    when(currentAccess.resolve(5L, TARGET_ID))
+        .thenReturn(BookingCalendarCurrentAccessDao.Access.VIEWER);
+
     ResolvedResourceAccess resolved = permissions.resolveForMutation(configuration, subject);
 
     assertEquals(Optional.of(BookingResourceRoleScheme.VIEWER), resolved.effectiveRole());
+    verify(permissionGate).requireHeld(BookingCalendarPermissionGateDao.Mode.SHARED);
+    verify(subscriptions).lockPermissionFence();
   }
 }

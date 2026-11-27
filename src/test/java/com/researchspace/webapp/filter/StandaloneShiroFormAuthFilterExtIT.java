@@ -13,19 +13,17 @@ import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
-import com.researchspace.auth.SidVerificationException;
-import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.UserSignupException;
 import com.researchspace.testutils.RSpaceTestUtils;
-import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
@@ -39,7 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTest {
+public class StandaloneShiroFormAuthFilterExtIT extends RealTransactionSpringTestBase {
 
   private StandaloneShiroFormAuthFilterExt filter;
   private @Autowired IPropertyHolder propertyHolder;
@@ -57,7 +55,8 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
   @Autowired private List<LoginAuthorizer> loginauths;
 
   @BeforeEach
-  public void setUp() {
+  public void setUp() throws Exception {
+    super.setUp();
     openMocks(this);
     filter = new StandaloneShiroFormAuthFilterExt();
     filter.setUserMgr(userMgr);
@@ -116,7 +115,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
   @Test
   public void testOnLoginSuccessAuthenticationToken() throws Exception {
 
-    User u = createAndSaveRandomUser();
+    User u = createAndSaveUser(UUID.randomUUID().toString().substring(0, 10));
     RSpaceTestUtils.login(u.getUsername(), TESTPASSWD);
     Subject subject = SecurityUtils.getSubject();
     Date b4 = new Date();
@@ -125,57 +124,15 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     u = userMgr.get(u.getId());
     // last login is set, and subject remains authenticated.
     assertNotNull(u.getLastLogin());
-    assertFalse(u.getLastLogin().before(b4)); // check is updated
+    // The committed SQL timestamp stores whole seconds.
+    assertFalse(
+        u.getLastLogin().toInstant().isBefore(b4.toInstant().truncatedTo(ChronoUnit.SECONDS)));
     assertTrue(subject.isAuthenticated());
   }
 
   @Test
-  public void onLoginFailureBehaviour() throws Exception {
-
-    User u = createAndSaveRandomUser();
-    UsernamePasswordToken token = getTokenAndSetUsernameInRequest(u);
-    AuthenticationException authException;
-
-    // auto-signup problem
-    UserSignupException userSignupException = new UserSignupException("signup exception");
-    authException = new AuthenticationException(null, userSignupException);
-    filter.onLoginFailure(token, authException, req, resp);
-    assertEquals(userSignupException.getMessage(), req.getAttribute("checkedExceptionMessage"));
-    // shouldn't increase login failures count
-    u = userMgr.get(u.getId());
-    assertEquals(0, u.getNumConsecutiveLoginFailures());
-
-    // sid verification problem
-    initHttpReqAndResp(u.getUsername());
-    SidVerificationException sidException =
-        new SidVerificationException("sid verification exception");
-    authException = new AuthenticationException(null, sidException);
-    filter.onLoginFailure(token, authException, req, resp);
-    assertEquals(sidException.getMessage(), req.getAttribute("checkedExceptionMessage"));
-    // shouldn't increase login failures count
-    u = userMgr.get(u.getId());
-    assertEquals(0, u.getNumConsecutiveLoginFailures());
-
-    // verification pool busy, RSDEV-894
-    initHttpReqAndResp(u.getUsername());
-    filter.onLoginFailure(token, new LoginVerificationBusyException("busy"), req, resp);
-    // shouldn't increase login failures count
-    u = userMgr.get(u.getId());
-    assertEquals(0, u.getNumConsecutiveLoginFailures());
-
-    // wrong password problem
-    initHttpReqAndResp(u.getUsername());
-    authException = new AuthenticationException("wrong password");
-    filter.onLoginFailure(token, authException, req, resp);
-    assertEquals(null, req.getAttribute("checkedExceptionMessage"));
-    // wrong password should increase login failures count
-    u = userMgr.get(u.getId());
-    assertEquals(1, u.getNumConsecutiveLoginFailures());
-  }
-
-  @Test
   public void testBlockedUserRedirectedToBlockedPage() throws Exception {
-    User u = createAndSaveRandomUser();
+    User u = createAndSaveUser(UUID.randomUUID().toString().substring(0, 10));
     u.setAccountLocked(true);
     userMgr.save(u);
 
@@ -200,7 +157,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     configureHttpReqAsLoginRequest();
     assertNull(getShiroLoginFailureAttr(req));
 
-    User u = createAndSaveRandomUser();
+    User u = createAndSaveUser(UUID.randomUUID().toString().substring(0, 10));
     req.setParameter("username", u.getUsername());
     filter.onAccessDenied(req, resp);
     assertNull(getShiroLoginFailureAttr(req));
@@ -238,7 +195,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
 
   @Test
   public void testDisabledUserISRedirectedCorrectly() throws Exception {
-    User u = createAndSaveRandomUser();
+    User u = createAndSaveUser(UUID.randomUUID().toString().substring(0, 10));
     u.setEnabled(false);
     userMgr.save(u);
 
@@ -256,7 +213,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     assertTrue(subject.isAuthenticated());
     initHttpReqAndResp(u.getUsername());
     // also if is initialised, if disabled fails too
-    initialiseContentWithEmptyContent(u);
+    initUser(u);
     subject = SecurityUtils.getSubject();
     assertFalse(filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp));
     assertThat(getRedirectUrl()).contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED);

@@ -11,6 +11,7 @@ import {
   listBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
+import { isNonEmpty } from "@/util/ArrayUtils";
 import { type BookingConfiguration, mapBookingConfiguration } from "./bookingConfigurationSchema";
 import { mapBookingTargetDirectory } from "./bookingConfigurationTargets";
 
@@ -126,6 +127,21 @@ export function findBookingConfigurationQueryOptions(globalId: string) {
       },
     },
   });
+}
+
+/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
+export async function fetchBookingOwnershipCandidates(
+  globalIds: readonly string[],
+
+  signal?: AbortSignal,
+): Promise<readonly BookingConfiguration[]> {
+  if (!isNonEmpty(globalIds)) return [];
+  return (
+    await listBookingConfigurations(
+      { ...parameters(globalIds[0]), where: { target: { in: globalIds } }, limit: Math.min(globalIds.length, 100) },
+      { signal },
+    )
+  ).docs.map(mapBookingConfiguration);
 }
 
 export function bookingRouteTargetQuery(globalId: string | undefined) {

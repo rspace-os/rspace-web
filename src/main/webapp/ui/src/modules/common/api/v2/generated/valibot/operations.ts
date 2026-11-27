@@ -41,6 +41,19 @@ export const apiV2Operations: Record<
   countBookingConfigurations: {
     responses: { "200": { "application/json": native.CountBookingConfigurationsResponse } },
   },
+  revokeBookingCalendarSubscription: { responses: {} },
+  getBookingCalendarSubscription: {
+    responses: { "200": { "application/json": native.GetBookingCalendarSubscriptionResponse } },
+  },
+  createBookingCalendarSubscription: {
+    responses: {
+      "200": { "application/json": native.CreateBookingCalendarSubscriptionResponse },
+      "201": { "application/json": native.CreateBookingCalendarSubscriptionResponse },
+    },
+  },
+  rotateBookingCalendarSubscription: {
+    responses: { "200": { "application/json": native.RotateBookingCalendarSubscriptionResponse } },
+  },
   deleteBookingConfiguration: {
     responses: { "200": { "application/json": native.DeleteBookingConfigurationResponse } },
   },
@@ -78,6 +91,7 @@ export const apiV2Operations: Record<
     },
   },
   countBookings: { responses: { "200": { "application/json": native.CountBookingsResponse } } },
+  downloadBookingCalendarFile: { responses: {} },
   getBooking: { responses: { "200": { "application/json": native.GetBookingResponse } } },
   updateBooking: {
     request: native.UpdateBookingBody,
@@ -141,6 +155,22 @@ export const apiV2Operations: Record<
   listUsers: { responses: { "200": { "application/json": native.ListUsersResponse } } },
   countUsers: { responses: { "200": { "application/json": native.CountUsersResponse } } },
   getCurrentUser: { responses: { "200": { "application/json": native.GetCurrentUserResponse } } },
+  listMyBookableItemCalendarSubscriptions: {
+    responses: { "200": { "application/json": native.ListMyBookableItemCalendarSubscriptionsResponse } },
+  },
+  revokeUserBookingCalendarSubscription: { responses: {} },
+  getUserBookingCalendarSubscription: {
+    responses: { "200": { "application/json": native.GetUserBookingCalendarSubscriptionResponse } },
+  },
+  createUserBookingCalendarSubscription: {
+    responses: {
+      "200": { "application/json": native.CreateUserBookingCalendarSubscriptionResponse },
+      "201": { "application/json": native.CreateUserBookingCalendarSubscriptionResponse },
+    },
+  },
+  rotateUserBookingCalendarSubscription: {
+    responses: { "200": { "application/json": native.RotateUserBookingCalendarSubscriptionResponse } },
+  },
   resetMyBookingPreferences: { responses: {} },
   getMyBookingPreferences: { responses: { "200": { "application/json": native.GetMyBookingPreferencesResponse } } },
   replaceMyBookingPreferences: {

@@ -92,6 +92,12 @@ function SearchParameterChips(): React.ReactNode {
           }}
         />
       )}
+      {search.fetcher.bookable !== null && (
+        <ParameterChip
+          label={t("search.parameterChips.bookable", { bookable: search.fetcher.bookable ? "yes" : "no" })}
+          onDelete={() => search.setBookable(null)}
+        />
+      )}
       {currentBasket && (
         <ParameterChip
           label={t("search.parameterChips.basket", {
