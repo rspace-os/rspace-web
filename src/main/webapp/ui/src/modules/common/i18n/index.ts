@@ -2,13 +2,16 @@ import i18next from "i18next";
 import ICU from "i18next-icu";
 import resourcesToBackend from "i18next-resources-to-backend";
 import { initReactI18next } from "react-i18next";
+import { localiseValibot } from "./valibot";
 
 /**
  * Shared i18next singleton. Every entry bundle must import this module for its
  * side effect so the instance is initialised before any `useTranslation` runs.
  * Only `common` loads at init; other namespaces load on demand (Vite
- * code-splits one chunk per namespace).
+ * code-splits one chunk per namespace). Valibot's issue messages follow the
+ * i18next language.
  */
+localiseValibot(i18next);
 void i18next
   .use(ICU)
   .use(resourcesToBackend((language: string, namespace: string) => import(`./locales/${language}/${namespace}.json`)))

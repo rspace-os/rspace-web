@@ -60,11 +60,13 @@ pre-commit:
         if [ -n "$spotless_files" ]; then
           ./mvnw -q spotless:check -DspotlessStrict -DspotlessFiles="$spotless_files"
         fi
-    # Type-check the frontend when any staged TS/TSX file changes. tsc is a
-    # whole-project check, so we run the full `tsc --noEmit` rather than a
-    # per-file subset.
+    # Type-check the frontend and the Node scripts when any staged TS/TSX file
+    # changes. tsc is a whole-project check, so we run the full `tsc --noEmit`
+    # rather than a per-file subset.
     tsc:
-      glob: "src/main/webapp/ui/**/*.{ts,tsx}"
+      glob:
+        - "src/main/webapp/ui/**/*.{ts,tsx}"
+        - "scripts/*.ts"
       run: pnpm run tsc
     # Lint/format-check the frontend with Biome when any staged TS/TSX/CSS file
     # changes. Reject the commit on ANY Biome diagnostic: --error-on-warnings
