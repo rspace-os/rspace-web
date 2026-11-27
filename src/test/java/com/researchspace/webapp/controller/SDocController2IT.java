@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
@@ -27,6 +28,7 @@ import com.researchspace.model.GroupType;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
@@ -38,6 +40,7 @@ import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
+import com.researchspace.model.record.DeltaType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
@@ -199,6 +202,25 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     Long fieldId = sd.getFields().iterator().next().getId();
     Long commentid = controller.insertComment(fieldId + "", "any").getData();
     assertThat(controller.getComments(commentid, null, principal)).hasSize(1);
+  }
+
+  @Test
+  public void getCommentsAtDocumentRevision() throws Exception {
+    User user = createAndSaveUser(getRandomName(MIN_USERNAMELENGTH));
+    logoutAndLoginAs(user);
+    Principal principal = user::getUsername;
+    StructuredDocument sd = createDocumentInFolder(initUser(user), createAnyForm(user), user);
+    Long fieldId = sd.getFields().iterator().next().getId();
+    Long commentId = controller.insertComment(fieldId + "", "historic comment").getData();
+    recordMgr.forceVersionUpdate(sd.getId(), DeltaType.COMMENT, null, user);
+    AuditedEntity<StructuredDocument> revision =
+        auditMgr.getNewestRevisionForEntity(StructuredDocument.class, sd.getId());
+
+    List<EcatCommentItem> items =
+        controller.getComments(commentId, revision.getRevision().intValue(), principal);
+
+    assertThat(items).hasSize(1);
+    assertEquals("historic comment", items.get(0).getItemContent());
   }
 
   @Test
