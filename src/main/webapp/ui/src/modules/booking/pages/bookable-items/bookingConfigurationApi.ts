@@ -6,6 +6,7 @@ import {
 import {
   deleteBookingConfiguration as generatedDeleteBookingConfiguration,
   updateBookingConfiguration as generatedUpdateBookingConfiguration,
+  getListBookingConfigurationsQueryOptions,
   getListBookingConfigurationsSuspenseQueryOptions,
   listBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -112,6 +113,17 @@ export function bookingConfigurationTargetQuery(globalId: string) {
       retry: retryUnlessClientError,
       // No single match reads as null, so the page shows "not found" itself instead of the error boundary.
       select: (result) => matchingConfiguration(globalId, result.docs.map(mapBookingConfiguration)),
+    },
+  });
+}
+
+export function findBookingConfigurationQueryOptions(globalId: string) {
+  return getListBookingConfigurationsQueryOptions<BookingConfiguration | null>(parameters(globalId), {
+    query: {
+      select: (result) => {
+        if (result.docs.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+        return result.docs.length === 0 ? null : mapBookingConfiguration(result.docs[0]);
+      },
     },
   });
 }

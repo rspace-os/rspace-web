@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import AllBookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemsTable } from "@/modules/booking/pages/bookable-items/bookingConfigurationTable";
@@ -88,11 +89,11 @@ export function BookableItemPageStory({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
+      <BookingCreationStoreProvider>
         <Suspense fallback={null}>
           <RouterProvider router={router as never} />
         </Suspense>
-      </NuqsAdapter>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>
   );
 }
