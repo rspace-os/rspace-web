@@ -39,14 +39,14 @@
 	<div id="requestHeader">
 		<a class="dashboardOptions" id="mynotifications" href="#">
 		    <spring:message code="messaging.newNotificationsTitle"/>
-	<c:if test="${not empty notificationList}">
-                <span class="badge" id="notificationsBadge">${fn:length(notificationList)}</span>
+	<c:if test="${notificationTotal > 0}">
+                <span class="badge" id="notificationsBadge">${notificationTotal}</span>
             </c:if>
 		</a>
 		<a class="dashboardOptions" id="mor" href="#">
 		<spring:message code="dashboard.received.header"/>
-	<c:if test="${not empty messages}">
-                <span class="badge" id="messagesBadge">${fn:length(messages)}</span>
+	<c:if test="${receivedMessageTotal > 0}">
+                <span class="badge" id="messagesBadge">${receivedMessageTotal}</span>
             </c:if>
 		</a>
 		<a class="dashboardOptions" id="myrequests" href="#"><spring:message code="dashboard.sent.header"/>  </a>
