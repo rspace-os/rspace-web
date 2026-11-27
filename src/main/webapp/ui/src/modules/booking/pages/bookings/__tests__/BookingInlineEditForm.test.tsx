@@ -407,7 +407,7 @@ describe("BookingInlineEditForm", () => {
     await waitFor(() => expect(alert).toHaveFocus());
     expect(alert).toMatchTextContent("booking:bookings.errors.bufferAfter");
     expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
-    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:time.labelWithPeriod");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("booking:bookings.errors.overlapBooking");
     expect(save).toBeDisabled();
   });
 
