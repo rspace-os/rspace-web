@@ -266,6 +266,33 @@ describe("StoichiometryDialog", () => {
     expect(hasStoichiometryRequest("POST")).toBe(true);
   });
 
+  it("does not return focus to the element focused before it opened", async () => {
+    const renderWithDialog = (open: boolean) => (
+      <>
+        <button type="button">{"Outside"}</button>
+        <StoichiometryDialogRoot
+          open={open}
+          onClose={() => {}}
+          chemId={12345}
+          recordId={1}
+          stoichiometryId={undefined}
+          stoichiometryRevision={undefined}
+        />
+      </>
+    );
+    const { rerender } = render(renderWithDialog(false));
+    const outsideButton = screen.getByRole("button", { name: "Outside" });
+    outsideButton.focus();
+
+    rerender(renderWithDialog(true));
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(dialog).toContainElement(document.activeElement as HTMLElement));
+
+    rerender(renderWithDialog(false));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(outsideButton).not.toHaveFocus();
+  });
+
   it("shows an inline error when creating a new table fails", async () => {
     const user = userEvent.setup();
     const createErrorMessage = "Unable to create stoichiometry table.";

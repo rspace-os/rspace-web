@@ -509,6 +509,28 @@ describe("TinyMCE stoichiometry plugin", () => {
     fetchSpy.mockRestore();
   });
 
+  it("returns focus to the editor when the dialog closes", async () => {
+    const registeredPlugins = registerTinymcePlugins();
+    const editorDocument = document.implementation.createHTMLDocument("editor");
+    const tableOnlyNode = createTableOnlyNode(editorDocument, {
+      id: "stoichiometry-1",
+      stoichiometry: { id: 12, revision: 4 },
+    });
+    const { buttons, editor } = createEditorHarness({ editorDocument, initialSelectionNode: tableOnlyNode });
+    await instantiateStoichiometryPlugin();
+    const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
+    new StoichiometryPlugin(editor);
+    buttons.get("stoichiometryInsertButton")?.onAction();
+    await waitFor(() => {
+      expect(getLastRenderedDialogProps()).toEqual(expect.objectContaining({ open: true }));
+    });
+    expect(editor.focus).not.toHaveBeenCalled();
+
+    getLastRenderedDialogProps()?.onClose?.();
+
+    expect(editor.focus).toHaveBeenCalledTimes(1);
+  });
+
   it("removes a newly inserted tableOnly div when its stoichiometry table is deleted", async () => {
     const registeredPlugins = registerTinymcePlugins();
     const editorDocument = document.implementation.createHTMLDocument("editor");

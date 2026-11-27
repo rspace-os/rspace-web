@@ -1,7 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw/http";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, onTestFinished, test } from "vitest";
+import { userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import StoichiometryDialogRoot from "../StoichiometryDialogRoot";
@@ -98,6 +99,25 @@ describe("Stoichiometry Dialog", () => {
     await dialog.clickCalculate();
     await expect.element(dialog.table).toBeVisible();
     expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
+  });
+
+  test("keeps focus in the dialog when the editor takes it after a table is created", async () => {
+    const editorFrame = document.createElement("iframe");
+    document.body.append(editorFrame);
+    onTestFinished(() => editorFrame.remove());
+    const editorBody = editorFrame.contentDocument?.body;
+    if (!editorBody) throw new Error("Editor iframe has no body");
+    editorBody.contentEditable = "true";
+    // TinyMCE focuses its iframe when the new table is written into the document.
+    render(<StoichiometryDialogWithCalculateButtonStory onTableCreated={() => editorBody.focus()} />);
+
+    await dialog.calculateWithKeyboard();
+    await expect.element(dialog.table).toBeVisible();
+    await expect.element(dialog.deleteButton).toBeEnabled();
+    expect(dialog.dialog.element()).toContainElement(document.activeElement as HTMLElement);
+
+    await userEvent.keyboard("{Escape}");
+    await expect.element(dialog.dialog).not.toBeInTheDocument();
   });
 
   test("makes a POST API call when creating a new table", async () => {

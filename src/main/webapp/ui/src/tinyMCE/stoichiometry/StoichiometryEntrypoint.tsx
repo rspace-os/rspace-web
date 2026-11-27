@@ -279,6 +279,8 @@ class StoichiometryPlugin {
         stoichiometryRevision: undefined,
         onTableCreated: () => {},
       });
+      // Focus reached the dialog from the editor's iframe, so the dialog has no element to return it to.
+      editor.focus();
     };
 
     const getSelectedStoichiometryContext = () => {
