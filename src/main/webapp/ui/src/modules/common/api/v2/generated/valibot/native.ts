@@ -53,6 +53,7 @@ export const ApiV2AuditEvent = v.object({
     "INV_CONTAINER",
     "INV_INSTRUMENT",
     "REQUEST",
+    "BOOKING",
     "WORKSPACE",
     "UNKNOWN",
   ]),
