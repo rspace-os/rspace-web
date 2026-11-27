@@ -45,7 +45,7 @@ export function FilterSelect({
   const { t } = useTranslation<Namespace>("common");
   const [open, setOpen] = useState(false);
 
-  const byKey = Map.groupBy(options, (option) => option.groupKey ?? option.groupLabelKey ?? "");
+  const byKey = Map.groupBy(options, (option) => option.groupKey ?? option.groupLabelKey ?? option.groupLabel ?? "");
   const groups: OptionGroup[] = [...byKey].map(([key, [first, ...rest]]) => ({
     key,
     heading: first.groupLabel ?? (first.groupLabelKey === null ? null : t(first.groupLabelKey)),

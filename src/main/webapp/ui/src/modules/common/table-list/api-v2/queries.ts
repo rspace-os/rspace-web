@@ -3,6 +3,7 @@ import { uniq } from "es-toolkit";
 import { useMemo, useState } from "react";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
+import { useQueryKeyScope } from "@/modules/common/queries/queryIdentityScope";
 import { type ApiV2CollectionMetadata, apiV2CollectionMetadataFor } from "./metadata";
 import type { ApiV2CollectionFetchOptions, ApiV2CollectionResourceOf, ApiV2FilterResourceOf } from "./requestParams";
 import type { RuntimeFieldCatalogForNamespace } from "./runtimeFieldCatalog";
@@ -35,7 +36,7 @@ export function useApiV2RuntimeFields<TDocument, TEntry extends ApiV2CollectionR
 }) {
   const resourceName = resource.name;
   const metadata = suppliedMetadata ?? apiV2CollectionMetadataFor<TDocument>(resourceName);
-  const scope = String(request?.authScope ?? "");
+  const scope = useQueryKeyScope(request?.authScope);
   // Only namespaces whose catalog route a registered resource publishes offer runtime-field selectors.
   const namespaces = (metadata.runtimeFields ?? []).flatMap((namespace) => {
     const endpoint = registeredRuntimeFieldCatalog(namespace);
