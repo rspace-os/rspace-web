@@ -143,15 +143,41 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   @Override
   public NotificationStatus getNotificationStatus(User user) {
     int notificationCount = getUnreadNotificationCount(user.getId());
-    int messageCount =
-        getActiveMessageOrRequestDistinctCTIds(
-                user, MessageTypeFilter.DEFAULT_MESSAGE_LISTING, null)
-            .size();
-    int specialMessageCount =
-        getActiveMessageOrRequestDistinctCTIds(
-                user, MessageTypeFilter.SPECIAL_MESSAGE_LISTING, null)
-            .size();
+    Map<MessageType, Long> activeCounts = countActiveMessageOrRequestsByType(user);
+    int messageCount = sumCounts(activeCounts, MessageTypeFilter.DEFAULT_MESSAGE_LISTING);
+    int specialMessageCount = sumCounts(activeCounts, MessageTypeFilter.SPECIAL_MESSAGE_LISTING);
     return new NotificationStatus(notificationCount, messageCount, specialMessageCount);
+  }
+
+  /**
+   * Counts, per message type, the rows {@link #getActiveMessageOrRequestDistinctCTIds} would return
+   * without a type filter. Each message has one type, so the standard and special totals are sums
+   * of these counts and need only this one query.
+   */
+  private Map<MessageType, Long> countActiveMessageOrRequestsByType(User user) {
+    List<Object[]> rows =
+        getSession()
+            .createQuery(
+                "select mor.messageType, count(distinct mor.id) from MessageOrRequest mor "
+                    + "join mor.recipients ct join ct.recipient recipient "
+                    + "join mor.originator originator "
+                    + "where ct.status not in :terminatedStates "
+                    + "and recipient.id = :userId "
+                    + "group by mor.messageType",
+                Object[].class)
+            .setParameterList("terminatedStates", TERMINATED_STATES)
+            .setParameter("userId", user.getId())
+            .getResultList();
+    Map<MessageType, Long> counts = new EnumMap<>(MessageType.class);
+    for (Object[] row : rows) {
+      counts.put((MessageType) row[0], (Long) row[1]);
+    }
+    return counts;
+  }
+
+  private static int sumCounts(Map<MessageType, Long> counts, MessageTypeFilter filter) {
+    return Math.toIntExact(
+        filter.getWantedTypes().stream().mapToLong(type -> counts.getOrDefault(type, 0L)).sum());
   }
 
   @Override
