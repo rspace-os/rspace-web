@@ -15,6 +15,7 @@ import com.researchspace.dao.FormCreateMenuDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.FormUsageDao;
 import com.researchspace.model.AccessControl;
+import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
 import com.researchspace.model.Version;
 import com.researchspace.model.dtos.*;
@@ -840,6 +841,33 @@ public class FormManagerTest extends SpringTransactionalTest {
     assertTrue(oldVersion.getVersion().before(newlyVersioned.getVersion()));
     assertNull(oldVersion.getPreviousVersion());
     assertEquals(NEWNAME, newlyVersioned.getFieldForms().get(0).getName());
+  }
+
+  // RSDEV-1458
+  @Test
+  public void outdatedVersionOpensReadOnlyWithoutTemporaryCopy() throws Exception {
+    RSForm v0 = formMgr.create(user);
+    v0.addFieldForm(TestFactory.createTextFieldForm());
+    v0.publish();
+    formMgr.save(v0, user);
+    RSForm toEdit = formMgr.getForEditing(v0.getId(), user, anySessionTracker());
+    assertNotNull(formMgr.updateVersion(toEdit.getId(), user));
+
+    RSForm opened = formMgr.getForEditing(v0.getId(), user, anySessionTracker());
+    assertEquals(v0.getId(), opened.getId());
+    assertEquals(EditStatus.CAN_NEVER_EDIT, opened.getEditStatus());
+    assertNull(formMgr.get(v0.getId(), user).getTempForm());
+
+    // an old version still linked to a temporary copy made before this fix
+    formMgr.copy(v0.getId(), user, new TemporaryCopyLinkedToOriginalCopyPolicy());
+    opened = formMgr.getForEditing(v0.getId(), user, anySessionTracker());
+    assertEquals(v0.getId(), opened.getId());
+    assertEquals(EditStatus.CAN_NEVER_EDIT, opened.getEditStatus());
+
+    User other = createInitAndLoginAnyUser();
+    assertEquals(
+        EditStatus.ACCESS_DENIED,
+        formMgr.getForEditing(v0.getId(), other, anySessionTracker()).getEditStatus());
   }
 
   private void editTextFieldForm(RSForm toEdit, String newFieldName) {
