@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import type { ReactNode } from "react";
 import { dayMinuteToZonedTime, parsePlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 
@@ -9,6 +10,9 @@ type BaseEvent = {
   startMinute: number;
   /** Same coordinates as startMinute; preserve off-day bounds and clip only for rendering. */
   endMinute: number;
+  startInstant?: Temporal.Instant | string;
+  endInstant?: Temporal.Instant | string;
+  instrumentTimeZone?: string | null;
 };
 
 export type DayTimelineItem = {

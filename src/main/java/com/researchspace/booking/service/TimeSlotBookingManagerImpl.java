@@ -31,6 +31,8 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
@@ -61,11 +63,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
 
+  private static final int MAX_PURPOSE_LENGTH = 1000;
+
   private final TimeSlotBookingDao bookingDao;
   private final BookingConfigurationDao configurationDao;
   private final BookingSchedulingPolicy schedulingPolicy;
   private final InstrumentDao instrumentDao;
   private final BookingInstrumentQueryDao bookingInstruments;
+  private final BookingNotificationService bookingNotificationService;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
   private final BookingItemPermissions accessManager;
@@ -80,6 +85,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       BookingSchedulingPolicy schedulingPolicy,
       InstrumentDao instrumentDao,
       BookingInstrumentQueryDao bookingInstruments,
+      BookingNotificationService bookingNotificationService,
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events,
       BookingItemPermissions accessManager,
@@ -93,6 +99,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.schedulingPolicy = schedulingPolicy;
     this.instrumentDao = instrumentDao;
     this.bookingInstruments = bookingInstruments;
+    this.bookingNotificationService = bookingNotificationService;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
     this.accessManager = accessManager;
@@ -201,7 +208,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                   return CalendarEvent.of(booking, itemName);
                 })
             .toList();
-    return new CalendarSource("booking:calendar.feed.myBookings", "UTC", calendarEvents, true);
+    return new CalendarSource("bookingCalendarFeed.myBookings", "UTC", calendarEvents, true);
   }
 
   private static boolean isInstrumentTarget(BookableTargetReference target) {
@@ -300,6 +307,10 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     booking.setCreatedBy(actor);
     booking.setUpdatedBy(actor);
     TimeSlotBooking saved = save(booking);
+    if (booking.getKind() == BookingEventKind.BOOKING) {
+      bookingNotificationService.notify(
+          saved, actor, NotificationType.NOTIFICATION_BOOKING_CREATED);
+    }
     events.publishEvent(new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.CREATE));
     prepare(List.of(saved), subject);
     return saved;
@@ -386,6 +397,14 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               booking.setUpdatedAt(new Date());
               booking.setUpdatedBy(actor);
               TimeSlotBooking saved = save(booking);
+              if (booking.getKind() == BookingEventKind.BOOKING
+                  && patch.state() == BookingState.CANCELLED) {
+                bookingNotificationService.notify(
+                    saved, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+              } else if (booking.getKind() == BookingEventKind.BOOKING && intervalChanged) {
+                bookingNotificationService.notify(
+                    saved, actor, NotificationType.NOTIFICATION_BOOKING_CHANGED);
+              }
               events.publishEvent(
                   new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.WRITE));
               prepare(List.of(saved), subject);
@@ -556,8 +575,9 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   private static void validatePurpose(String purpose) {
-    if (purpose != null && purpose.length() > 1000) {
-      throw new IllegalArgumentException("errors.api.v2.booking.purpose.length");
+    if (purpose != null && purpose.length() > MAX_PURPOSE_LENGTH) {
+      throw new LocalizedIllegalArgumentException(
+          "errors.api.v2.booking.purpose.length", MAX_PURPOSE_LENGTH);
     }
   }
 
