@@ -711,16 +711,6 @@ export default class SampleModel
     return Boolean(this.search.selectedResults[0]);
   }
 
-  contextMenuDisabled(): string | null {
-    const searchShowsSelection = new Set(["LIST", "GRID", "IMAGE"]).has(this.search.searchView);
-    return (
-      super.contextMenuDisabled() ??
-      (this.hasSelectedSubsample && searchShowsSelection
-        ? i18n.t("inventory:sample.contextMenu.subsamplesSelected")
-        : null)
-    );
-  }
-
   get fieldNamesInUse(): Array<string> {
     return [
       ...super.fieldNamesInUse,
