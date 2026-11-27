@@ -54,12 +54,16 @@ function capabilitiesForSelector<TDocument>(
 ): NonNullable<FieldConfig<TDocument>["capabilities"]> {
   return {
     sortable: metadata.sorting.fields.includes(field.name),
-    filterOperators:
-      selector?.operators
-        .map((operator) => semanticOperators[operator])
-        .filter((operator) => isFilterOperatorCompatible(field.type, operator)) ?? [],
+    filterOperators: filterOperatorsFor(field.type, selector?.operators ?? []),
     supportsWildcards: selector?.wildcards ?? false,
   };
+}
+
+/** The published wire operators as filter operators that suit the field type. */
+function filterOperatorsFor(type: FieldConfig<unknown>["type"], wire: readonly FilterOperatorToken[]) {
+  return wire
+    .map((operator) => semanticOperators[operator])
+    .filter((operator) => isFilterOperatorCompatible(type, operator));
 }
 
 /** `<relationship>.value` and `<relationship>.relationTo` address the reference itself, not a target field. */

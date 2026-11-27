@@ -10,12 +10,16 @@ import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreat
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { calendarBookingCatalogueQuery, catalogueItemAsConfiguration } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
+import {
+  bookingInstrumentSource,
+  bookingRelationshipSources,
+} from "@/modules/booking/domain/bookingRelationshipSource";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { apiV2Resources } from "@/modules/common/api/v2/generated/apiV2Resources";
 import type { CollectionConfig, FieldName, SearchSelector } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { useTableList } from "@/modules/common/table-list/hooks/useTableList";
@@ -45,6 +49,8 @@ const calendarResourceSourceConfig = {
   pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
 } satisfies CollectionConfig<BookingConfiguration>;
 
+// The target chip words a missing or failed item itself (`CalendarTargetFilterChip`), so the option keeps the bare ID.
+const TARGET_OPTION_LABELS = {};
 const calendarSearchOptions = { history: "replace", clearOnDefault: true } as const;
 const calendarSearchParser = parseAsString.withDefault("").withOptions(calendarSearchOptions);
 const calendarWhereParser = parseAsString.withOptions(calendarSearchOptions);
@@ -437,10 +443,20 @@ export function useCalendarContentData() {
     () => resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : [])),
     [resourceTable.tableProps.rows],
   );
-  const targetName = target
+  // Search and the filters can hide the item from the loaded rows and events, so resolve its name on its own,
+  // as the Location filter restores its chips.
+  const [targetOption] = useSelectedRelationshipOptions({
+    sources: [bookingInstrumentSource],
+    values: target ? [target] : [],
+
+    authScope: currentUser.id,
+    labels: TARGET_OPTION_LABELS,
+  });
+  const loadedTargetName = target
     ? (resourceTargets.find((resource) => resource.globalId === target)?.value.name ??
       events.data?.find((event) => event.target?.globalId === target)?.target?.value.name)
     : undefined;
+  const targetName = targetOption?.restoreStatus === undefined ? targetOption?.label : loadedTargetName;
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     const events = withoutPresets(expression, [eventOwnerPreset]);
     const otherItems = withoutPresets(itemExpression, [ownerPreset]);
@@ -495,5 +511,6 @@ export function useCalendarContentData() {
     target,
     targetName,
     replaceSearch,
+    targetOption,
   };
 }

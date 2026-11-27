@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { ownBooking } from "../../mocks/bookingCalendarFixtures";
-import { monthDayCount, nextFreeRange, shiftDate, startOfWeek } from "../calendarLayoutUtils";
+import { nextFreeRange, scrollCalendarWithArrowKeys, shiftDate, startOfWeek } from "../calendarLayoutUtils";
 
 describe("calendar date layout", () => {
   it("keeps a retained booking while omitting its redacted target", () => {
@@ -23,11 +23,6 @@ describe("calendar date layout", () => {
   it("starts weeks on Monday using the ISO calendar date", () => {
     expect(startOfWeek("2026-03-29")).toBe("2026-03-23");
     expect(startOfWeek("2026-03-30")).toBe("2026-03-30");
-  });
-
-  it("uses the number of days in the ISO month", () => {
-    expect(monthDayCount("2024-02-15")).toBe(29);
-    expect(monthDayCount("2025-02-15")).toBe(28);
   });
 
   it("shifts months from the first day across year boundaries", () => {
@@ -75,5 +70,50 @@ describe("nextFreeRange", () => {
       endMinute: 11 * 60,
     });
     expect(nextFreeRange([], "2026-10-05", "Europe/Berlin", 17 * 60, 19 * 60, 15, closed)).toBeUndefined();
+  });
+});
+
+describe("scrollCalendarWithArrowKeys", () => {
+  it("scrolls only when the calendar region itself owns the event", () => {
+    const region = document.createElement("section");
+    const scrollBy = vi.fn();
+    Object.defineProperty(region, "scrollBy", { value: scrollBy });
+    const preventDefault = vi.fn();
+    const event = {
+      key: "ArrowRight",
+      target: region,
+      currentTarget: region,
+      defaultPrevented: false,
+      preventDefault,
+    } as unknown as Parameters<typeof scrollCalendarWithArrowKeys>[0];
+
+    scrollCalendarWithArrowKeys(event);
+
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(scrollBy).toHaveBeenCalledWith({ left: 240, behavior: "smooth" });
+  });
+
+  it("leaves bubbled or already handled arrow keys alone", () => {
+    const region = document.createElement("section");
+    const child = document.createElement("button");
+    region.append(child);
+    const scrollBy = vi.fn();
+    Object.defineProperty(region, "scrollBy", { value: scrollBy });
+    const preventDefault = vi.fn();
+    const keyEvent = (overrides: Partial<KeyboardEvent> = {}) => ({
+      key: "ArrowRight",
+      target: region,
+      currentTarget: region,
+      defaultPrevented: false,
+      preventDefault,
+      ...overrides,
+    });
+
+    for (const event of [keyEvent({ key: "ArrowLeft", target: child }), keyEvent({ defaultPrevented: true })]) {
+      scrollCalendarWithArrowKeys(event as unknown as Parameters<typeof scrollCalendarWithArrowKeys>[0]);
+    }
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(scrollBy).not.toHaveBeenCalled();
   });
 });

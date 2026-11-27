@@ -34,8 +34,9 @@ import {
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
-import { epochMillisecondsOf } from "@/modules/common/time/instant";
+
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
+
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 
@@ -239,7 +240,7 @@ export function InlineBookingEditor({
         ...enteredWindow,
         date: formState.draft.startDate,
         timeZone: configuration.data?.timezone ?? timezone,
-        elapsedMinutes: (epochMillisecondsOf(enteredWindow.end) - epochMillisecondsOf(enteredWindow.start)) / 60_000,
+        elapsedMinutes: (Date.parse(enteredWindow.end) - Date.parse(enteredWindow.start)) / 60_000,
       }
     : { start: "", end: "", date: "", timeZone: timezone, elapsedMinutes: 0 };
   const availability = useCalendarAvailability(

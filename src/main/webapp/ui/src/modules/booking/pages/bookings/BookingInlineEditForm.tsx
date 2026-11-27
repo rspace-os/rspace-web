@@ -107,6 +107,7 @@ export default function BookingInlineEditForm() {
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         await invalidateListBookingConfigurations(queryClient);
+        await invalidateListBookingConfigurations(queryClient);
       }
     },
   });
