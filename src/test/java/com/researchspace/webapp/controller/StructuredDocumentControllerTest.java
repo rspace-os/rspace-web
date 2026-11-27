@@ -24,11 +24,17 @@ import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.EditStatus;
+import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
 import com.researchspace.model.User;
+import com.researchspace.model.Witness;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.RenameAuditEvent;
+import com.researchspace.model.comms.CommunicationStatus;
+import com.researchspace.model.comms.MessageOrRequest;
+import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
@@ -66,6 +72,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -350,6 +357,82 @@ public class StructuredDocumentControllerTest {
     assertEquals(List.of(busyText()), result.getErrorMsg().getErrorMessages());
     verify(signingManager, never())
         .updateWitness(anyLong(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+  }
+
+  @Test
+  public void openDocumentTellsPendingWitnessWhyAnUnsharedDocumentCannotOpen() {
+    RecordSigningManager signingManager = Mockito.mock(RecordSigningManager.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "signingManager", signingManager);
+    givenSignedDocumentNoLongerReadableBy(3L);
+    givenWitnessRequestFor(signingManager, 3L, new Witness(user), CommunicationStatus.NEW);
+
+    RecordAccessDeniedException e =
+        assertThrows(RecordAccessDeniedException.class, () -> openDocument(3L));
+
+    assertEquals(
+        new MessageSourceUtils(new JsonMessageSource())
+            .getMessage("document.witness.errors.noAccess"),
+        e.getMessage());
+    assertThat(e.getMessage()).contains("no longer have access");
+  }
+
+  @Test
+  public void openDocumentKeepsGenericDenialForUserWhoIsNotAWitness() {
+    RecordSigningManager signingManager = Mockito.mock(RecordSigningManager.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "signingManager", signingManager);
+    AuthorizationException denial = givenSignedDocumentNoLongerReadableBy(3L);
+
+    assertSame(denial, assertThrows(AuthorizationException.class, () -> openDocument(3L)));
+  }
+
+  @Test
+  public void openDocumentKeepsGenericDenialForWitnessWhoDeclined() {
+    RecordSigningManager signingManager = Mockito.mock(RecordSigningManager.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "signingManager", signingManager);
+    AuthorizationException denial = givenSignedDocumentNoLongerReadableBy(3L);
+    Witness declined = new Witness(user);
+    declined.setOptionString("not my experiment");
+    declined.setWitnessesDate(new Date());
+    givenWitnessRequestFor(signingManager, 3L, declined, CommunicationStatus.REJECTED);
+
+    assertSame(denial, assertThrows(AuthorizationException.class, () -> openDocument(3L)));
+  }
+
+  @Test
+  public void openDocumentKeepsGenericDenialForWitnessWhoseRequestWasCancelled() {
+    RecordSigningManager signingManager = Mockito.mock(RecordSigningManager.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "signingManager", signingManager);
+    AuthorizationException denial = givenSignedDocumentNoLongerReadableBy(3L);
+    givenWitnessRequestFor(signingManager, 3L, new Witness(user), CommunicationStatus.CANCELLED);
+
+    assertSame(denial, assertThrows(AuthorizationException.class, () -> openDocument(3L)));
+  }
+
+  private void givenWitnessRequestFor(
+      RecordSigningManager signingManager,
+      long recordId,
+      Witness witness,
+      CommunicationStatus requestStatus) {
+    Signature signature = new Signature();
+    signature.addWitnesses(List.of(witness));
+    MessageOrRequest request = new MessageOrRequest(MessageType.REQUEST_RECORD_WITNESS);
+    request.setStatus(requestStatus);
+    signature.setWitnessRequest(request);
+    when(signingManager.canWitness(recordId, user)).thenReturn(true);
+    when(signingManager.getSignatureForRecord(recordId)).thenReturn(signature);
+  }
+
+  private AuthorizationException givenSignedDocumentNoLongerReadableBy(long recordId) {
+    AuthorizationException denial = new AuthorizationException("Attempt to load record");
+    when(userMgr.getUserByUsername(user.getUsername(), true)).thenReturn(user);
+    when(recordMgr.requestRecordView(recordId, user)).thenReturn(EditStatus.CAN_NEVER_EDIT);
+    when(recordMgr.getRecordWithFields(recordId, user)).thenThrow(denial);
+    return denial;
+  }
+
+  private void openDocument(long recordId) throws RecordAccessDeniedException {
+    strucDocCtrller.openDocument(
+        recordId, null, false, false, null, new ExtendedModelMap(), session, mockPrincipal);
   }
 
   private static String busyText() {

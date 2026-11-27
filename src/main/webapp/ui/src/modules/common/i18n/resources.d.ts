@@ -10046,6 +10046,11 @@ export default interface Resources {
       },
       "validation": {
         "tagsTooLong": "Document tags cannot be longer than 8000 characters"
+      },
+      "witness": {
+        "errors": {
+          "noAccess": "Signing could not be completed because you no longer have access to this document. Ask the signer to share it with you again."
+        }
       }
     },
     "documentAndNotebookTemplates": {
