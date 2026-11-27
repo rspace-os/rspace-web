@@ -13,7 +13,6 @@ import com.researchspace.booking.service.InvalidBookingSchedulingSettingsExcepti
 import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Locale;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -37,7 +36,8 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   @ExceptionHandler(InvalidBookingSchedulingSettingsException.class)
   public ResponseEntity<ApiV2Problem> handleInvalidBookingSettings(
       InvalidBookingSchedulingSettingsException ex) {
-    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+    return problems.problem(
+        HttpStatus.BAD_REQUEST, ex.reason().errorCode(), ex.reason().messageArguments());
   }
 
   @ExceptionHandler(InvalidBookingDisplaySettingsException.class)
@@ -49,16 +49,16 @@ public class BookingApiV2ControllerAdvice extends ApiV2ControllerAdvice {
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
     String code = ex.reason().errorCode();
+    Object[] arguments =
+        BookingPolicyProblemArguments.of(ex, messages, LocaleContextHolder.getLocale());
     if (ex.maximumDurationMinutes().isEmpty()) {
-      return problem(HttpStatus.BAD_REQUEST, code);
+      return problems.problem(HttpStatus.BAD_REQUEST, code, arguments);
     }
-    long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
-    Locale locale = LocaleContextHolder.getLocale();
     return problems.problem(
         HttpStatus.BAD_REQUEST,
         code,
-        BookingProblem.maximumDuration(maximumMinutes),
-        BookingDurationWords.format(maximumMinutes, messages, locale));
+        BookingProblem.maximumDuration(ex.maximumDurationMinutes().getAsLong()),
+        arguments);
   }
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)

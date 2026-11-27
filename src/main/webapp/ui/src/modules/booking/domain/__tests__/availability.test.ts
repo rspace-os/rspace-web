@@ -1,4 +1,7 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
+import { type CalendarAvailabilityRow, rowAvailabilityIntervals } from "@/modules/booking/domain/availability";
+import { todayAvailabilityWindow } from "../../pages/calendar/availability/availabilityQuickFilters";
 import {
   type AvailabilityInterval,
   bookingConflicts,
@@ -6,21 +9,185 @@ import {
   buildAvailabilitySlices,
   classifyCurrentDayAvailability,
 } from "../availability";
+import type { Booking } from "../booking";
 
-const start = new Date("2026-08-17T00:00:00Z");
-const end = new Date("2026-08-18T00:00:00Z");
+const start = Temporal.Instant.from("2026-08-17T00:00:00Z");
+const end = Temporal.Instant.from("2026-08-18T00:00:00Z");
 const occupied = (from: string, to: string, kind: AvailabilityInterval["kind"] = "booking") => ({
   kind,
-  startsAt: new Date(from),
-  endsAt: new Date(to),
+  startsAt: Temporal.Instant.from(from),
+  endsAt: Temporal.Instant.from(to),
+});
+
+/**
+ * The classification the server owns, computed with the client's own interval helpers. The mocks
+ * use the same helpers, and `BookingCurrentAvailabilityTest` holds the server's copy of these cases.
+ */
+describe("the availability oracle", () => {
+  const row = (overrides: Partial<CalendarAvailabilityRow> = {}): CalendarAvailabilityRow => ({
+    globalId: "IN1",
+    timezone: "UTC",
+    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
+    allowDoubleBooking: false,
+    ...overrides,
+  });
+  const booking = (start: string, end: string, kind: Booking["kind"] = "BOOKING"): Booking => ({
+    id: 1,
+    version: 0,
+    target: { relationTo: "instruments", value: { id: 1, name: "IN1", deleted: false }, globalId: "IN1" },
+    timezone: "UTC",
+    start: Temporal.Instant.from(start),
+    end: Temporal.Instant.from(end),
+    state: "CONFIRMED",
+    cancellationReason: null,
+    kind,
+    privacy: "busy",
+    purpose: null,
+    bookedBy: null,
+    canEdit: false,
+    canCancel: false,
+    createdAt: Temporal.Instant.from(start),
+    updatedAt: Temporal.Instant.from(start),
+  });
+  const classify = (candidate: CalendarAvailabilityRow, now: string, bookings: readonly Booking[] = []) => {
+    const today = todayAvailabilityWindow(Temporal.Instant.from(now), "UTC", "00:00", "24:00");
+    return classifyCurrentDayAvailability(
+      rowAvailabilityIntervals(candidate, today.bounds, bookings),
+      Temporal.Instant.from(today.start),
+      Temporal.Instant.from(today.end),
+      Temporal.Instant.from(now),
+    );
+  };
+
+  const gapCases = (["BOOKING", "MAINTENANCE"] as const).flatMap((requested) =>
+    (["BOOKING", "MAINTENANCE"] as const).flatMap((existing) =>
+      [false, true].flatMap((doubleBooking) =>
+        [false, true].flatMap((earlier) =>
+          [false, true].map((inside) => ({ requested, existing, doubleBooking, earlier, inside })),
+        ),
+      ),
+    ),
+  );
+  it.each(gapCases)(
+    "matches directional-gap boundaries for $requested / $existing double=$doubleBooking earlier=$earlier inside=$inside",
+    ({ requested, existing, doubleBooking, earlier, inside }) => {
+      const stored = booking("2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z", existing);
+      const separation =
+        (earlier
+          ? (requested === "BOOKING" ? 13 : 0) + (existing === "BOOKING" ? 7 : 0)
+          : (existing === "BOOKING" ? 13 : 0) + (requested === "BOOKING" ? 7 : 0)) - (inside ? 1 : 0);
+      const from = earlier
+        ? stored.start.epochMilliseconds - (separation + 60) * 60000
+        : stored.end.epochMilliseconds + separation * 60000;
+      const intervals = rowAvailabilityIntervals(
+        row({
+          eventKind: requested,
+          bufferBeforeMinutes: 7,
+          bufferAfterMinutes: 13,
+          allowDoubleBooking: doubleBooking,
+        }),
+        {
+          start: start.toString(),
+          end: end.toString(),
+          elapsedMinutes: 1440,
+          date: "2026-08-17",
+          timeZone: "UTC",
+        },
+        [stored],
+      );
+      const blocked = intervals.some(
+        (interval) => interval.startsAt.epochMilliseconds < from + 3600000 && interval.endsAt.epochMilliseconds > from,
+      );
+      expect(blocked).toBe(inside && !(doubleBooking && requested === "BOOKING" && existing === "BOOKING"));
+    },
+  );
+
+  it("classifies each item in its own scheduling time zone", () => {
+    const busy = [booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
+    expect(classify(row(), "2026-08-17T09:00:00Z", busy)).toBe("free-later-today");
+    expect(classify(row({ globalId: "IN2", timezone: "America/Los_Angeles" }), "2026-08-17T09:00:00Z", busy)).toBe(
+      "available-now",
+    );
+  });
+
+  it("distinguishes before opening, open now, and after closing", () => {
+    const restricted = row({
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+    });
+    expect(classify(restricted, "2026-08-17T07:00:00Z")).toBe("free-later-today");
+    expect(classify(restricted, "2026-08-17T09:00:00Z")).toBe("available-now");
+    expect(classify(restricted, "2026-08-17T19:00:00Z")).toBe("unavailable-today");
+  });
+
+  it("treats an item closed on the instrument's weekday as unavailable and follows its exception", () => {
+    // 2026-08-17 is a Monday.
+    expect(
+      classify(
+        row({
+          openingHours: [
+            { dayOfWeek: 2, start: "00:00", end: "24:00" },
+            { dayOfWeek: 3, start: "00:00", end: "24:00" },
+            { dayOfWeek: 4, start: "00:00", end: "24:00" },
+            { dayOfWeek: 5, start: "00:00", end: "24:00" },
+            { dayOfWeek: 6, start: "00:00", end: "24:00" },
+            { dayOfWeek: 7, start: "00:00", end: "24:00" },
+          ],
+        }),
+        "2026-08-17T09:00:00Z",
+      ),
+    ).toBe("unavailable-today");
+    expect(
+      classify(
+        row({
+          openingHours: [
+            { dayOfWeek: 1, start: "12:00", end: "18:00" },
+            { dayOfWeek: 2, start: "00:00", end: "24:00" },
+            { dayOfWeek: 3, start: "00:00", end: "24:00" },
+            { dayOfWeek: 4, start: "00:00", end: "24:00" },
+            { dayOfWeek: 5, start: "00:00", end: "24:00" },
+            { dayOfWeek: 6, start: "00:00", end: "24:00" },
+            { dayOfWeek: 7, start: "00:00", end: "24:00" },
+          ],
+        }),
+        "2026-08-17T09:00:00Z",
+      ),
+    ).toBe("free-later-today");
+  });
+
+  it("keeps maintenance buffers occupied until their half-open boundary", () => {
+    const events = [booking("2026-08-17T08:00:00Z", "2026-08-17T08:45:00Z", "MAINTENANCE")];
+    const buffered = row({ bufferBeforeMinutes: 15, bufferAfterMinutes: 15, allowDoubleBooking: true });
+    expect(classify(buffered, "2026-08-17T08:59:00Z", events)).toBe("free-later-today");
+    expect(classify(buffered, "2026-08-17T09:00:00Z", events)).toBe("available-now");
+  });
+
+  it("counts maintenance on double-booked items and widens events by their buffers", () => {
+    const shared = row({ allowDoubleBooking: true });
+    expect(classify(shared, "2026-08-17T09:00:00Z", [booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")])).toBe(
+      "available-now",
+    );
+    expect(
+      classify(shared, "2026-08-17T09:00:00Z", [
+        booking("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z", "MAINTENANCE"),
+      ]),
+    ).toBe("free-later-today");
+    expect(
+      classify(row({ bufferBeforeMinutes: 30 }), "2026-08-17T09:00:00Z", [
+        booking("2026-08-17T09:30:00Z", "2026-08-17T10:00:00Z"),
+      ]),
+    ).toBe("free-later-today");
+  });
 });
 
 describe("availability", () => {
   it("deduplicates booking sources and excludes the booking being edited", () => {
     const source = (id: number) => ({
       id: `booking:${id}`,
-      startsAt: new Date("2026-08-17T10:00:00Z"),
-      endsAt: new Date("2026-08-17T11:00:00Z"),
+      startsAt: Temporal.Instant.from("2026-08-17T10:00:00Z"),
+      endsAt: Temporal.Instant.from("2026-08-17T11:00:00Z"),
       booking: {
         id,
         kind: "BOOKING" as const,
@@ -43,22 +210,22 @@ describe("availability", () => {
   it("marks conflicts where only the buffer, not the event itself, reaches the draft", () => {
     const source = (id: number, from: string, to: string) => ({
       id: `booking:${id}`,
-      startsAt: new Date(from),
-      endsAt: new Date(to),
+      startsAt: Temporal.Instant.from(from),
+      endsAt: Temporal.Instant.from(to),
       booking: { id, kind: "BOOKING" as const, privacy: "full" as const, purpose: null, bookedBy: null },
     });
     // Draft 11:00-12:00 with 15-minute buffers: #42 ends as the draft starts, #43 starts inside it.
     const intervals = [
       {
         kind: "booking" as const,
-        startsAt: new Date("2026-08-17T11:00:00Z"),
-        endsAt: new Date("2026-08-17T11:15:00Z"),
+        startsAt: Temporal.Instant.from("2026-08-17T11:00:00Z"),
+        endsAt: Temporal.Instant.from("2026-08-17T11:15:00Z"),
         source: source(42, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"),
       },
       {
         kind: "booking" as const,
-        startsAt: new Date("2026-08-17T11:15:00Z"),
-        endsAt: new Date("2026-08-17T12:00:00Z"),
+        startsAt: Temporal.Instant.from("2026-08-17T11:15:00Z"),
+        endsAt: Temporal.Instant.from("2026-08-17T12:00:00Z"),
         source: source(43, "2026-08-17T11:30:00Z", "2026-08-17T13:00:00Z"),
       },
     ];
@@ -71,39 +238,39 @@ describe("availability", () => {
 
   it("classifies half-open current and future availability", () => {
     const intervals = [occupied("2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z")];
-    expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T09:00:00Z"))).toBe(
+    expect(classifyCurrentDayAvailability(intervals, start, end, Temporal.Instant.from("2026-08-17T09:00:00Z"))).toBe(
       "free-later-today",
     );
-    expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T10:00:00Z"))).toBe(
+    expect(classifyCurrentDayAvailability(intervals, start, end, Temporal.Instant.from("2026-08-17T10:00:00Z"))).toBe(
       "available-now",
     );
   });
 
   it("does not claim future availability when occupied through day end", () => {
     const intervals = [occupied("2026-08-17T08:00:00Z", "2026-08-18T01:00:00Z")];
-    expect(classifyCurrentDayAvailability(intervals, start, end, new Date("2026-08-17T09:00:00Z"))).toBe(
+    expect(classifyCurrentDayAvailability(intervals, start, end, Temporal.Instant.from("2026-08-17T09:00:00Z"))).toBe(
       "unavailable-today",
     );
   });
 
   it("classifies times before and after the displayed availability window", () => {
-    const windowStart = new Date("2026-08-17T08:00:00Z");
-    const windowEnd = new Date("2026-08-17T18:00:00Z");
-    expect(classifyCurrentDayAvailability([], windowStart, windowEnd, new Date("2026-08-17T07:00:00Z"))).toBe(
-      "free-later-today",
-    );
+    const windowStart = Temporal.Instant.from("2026-08-17T08:00:00Z");
+    const windowEnd = Temporal.Instant.from("2026-08-17T18:00:00Z");
+    expect(
+      classifyCurrentDayAvailability([], windowStart, windowEnd, Temporal.Instant.from("2026-08-17T07:00:00Z")),
+    ).toBe("free-later-today");
     expect(
       classifyCurrentDayAvailability(
         [occupied("2026-08-17T08:00:00Z", "2026-08-17T18:00:00Z")],
         windowStart,
         windowEnd,
-        new Date("2026-08-17T07:00:00Z"),
+        Temporal.Instant.from("2026-08-17T07:00:00Z"),
       ),
     ).toBe("unavailable-today");
     expect(classifyCurrentDayAvailability([], windowStart, windowEnd, windowEnd)).toBe("unavailable-today");
-    expect(classifyCurrentDayAvailability([], windowStart, windowEnd, new Date("2026-08-17T19:00:00Z"))).toBe(
-      "unavailable-today",
-    );
+    expect(
+      classifyCurrentDayAvailability([], windowStart, windowEnd, Temporal.Instant.from("2026-08-17T19:00:00Z")),
+    ).toBe("unavailable-today");
   });
 
   it("retains every contributor when bookings overlap or touch", () => {
@@ -141,8 +308,8 @@ describe("availability", () => {
   it("clips occupied bounds while preserving source metadata", () => {
     const source = {
       id: "booking:42",
-      startsAt: new Date("2026-08-16T22:00:00Z"),
-      endsAt: new Date("2026-08-17T02:00:00Z"),
+      startsAt: Temporal.Instant.from("2026-08-16T22:00:00Z"),
+      endsAt: Temporal.Instant.from("2026-08-17T02:00:00Z"),
     };
     const interval = { ...occupied("2026-08-16T23:00:00Z", "2026-08-17T01:00:00Z"), source };
 
@@ -152,7 +319,7 @@ describe("availability", () => {
       {
         ...interval,
         startsAt: start,
-        endsAt: new Date("2026-08-17T01:00:00Z"),
+        endsAt: Temporal.Instant.from("2026-08-17T01:00:00Z"),
       },
     ]);
     expect(bookingSlice?.intervals[0].source).toBe(source);
@@ -166,11 +333,10 @@ describe("availability", () => {
     );
   });
 
-  it("rejects invalid dates, periods, and intervals", () => {
+  it("rejects inverted periods and intervals", () => {
     expect(() => buildAvailabilitySegments([], end, start)).toThrow(RangeError);
     expect(() =>
       buildAvailabilitySegments([occupied("2026-08-17T10:00:00Z", "2026-08-17T09:00:00Z")], start, end),
     ).toThrow(RangeError);
-    expect(() => classifyCurrentDayAvailability([], start, end, new Date("invalid"))).toThrow(RangeError);
   });
 });

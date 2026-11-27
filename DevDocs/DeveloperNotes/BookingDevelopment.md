@@ -8,11 +8,20 @@ than editing an applied changeset.
 
 The [master changelog](../../src/main/resources/sqlUpdates/liquibase-master.xml)
 creates each Booking table and its Envers history once, in dependency order, with
-its final columns. `openingHours` stores independent weekday intervals directly.
-The resource-access tables precede Booking configuration creation. Keep new
-includes after their dependencies. `recurring-changeLog.xml` follows the
-application changesets, and `customUpdates-changeLog.xml` remains the final
-include.
+its final settings, display, lifecycle and event columns. `openingHours` stores
+independent weekday intervals directly. Increment units default to `MINUTES` and
+the singleton starts with a fifteen-minute increment.
+
+The resource-access tables precede Booking configuration creation. The separate
+[`changeLog-booking-drop-resource-access.xml`](../../src/main/resources/sqlUpdates/changeLog-booking-drop-resource-access.xml)
+removes the configuration ACL column after Booking adopts inherited Inventory
+access. `recurring-changeLog.xml` follows the application changesets, and
+`customUpdates-changeLog.xml` remains the final include.
+
+The custom-field index changelog explicitly marks a pre-stack schema change: it
+drops the redundant `InventoryEntityField.templateField_id` index after its
+composite replacement exists.
+The nullable ScheduledMaintenance cutoff remains beside the API mutation work.
 
 ## Static development seed
 
@@ -21,7 +30,8 @@ uses reserved IDs and bypasses Envers, so it creates no audit revisions. See its
 [changelog](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml) for the
 execution guard, and its [original SQL](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
 and [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql) for fixture values.
-The legacy `ResourceAccess` and role rows in the static SQL seed do not grant current Booking access.
+The seed creates no independent Booking ACLs. It includes one-day increments and
+off-grid fifteen-minute starts, and skips occupied fixture IDs.
 
 ## Service-created development fixtures
 
@@ -104,6 +114,17 @@ Permanent user deletion removes live Booking rows through
 [`UserDeletionDaoHibernate.table2UserIdColumn`](../../src/main/java/com/researchspace/dao/hibernate/UserDeletionDaoHibernate.java),
 keyed by `TimeSlotBooking.requester_id`. Keep that cleanup mapping aligned if the
 requester column or table changes. Booking audit history is retained.
+
+## Rebuilding development databases
+
+The Booking stack has not been deployed. Its changelogs create the final schema
+without historical checksums, increment-schema detection or shared-hours
+backfills. Rebuild development databases from the baseline after updating this
+stack; do not reuse a database with the earlier Booking changesets applied.
+
+The seed creates its fifteen-minute, one-day and off-grid examples and its
+edge cases in one guarded changeset. It skips databases with existing
+configurations or occupied fixture IDs.
 
 ## Instrument locking
 

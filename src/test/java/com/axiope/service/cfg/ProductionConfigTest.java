@@ -14,7 +14,6 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IContentInitializer;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.impl.AbstractAppInitializor;
 import com.researchspace.service.impl.BookingFixturesAppInitialiser;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -36,7 +35,6 @@ class ProductionConfigTest {
             mock(InstrumentDao.class),
             mock(ContainerApiManager.class),
             mock(InstrumentEntityApiManager.class),
-            mock(MessageSourceUtils.class),
             mock(BookingConfigurationManager.class),
             mock(TimeSlotBookingManager.class),
             mock(BookingConfigurationDao.class),

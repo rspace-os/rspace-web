@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { Link } from "@tanstack/react-router";
 import { CalendarPlusIcon, EyeIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,7 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
   return (
     <TableList
       {...tableProps}
+      stickyActions="when-fitted"
       hideHeader
       hideFilterPanel
       variant="transparent"
@@ -25,7 +27,7 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
           id: "availability",
           label: t("calendar.availability"),
           minWidth: 320,
-          width: 320,
+          widthMode: "fill",
           item: { fullWidth: true },
           renderCell: (row) => {
             const target = row.target;
@@ -51,9 +53,9 @@ export function CalendarAvailabilityRows({ data }: { data: ReturnType<typeof use
               <AvailabilityBar
                 className="min-w-0 px-1 in-[td]:min-w-72"
                 intervals={availability.data.get(target.globalId) ?? emptyIntervals}
-                periodStart={new Date(rowsBounds.start)}
-                periodEnd={new Date(rowsBounds.end)}
-                now={rowsDate === userToday ? new Date(minute) : undefined}
+                periodStart={Temporal.Instant.from(rowsBounds.start)}
+                periodEnd={Temporal.Instant.from(rowsBounds.end)}
+                now={rowsDate === userToday ? Temporal.Instant.fromEpochMilliseconds(minute) : undefined}
                 showBookingContextDetails={false}
                 showCurrentAvailability
                 showPeriodLabels

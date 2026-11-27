@@ -3,6 +3,7 @@ import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFields } from "./RenderFields";
 import { FormWithValues } from "./renderFieldsStorySupport.story";
+import "./__tests__/i18n/collectionFormExamples";
 
 type RadioSelectDocument = {
   allowOff: boolean;
@@ -18,21 +19,21 @@ const radioSelectConfig = resolveCollectionConfig<RadioSelectDocument>({
   slug: "radio-select-example",
   idField: "subscription",
   labels: {
-    singularKey: "collectionForm.examples.record",
-    pluralKey: "collectionForm.examples.records",
+    singularKey: "collectionFormExamples:record",
+    pluralKey: "collectionFormExamples:records",
   },
   useAsTitle: "subscription",
   defaultColumns: ["subscription"],
   fields: [
-    { name: "allowOff", type: "boolean", labelKey: "collectionForm.examples.fields.enabled" },
+    { name: "allowOff", type: "boolean", labelKey: "collectionFormExamples:fields.enabled" },
     {
       name: "subscription",
       type: "select",
-      labelKey: "collectionForm.examples.fields.status",
+      labelKey: "collectionFormExamples:fields.status",
       required: true,
       form: {
         widget: "radio",
-        descriptionKey: "collectionForm.examples.fields.titleDescription",
+        descriptionKey: "collectionFormExamples:fields.titleDescription",
         isOptionDisabled: (option, data) => {
           const value = typeof option === "string" ? option : option.value;
           return value === "off" && data.allowOff !== true;

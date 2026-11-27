@@ -2,7 +2,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import type { BookingConfigurationTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetDirectoryDocument";
-import { searchBookingTargets } from "../bookingConfigurationTargets";
+import { searchBookingTargets } from "../bookingConfigurationApi";
 
 describe("eligible booking targets", () => {
   it("searches with q and reads the docs envelope", async () => {

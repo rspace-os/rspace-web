@@ -1,4 +1,11 @@
-import { type QueryClient, skipToken, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  skipToken,
+  type UseQueryResult,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { chunk, clamp, uniq } from "es-toolkit";
 import { useQueryKeyScope } from "@/modules/common/queries/queryIdentityScope";
 import {
@@ -25,6 +32,15 @@ export const relationshipPickerQueryKeys = {
     [...relationshipPickerQueryKeys.all, "optionBatch", sourceId, scope, ...values] as const,
 };
 
+// Module-level and data-only, so TanStack's structural sharing keeps `data` stable between renders.
+function combineSearches(results: UseQueryResult<readonly unknown[]>[]) {
+  return {
+    data: results.map((query) => query.data),
+    failed: results.some((query) => query.isError),
+    loading: results.some((query) => query.isFetching),
+  };
+}
+
 export function useRelationshipOptions({
   sources,
   term,
@@ -41,7 +57,7 @@ export function useRelationshipOptions({
   const scope = useQueryKeyScope(authScope);
   const queryClient = useQueryClient();
   // Plain useQueries: options load under the open picker input and report failures per source.
-  const sourceQueries = useQueries({
+  const { data, failed, loading } = useQueries({
     queries: sources.map((candidate) => ({
       queryKey: relationshipPickerQueryKeys.search(candidate.id, scope, term.trim()),
       enabled,
@@ -61,18 +77,12 @@ export function useRelationshipOptions({
         return documents;
       },
     })),
+    combine: combineSearches,
   });
   const options: RelationshipOptionWithSource[] = sources.flatMap((candidate, index) =>
-    (sourceQueries[index]?.data ?? []).map((document) => {
-      const option = candidate.toOption(document, labels);
-      return { ...option, sourceId: candidate.id };
-    }),
+    (data[index] ?? []).map((document) => ({ ...candidate.toOption(document, labels), sourceId: candidate.id })),
   );
-  return {
-    options,
-    failed: sourceQueries.some((query) => query.isError),
-    loading: sourceQueries.some((query) => query.isFetching),
-  };
+  return { options, failed, loading };
 }
 
 export function useRelationshipOptionAvailability({
@@ -224,27 +234,50 @@ export function useSelectedRelationshipOptions({
     const canonicalValues = [...(canonicalValuesBySource.get(candidate) ?? [])];
     return canonicalValues.map((canonical) => ({ candidate, canonical }));
   });
+  // The combined records hold plain data only, so TanStack's structural sharing keeps unchanged ones
+  // identical between renders; option objects (which may hold JSX) are built from them below.
   // Plain useQueries: subscribes to cached options without fetching.
-  const cacheQueries = useQueries({
+  const resolutions = useQueries({
     queries: cacheSubscriptions.map(({ candidate, canonical }) => ({
       queryKey: relationshipPickerQueryKeys.option(candidate.id, scope, canonical),
       enabled: false,
     })),
-  });
-  const queryByValue = new Map<string, (typeof queries)[number]>();
-  resolveQueries.forEach((resolveQuery, index) => {
-    for (const canonical of resolveQuery.values) {
-      queryByValue.set(optionKey(resolveQuery.owner.id, canonical), queries[index]);
-    }
-  });
-  const cacheQueryByValue = new Map<string, (typeof cacheQueries)[number]>();
-  cacheSubscriptions.forEach((subscription, index) => {
-    cacheQueryByValue.set(optionKey(subscription.candidate.id, subscription.canonical), cacheQueries[index]);
+    combine: (cacheQueries) => {
+      const queryByValue = new Map<string, (typeof queries)[number]>();
+      resolveQueries.forEach((resolveQuery, index) => {
+        for (const canonical of resolveQuery.values) {
+          queryByValue.set(optionKey(resolveQuery.owner.id, canonical), queries[index]);
+        }
+      });
+      const cacheQueryByValue = new Map<string, (typeof cacheQueries)[number]>();
+      cacheSubscriptions.forEach((subscription, index) => {
+        cacheQueryByValue.set(optionKey(subscription.candidate.id, subscription.canonical), cacheQueries[index]);
+      });
+      return selections.map(({ value, owner, canonical, malformed }) => {
+        if (owner === undefined || canonical === null) return { value, ownerId: owner?.id, canonical, malformed };
+        const query = queryByValue.get(optionKey(owner.id, canonical));
+        const cacheQuery = cacheQueryByValue.get(optionKey(owner.id, canonical));
+        const document =
+          cacheQuery?.data !== undefined
+            ? cacheQuery.data
+            : (query?.data?.[canonical] ??
+              queryClient.getQueryData(relationshipPickerQueryKeys.option(owner.id, scope, canonical)));
+        return {
+          value,
+          ownerId: owner.id,
+          canonical,
+          malformed,
+          document,
+          failed: query?.isError === true,
+          missing: document === null || (query?.isSuccess === true && !Object.hasOwn(query.data ?? {}, canonical)),
+        };
+      });
+    },
   });
 
-  return values.map((value, index) => {
-    const selection = selections[index];
-    const { owner, canonical, malformed } = selection;
+  return resolutions.map((resolution): RelationshipOptionWithSource => {
+    const { value, canonical, malformed } = resolution;
+    const owner = sources.find((candidate) => candidate.id === resolution.ownerId);
     if (owner === undefined) {
       return {
         value,
@@ -257,13 +290,7 @@ export function useSelectedRelationshipOptions({
       return { value, label: value, sourceId: owner.id, restoreStatus: "invalid" };
     }
 
-    const query = queryByValue.get(optionKey(owner.id, canonical));
-    const cacheQuery = cacheQueryByValue.get(optionKey(owner.id, canonical));
-    const document =
-      cacheQuery?.data !== undefined
-        ? cacheQuery.data
-        : (query?.data?.[canonical] ??
-          queryClient.getQueryData(relationshipPickerQueryKeys.option(owner.id, scope, canonical)));
+    const { document } = resolution;
     const failedRestore = (): RelationshipOptionWithSource => ({
       value,
       label: failedRestoreLabel(labels, value),
@@ -277,8 +304,8 @@ export function useSelectedRelationshipOptions({
         return failedRestore();
       }
     }
-    if (query?.isError) return failedRestore();
-    if (document === null || (query?.isSuccess && !Object.hasOwn(query.data ?? {}, canonical))) {
+    if (resolution.failed) return failedRestore();
+    if (resolution.missing) {
       return {
         value,
         label: labels.unavailableLabel?.(value) ?? value,

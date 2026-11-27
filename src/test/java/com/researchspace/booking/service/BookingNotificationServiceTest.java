@@ -29,6 +29,7 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.NotificationConfig;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.TestFactory;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -59,7 +60,11 @@ class BookingNotificationServiceTest {
           new JsonMessageSource(), "https://rspace.example.org/");
   private final BookingNotificationService service =
       new BookingNotificationService(
-          instrumentDao, communicationManager, recipientReader, messageFormatter);
+          instrumentDao,
+          communicationManager,
+          recipientReader,
+          messageFormatter,
+          new UserLocaleService());
 
   @BeforeEach
   void setUp() {
@@ -93,7 +98,16 @@ class BookingNotificationServiceTest {
             INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
         .thenReturn(recipients);
 
-    service.notify(booking, actor, notificationType);
+    // Time changes always carry the interval before the edit.
+    if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
+      service.notifyChanged(
+          booking,
+          actor,
+          Instant.parse("2026-01-02T01:04:05Z"),
+          Instant.parse("2026-01-02T02:04:05Z"));
+    } else {
+      service.notify(booking, actor, notificationType);
+    }
 
     ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
     ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
@@ -129,25 +143,54 @@ class BookingNotificationServiceTest {
                 + bookingLink
                 + " was created for instrument "
                 + itemLink
-                + " from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-                + "5:04 AM (Europe/Berlin, UTC+01:00)."
+                + " from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
+                + "5:04 AM CET (Europe/Berlin)."
             : "Booking "
                 + bookingLink
                 + " for instrument "
                 + itemLink
                 + " was cancelled. It was "
-                + "scheduled from Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-                + "5:04 AM (Europe/Berlin, UTC+01:00).";
+                + "scheduled from Jan 2, 2026, 4:04 AM CET (Europe/Berlin) to "
+                + "5:04 AM CET (Europe/Berlin).";
     if (notificationType == NotificationType.NOTIFICATION_BOOKING_CHANGED) {
       expectedMessage =
           "Booking "
               + bookingLink
               + " for instrument "
               + itemLink
-              + " was changed to Jan 2, 2026, 4:04 AM (Europe/Berlin, UTC+01:00) to "
-              + "5:04 AM (Europe/Berlin, UTC+01:00).";
+              + " was changed from Jan 2, 2026, 2:04 AM CET (Europe/Berlin)–3:04 AM CET"
+              + " (Europe/Berlin) to Jan 2, 2026, 4:04 AM CET (Europe/Berlin)–5:04 AM CET"
+              + " (Europe/Berlin).";
     }
     assertEquals(expectedMessage, message.getValue());
+  }
+
+  @Test
+  void writesEachBodyInItsRecipientsLocaleRatherThanTheActorsRequestLocale() {
+    User actor = user(1L, "actor");
+    User recipient = user(2L, "recipient");
+    UserLocaleService locales = mock(UserLocaleService.class);
+    when(locales.getLocaleFor(recipient)).thenReturn(Locale.GERMANY);
+    TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument("Scope")));
+    when(recipientReader.selectRecipients(
+            INSTRUMENT_ID,
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            actor.getId(),
+            actor.getId()))
+        .thenReturn(
+            List.of(
+                new BookingNotificationRecipient(
+                    recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, false)));
+
+    new BookingNotificationService(
+            instrumentDao, communicationManager, recipientReader, messageFormatter, locales)
+        .notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_CREATED);
+
+    ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+    verify(communicationManager).notify(eq(actor), isNull(), any(), message.capture());
+    assertTrue(message.getValue().contains("02.01.2026"), message.getValue());
+    assertTrue(message.getValue().contains("MEZ (Europe/Berlin)"), message.getValue());
   }
 
   @ParameterizedTest
@@ -241,11 +284,11 @@ class BookingNotificationServiceTest {
                     ((BookingNotificationData) config.getNotificationData()).getEmailTimeFormat())
             .toList());
     assertTrue(messages.getAllValues().get(0).contains("Jan 2, 2026, 4:04 AM"));
-    assertTrue(messages.getAllValues().get(0).contains("Europe/Berlin, UTC+01:00"));
+    assertTrue(messages.getAllValues().get(0).contains("CET (Europe/Berlin)"));
     assertTrue(
         messages.getAllValues().get(1).contains("Jan 1, 2026, 19:04"),
         messages.getAllValues().get(1));
-    assertTrue(messages.getAllValues().get(1).contains("America/Los_Angeles, UTC-08:00"));
+    assertTrue(messages.getAllValues().get(1).contains("PST (America/Los_Angeles)"));
   }
 
   @Test

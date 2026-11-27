@@ -11,7 +11,11 @@ beforeBookingCatalog(async () => {
 
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import { BookingFormAlerts } from "../BookingFormAlerts";
+
+// Each conflict is one translated label-and-period message, which cimode would reduce to its key.
+setupRealAppI18n();
 
 const conflict = {
   id: 42,
@@ -30,9 +34,21 @@ describe("BookingFormAlerts", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toMatchTextContent("Conflict");
-    expect(alert).toMatchTextContent("Cell imaging");
-    expect(alert).toMatchTextContent("10:00");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent(/^Cell imaging · 10:00/);
     expect(alert).toHaveClass("bg-red-100");
+  });
+
+  it("names a maintenance conflict without a purpose by its number", () => {
+    render(
+      <BookingFormAlerts
+        conflicts={[{ ...conflict, id: 60, kind: "MAINTENANCE", purpose: null }]}
+        displayTimezone="UTC"
+      />,
+    );
+
+    expect(within(screen.getByRole("alert")).getByRole("listitem")).toMatchTextContent(
+      /^Maintenance: Maintenance event #60 · 10:00/,
+    );
   });
 
   it("lists buffer-only conflicts as within the buffer rather than as overlaps", () => {
@@ -48,11 +64,9 @@ describe("BookingFormAlerts", () => {
 
     const alert = screen.getByRole("alert");
     const [overlaps, buffered] = within(alert).getAllByRole("list");
-    expect(alert).toMatchTextContent(
-      /booking:bookings\.errors\.overlapSummary.*booking:bookings\.errors\.bufferSummary/,
-    );
+    expect(alert).toMatchTextContent(/This period overlaps:.*This period is within the buffer time of:/);
     expect(overlaps).toMatchTextContent("Cell imaging");
-    expect(buffered).toMatchTextContent("booking:bookings.errors.overlapBooking");
+    expect(buffered).toMatchTextContent("Booking #43");
     expect(buffered).not.toMatchTextContent("Cell imaging");
   });
 
@@ -60,8 +74,8 @@ describe("BookingFormAlerts", () => {
     render(<BookingFormAlerts conflicts={[{ ...conflict, bufferOnly: true }]} displayTimezone="UTC" />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
-    expect(alert).not.toMatchTextContent("booking:bookings.errors.overlapSummary");
+    expect(alert).toMatchTextContent("This period is within the buffer time of:");
+    expect(alert).not.toMatchTextContent("This period overlaps:");
   });
 
   it("keeps allowed conflicts visible as warnings", () => {

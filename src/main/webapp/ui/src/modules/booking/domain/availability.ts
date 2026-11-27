@@ -12,11 +12,12 @@ import {
   instantToDayMinute,
 } from "@/modules/booking/domain/bookingTime";
 import type { BookingEventKind } from "@/modules/common/api/v2/generated/models/bookingEventKind";
+import { instantToWire } from "@/modules/common/time/instant";
 
 export type AvailabilityInterval = {
   kind: "booking" | "blockout";
-  startsAt: Date;
-  endsAt: Date;
+  startsAt: Temporal.Instant;
+  endsAt: Temporal.Instant;
 };
 
 export type AvailabilityState = "available" | "booking" | "blockout" | "overlap";
@@ -33,8 +34,8 @@ type AvailabilitySegment = {
  */
 export type AvailabilitySource = {
   id: string;
-  startsAt: Date;
-  endsAt: Date;
+  startsAt: Temporal.Instant;
+  endsAt: Temporal.Instant;
   booking?: {
     id: number;
     kind: BookingEventKind;
@@ -72,8 +73,8 @@ export function bookingConflicts(
     if (!booking || booking.id === excludedBookingId) continue;
     // Intervals are buffer-widened and clipped to the draft, so missing the raw event means only the buffer overlaps.
     const bufferOnly =
-      interval.endsAt.getTime() <= interval.source.startsAt.getTime() ||
-      interval.startsAt.getTime() >= interval.source.endsAt.getTime();
+      Temporal.Instant.compare(interval.endsAt, interval.source.startsAt) <= 0 ||
+      Temporal.Instant.compare(interval.startsAt, interval.source.endsAt) >= 0;
     const existing = conflicts.get(booking.id);
     if (existing) {
       if (!bufferOnly) existing.bufferOnly = false;
@@ -81,8 +82,8 @@ export function bookingConflicts(
     }
     conflicts.set(booking.id, {
       ...booking,
-      start: interval.source.startsAt.toISOString(),
-      end: interval.source.endsAt.toISOString(),
+      start: instantToWire(interval.source.startsAt),
+      end: instantToWire(interval.source.endsAt),
       timezone,
       instrumentTimeZone: booking.instrumentTimeZone ?? null,
       bufferOnly,
@@ -98,12 +99,6 @@ type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = 
 type CurrentDayAvailability = "available-now" | "free-later-today" | "unavailable-today";
 
 type TimestampInterval = Omit<AvailabilitySegment, "state">;
-
-export function timestamp(date: Date, name: string): number {
-  const value = date.getTime();
-  if (!Number.isFinite(value)) throw new RangeError(`${name} must be a valid Date`);
-  return value;
-}
 
 function overlaps(start: number, end: number, otherStart: number, otherEnd: number): boolean {
   return start < otherEnd && end > otherStart;
@@ -123,30 +118,30 @@ function mergeIntervals(intervals: readonly TimestampInterval[]): TimestampInter
 
 function buildTimeline<T extends AvailabilityInterval>(
   intervals: readonly T[],
-  periodStart: Date,
-  periodEnd: Date,
+  periodStart: Temporal.Instant,
+  periodEnd: Temporal.Instant,
 ): { clipped: T[]; segments: AvailabilitySegment[] } {
-  const start = timestamp(periodStart, "periodStart");
-  const end = timestamp(periodEnd, "periodEnd");
+  const start = periodStart.epochMilliseconds;
+  const end = periodEnd.epochMilliseconds;
   if (end < start) throw new RangeError("periodEnd must be after periodStart");
   if (end === start) return { clipped: [], segments: [] };
   const clipped = intervals.flatMap((interval) => {
-    const startsAt = timestamp(interval.startsAt, "interval startsAt");
-    const endsAt = timestamp(interval.endsAt, "interval endsAt");
+    const startsAt = interval.startsAt.epochMilliseconds;
+    const endsAt = interval.endsAt.epochMilliseconds;
     if (endsAt <= startsAt) throw new RangeError("interval endsAt must be after startsAt");
     if (endsAt <= start || startsAt >= end) return [];
     return [
       {
         ...interval,
-        startsAt: new Date(Math.max(startsAt, start)),
-        endsAt: new Date(Math.min(endsAt, end)),
+        startsAt: startsAt < start ? periodStart : interval.startsAt,
+        endsAt: endsAt > end ? periodEnd : interval.endsAt,
       },
     ];
   });
   const timestampIntervals = clipped.map(({ kind, startsAt, endsAt }) => ({
     kind,
-    startsAt: startsAt.getTime(),
-    endsAt: endsAt.getTime(),
+    startsAt: startsAt.epochMilliseconds,
+    endsAt: endsAt.epochMilliseconds,
   }));
   const bookings = mergeIntervals(timestampIntervals.filter(({ kind }) => kind === "booking"));
   const blockouts = mergeIntervals(timestampIntervals.filter(({ kind }) => kind === "blockout"));
@@ -174,16 +169,16 @@ function buildTimeline<T extends AvailabilityInterval>(
 
 export function buildAvailabilitySegments(
   intervals: readonly AvailabilityInterval[],
-  periodStart: Date,
-  periodEnd: Date,
+  periodStart: Temporal.Instant,
+  periodEnd: Temporal.Instant,
 ): AvailabilitySegment[] {
   return buildTimeline(intervals, periodStart, periodEnd).segments;
 }
 
 export function buildAvailabilitySlices<T extends AvailabilityInterval>(
   intervals: readonly T[],
-  periodStart: Date,
-  periodEnd: Date,
+  periodStart: Temporal.Instant,
+  periodEnd: Temporal.Instant,
 ): AvailabilitySlice<T>[] {
   const { clipped, segments } = buildTimeline(intervals, periodStart, periodEnd);
   return segments.map((segment) => ({
@@ -192,20 +187,25 @@ export function buildAvailabilitySlices<T extends AvailabilityInterval>(
       segment.state === "available"
         ? []
         : clipped.filter((interval) =>
-            overlaps(interval.startsAt.getTime(), interval.endsAt.getTime(), segment.startsAt, segment.endsAt),
+            overlaps(
+              interval.startsAt.epochMilliseconds,
+              interval.endsAt.epochMilliseconds,
+              segment.startsAt,
+              segment.endsAt,
+            ),
           ),
   }));
 }
 
 export function classifyCurrentDayAvailability(
   intervals: readonly AvailabilityInterval[],
-  dayStart: Date,
-  dayEnd: Date,
-  now: Date,
+  dayStart: Temporal.Instant,
+  dayEnd: Temporal.Instant,
+  now: Temporal.Instant,
 ): CurrentDayAvailability {
   const segments = buildAvailabilitySegments(intervals, dayStart, dayEnd);
-  const current = timestamp(now, "now");
-  if (current >= dayEnd.getTime()) return "unavailable-today";
+  const current = now.epochMilliseconds;
+  if (current >= dayEnd.epochMilliseconds) return "unavailable-today";
   const currentIndex = segments.findIndex(({ startsAt, endsAt }) => startsAt <= current && current < endsAt);
   if (segments[currentIndex]?.state === "available") return "available-now";
   return segments
@@ -216,16 +216,17 @@ export function classifyCurrentDayAvailability(
 }
 
 export type CalendarAvailabilityRow = OpeningSchedule & {
+  eventKind?: BookingEventKind;
   globalId: string;
   timezone: string;
-  /** With bufferAfterMinutes, defines one shared gap using their maximum; see sharedBufferGapMinutes. */
+  /** Idle minutes required before and after a booking. */
   bufferBeforeMinutes: number;
-  /** Shares the gap defined by bufferBeforeMinutes, matching server scheduling checks. */
   bufferAfterMinutes: number;
   allowDoubleBooking: boolean;
 };
 
 export function calendarAvailabilityRow(row: {
+  eventKind?: BookingEventKind;
   globalId: string;
   timezone?: string;
   openingHours?: readonly OpeningHoursEntry[];
@@ -243,6 +244,7 @@ export function calendarAvailabilityRow(row: {
     return undefined;
   }
   return {
+    eventKind: row.eventKind,
     globalId: row.globalId,
     timezone: row.timezone,
     openingHours: row.openingHours,
@@ -253,7 +255,7 @@ export function calendarAvailabilityRow(row: {
 }
 
 function sharedBufferGapMinutes(row: Pick<CalendarAvailabilityRow, "bufferBeforeMinutes" | "bufferAfterMinutes">) {
-  return Math.max(row.bufferBeforeMinutes, row.bufferAfterMinutes);
+  return row.bufferBeforeMinutes + row.bufferAfterMinutes;
 }
 
 function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval: AbsoluteDisplayInterval) {
@@ -265,20 +267,22 @@ function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval
 }
 
 function clipInterval<T extends AvailabilityInterval>(candidate: T, interval: AbsoluteDisplayInterval): T | undefined {
-  const start = Math.max(candidate.startsAt.getTime(), Date.parse(interval.start));
-  const end = Math.min(candidate.endsAt.getTime(), Date.parse(interval.end));
-  return end > start ? { ...candidate, startsAt: new Date(start), endsAt: new Date(end) } : undefined;
+  const intervalStart = Temporal.Instant.from(interval.start);
+  const intervalEnd = Temporal.Instant.from(interval.end);
+  const startsAt = Temporal.Instant.compare(candidate.startsAt, intervalStart) < 0 ? intervalStart : candidate.startsAt;
+  const endsAt = Temporal.Instant.compare(candidate.endsAt, intervalEnd) > 0 ? intervalEnd : candidate.endsAt;
+  return Temporal.Instant.compare(endsAt, startsAt) > 0 ? { ...candidate, startsAt, endsAt } : undefined;
 }
 
 function sourcedInterval(
   kind: AvailabilityInterval["kind"],
   id: string,
-  startsAt: string | number,
-  endsAt: string | number,
+  startsAt: Temporal.Instant | string,
+  endsAt: Temporal.Instant | string,
   booking?: Booking,
 ): SourcedAvailabilityInterval {
-  const sourceStartsAt = new Date(startsAt);
-  const sourceEndsAt = new Date(endsAt);
+  const sourceStartsAt = Temporal.Instant.from(startsAt);
+  const sourceEndsAt = Temporal.Instant.from(endsAt);
   return {
     kind,
     startsAt: sourceStartsAt,
@@ -315,7 +319,7 @@ function closedInterval(
 ): SourcedAvailabilityInterval | undefined {
   const candidate = sourcedInterval(
     "blockout",
-    `opening-hours:${row.globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`,
+    `opening-hours:${row.globalId}:${instantToWire(Temporal.Instant.from(startsAt))}:${instantToWire(Temporal.Instant.from(endsAt))}`,
     startsAt,
     endsAt,
   );
@@ -341,8 +345,8 @@ export function closedDayRanges(row: ClosureSchedule, date: string, timezone: st
   const interval = displayInterval(date, timezone, "00:00", "24:00");
   if (interval.elapsedMinutes === 0) return [];
   return closedIntervals(row, interval).map((closed) => ({
-    startMinute: instantToDayMinute(closed.startsAt.toISOString(), date, timezone),
-    endMinute: instantToDayMinute(closed.endsAt.toISOString(), date, timezone),
+    startMinute: instantToDayMinute(instantToWire(closed.startsAt), date, timezone),
+    endMinute: instantToDayMinute(instantToWire(closed.endsAt), date, timezone),
   }));
 }
 
@@ -354,16 +358,31 @@ function bookingInterval(
   const candidate = sourcedInterval(
     booking.kind === "MAINTENANCE" ? "blockout" : "booking",
     `booking:${booking.id}`,
-    booking.start.epochMilliseconds,
-    booking.end.epochMilliseconds,
+    booking.start,
+    booking.end,
     booking,
   );
-  const sharedGapMinutes = sharedBufferGapMinutes(row);
+  const maintenanceDraft = row.eventKind === "MAINTENANCE";
+  const existingMaintenance = booking.kind === "MAINTENANCE";
+  const before = existingMaintenance
+    ? maintenanceDraft
+      ? 0
+      : row.bufferAfterMinutes
+    : maintenanceDraft
+      ? row.bufferBeforeMinutes
+      : sharedBufferGapMinutes(row);
+  const after = existingMaintenance
+    ? maintenanceDraft
+      ? 0
+      : row.bufferBeforeMinutes
+    : maintenanceDraft
+      ? row.bufferAfterMinutes
+      : sharedBufferGapMinutes(row);
   return clipInterval(
     {
       ...candidate,
-      startsAt: new Date(candidate.startsAt.getTime() - sharedGapMinutes * 60_000),
-      endsAt: new Date(candidate.endsAt.getTime() + sharedGapMinutes * 60_000),
+      startsAt: candidate.startsAt.subtract({ minutes: before }),
+      endsAt: candidate.endsAt.add({ minutes: after }),
     },
     interval,
   );
@@ -378,7 +397,7 @@ export function rowAvailabilityIntervals(
   const intervals = closedIntervals(row, interval);
   for (const booking of bookings) {
     if (booking.state !== "CONFIRMED" || booking.target?.globalId !== row.globalId) continue;
-    if (row.allowDoubleBooking && booking.kind === "BOOKING") continue;
+    if (row.allowDoubleBooking && row.eventKind !== "MAINTENANCE" && booking.kind === "BOOKING") continue;
     const clipped = bookingInterval(booking, row, interval);
     if (clipped) intervals.push(clipped);
   }

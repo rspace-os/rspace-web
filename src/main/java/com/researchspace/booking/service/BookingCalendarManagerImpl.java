@@ -26,6 +26,7 @@ import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.Collator;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -408,7 +409,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   @Override
   @Transactional(readOnly = true)
-  public List<ItemLink> itemLinks(User subject, User actor) {
+  public List<ItemLink> itemLinks(User subject, User actor, Locale locale) {
     requirePersonalCaller(subject, actor);
     requireFeatureRead(subject);
     List<BookableItemCalendarSubscription> eligible =
@@ -452,7 +453,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
                       subscription.getUpdatedAt(),
                       subscriptionUrl(subscription.getRawToken())));
             })
-        .sorted(Comparator.comparing(ItemLink::itemName, String.CASE_INSENSITIVE_ORDER))
+        .sorted(
+            Comparator.comparing(ItemLink::itemName, Collator.getInstance(locale))
+                .thenComparing(ItemLink::configurationId))
         .toList();
   }
 

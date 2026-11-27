@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClockIcon, CalendarX2Icon, HistoryIcon, RefreshCwIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
@@ -16,6 +17,7 @@ import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { usePersistedApiV2TableList } from "@/modules/common/table-list/hooks/useApiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import { instantToWire } from "@/modules/common/time/instant";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
@@ -83,12 +85,12 @@ export type UserBookingsPageProps = {
 
 export async function fetchUpcomingBookingCount(
   requesterId: number,
-  asOf: Date,
+  asOf: Temporal.Instant,
   signal?: AbortSignal,
 ): Promise<ApiV2CountResult & { totalDocs: number }> {
   const result = await countBookings(
     {
-      where: upcomingBookingWhere(requesterId, asOf.toISOString()),
+      where: upcomingBookingWhere(requesterId, instantToWire(asOf)),
       max: 100,
     },
     { signal },
@@ -122,7 +124,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     [preferences.timeFormat, preferences.timeZone],
   );
   const asOf = useAlignedMinute();
-  const asOfDate = new Date(asOf);
+  const asOfInstant = Temporal.Instant.fromEpochMilliseconds(asOf);
   const baseFilter: ApiV2WhereObject<"Bookings"> = {
     [requesterValueField]: requesterId,
     kind: "BOOKING",
@@ -131,10 +133,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       ? { state: "CANCELLED" }
       : {
           state: "CONFIRMED",
-          end:
-            period === "upcoming"
-              ? { greaterThan: asOfDate.toISOString() }
-              : { lessThanOrEqual: asOfDate.toISOString() },
+          end: period === "upcoming" ? { greaterThan: asOfInstant } : { lessThanOrEqual: asOfInstant },
         }),
   };
   const request = {
@@ -153,29 +152,14 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     query: { keepPreviousData: true },
   });
   // Plain useQuery: the optional upcoming count must not hide the bookings table.
-  const upcomingCount = useQuery(
-    getCountBookingsQueryOptions(
-      {
-        where: upcomingBookingWhere(requesterId, asOfDate.toISOString()),
-        max: 100,
-      },
-      {
-        query: {
-          select: (result) => {
-            if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
-            return { ...result, totalDocs: result.totalDocs };
-          },
-        },
-      },
-    ),
-  );
+  const upcomingCount = useQuery({
+    ...upcomingBookingCountQuery(requesterId, asOfInstant),
+  });
   const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
-      width: 200,
-      minWidth: 200,
+      widthMode: "content",
       renderCell: ({ row }) => (
         <BookingRowActions row={row} timeZone={preferences.timeZone} timeFormat={preferences.timeFormat} />
       ),
@@ -233,6 +217,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                           : t("myBookings.count.accessible", { count: upcomingCount.data.totalDocs })
                       }
                     >
+                      {" "}
                       {upcomingCount.data.totalIsLowerBound
                         ? t("myBookings.count.lowerBound", { max: UPCOMING_COUNT_LIMIT })
                         : formatNumber(upcomingCount.data.totalDocs, i18n.resolvedLanguage ?? i18n.language)}
@@ -280,3 +265,16 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     </TooltipProvider>
   );
 }
+
+export const upcomingBookingCountQuery = (requesterId: number, asOf: Temporal.Instant) =>
+  getCountBookingsQueryOptions(
+    { where: upcomingBookingWhere(requesterId, instantToWire(asOf)), max: 100 },
+    {
+      query: {
+        select: (result) => {
+          if (typeof result.totalDocs !== "number") throw new Error("Booking count missing totalDocs");
+          return { ...result, totalDocs: result.totalDocs };
+        },
+      },
+    },
+  );

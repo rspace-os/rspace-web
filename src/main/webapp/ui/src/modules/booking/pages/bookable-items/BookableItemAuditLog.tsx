@@ -4,6 +4,7 @@ import { isNil } from "es-toolkit";
 import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { bookingDisplayLocale } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getListBookingConfigurationAuditEventsQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { CollectionTranslationKey } from "@/modules/common/collection/config";
@@ -28,7 +29,6 @@ import {
 } from "./bookableItemAudit";
 
 const PRESET_DAYS = [7, 30, 90] as const;
-const RANGE_SEPARATOR = "\u2013";
 
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
   slug: "booking-configuration-audit",
@@ -112,7 +112,7 @@ function requestError(error: unknown): RequestError | null {
 }
 
 export function BookableItemAuditLog({ configurationId }: { configurationId: number }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
 
   const [today] = useState(() => Temporal.Now.plainDateISO("UTC"));
   const [draft, setDraft] = useState<AuditDateRange>(() => auditPresetRange(30, today));
@@ -224,28 +224,33 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const formattedResultDate =
     resultDate === undefined
       ? null
-      : new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeZone: "UTC" }).format(
+      : new Intl.DateTimeFormat(bookingDisplayLocale(), { dateStyle: "medium", timeZone: "UTC" }).format(
           Temporal.PlainDate.from(resultDate).toZonedDateTime("UTC").epochMilliseconds,
         );
   const truncatedText = audit.data?.truncated
-    ? t("bookableItemDetails.audit.truncated", { limit: audit.data.limit })
+    ? t("bookableItemDetails.audit.truncated", {
+        limit: audit.data.limit,
+      })
     : "";
   const statusText = audit.isPending
     ? t("bookableItemDetails.audit.status.loading")
     : audit.isFetching
       ? t("bookableItemDetails.audit.status.refreshing")
       : audit.isSuccess
-        ? [
-            t("bookableItemDetails.audit.status.loaded", {
+        ? audit.data.truncated
+          ? t("bookableItemDetails.audit.status.loadedTruncated", {
               page: page + 1,
-              totalPages: totalPages,
+              totalPages,
               count: audit.data.rows.length,
               date: formattedResultDate,
-            }),
-            truncatedText,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              limit: audit.data.limit,
+            })
+          : t("bookableItemDetails.audit.status.loaded", {
+              page: page + 1,
+              totalPages,
+              count: audit.data.rows.length,
+              date: formattedResultDate,
+            })
         : "";
 
   const dateError = (field: AuditDateField) => {
@@ -312,7 +317,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
                 onChange={(event) => setDraft({ ...draft, from: event.currentTarget.value })}
               />
               <InputGroupText aria-hidden="true" className="px-2">
-                {RANGE_SEPARATOR}
+                {t("bookableItemDetails.audit.rangeSeparator")}
               </InputGroupText>
               <input
                 ref={toRef}

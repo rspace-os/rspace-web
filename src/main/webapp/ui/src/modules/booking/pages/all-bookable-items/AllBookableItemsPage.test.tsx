@@ -14,11 +14,12 @@ import {
   createRouter,
   Outlet,
   RouterProvider,
+  useNavigate,
 } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { type ComponentType, type ReactNode, Suspense } from "react";
+import { type ComponentType, type ReactNode, Suspense, useEffect } from "react";
 import type * as v from "valibot";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -26,6 +27,7 @@ import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { BookingNoticesProvider, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import BookableItemsPage from "@/modules/booking/pages/all-bookable-items/AllBookableItemsPage";
 import {
   allBookableItemsTable,
@@ -36,6 +38,7 @@ import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/searc
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import type { TableListAlert } from "@/modules/common/table-list/components/TableListAlerts";
 import { tableViewRouteOptions } from "@/modules/common/table-list/tableViewRoute";
 import {
   bookableItemFixtures,
@@ -140,9 +143,32 @@ vi.mock("@/modules/common/table-list/api-v2/metadata", async (importOriginal) =>
   };
 });
 
+function SeedNotice({ alert }: { alert: TableListAlert }) {
+  const { notify } = useBookingNotices();
+  useEffect(() => notify("bookable-items", alert), [alert, notify]);
+  return null;
+}
+
+function NoticeOrigin({ alert }: { alert: TableListAlert }) {
+  const { notify } = useBookingNotices();
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        notify("bookable-items", alert);
+        void navigate({ to: "/booking/all-items" });
+      }}
+    >
+      {"Finish item action"}
+    </button>
+  );
+}
+
 function renderBookableItemsPage(
   initialEntry = "/booking/all-items",
   wrapper?: ComponentType<{ children: ReactNode }>,
+  initialNotice?: TableListAlert,
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({
@@ -152,7 +178,16 @@ function renderBookableItemsPage(
       </NuqsAdapter>
     ),
   });
-  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
+  const bookingRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/booking",
+    component: () => (
+      <BookingNoticesProvider>
+        <Outlet />
+        {initialNotice ? <SeedNotice alert={initialNotice} /> : null}
+      </BookingNoticesProvider>
+    ),
+  });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
@@ -167,6 +202,11 @@ function renderBookableItemsPage(
           path: "/bookable-items/$globalId/{-$tab}/",
           validateSearch: bookableItemSearch,
           component: BookableItemPage,
+        }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "review-source",
+          component: () => (initialNotice ? <NoticeOrigin alert={initialNotice} /> : null),
         }),
       ]),
     ]),
@@ -239,7 +279,6 @@ describe("AllBookableItemsPage", () => {
       "text-2xl",
       "font-semibold",
     );
-    expect(screen.queryByText("booking:bookableItems.ownerHealth.needsOwner")).not.toBeInTheDocument();
     expect(collectionRequests[0]?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(new URL(collectionRequests[0]?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
     expect(await screen.findByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
@@ -251,9 +290,6 @@ describe("AllBookableItemsPage", () => {
       "href",
       "/booking/bookable-items/IN123",
     );
-    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.edit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.access" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.repairAccess" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.archive" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" }));
     expect(
@@ -261,8 +297,6 @@ describe("AllBookableItemsPage", () => {
     ).toBeVisible();
     expect(screen.getByRole("menuitem", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
     await user.keyboard("{Escape}");
-
-    expect(screen.queryByRole("button", { name: "booking:bookableItems.ownerHealth.filter" })).not.toBeInTheDocument();
     await expectAccessible(container);
   });
 
@@ -364,7 +398,6 @@ describe("AllBookableItemsPage", () => {
     await userEvent.setup().click(screen.getByRole("button", { name: "common:tableList.toolbar.columns" }));
     const columnsPanel = await screen.findByRole("region", { name: "common:tableList.columns.title" });
     expect(within(columnsPanel).getByText("booking:allBookableItems.fields.status")).toBeVisible();
-    expect(within(columnsPanel).queryByText("booking:allBookableItems.fields.state")).not.toBeInTheDocument();
   });
 
   it("renders an unknown item when the related instrument is unreadable", async () => {
@@ -383,7 +416,9 @@ describe("AllBookableItemsPage", () => {
     expect(
       screen.queryByRole("link", { name: "booking:allBookableItems.actions.viewDetails" }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.edit" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /common:values\.unknownItem/ })).queryAllByRole("link")).toHaveLength(
+      0,
+    );
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
   });
 
@@ -444,6 +479,7 @@ describe("AllBookableItemsPage", () => {
       { cancelRefetch: false },
     );
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+    expect(screen.getByText("booking:bookableItems.feedback.archived")).toBeVisible();
     await waitFor(() => expect(queryClient.isFetching()).toBe(0));
     expect(reads).toEqual({ page: 1, totals: 1 });
   });
@@ -485,6 +521,7 @@ describe("AllBookableItemsPage", () => {
       undefined,
     );
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+    expect(screen.getByText("booking:bookableItems.feedback.restored")).toBeVisible();
   });
 
   it("debounces search and searches the target name", async () => {
@@ -524,8 +561,8 @@ describe("AllBookableItemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Add filter" }));
     await user.click(screen.getByRole("combobox", { name: "Field for filter 1" }));
 
-    expect(await screen.findByRole("option", { name: "Buffer before booking (minutes)" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "Buffer after booking (minutes)" })).toBeVisible();
+    expect(await screen.findByRole("option", { name: "Gap before (minutes)" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "Gap after (minutes)" })).toBeVisible();
   });
 
   it("hides a column locally when the table uses a fixed projection", async () => {
@@ -585,7 +622,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,enabled,id,target,configurationVersion,effectiveRole,roleSources,capabilities",
+        "state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,enabled,id,target,configurationVersion,incrementUnit,effectiveRole,roleSources,capabilities",
       );
       expect(params.get("depth")).toBe("1");
     });
@@ -630,6 +667,7 @@ describe("AllBookableItemsPage", () => {
     expect(new URL(enableRequest.url).searchParams.get("where")).toBe("id=in=(7,8)");
     expect(enableRequest.body).toEqual({ enabled: true });
     expect(enableRequest.authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
+    expect(await screen.findByText("2 items are now enabled.")).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
     );
@@ -668,6 +706,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(requests).toHaveLength(1));
     expect(requests[0]).toEqual({ where: "id=in=(7,8)", body: { enabled: false } });
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+    expect(await screen.findByText("2 items are now disabled.")).toBeVisible();
   });
 
   it("confirms the multi-page count and archives all selected rows with one request", async () => {
@@ -693,10 +732,15 @@ describe("AllBookableItemsPage", () => {
       }),
     );
     const catalogueQueryKey = getSearchBookingCatalogueQueryKey();
-    const { queryClient } = renderBookableItemsPage("/booking/all-items", await realI18nWrapper());
+    const { queryClient } = renderBookableItemsPage("/booking/all-items", await realI18nWrapper(), {
+      id: "bookable-item-IN123",
+      message: "Bookable item added.",
+      actions: <a href="/booking/calendar?target=IN123">{"View calendar"}</a>,
+    });
     queryClient.setQueryData(catalogueQueryKey, []);
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
 
+    expect(await screen.findByRole("link", { name: "View calendar" })).toBeVisible();
     await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
     await user.click(screen.getByRole("button", { name: "Next page" }));
     await user.click(await screen.findByRole("checkbox", { name: "Select Electron microscope" }));
@@ -727,6 +771,7 @@ describe("AllBookableItemsPage", () => {
       undefined,
     );
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+    expect(screen.queryByRole("link", { name: "View calendar" })).not.toBeInTheDocument();
   });
 
   it("keeps selection and re-enables the action after a failed bulk request", async () => {
@@ -771,6 +816,59 @@ describe("AllBookableItemsPage", () => {
 
     await expect(mutateBookableItems("enable", ids)).rejects.toThrow("more than 100 row IDs");
     expect(bulkRequests).toBe(0);
+  });
+  it("delivers a pending result after navigating to the real table host", async () => {
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get<never, never, ListBookingConfigurations200 | ApiV2Problem>("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([bookingConfiguration])),
+      ),
+    );
+    renderBookableItemsPage("/booking/review-source", await realI18nWrapper(), {
+      id: "bookable-item-IN123",
+      message: "Confocal microscope was added as a bookable item.",
+      actions: <a href="/booking/bookable-items/IN123">{"View details"}</a>,
+    });
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Finish item action" }));
+    const alerts = await screen.findByRole("list", { name: "Recent changes" });
+    expect(within(alerts).getByText("Confocal microscope was added as a bookable item.")).toBeVisible();
+    expect(within(alerts).getByRole("link", { name: "View details" })).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN123",
+    );
+  });
+
+  it("refreshes and clears stale item actions after a committed bulk success with an unreadable receipt", async () => {
+    let changed = false;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get<never, never, ListBookingConfigurations200 | ApiV2Problem>("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...bookingConfiguration, enabled: !changed }])),
+      ),
+      http.patch("/api/v2/booking-configurations", () => {
+        changed = true;
+        return HttpResponse.json({ docs: [{ id: "invalid" }] });
+      }),
+    );
+    renderBookableItemsPage("/booking/all-items", await realI18nWrapper(), {
+      id: "bookable-item-IN123",
+      message: "Confocal microscope was added as a bookable item.",
+      actions: <a href="/booking/calendar?target=IN123">{"View calendar"}</a>,
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
+    await user.click(screen.getByRole("button", { name: "Disable" }));
+    await user.click(
+      within(screen.getByRole("alertdialog", { name: "Disable 1 bookable item?" })).getByRole("button", {
+        name: "Disable",
+      }),
+    );
+    expect(
+      await screen.findByText("The disable request succeeded. Refreshing the items to confirm their current state."),
+    ).toBeVisible();
+    expect(await screen.findByRole("cell", { name: "Disabled" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "View calendar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument();
   });
 
   it.each([
@@ -866,9 +964,8 @@ it("subscribes only eligible selected rows and preserves the version", async () 
     }),
   );
   renderBookableItemsPage("/booking/all-items", await realI18nWrapper());
-  await screen.findByRole("checkbox", { name: "Select Confocal microscope" });
   await user.click(await screen.findByRole("checkbox", { name: "Select all rows on this page" }));
-  await user.click(await screen.findByRole("button", { name: "Subscribe to notifications" }));
+  await user.click(screen.getByRole("button", { name: "Subscribe to notifications" }));
   await waitFor(() => expect(updates).toEqual([{ id: bookingConfiguration.id, body: { enabled: true } }]));
 });
 

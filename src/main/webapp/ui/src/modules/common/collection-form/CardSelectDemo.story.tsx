@@ -4,6 +4,7 @@ import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFields } from "./RenderFields";
 import { FormWithValues } from "./renderFieldsStorySupport.story";
+import "./__tests__/i18n/collectionFormExamples";
 
 type CardSelectDocument = {
   enabled: boolean;
@@ -23,17 +24,17 @@ const cardSelectConfig = resolveCollectionConfig<CardSelectDocument>({
   slug: "card-select-example",
   idField: "status",
   labels: {
-    singularKey: "collectionForm.examples.record",
-    pluralKey: "collectionForm.examples.records",
+    singularKey: "collectionFormExamples:record",
+    pluralKey: "collectionFormExamples:records",
   },
   useAsTitle: "status",
   defaultColumns: ["status"],
   fields: [
-    { name: "enabled", type: "boolean", labelKey: "collectionForm.examples.fields.enabled" },
+    { name: "enabled", type: "boolean", labelKey: "collectionFormExamples:fields.enabled" },
     {
       name: "status",
       type: "select",
-      labelKey: "collectionForm.examples.fields.status",
+      labelKey: "collectionFormExamples:fields.status",
       form: {
         widget: "card",
         isOptionDisabled: (option, data) => {

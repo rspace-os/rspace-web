@@ -200,6 +200,19 @@ export default defineConfig({
         async mouseUp({ page }) {
           await page.mouse.up();
         },
+        async resizeTableColumn({ page, frame }, label: string, delta: number) {
+          const handle = (await frame()).getByRole("button", { name: `Resize column ${label}`, exact: true });
+          await handle.scrollIntoViewIfNeeded();
+          const rect = await handle.boundingBox();
+          if (!rect) throw new Error(`Missing resize handle: ${label}`);
+          const x = rect.x + rect.width / 2;
+          const y = rect.y + rect.height / 2;
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + delta, y, { steps: 4 });
+          await page.mouse.up();
+          return handle.evaluate((element) => element === document.activeElement);
+        },
       },
       enabled: true,
       headless: true,

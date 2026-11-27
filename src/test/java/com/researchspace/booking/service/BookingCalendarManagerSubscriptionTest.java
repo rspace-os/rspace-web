@@ -50,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -473,7 +474,7 @@ class BookingCalendarManagerSubscriptionTest {
                 104L, instrument(104L, "Centrifuge", true),
                 105L, instrument(105L, "Autoclave", false)));
 
-    List<BookingCalendarManager.ItemLink> links = manager.itemLinks(owner, owner);
+    List<BookingCalendarManager.ItemLink> links = manager.itemLinks(owner, owner, Locale.ENGLISH);
 
     assertEquals(
         List.of("Autoclave", "microscope"),
@@ -493,7 +494,8 @@ class BookingCalendarManagerSubscriptionTest {
     User delegate = TestFactory.createAnyUser("delegate");
     delegate.setId(8L);
 
-    assertThrows(AuthorizationException.class, () -> manager.itemLinks(owner, delegate));
+    assertThrows(
+        AuthorizationException.class, () -> manager.itemLinks(owner, delegate, Locale.ENGLISH));
     verify(subscriptionDao, never()).findByUserId(any());
   }
 

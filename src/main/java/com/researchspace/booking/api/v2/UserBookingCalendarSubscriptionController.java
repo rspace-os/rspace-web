@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -232,9 +233,9 @@ public class UserBookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public ItemLinksDocument itemLinks(
-      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller, Locale locale) {
     return new ItemLinksDocument(
-        manager.itemLinks(caller.subject(), caller.actor()).stream()
+        manager.itemLinks(caller.subject(), caller.actor(), locale).stream()
             .map(ItemLinkDocument::from)
             .toList());
   }

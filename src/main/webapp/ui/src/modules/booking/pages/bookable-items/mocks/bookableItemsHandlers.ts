@@ -1,6 +1,5 @@
 import { parse } from "@rsql/parser";
 import { HttpResponse, http, type RequestHandler } from "msw";
-
 import type * as v from "valibot";
 import {
   apiV2CollectionResponse,

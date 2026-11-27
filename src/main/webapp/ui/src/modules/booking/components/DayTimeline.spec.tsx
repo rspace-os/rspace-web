@@ -1,6 +1,6 @@
 import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { currentWallClock } from "@/modules/booking/domain/bookingTime";
@@ -11,6 +11,8 @@ import { DayTimelinePage } from "./pageObjects/DayTimelinePage";
 
 const timeline = new DayTimelinePage();
 
+// Scroller containment is the desktop layout; mobile uses a viewport-wide bottom sheet.
+beforeEach(async () => page.viewport(1280, 900));
 afterEach(cleanup);
 
 function bounds(locator: ReturnType<DayTimelinePage["popup"]>) {
@@ -64,6 +66,35 @@ describe("DayTimeline expanded cards", () => {
         return popup.left >= scrollerBounds.left - 1 && popup.right <= scrollerBounds.right + 1;
       })
       .toBe(true);
+  });
+
+  test("keeps the mobile bottom sheet inside the viewport when its trigger scrolls away", async () => {
+    await page.viewport(390, 844);
+    render(<DayTimelineStory width={320} />);
+    await timeline.open(LONG_ITEM_NAME);
+
+    const expectSheetInViewport = async () => {
+      await expect
+        .poll(() => {
+          const popup = bounds(timeline.popup("09:30 AM–10:30 AM"));
+          return {
+            left: popup.left,
+            right: popup.right,
+            bottom: popup.bottom,
+            topOnScreen: popup.top >= 0,
+          };
+        })
+        .toEqual({ left: 0, right: 390, bottom: 844, topOnScreen: true });
+    };
+    await expectSheetInViewport();
+
+    const scroller = timeline.scroller.element();
+    scroller.scrollLeft = scroller.scrollWidth;
+    scroller.dispatchEvent(new Event("scroll"));
+    await expectSheetInViewport();
+    await timeline.pressEscape();
+    await expect.element(timeline.popup("09:30 AM–10:30 AM")).not.toBeInTheDocument();
+    await expect.element(timeline.trigger(LONG_ITEM_NAME)).toHaveFocus();
   });
 
   test("keeps only one overlapping popup open and restores focus when it closes", async () => {
@@ -129,7 +160,7 @@ describe("DayTimeline expanded cards", () => {
     await expect
       .element(tooltip)
       .toHaveTextContent(
-        `Instrument time: ${expectedInstrumentRange.format(startDate)} – ${expectedInstrumentRange.format(endDate)} (Asia/Calcutta)`,
+        `Instrument time: ${expectedInstrumentRange.format(startDate)}–${expectedInstrumentRange.format(endDate)} (Asia/Calcutta)`,
       );
     expect(currentWallClock(startInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 13 * 60 });
     expect(currentWallClock(endInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 14 * 60 });

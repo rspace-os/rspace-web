@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static java.util.stream.Collectors.joining;
-
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
@@ -10,9 +10,14 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -23,9 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Readable "Label: value" details and a display name of a booking audit snapshot for the My RSpace
- * audit table and its CSV export. Labels and value formatting match the bookable item's audit
- * history; instants are shown to the second.
+ * Readable details and a display name of a booking audit snapshot for the My RSpace audit table and
+ * its CSV export. Labels and value formatting match the bookable item's audit history. The table
+ * shows instants as localized UTC date-times to the second; the CSV keeps ISO instants.
  */
 @Slf4j
 final class BookingAuditDetails {
@@ -35,7 +40,10 @@ final class BookingAuditDetails {
 
   private static final Pattern PERMANENT_DELETE =
       Pattern.compile("(?:^|;)\\s*permanent=true(?:;|$)");
+  private static final String PERMANENT_DELETE_MARKER = "permanent=true";
+  private static final String SUBJECT_PREFIX = "subject=";
   private static final String LABEL_PREFIX = "booking:bookableItemDetails.audit.values.";
+  private static final String MESSAGE_PREFIX = "export.audit.booking.";
 
   private static final List<String> LABEL_ORDER =
       List.of(
@@ -52,6 +60,7 @@ final class BookingAuditDetails {
           "timezone",
           "openingHours",
           "slotGranularityMinutes",
+          "incrementUnit",
           "maxBookingDurationMinutes",
           "bufferBeforeMinutes",
           "bufferAfterMinutes",
@@ -63,6 +72,7 @@ final class BookingAuditDetails {
           "timeFormat",
           "configurationVersion",
           "removedBookings",
+          "removedAssignments",
           "removedSubscriptions",
           "deletedAt");
 
@@ -76,15 +86,27 @@ final class BookingAuditDetails {
 
   private static final Set<String> LABEL_KEYS = Set.copyOf(LABEL_ORDER);
 
-  // Recorded enum values, worded with the phrases the booking UI already uses.
+  private static final Set<String> WORDED_KEYS =
+      Set.of("state", "kind", "incrementUnit", "timezoneMode", "timeFormat");
+
+  // Recorded enum values, worded with the phrases the booking UI already uses where it has them.
   private static final Map<Object, String> DISPLAY_VALUES =
-      Map.of(
-          "CONFIRMED", "booking:bookings.details.confirmed",
-          "CANCELLED", "booking:bookings.details.cancelled",
-          "ACTIVE", "booking:allBookableItems.states.active",
-          "ARCHIVED", "booking:bookableItemDetails.archived",
-          "BOOKING", "booking:bookings.form.typeBooking",
-          "MAINTENANCE", "booking:calendar.feed.maintenance");
+      Map.ofEntries(
+          Map.entry("CONFIRMED", "booking:bookings.details.confirmed"),
+          Map.entry("CANCELLED", "booking:bookings.details.cancelled"),
+          Map.entry("ACTIVE", "booking:allBookableItems.states.active"),
+          Map.entry("ARCHIVED", "booking:bookableItemDetails.archived"),
+          Map.entry("BOOKING", "booking:bookings.form.typeBooking"),
+          Map.entry("MAINTENANCE", "booking:bookings.form.typeBlockout"),
+          Map.entry("MINUTES", "booking:settings.fields.incrementMinutes"),
+          Map.entry("HOURS", "booking:settings.fields.incrementHours"),
+          Map.entry("DAYS", "booking:settings.fields.incrementDays"),
+          Map.entry("BROWSER", MESSAGE_PREFIX + "timezoneModeBrowser"),
+          Map.entry("INSTITUTION", MESSAGE_PREFIX + "timezoneModeInstitution"),
+          Map.entry("CUSTOM", MESSAGE_PREFIX + "timezoneModeCustom"),
+          Map.entry("AUTOMATIC", MESSAGE_PREFIX + "timeFormatAutomatic"),
+          Map.entry("H12", MESSAGE_PREFIX + "timeFormatTwelveHour"),
+          Map.entry("H24", MESSAGE_PREFIX + "timeFormatTwentyFourHour"));
 
   private BookingAuditDetails() {}
 
@@ -113,10 +135,12 @@ final class BookingAuditDetails {
     if (AuditAction.DELETE.equals(action) && state != null && "ARCHIVED".equals(state.toString())) {
       return messages.getMessageForLocale("export.audit.csv.bookingActionArchived", locale);
     }
+    // Booking code records no other actions; any other stays the raw action, as in other domains.
     String label =
         switch (action) {
           case CREATE -> "export.audit.csv.bookingActionCreated";
           case WRITE -> "export.audit.csv.bookingActionChanged";
+          case DELETE -> "export.audit.csv.bookingActionDeleted";
           case RESTORE -> "export.audit.csv.bookingActionRestored";
           default -> null;
         };
@@ -128,16 +152,22 @@ final class BookingAuditDetails {
   }
 
   /**
-   * Sets {@link HistoricData#getDetails()} and {@link HistoricData#getDisplayName()} on every
-   * booking event in the results.
+   * Sets {@link HistoricData#getDetails()}, the worded snapshot followed by the readable recorded
+   * description, and {@link HistoricData#getDisplayName()} on every booking event in the results.
    */
   static void addTo(
       List<AuditTrailSearchResult> results, MessageSourceUtils messages, Locale locale) {
     for (AuditTrailSearchResult result : results) {
-      Map<String, Object> data = payload(result.getEvent());
-      if (isBookingEvent(result.getEvent())) {
-        result.getEvent().setDetails(format(data, messages, locale, true));
-        result.getEvent().setDisplayName(displayName(data));
+      HistoricData event = result.getEvent();
+      if (isBookingEvent(event)) {
+        Map<String, Object> data = payload(event);
+        event.setDetails(
+            combine(
+                format(data, messages, locale, true),
+                readableDescription(event.getDescription(), messages, locale),
+                messages,
+                locale));
+        event.setDisplayName(displayName(data));
       }
     }
   }
@@ -174,7 +204,8 @@ final class BookingAuditDetails {
 
   /**
    * As {@link #format(Map, MessageSourceUtils, Locale)}; {@code forDisplay} also words known
-   * states, event kinds and booleans. The CSV keeps the raw values as its stable format.
+   * states, kinds, units, modes and booleans, and localizes instants and opening hours. The CSV
+   * keeps the raw values as its stable format.
    */
   static String format(
       Map<String, Object> data, MessageSourceUtils messages, Locale locale, boolean forDisplay) {
@@ -186,10 +217,13 @@ final class BookingAuditDetails {
                         && (!"cancellationReason".equals(key) || data.get(key) != null))
             .map(
                 key ->
-                    messages.getMessageForLocale(
-                            LABEL_PREFIX + RENAMED_LABELS.getOrDefault(key, key), locale)
-                        + ": "
-                        + value(key, data.get(key), locale, messages, forDisplay));
+                    entry(
+                        messages.getMessageForLocale(
+                            LABEL_PREFIX + RENAMED_LABELS.getOrDefault(key, key), locale),
+                        value(key, data.get(key), locale, messages, forDisplay),
+                        messages,
+                        locale));
+    // Fields outside the current snapshots have no label, so they keep their recorded name.
     Stream<String> other =
         data.keySet().stream()
             .filter(
@@ -198,39 +232,79 @@ final class BookingAuditDetails {
                         && !"defaultSharedWith".equals(key)
                         && !LABEL_KEYS.contains(key))
             .sorted()
-            .map(key -> key + ": " + value(key, data.get(key), locale, messages, forDisplay));
-    return Stream.concat(known, other).collect(joining("; "));
+            .map(
+                key ->
+                    entry(
+                        key,
+                        value(key, data.get(key), locale, messages, forDisplay),
+                        messages,
+                        locale));
+    return join(Stream.concat(known, other).toList(), messages, locale);
   }
 
-  /** Details followed by the recorded description, each omitted when blank. */
-  static String combine(String details, String recorded) {
-    return Stream.of(details, recorded).filter(StringUtils::isNotBlank).collect(joining("; "));
+  /**
+   * The recorded description in words: a delegated change's {@code subject=<username>} names the
+   * user it was made on behalf of, and the {@code permanent=true} marker, which the action already
+   * states, is dropped. Other recorded text is kept.
+   */
+  static String readableDescription(String recorded, MessageSourceUtils messages, Locale locale) {
+    if (StringUtils.isBlank(recorded)) {
+      return "";
+    }
+    List<String> parts = new ArrayList<>();
+    String subject = null;
+    for (String part : recorded.split(";")) {
+      String trimmed = part.trim();
+      if (trimmed.startsWith(SUBJECT_PREFIX)) {
+        subject = trimmed.substring(SUBJECT_PREFIX.length());
+      } else if (!trimmed.isEmpty() && !PERMANENT_DELETE_MARKER.equals(trimmed)) {
+        parts.add(trimmed);
+      }
+    }
+    if (subject != null) {
+      parts.add(messages.getMessage(MESSAGE_PREFIX + "onBehalfOf", new Object[] {subject}, locale));
+    }
+    return join(parts, messages, locale);
+  }
+
+  /** Details followed by the readable description, each omitted when blank. */
+  static String combine(
+      String details, String description, MessageSourceUtils messages, Locale locale) {
+    return join(
+        Stream.of(details, description).filter(StringUtils::isNotBlank).toList(), messages, locale);
+  }
+
+  private static String entry(
+      String label, String value, MessageSourceUtils messages, Locale locale) {
+    return messages.getMessage(MESSAGE_PREFIX + "entry", new Object[] {label, value}, locale);
+  }
+
+  private static String join(List<String> parts, MessageSourceUtils messages, Locale locale) {
+    return String.join(messages.getMessageForLocale(MESSAGE_PREFIX + "separator", locale), parts);
   }
 
   private static String value(
       String key, Object value, Locale locale, MessageSourceUtils messages, boolean forDisplay) {
     if (value == null) {
-      return "—";
+      // A permanent deletion records no name when its instrument was already gone.
+      return messages.getMessageForLocale(
+          MESSAGE_PREFIX + ("targetName".equals(key) ? "targetUnavailable" : "emptyValue"), locale);
     }
     if (forDisplay && value instanceof Boolean flag) {
       return messages.getMessageForLocale(
           flag ? "common:actions.yes" : "common:actions.no", locale);
     }
-    if (forDisplay
-        && ("state".equals(key) || "kind".equals(key))
-        && DISPLAY_VALUES.containsKey(value)) {
+    if (forDisplay && WORDED_KEYS.contains(key) && DISPLAY_VALUES.containsKey(value)) {
       return messages.getMessageForLocale(DISPLAY_VALUES.get(value), locale);
     }
     if (("start".equals(key) || "end".equals(key)) && value instanceof Number epochMillis) {
-      return Instant.ofEpochMilli(epochMillis.longValue())
-          .truncatedTo(ChronoUnit.SECONDS)
-          .toString();
+      return instant(Instant.ofEpochMilli(epochMillis.longValue()), locale, forDisplay);
     }
     if (!"purpose".equals(key)
         && !"cancellationReason".equals(key)
         && value instanceof String text
         && ISO_INSTANT.matcher(text).matches()) {
-      return toSeconds(text);
+      return recordedInstant(text, locale, forDisplay);
     }
     String targetGlobalId = "target".equals(key) ? targetGlobalId(value) : null;
     if (targetGlobalId != null) {
@@ -240,21 +314,29 @@ final class BookingAuditDetails {
         && value instanceof List<?> openingHours
         && openingHours.stream().allMatch(BookingAuditDetails::isOpeningHoursEntry)) {
       return openingHours.isEmpty()
-          ? "—"
-          : openingHours.stream()
-              .map(Map.class::cast)
-              .map(
-                  entry ->
-                      weekday(entry.get("dayOfWeek"), locale)
-                          + " "
-                          + entry.get("start")
-                          + "–"
-                          + displayEnd((String) entry.get("end")))
-              .collect(joining(", "));
+          ? messages.getMessageForLocale(MESSAGE_PREFIX + "emptyValue", locale)
+          : ListFormatUtils.formatList(
+              openingHours.stream()
+                  .map(entry -> weekdayHours((Map<?, ?>) entry, messages, locale, forDisplay))
+                  .toList(),
+              locale,
+              ListFormatter.Type.UNITS);
     }
     return value instanceof Map || value instanceof List
         ? JacksonUtil.toJson(value)
         : value.toString();
+  }
+
+  private static String weekdayHours(
+      Map<?, ?> entry, MessageSourceUtils messages, Locale locale, boolean forDisplay) {
+    return messages.getMessage(
+        MESSAGE_PREFIX + "weekdayHours",
+        new Object[] {
+          weekday(entry.get("dayOfWeek"), locale),
+          wallTime((String) entry.get("start"), locale, forDisplay),
+          wallTime(displayEnd((String) entry.get("end")), locale, forDisplay)
+        },
+        locale);
   }
 
   private static String targetGlobalId(Object value) {
@@ -266,13 +348,38 @@ final class BookingAuditDetails {
   }
 
   // Snapshots record Instant.toString(), which keeps every fraction down to nanoseconds.
-  private static String toSeconds(String instant) {
+  private static String recordedInstant(String instant, Locale locale, boolean forDisplay) {
     try {
-      return Instant.parse(instant).truncatedTo(ChronoUnit.SECONDS).toString();
+      return instant(Instant.parse(instant), locale, forDisplay);
     } catch (DateTimeParseException ex) {
       log.warn(
           "Audit value {} looks like an instant but does not parse; shown as recorded", instant);
       return instant;
+    }
+  }
+
+  /** The labels say UTC, so the table shows a localized UTC date-time; the CSV keeps ISO text. */
+  private static String instant(Instant instant, Locale locale, boolean forDisplay) {
+    Instant seconds = instant.truncatedTo(ChronoUnit.SECONDS);
+    return forDisplay
+        ? DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .withLocale(locale)
+            .withZone(ZoneOffset.UTC)
+            .format(seconds)
+        : seconds.toString();
+  }
+
+  /** An {@code HH:mm} wall time in {@code locale}'s clock for display, as recorded for the CSV. */
+  private static String wallTime(String time, Locale locale, boolean forDisplay) {
+    if (!forDisplay) {
+      return time;
+    }
+    try {
+      return LocalTime.parse(time)
+          .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale));
+    } catch (DateTimeParseException ex) {
+      log.warn("Audit opening time {} does not parse; shown as recorded", time);
+      return time;
     }
   }
 

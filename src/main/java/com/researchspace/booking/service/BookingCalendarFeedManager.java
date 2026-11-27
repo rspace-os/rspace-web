@@ -28,6 +28,7 @@ import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.FeatureFlagManager;
 import java.net.URI;
+import java.text.Normalizer;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +49,7 @@ final class BookingCalendarFeedManager {
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+  private static final Pattern NON_NAME_CHARACTERS = Pattern.compile("[^\\p{L}\\p{M}\\p{N}]+");
 
   private final BookingCalendarSubscriptionDao subscriptionDao;
   private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
@@ -97,7 +100,7 @@ final class BookingCalendarFeedManager {
       return Optional.of(
           new Download(
               generator.generateDownload(source.get(), serverBaseUrl, locale, limits.maxBytes()),
-              downloadFilename(source.get(), booking.get())));
+              downloadFilename(source.get(), booking.get(), locale)));
     } catch (CalendarTooLargeException | CalendarGenerationException ex) {
       SECURITY_LOG.warn(
           "Booking calendar download generation failed for booking [{}]", bookingId, ex);
@@ -195,19 +198,23 @@ final class BookingCalendarFeedManager {
   /**
    * Names one downloaded file after the item, its global identifier, and the local start date, so a
    * folder of saved bookings sorts and reads sensibly: {@code confocal-microscope-IN12-2026-09-12}.
+   * Letters, marks and digits of every script are kept; a name with none falls back to the
+   * catalog's word in {@code locale}.
    */
-  private static String downloadFilename(CalendarSource source, TimeSlotBooking booking) {
+  private String downloadFilename(CalendarSource source, TimeSlotBooking booking, Locale locale) {
     String slug =
-        source
-            .itemName()
-            .toLowerCase(Locale.ROOT)
-            .replaceAll("[^a-z0-9]+", "-")
+        NON_NAME_CHARACTERS
+            .matcher(
+                Normalizer.normalize(source.itemName(), Normalizer.Form.NFC)
+                    .toLowerCase(Locale.ROOT))
+            .replaceAll("-")
             .replaceAll("^-|-$", "");
     BookableTargetReference target = booking.getBookingConfiguration().getTarget();
     String globalId = "IN" + target.id();
     String date =
         DATE_FORMAT.withZone(zone(source.timeZone())).format(booking.getStartTime().toInstant());
-    return (slug.isEmpty() ? "booking" : slug) + "-" + globalId + "-" + date + ".ics";
+    String name = slug.isEmpty() ? generator.fileNameFallback(locale) : slug;
+    return name + "-" + globalId + "-" + date + ".ics";
   }
 
   private static ZoneId zone(String timeZone) {

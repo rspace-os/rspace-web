@@ -1,13 +1,18 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as React from "react";
 import type { DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
+import { proposeDayRange, type TimelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { incrementRule } from "@/modules/booking/domain/bookingIncrement";
 import {
   addCalendarDays,
+  bookingDateTimeLocale,
+  bookingDisplayLocale,
   sliceAcrossZonedDay,
   wallClockToDayMinute,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
+import { firstDayOfWeek } from "@/modules/common/i18n/localeFormat";
 import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { BookingActions } from "./BookingEventActions";
 
@@ -31,17 +36,19 @@ export function resourceLocation(resource: BookingCalendarResource) {
   return typeof parent === "object" && parent !== null ? parent : undefined;
 }
 
-export function utcDate(date: string): Date {
-  return new Date(`${date}T12:00:00Z`);
+/** Epoch milliseconds at noon UTC on `date`, for formatting a calendar date with `timeZone: "UTC"`. */
+function utcNoon(date: string): number {
+  return Temporal.PlainDate.from(date).toZonedDateTime({ timeZone: "UTC", plainTime: "12:00" }).epochMilliseconds;
 }
 
 export function firstOfMonth(date: string): string {
   return `${date.slice(0, 8)}01`;
 }
 
-export function startOfWeek(date: string): string {
+/** The first day of the week holding `date`; `weekStart` is an ISO weekday and defaults to the browser region's, like the clock. */
+export function startOfWeek(date: string, weekStart = firstDayOfWeek(bookingDateTimeLocale())): string {
   const value = Temporal.PlainDate.from(date);
-  return value.subtract({ days: value.dayOfWeek - 1 }).toString();
+  return value.subtract({ days: (value.dayOfWeek - weekStart + 7) % 7 }).toString();
 }
 
 export function monthGridStart(date: string): string {
@@ -67,33 +74,48 @@ export function periodDates(date: string, view: CalendarView): readonly string[]
   return datesFrom(firstOfMonth(date), monthDayCount(date));
 }
 
+/**
+ * The first free proposal starts at the first whole minute in a gap, with a whole number of increments.
+ */
 export function nextFreeRange(
   events: readonly BookingListDocument[],
   date: string,
   timezone: string,
   startWindow: number,
   endWindow: number,
-  increment: number,
+  policy: TimelinePolicy,
   // Day-minute ranges, such as closed hours, that a proposal must also avoid.
   unavailable: readonly { startMinute: number; endMinute: number }[] = [],
 ): { startMinute: number; endMinute: number } | undefined {
   startWindow = wallClockToDayMinute(date, timezone, startWindow);
   endWindow = wallClockToDayMinute(date, timezone, endWindow);
   if (endWindow <= startWindow) return undefined;
-  if (!Number.isFinite(increment) || increment <= 0) return undefined;
-  const preferredDuration = Math.ceil(Math.min(60, endWindow - startWindow) / increment) * increment;
-  const firstStart = Math.ceil(startWindow / increment) * increment;
+  if (!Number.isFinite(policy.slotGranularityMinutes) || policy.slotGranularityMinutes <= 0) return undefined;
+  const rule = incrementRule(policy);
+  const dayMinutes = zonedDayBounds(date, timezone).elapsedMinutes;
+  if (rule.kind === "days" || rule.minutes > dayMinutes) {
+    const nominal = rule.kind === "days" ? rule.days * 1440 : rule.minutes;
+    return proposeDayRange({ startMinute: startWindow, endMinute: startWindow + nominal }, date, timezone, policy);
+  }
+  const preferredDuration = Math.ceil(Math.min(60, endWindow - startWindow) / rule.minutes) * rule.minutes;
+  const maximumDuration = policy.maxBookingDurationMinutes > 0 ? policy.maxBookingDurationMinutes : Infinity;
   const occupied = [
     ...events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone)),
     ...unavailable,
   ].toSorted((left, right) => left.startMinute - right.startMinute);
-  for (let startMinute = firstStart; startMinute < endWindow; startMinute += increment) {
-    if (occupied.some((event) => event.startMinute <= startMinute && event.endMinute > startMinute)) continue;
-    const nextOccupiedStart = occupied.find((event) => event.startMinute > startMinute)?.startMinute ?? endWindow;
-    const duration =
-      Math.floor(Math.min(preferredDuration, nextOccupiedStart - startMinute, endWindow - startMinute) / increment) *
-      increment;
-    if (duration > 0) return { startMinute, endMinute: startMinute + duration };
+  // The first free minute in a gap leaves the most room for whole increments.
+  const gaps: Array<{ from: number; to: number }> = [];
+  let cursor = Math.ceil(startWindow);
+  for (const block of occupied) {
+    if (block.startMinute >= endWindow) break;
+    if (block.startMinute > cursor) gaps.push({ from: cursor, to: Math.min(block.startMinute, endWindow) });
+    cursor = Math.max(cursor, Math.ceil(block.endMinute));
+  }
+  if (cursor < endWindow) gaps.push({ from: cursor, to: endWindow });
+  for (const { from, to } of gaps) {
+    const duration = Math.floor(Math.min(preferredDuration, to - from, maximumDuration) / rule.minutes) * rule.minutes;
+    if (duration <= 0) continue;
+    return { startMinute: from, endMinute: from + duration };
   }
   return undefined;
 }
@@ -137,7 +159,7 @@ export function timelineEditorPositions(
 }
 
 export function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
-  return new Intl.DateTimeFormat(undefined, { ...options, timeZone: "UTC" }).format(utcDate(date));
+  return new Intl.DateTimeFormat(bookingDisplayLocale(), { ...options, timeZone: "UTC" }).format(utcNoon(date));
 }
 
 export function scrollCalendarWithArrowKeys(event: React.KeyboardEvent<HTMLElement>) {

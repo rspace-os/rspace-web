@@ -114,7 +114,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background">
-      <div className="flex h-12 items-center gap-0 px-1 sm:gap-2 sm:px-3">
+      <div className="flex h-12 items-center gap-0 px-1 sm:gap-1 sm:px-3 lg:gap-2">
         {renderHamburger?.()}
         <a href="/workspace" className="flex h-8 shrink-0 items-center">
           <img src={RSpaceLogoTight} alt={t("helpDocs.rspaceAlt")} className="h-8 md:hidden" />

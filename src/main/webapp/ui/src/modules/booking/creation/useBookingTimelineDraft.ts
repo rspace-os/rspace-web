@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { type BookingWindowDraft, sameDraft } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormState } from "./BookingForm";
 
@@ -14,33 +14,31 @@ export function useBookingTimelineDraft() {
   const [pendingAdjustment, setPendingAdjustment] = useState<PendingAdjustment | undefined>(undefined);
   const [interactionActive, setInteractionActive] = useState(false);
 
-  const onStateChange = useCallback((state: BookingFormState) => {
+  const onStateChange = (state: BookingFormState) => {
     setFormState(state);
     setPendingAdjustment((pending) =>
       pending && state.target?.globalId === pending.targetGlobalId && !sameDraft(state.draft, pending.draft)
         ? pending
         : undefined,
     );
-  }, []);
+  };
 
-  const onDraftChange = useCallback((draft: BookingWindowDraft, targetGlobalId?: string) => {
+  const onDraftChange = (draft: BookingWindowDraft, targetGlobalId?: string) => {
     setPendingAdjustment((pending) => {
       if (!pending || pending.targetGlobalId !== targetGlobalId || sameDraft(pending.draft, draft)) return pending;
       return undefined;
     });
-  }, []);
+  };
 
-  const onTargetChange = useCallback(() => {
+  const onTargetChange = () => {
     setPendingAdjustment(undefined);
     setInteractionActive(false);
-  }, []);
+  };
 
-  const onInteractionChange = useCallback((active: boolean) => setInteractionActive(active), []);
-
-  const onTimelineChange = useCallback((draft: BookingWindowDraft, targetGlobalId: string | undefined) => {
+  const onTimelineChange = (draft: BookingWindowDraft, targetGlobalId: string | undefined) => {
     if (!targetGlobalId) return;
     setPendingAdjustment({ draft, targetGlobalId });
-  }, []);
+  };
 
   return {
     formState,
@@ -53,7 +51,7 @@ export function useBookingTimelineDraft() {
     onStateChange,
     onDraftChange,
     onTargetChange,
-    onInteractionChange,
+    onInteractionChange: setInteractionActive,
     onTimelineChange,
   };
 }
