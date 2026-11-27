@@ -1209,7 +1209,7 @@ export default interface Resources {
         "keep": "Keep booking",
         "keepMaintenance": "Keep maintenance event",
         "maintenanceReasonHint": "The reason is saved with this maintenance event.",
-        "reasonCount": "{count, number}/500 characters",
+        "reasonCount": "{count, number}/{max, plural, one {# character} other {# characters}}",
         "reasonHint": "The booker and subscribers will see this reason.",
         "reasonLabel": "Cancellation reason (optional)",
         "title": "Cancel booking?"
