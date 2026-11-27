@@ -7,8 +7,8 @@ import type * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
-import { fetchBooking } from "@/modules/booking/domain/booking";
-import { getGetBookingQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
+import { bookingQueryOptions, fetchBooking } from "@/modules/booking/domain/booking";
+import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
@@ -86,7 +86,7 @@ function renderDialog(
 
 function ActiveBookingHarness({ onDeleted }: { onDeleted: ComponentProps<typeof DeleteBookingDialog>["onDeleted"] }) {
   const { data: booking } = useQuery({
-    queryKey: getGetBookingQueryKey(41),
+    queryKey: bookingQueryOptions(41).queryKey,
     queryFn: ({ signal }) => fetchBooking(41, signal),
     retry: false,
   });
@@ -181,7 +181,6 @@ describe("DeleteBookingDialog", () => {
     expect(requests[0].method).toBe("PATCH");
     expect(requests[0].headers.get("Authorization")).toMatch(/^Bearer .+/);
     expect(requests[0].headers.get("If-Match")).toBe('"0"');
-    expect(queryClient.getQueryState(getListBookingsQueryKey())?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(getListBookingsQueryKey())?.isInvalidated).toBe(true);
 
     expect(onDeleted).toHaveBeenCalledOnce();
@@ -298,7 +297,6 @@ describe("DeleteBookingDialog", () => {
     expect(screen.getByRole("alert")).not.toHaveTextContent("Do not display this");
     expect(screen.getByRole("alertdialog")).toBeVisible();
     if (status !== 403) {
-      expect(queryClient.getQueryState(getListBookingsQueryKey())?.isInvalidated).toBe(true);
       expect(queryClient.getQueryState(getListBookingsQueryKey())?.isInvalidated).toBe(true);
     }
   });

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http, type RequestHandler } from "msw";
 import * as v from "valibot";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
@@ -84,10 +85,10 @@ function catalogueAvailability(item: BookingCatalogueItem, url: URL) {
     elapsedMinutes: (Date.parse(end) - Date.parse(start)) / 60_000,
   };
   return classifyCurrentDayAvailability(
-    rowAvailabilityIntervals(row, bounds, parsedAvailabilityBookings),
-    new Date(start),
-    new Date(end),
-    new Date(url.searchParams.get("now") ?? start),
+    rowAvailabilityIntervals({ ...row, eventKind: "BOOKING" }, bounds, parsedAvailabilityBookings),
+    Temporal.Instant.from(start),
+    Temporal.Instant.from(end),
+    Temporal.Instant.from(url.searchParams.get("now") ?? start),
   );
 }
 

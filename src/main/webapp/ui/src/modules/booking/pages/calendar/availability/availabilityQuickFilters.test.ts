@@ -224,9 +224,9 @@ describe("the availability oracle", () => {
     const today = todayAvailabilityWindow(Temporal.Instant.from(now), "UTC", "00:00", "24:00");
     return classifyCurrentDayAvailability(
       rowAvailabilityIntervals(candidate, today.bounds, bookings),
-      new Date(today.start.epochMilliseconds),
-      new Date(today.end.epochMilliseconds),
-      new Date(now),
+      Temporal.Instant.from(today.start),
+      Temporal.Instant.from(today.end),
+      Temporal.Instant.from(now),
     );
   };
 

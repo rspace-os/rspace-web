@@ -9,12 +9,10 @@ import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -24,25 +22,20 @@ class BookingInventoryFixtureFactory {
   private final InstrumentDao instrumentDao;
   private final ContainerApiManager containerManager;
   private final InstrumentEntityApiManager instrumentManager;
-  private final MessageSourceUtils messages;
-  private static final String FIXTURE_DESCRIPTION_KEY = "bookingFixtures.description";
-  private static final Locale FIXTURE_LOCALE = Locale.forLanguageTag("en-US");
 
   BookingInventoryFixtureFactory(
       ContainerDao containerDao,
       InstrumentDao instrumentDao,
       ContainerApiManager containerManager,
-      InstrumentEntityApiManager instrumentManager,
-      MessageSourceUtils messages) {
+      InstrumentEntityApiManager instrumentManager) {
     this.containerDao = containerDao;
     this.instrumentDao = instrumentDao;
     this.containerManager = containerManager;
     this.instrumentManager = instrumentManager;
-    this.messages = messages;
   }
 
   Instrument ensureInstrument(String name, User owner) {
-    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
+    String fixtureDescription = BookingFixtureText.DESCRIPTION;
     return instrumentDao.findInstrumentsByName(name, owner).stream()
         .filter(instrument -> !instrument.isDeleted())
         .filter(instrument -> fixtureDescription.equals(instrument.getDescription()))
@@ -59,7 +52,7 @@ class BookingInventoryFixtureFactory {
   }
 
   Container ensureContainer(String name, User owner, boolean includeDeleted) {
-    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
+    String fixtureDescription = BookingFixtureText.DESCRIPTION;
     return containerDao.getAll().stream()
         .filter(container -> name.equals(container.getName()))
         .filter(container -> owner.getId().equals(container.getOwner().getId()))
@@ -73,10 +66,6 @@ class BookingInventoryFixtureFactory {
               ApiContainer created = containerManager.createNewApiContainer(request, owner);
               return containerDao.get(created.getId());
             });
-  }
-
-  String message(String key) {
-    return messages.getMessageForLocale(key, FIXTURE_LOCALE);
   }
 
   void moveToParent(Instrument instrument, Container parent) {
@@ -99,7 +88,7 @@ class BookingInventoryFixtureFactory {
   }
 
   List<Instrument> ensureBusyCalendarInstruments(User owner, int busyCalendarInstrumentCount) {
-    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
+    String fixtureDescription = BookingFixtureText.DESCRIPTION;
     Map<String, Instrument> existingByName =
         instrumentDao.getAll().stream()
             .filter(instrument -> !instrument.isDeleted())
@@ -110,9 +99,7 @@ class BookingInventoryFixtureFactory {
                     Instrument::getName, instrument -> instrument, (first, duplicate) -> first));
     List<Instrument> instruments = new ArrayList<>(busyCalendarInstrumentCount);
     for (int index = 1; index <= busyCalendarInstrumentCount; index++) {
-      String name =
-          messages.getMessage(
-              "bookingFixtures.instruments.busyCalendar", new Object[] {index}, FIXTURE_LOCALE);
+      String name = BookingFixtureText.busyCalendarInstrument(index);
       instruments.add(
           existingByName.computeIfAbsent(
               name, ignored -> createInstrument(name, fixtureDescription, owner)));

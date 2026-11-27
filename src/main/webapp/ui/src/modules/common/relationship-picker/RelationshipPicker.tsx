@@ -1,3 +1,4 @@
+import { useDebouncer } from "@tanstack/react-pacer";
 import { uniqBy } from "es-toolkit";
 import type { TFunction } from "i18next";
 import { type FocusEventHandler, type Ref, useState } from "react";
@@ -106,6 +107,7 @@ export function RelationshipPicker({
   browseWhenEmpty = false,
   browseEmptyMessage,
   minimumSearchLength,
+  searchDebounceMs = 0,
 }: {
   /** Sources searched in parallel and merged in declaration order. */
   sources: readonly RelationshipSource[];
@@ -141,10 +143,14 @@ export function RelationshipPicker({
   browseEmptyMessage?: string;
   /** The shortest term the sources search; a shorter one asks for more characters instead of reporting no matches. */
   minimumSearchLength?: number;
+  searchDebounceMs?: number;
 }) {
   const { t } = useTranslation("common");
   const anchor = useComboboxAnchor();
   const [term, setTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const searchDebouncer = useDebouncer(setSearchTerm, { wait: searchDebounceMs });
+  const debouncing = searchDebounceMs > 0 && searchTerm !== term;
   const trimmedTerm = term.trim();
   const hasSearchTerm = trimmedTerm !== "";
   const searchTooShort = hasSearchTerm && minimumSearchLength !== undefined && trimmedTerm.length < minimumSearchLength;
@@ -163,7 +169,7 @@ export function RelationshipPicker({
   });
   const { options, failed, loading } = useRelationshipOptions({
     sources,
-    term,
+    term: searchDebounceMs > 0 ? searchTerm : term,
     authScope,
     labels,
     enabled: showsOptions,
@@ -176,7 +182,7 @@ export function RelationshipPicker({
   });
   // Keeps the selected options selectable while a fresh search is in flight, so a chip never
   // disappears from the list mid-typing.
-  const items = showsOptions ? [...options] : [];
+  const items = showsOptions && !debouncing ? [...options] : [];
   for (const option of selected) {
     if (!items.some((candidate) => sameOption(candidate, option))) items.push(option);
   }
@@ -196,7 +202,9 @@ export function RelationshipPicker({
     const isClearAction = reason === "input-clear" || reason === "clear-press" || reason === "item-press";
     if (reason !== "input-change" && !isClearAction) return;
 
-    setTerm(isClearAction ? "" : nextTerm);
+    const updatedTerm = isClearAction ? "" : nextTerm;
+    setTerm(updatedTerm);
+    if (searchDebounceMs > 0) searchDebouncer.maybeExecute(updatedTerm);
   };
   const availabilityPresentation = availabilityView(availability, availabilitySource, t);
   const optionIsDisabled = availabilityPresentation.isDisabled;

@@ -142,8 +142,8 @@ function ItemNotificationCard({
         >
           <BookingNotificationChoiceFields
             form={form}
-            labelKey="Receive booking notifications"
-            descriptionKey="When someone else creates or cancels a booking."
+            label="Receive booking notifications"
+            description="When someone else creates or cancels a booking."
           />
           <div className="flex items-center gap-3">
             <Button type="submit" size="sm" disabled={!dirty}>
@@ -206,8 +206,8 @@ function AutoSubscribeForm({ value, onSave }: { value: boolean; onSave: (value: 
     >
       <BookingNotificationChoiceFields
         form={form}
-        labelKey="notificationSubscriptions.preferences.autoSubscribe.label"
-        descriptionKey="Existing subscriptions stay unchanged."
+        label="Automatically subscribe to new instruments I own"
+        description="Existing subscriptions stay unchanged."
       />
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={!dirty}>

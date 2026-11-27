@@ -19,7 +19,6 @@ import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.time.DayOfWeek;
@@ -279,7 +278,6 @@ class BookingFixturesAppInitialiserTest {
         mock(InstrumentDao.class),
         mock(ContainerApiManager.class),
         mock(InstrumentEntityApiManager.class),
-        mock(MessageSourceUtils.class),
         mock(BookingConfigurationManager.class),
         mock(TimeSlotBookingManager.class),
         mock(BookingConfigurationDao.class),

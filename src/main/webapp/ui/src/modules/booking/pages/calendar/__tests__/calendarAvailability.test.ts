@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
@@ -67,12 +68,12 @@ const sourced = (
   sourceEndsAt = endsAt,
 ) => ({
   kind,
-  startsAt: new Date(startsAt),
-  endsAt: new Date(endsAt),
+  startsAt: Temporal.Instant.from(startsAt),
+  endsAt: Temporal.Instant.from(endsAt),
   source: {
     id,
-    startsAt: new Date(sourceStartsAt),
-    endsAt: new Date(sourceEndsAt),
+    startsAt: Temporal.Instant.from(sourceStartsAt),
+    endsAt: Temporal.Instant.from(sourceEndsAt),
     ...(kind === "booking"
       ? {
           booking: {
@@ -91,7 +92,7 @@ const sourced = (
 });
 
 const closureId = (globalId: string, startsAt: string, endsAt: string) =>
-  `opening-hours:${globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`;
+  `opening-hours:${globalId}:${Temporal.Instant.from(startsAt).toString({ fractionalSecondDigits: 3 })}:${Temporal.Instant.from(endsAt).toString({ fractionalSecondDigits: 3 })}`;
 
 // Later pages always request page 1 and continue after the last row: `;(start=gt=S,(start==S;id=gt=ID))`.
 const keysetAfterId = (request: Request) =>
@@ -121,7 +122,7 @@ describe("calendar availability", () => {
     expect(requests).toBe(2);
   });
 
-  it("classifies maintenance as a blockout while retaining its details and buffers", async () => {
+  it.each([undefined, "MAINTENANCE"] as const)("classifies maintenance with %s intent", async (eventKind) => {
     server.use(
       http.get("/api/v2/bookings", () =>
         HttpResponse.json(
@@ -132,7 +133,17 @@ describe("calendar availability", () => {
       ),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, allowDoubleBooking: true }],
+      [
+        {
+          globalId: "IN1",
+          timezone: "UTC",
+          ...schedule,
+          bufferBeforeMinutes: 10,
+          bufferAfterMinutes: 10,
+          allowDoubleBooking: true,
+          eventKind,
+        },
+      ],
       "2026-08-17",
 
       new AbortController().signal,
@@ -140,8 +151,8 @@ describe("calendar availability", () => {
     expect(result.get("IN1")).toEqual([
       expect.objectContaining({
         kind: "blockout",
-        startsAt: new Date("2026-08-17T09:50:00Z"),
-        endsAt: new Date("2026-08-17T11:10:00Z"),
+        startsAt: Temporal.Instant.from(eventKind === "MAINTENANCE" ? "2026-08-17T10:00:00Z" : "2026-08-17T09:50:00Z"),
+        endsAt: Temporal.Instant.from(eventKind === "MAINTENANCE" ? "2026-08-17T11:00:00Z" : "2026-08-17T11:10:00Z"),
         source: expect.objectContaining({ booking: expect.objectContaining({ id: 1, kind: "MAINTENANCE" }) }),
       }),
     ]);
@@ -336,6 +347,7 @@ describe("calendar availability", () => {
           globalId: "IN1",
           timezone: "America/Los_Angeles",
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           allowDoubleBooking: false,
@@ -364,7 +376,7 @@ describe("calendar availability", () => {
     ]);
   });
 
-  it("closes omitted weekdays even when the listed days are all day", async () => {
+  it("closes whole unselected weekdays even when the shared hours are all day", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookingResponse([]))));
     const row = {
       ...schedule,
@@ -393,19 +405,29 @@ describe("calendar availability", () => {
       ...schedule,
       globalId: "IN1",
       timezone: "UTC",
-      openingHours: schedule.openingHours
-        .map((entry) => ({ ...entry, start: "09:00", end: "17:00" }))
-        .map(
-          (entry) =>
-            [{ dayOfWeek: 2, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-        ),
+      openingHours: [
+        { dayOfWeek: 1, start: "09:00", end: "17:00" },
+        { dayOfWeek: 2, start: "10:00", end: "16:00" },
+        { dayOfWeek: 3, start: "09:00", end: "17:00" },
+        { dayOfWeek: 4, start: "09:00", end: "17:00" },
+        { dayOfWeek: 5, start: "09:00", end: "17:00" },
+        { dayOfWeek: 6, start: "09:00", end: "17:00" },
+        { dayOfWeek: 7, start: "09:00", end: "17:00" },
+      ],
     };
     // Monday 2026-08-17 and Tuesday 2026-08-18.
     const interval = { ...displayInterval("2026-08-17", "UTC", "00:00", "24:00"), end: "2026-08-19T00:00:00Z" };
 
     const result = await loadCalendarAvailability([row], interval, new AbortController().signal);
 
-    expect(result.get("IN1")?.map(({ startsAt, endsAt }) => [startsAt.toISOString(), endsAt.toISOString()])).toEqual([
+    expect(
+      result
+        .get("IN1")
+        ?.map(({ startsAt, endsAt }) => [
+          startsAt.toString({ fractionalSecondDigits: 3 }),
+          endsAt.toString({ fractionalSecondDigits: 3 }),
+        ]),
+    ).toEqual([
       ["2026-08-17T00:00:00.000Z", "2026-08-17T09:00:00.000Z"],
       ["2026-08-17T17:00:00.000Z", "2026-08-18T10:00:00.000Z"],
       ["2026-08-18T16:00:00.000Z", "2026-08-19T00:00:00.000Z"],
@@ -418,7 +440,7 @@ describe("calendar availability", () => {
     ).toBeUndefined();
   });
 
-  it("recomputes closures when only one weekday's hours change", async () => {
+  it("recomputes closures when only one exception changes", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookingResponse([]))));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
@@ -441,12 +463,16 @@ describe("calendar availability", () => {
       { wrapper, initialProps: { end: "17:00" } },
     );
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T17:00:00.000Z");
+    expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toString({ fractionalSecondDigits: 3 })).toBe(
+      "2026-08-17T17:00:00.000Z",
+    );
 
     rerender({ end: "18:00" });
 
     await waitFor(() =>
-      expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T18:00:00.000Z"),
+      expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toString({ fractionalSecondDigits: 3 })).toBe(
+        "2026-08-17T18:00:00.000Z",
+      ),
     );
   });
 
@@ -460,8 +486,9 @@ describe("calendar availability", () => {
       globalId: "IN1",
       timezone: "UTC",
       openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
-      bufferBeforeMinutes: 10,
-      bufferAfterMinutes: 20,
+
+      bufferBeforeMinutes: 20,
+      bufferAfterMinutes: 0,
       allowDoubleBooking: false,
     };
 
@@ -503,7 +530,7 @@ describe("calendar availability", () => {
     expect(available.get("IN1")?.filter(({ kind }) => kind === "booking")).toEqual([]);
   });
 
-  it("uses the shared maximum gap in query bounds and allows its exact boundary", async () => {
+  it("uses the additive gap in query bounds and allows its exact boundary", async () => {
     const requests: URL[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
@@ -519,7 +546,7 @@ describe("calendar availability", () => {
       }),
     );
     const result = await loadCalendarAvailability(
-      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 10, bufferAfterMinutes: 20 }],
+      [{ globalId: "IN1", timezone: "UTC", ...schedule, bufferBeforeMinutes: 20, bufferAfterMinutes: 0 }],
       displayInterval("2026-08-17", "UTC", "10:00", "11:00"),
 
       new AbortController().signal,
@@ -660,12 +687,13 @@ describe("calendar availability", () => {
     const schedule = {
       globalId: "IN1",
       timezone: "Europe/Berlin",
-      openingHours: [1, 2, 3, 4, 5]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" }))
-        .map(
-          (entry) =>
-            [{ dayOfWeek: 5, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-        ),
+      openingHours: [
+        { dayOfWeek: 1, start: "09:00", end: "17:00" },
+        { dayOfWeek: 2, start: "09:00", end: "17:00" },
+        { dayOfWeek: 3, start: "09:00", end: "17:00" },
+        { dayOfWeek: 4, start: "09:00", end: "17:00" },
+        { dayOfWeek: 5, start: "10:00", end: "16:00" },
+      ],
     };
     expect(closedDayRanges(schedule, "2026-09-21", "Europe/Berlin")).toEqual([
       { startMinute: 0, endMinute: 9 * 60 },

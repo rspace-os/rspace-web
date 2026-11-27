@@ -8,22 +8,29 @@ import {
   type AvailabilityState,
   buildAvailabilitySlices,
   type SourcedAvailabilityInterval,
-  timestamp,
 } from "@/modules/booking/domain/availability";
-import { bookingLocale, formatInstantRange } from "@/modules/booking/domain/bookingTime";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingDateTimeFormatter,
+  bookingDisplayLocale,
+  bookingHourCycle,
+  bookingLocale,
+  formatBookingPeriod,
+  formatInstantRange,
+} from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { instantToWire } from "@/modules/common/time/instant";
 import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
 import { BookingSourceRow } from "./BookingSourceRow";
 
-const DEFAULT_PERIOD_MILLISECONDS = 24 * 60 * 60 * 1000;
-
 export type AvailabilityBarProps = {
   intervals: ReadonlyArray<SourcedAvailabilityInterval>;
-  periodStart: Date;
-  periodEnd?: Date;
-  now?: Date;
+  periodStart: Temporal.Instant;
+  /** Defaults to 24 hours after `periodStart`. */
+  periodEnd?: Temporal.Instant;
+  now?: Temporal.Instant;
   /** Show the item and actor rows when a standard booking is expanded. */
   showBookingContextDetails?: boolean;
   showCurrentAvailability?: boolean;
@@ -39,9 +46,14 @@ export type AvailabilityBarProps = {
 };
 
 type TimestampInterval = {
-  startsAt: number | Date;
-  endsAt: number | Date;
+  startsAt: number | Temporal.Instant;
+  endsAt: number | Temporal.Instant;
 };
+
+const epochMilliseconds = (value: number | Temporal.Instant) =>
+  typeof value === "number" ? value : value.epochMilliseconds;
+const wireInstant = (value: number | Temporal.Instant) =>
+  instantToWire(typeof value === "number" ? Temporal.Instant.fromEpochMilliseconds(value) : value);
 
 type DetailedBookingSource = AvailabilitySource & {
   booking: NonNullable<AvailabilitySource["booking"]> & { privacy: "full" };
@@ -49,22 +61,20 @@ type DetailedBookingSource = AvailabilitySource & {
 
 const stateClasses: Record<AvailabilityState, string> = {
   available: "bg-transparent",
-  booking: "bg-blue-600",
-  blockout: "bg-[repeating-linear-gradient(135deg,var(--color-amber-700)_0_3px,var(--color-amber-300)_3px_6px)]",
+  booking: "bg-blue-200",
+  blockout: "bg-muted bg-[repeating-linear-gradient(135deg,var(--color-muted-foreground)_0_1px,transparent_1px_6px)]",
   overlap: "bg-[repeating-linear-gradient(135deg,var(--color-blue-600)_0_3px,var(--color-amber-400)_3px_6px)]",
 };
 
 function hasValidSource(interval: SourcedAvailabilityInterval): boolean {
-  const startsAt = interval.source.startsAt.getTime();
-  const endsAt = interval.source.endsAt.getTime();
-  return Number.isFinite(startsAt) && Number.isFinite(endsAt) && endsAt > startsAt;
+  return Temporal.Instant.compare(interval.source.endsAt, interval.source.startsAt) > 0;
 }
 
 function hasBookingDetails(source: AvailabilitySource): source is DetailedBookingSource {
   return source.booking?.privacy === "full";
 }
 
-export function AvailabilityBar({
+function AvailabilityBarContent({
   intervals,
   periodStart,
   periodEnd,
@@ -78,62 +88,47 @@ export function AvailabilityBar({
   className,
 }: AvailabilityBarProps) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const descriptionId = `${React.useId()}-description`;
   const accordionName = `${React.useId()}-bookings`;
-  const start = timestamp(periodStart, "periodStart");
-  const end = periodEnd === undefined ? start + DEFAULT_PERIOD_MILLISECONDS : timestamp(periodEnd, "periodEnd");
+  const periodEndInstant = periodEnd ?? periodStart.add({ hours: 24 });
+  const start = periodStart.epochMilliseconds;
+  const end = periodEndInstant.epochMilliseconds;
   if (end < start) throw new RangeError("periodEnd must be after periodStart");
   if (end === start)
     return <p className={cn("text-xs text-muted-foreground", className)}>{t("availabilityBar.emptyWindow")}</p>;
-  const nowTimestamp = now === undefined ? null : timestamp(now, "now");
+  const nowTimestamp = now === undefined ? null : now.epochMilliseconds;
   const nowPosition = nowTimestamp === null ? null : Math.max(0, Math.min(1, (nowTimestamp - start) / (end - start)));
 
-  const slices = buildAvailabilitySlices(intervals, new Date(start), new Date(end));
-  const locale = bookingLocale();
-  const itemDateTimeFormatter = new Intl.DateTimeFormat(locale, {
+  const slices = buildAvailabilitySlices(intervals, periodStart, periodEndInstant);
+  const locale = bookingDisplayLocale(timeFormat);
+  const listLocale = bookingLocale();
+  const hourCycle = bookingHourCycle(timeFormat);
+  const itemDateTimeFormatter = bookingDateTimeFormatter(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    hourCycle: "h23",
+    hourCycle,
     timeZone,
-    timeZoneName: "short",
   });
-  const timeFormatter = new Intl.DateTimeFormat(locale, {
+  const timeFormatter = bookingDateTimeFormatter(locale, {
     hour: "2-digit",
     minute: "2-digit",
-    hourCycle: "h23",
+    hourCycle,
     timeZone,
   });
-  const dateFormatter = new Intl.DateTimeFormat(locale, {
+  const dateFormatter = bookingDateTimeFormatter(locale, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
     timeZone,
   });
-  const periodFormatter = new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone,
-  });
-  const formatRange = ({ startsAt, endsAt }: TimestampInterval) => {
-    const first = Temporal.Instant.fromEpochMilliseconds(Number(startsAt)).toZonedDateTimeISO(timeZone);
-    const last = Temporal.Instant.fromEpochMilliseconds(Number(endsAt)).toZonedDateTimeISO(timeZone);
-    const clockChanges =
-      first.startOfDay().offset !== first.startOfDay().add({ days: 1 }).offset || first.offset !== last.offset;
-    const startLabel = periodFormatter.format(startsAt);
-    const endLabel = first.toPlainDate().equals(last.toPlainDate())
-      ? timeFormatter.format(endsAt)
-      : periodFormatter.format(endsAt);
-    return clockChanges ? `${startLabel} ${first.offset}–${endLabel} ${last.offset}` : `${startLabel}–${endLabel}`;
-  };
+  const formatRange = ({ startsAt, endsAt }: TimestampInterval) =>
+    formatBookingPeriod(wireInstant(startsAt), wireInstant(endsAt), timeZone, locale, timeFormat);
   const formatTimeRange = ({ startsAt, endsAt }: TimestampInterval) =>
-    formatInstantRange(timeFormatter, startsAt, endsAt);
+    formatInstantRange(timeFormatter, epochMilliseconds(startsAt), epochMilliseconds(endsAt));
   const period = formatRange({ startsAt: start, endsAt: end });
   const nowLabel =
     nowTimestamp === null
@@ -143,34 +138,24 @@ export function AvailabilityBar({
         : nowTimestamp >= end
           ? t("availabilityBar.nowAfterWindow", { time: itemDateTimeFormatter.format(nowTimestamp) })
           : t("availabilityBar.now", { time: itemDateTimeFormatter.format(nowTimestamp) });
-  const stateOrder: ReadonlyArray<AvailabilityState> = ["available", "booking", "blockout", "overlap"];
-  const states =
-    slices.length === 1 && slices[0].state === "available"
-      ? t("availabilityBar.fullAvailable")
-      : stateOrder
-          .flatMap((state) => {
-            const ranges = [
-              ...new Set(
-                slices
-                  .filter((slice) => slice.state === state)
-                  .flatMap((slice) =>
-                    state === "available" || state === "overlap" || !slice.intervals.every(hasValidSource)
-                      ? [formatRange(slice)]
-                      : slice.intervals
-                          .toSorted((left, right) => left.source.startsAt.getTime() - right.source.startsAt.getTime())
-                          .map(({ source }) => formatRange(source)),
-                  ),
-              ),
-            ];
-            return ranges.length === 0
-              ? []
-              : [
-                  t(`availabilityBar.ranges.${state}`, {
-                    ranges: formatList(ranges, locale),
-                  }),
-                ];
-          })
-          .join(" ");
+  const stateRanges = (state: AvailabilityState) => {
+    const ranges = [
+      ...new Set(
+        slices
+          .filter((slice) => slice.state === state)
+          .flatMap((slice) =>
+            state === "available" || state === "overlap" || !slice.intervals.every(hasValidSource)
+              ? [formatRange(slice)]
+              : slice.intervals
+                  .toSorted((left, right) => Temporal.Instant.compare(left.source.startsAt, right.source.startsAt))
+                  .map(({ source }) => formatRange(source)),
+          ),
+      ),
+    ];
+    // "none" selects no sentence for this state in the ICU description.
+    return ranges.length === 0 ? "none" : formatList(ranges, listLocale);
+  };
+  const fullyAvailable = slices.length === 1 && slices[0].state === "available";
   const gapRanges = slices.flatMap((slice) => {
     if (slice.state !== "booking" || !slice.intervals.every(hasValidSource)) return [];
     return buildAvailabilitySlices(
@@ -179,18 +164,20 @@ export function AvailabilityBar({
         startsAt: interval.source.startsAt,
         endsAt: interval.source.endsAt,
       })),
-      new Date(slice.startsAt),
-      new Date(slice.endsAt),
+      Temporal.Instant.fromEpochMilliseconds(slice.startsAt),
+      Temporal.Instant.fromEpochMilliseconds(slice.endsAt),
     )
       .filter((part) => part.state === "available")
       .map(formatRange);
   });
-  const gapDescription = gapRanges.length
-    ? t("availabilityBar.ranges.gap", { ranges: formatList(gapRanges, locale) })
-    : "";
   const description = t("availabilityBar.description", {
     period,
-    states: [states, gapDescription].filter(Boolean).join(" "),
+    full: fullyAvailable ? "yes" : "no",
+    available: fullyAvailable ? "none" : stateRanges("available"),
+    booking: fullyAvailable ? "none" : stateRanges("booking"),
+    blockout: fullyAvailable ? "none" : stateRanges("blockout"),
+    overlap: fullyAvailable ? "none" : stateRanges("overlap"),
+    gap: gapRanges.length ? formatList(gapRanges, listLocale) : "none",
     now: nowLabel ?? "",
     hasNow: nowLabel ? "yes" : "no",
   });
@@ -240,8 +227,8 @@ export function AvailabilityBar({
       )}
       {showPeriodLabels && (
         <div aria-hidden="true" className="mb-1 flex justify-between text-[10px] tabular-nums text-foreground">
-          <time dateTime={new Date(start).toISOString()}>{timeFormatter.format(start)}</time>
-          <time dateTime={new Date(end).toISOString()}>{timeFormatter.format(end)}</time>
+          <time dateTime={wireInstant(start)}>{timeFormatter.format(start)}</time>
+          <time dateTime={wireInstant(end)}>{timeFormatter.format(end)}</time>
         </div>
       )}
       <div className="relative min-h-6 w-full">
@@ -260,18 +247,39 @@ export function AvailabilityBar({
               <span
                 key={`${slice.startsAt}-${slice.endsAt}-${slice.state}`}
                 data-availability-state={slice.state}
-                className={stateClasses[slice.state]}
+                className={cn(
+                  "relative",
+                  stateClasses[slice.state],
+                  slice.intervals.some(({ source }) => source.booking?.kind === "MAINTENANCE") &&
+                    "bg-[repeating-linear-gradient(90deg,var(--color-amber-700)_0_3px,var(--color-amber-200)_3px_6px)]",
+                )}
                 style={{
                   flexBasis: `${((slice.endsAt - slice.startsAt) / (end - start)) * 100}%`,
                   flexGrow: 0,
                   flexShrink: 0,
                 }}
-              />
+              >
+                {slice.state === "booking" &&
+                  slice.intervals.map(({ source }) => {
+                    const from = Math.max(slice.startsAt, source.startsAt.epochMilliseconds);
+                    const to = Math.min(slice.endsAt, source.endsAt.epochMilliseconds);
+                    return to > from ? (
+                      <span
+                        key={source.id}
+                        className="absolute inset-y-0 bg-blue-600"
+                        style={{
+                          left: `${((from - slice.startsAt) / (slice.endsAt - slice.startsAt)) * 100}%`,
+                          width: `${((to - from) / (slice.endsAt - slice.startsAt)) * 100}%`,
+                        }}
+                      />
+                    ) : null;
+                  })}
+              </span>
             ))}
           </div>
           {nowTimestamp !== null && nowLabel !== null && nowPosition !== null && (
             <time
-              dateTime={new Date(nowTimestamp).toISOString()}
+              dateTime={wireInstant(nowTimestamp)}
               title={nowLabel}
               data-slot="availability-bar-now"
               className="pointer-events-none absolute inset-y-0 z-30 w-0.5 bg-red-600"
@@ -284,13 +292,30 @@ export function AvailabilityBar({
             if (slice.state === "available" || !slice.intervals.every(hasValidSource)) return null;
             const contributors = slice.intervals.toSorted(
               (left, right) =>
-                left.source.startsAt.getTime() - right.source.startsAt.getTime() ||
-                left.source.endsAt.getTime() - right.source.endsAt.getTime() ||
+                Temporal.Instant.compare(left.source.startsAt, right.source.startsAt) ||
+                Temporal.Instant.compare(left.source.endsAt, right.source.endsAt) ||
                 left.kind.localeCompare(right.kind) ||
                 left.source.id.localeCompare(right.source.id),
             );
-            const stateLabel = sliceStateLabels[slice.state];
-            const slicePeriod = formatRange(slice);
+            const stateLabel = contributors.some(({ source }) => source.booking?.kind === "MAINTENANCE")
+              ? t("bookings.maintenanceLabel")
+              : sliceStateLabels[slice.state];
+            const slicePeriod = formatList(
+              [
+                ...new Set(
+                  contributors.map(({ source }) =>
+                    formatBookingPeriod(
+                      instantToWire(source.startsAt),
+                      instantToWire(source.endsAt),
+                      timeZone,
+                      locale,
+                      timeFormat,
+                    ),
+                  ),
+                ),
+              ],
+              listLocale,
+            );
             const triggerLabel = t("availabilityBar.slice.trigger", {
               itemName: item.name,
               state: stateLabel,
@@ -340,14 +365,14 @@ export function AvailabilityBar({
                                 ? t("availabilityBar.slice.bookedBy", { user: actor })
                                 : t("availabilityBar.slice.sources.booking")
                           }
-                          canViewConfiguration={source.booking.canViewConfiguration}
                           period={formatTimeRange(source)}
                           periodTooltip={{
-                            start: source.startsAt.toISOString(),
-                            end: source.endsAt.toISOString(),
+                            start: instantToWire(source.startsAt),
+                            end: instantToWire(source.endsAt),
                             displayTimeZone: timeZone,
                             instrumentTimeZone,
                           }}
+                          canViewConfiguration={source.booking.canViewConfiguration}
                           purpose={source.booking.purpose}
                           maintenance={maintenance}
                           item={maintenance || showBookingContextDetails ? item : undefined}
@@ -369,8 +394,8 @@ export function AvailabilityBar({
                         }
                         period={
                           <BookingInstrumentTimeTooltip
-                            start={source.startsAt.toISOString()}
-                            end={source.endsAt.toISOString()}
+                            start={instantToWire(source.startsAt)}
+                            end={instantToWire(source.endsAt)}
                             displayTimeZone={timeZone}
                             instrumentTimeZone={instrumentTimeZone}
                           >
@@ -393,3 +418,29 @@ export function AvailabilityBar({
     </div>
   );
 }
+
+export const AvailabilityBar = React.memo(AvailabilityBarContent, (previous, next) => {
+  const normalize = (props: AvailabilityBarProps) =>
+    ({
+      intervals: props.intervals,
+      showBookingContextDetails: props.showBookingContextDetails,
+      showCurrentAvailability: props.showCurrentAvailability,
+      showPeriodLabels: props.showPeriodLabels,
+      timeZone: props.timeZone,
+      instrumentTimeZone: props.instrumentTimeZone,
+      className: props.className,
+      periodStart: props.periodStart.epochMilliseconds,
+      periodEnd: props.periodEnd?.epochMilliseconds,
+      now: props.now?.epochMilliseconds,
+      itemName: props.item.name,
+      itemId: props.item.globalId,
+      locationName: props.item.location?.name,
+      locationId: props.item.location?.globalId,
+    }) satisfies Record<
+      Exclude<keyof AvailabilityBarProps, "item"> | "itemName" | "itemId" | "locationName" | "locationId",
+      unknown
+    >;
+  const left = normalize(previous);
+  const right = normalize(next);
+  return Object.entries(left).every(([key, value]) => value === right[key as keyof typeof right]);
+});

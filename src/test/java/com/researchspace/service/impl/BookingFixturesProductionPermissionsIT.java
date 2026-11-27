@@ -22,7 +22,6 @@ import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -94,10 +93,9 @@ class BookingFixturesProductionPermissionsIT extends RealTransactionSpringTestBa
     assertTrue(viewer.isContentInitialized());
     assertTrue(owner.isContentInitialized());
     assertTrue(userDao.getUserByUsername("user3c").getGroups().isEmpty());
-    String readerName =
-        messages.getMessage(
-            "bookingFixtures.instruments.restrictedLocationPlateReader", new Object[0], Locale.US);
-    List<Instrument> readers = instrumentDao.findInstrumentsByName(readerName, owner);
+    List<Instrument> readers =
+        instrumentDao.findInstrumentsByName(
+            BookingFixtureText.INSTRUMENT_RESTRICTED_LOCATION_PLATE_READER, owner);
     assertEquals(1, readers.size());
     Instrument reader = readers.get(0);
     assertEquals(InventorySharingMode.OWNER_ONLY, reader.getSharingMode());

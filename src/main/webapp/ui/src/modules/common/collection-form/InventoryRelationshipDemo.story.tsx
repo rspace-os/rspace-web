@@ -6,6 +6,7 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { instrumentRelationshipSources } from "@/modules/inventory/instrumentRelationshipSource";
 import { RenderFields } from "./RenderFields";
 import type { RelationshipOptions, ToOneRelationshipValue } from "./RenderFields.types";
+import "./__tests__/i18n/collectionFormExamples";
 
 type InventoryRelationshipDocument = {
   inventoryItemId: ToOneRelationshipValue<string> | null;
@@ -15,8 +16,8 @@ const inventoryRelationshipConfig = resolveCollectionConfig<InventoryRelationshi
   slug: "inventory-links",
   idField: "inventoryItemId",
   labels: {
-    singularKey: "collectionForm.examples.inventoryItem",
-    pluralKey: "collectionForm.examples.inventoryItem",
+    singularKey: "collectionFormExamples:inventoryItem",
+    pluralKey: "collectionFormExamples:inventoryItem",
   },
   useAsTitle: "inventoryItemId",
   defaultColumns: ["inventoryItemId"],
@@ -24,7 +25,7 @@ const inventoryRelationshipConfig = resolveCollectionConfig<InventoryRelationshi
     {
       name: "inventoryItemId",
       type: "relationship",
-      labelKey: "collectionForm.examples.inventoryItem",
+      labelKey: "collectionFormExamples:inventoryItem",
       relationTo: "inventoryItems",
       hasMany: false,
       nullable: true,

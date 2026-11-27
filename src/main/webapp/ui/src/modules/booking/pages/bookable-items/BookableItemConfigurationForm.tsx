@@ -3,17 +3,19 @@ import { isEqual, pick } from "es-toolkit";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import {
   SchedulingSettingsFields,
   SchedulingSettingsSchema,
   schedulingSettingsEntries,
   schedulingSettingsFieldNames,
 } from "@/modules/booking/configuration/schedulingSettings";
-import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
-import { formatDurationMinutes, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import { formatIsoWeekday, formatOpeningRange } from "@/modules/booking/domain/bookingOpeningHours";
+import { bookingLocale, formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import type { BookingConfigurationsUpdate } from "@/modules/common/api/v2/generated/models/bookingConfigurationsUpdate";
 import { BookingConfigurationsUpdateSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import {
   AlertDialog,
@@ -55,7 +57,10 @@ type EditableField = (typeof editableFields)[number];
 
 type ConfigurationInput = ReturnType<typeof configurationInput>;
 
-function configurationPatch(baseline: ConfigurationInput, draft: ConfigurationInput): Partial<ConfigurationInput> {
+function configurationPatch(
+  baseline: ConfigurationInput,
+  draft: ConfigurationInput,
+): Partial<BookingConfigurationsUpdate> {
   return Object.fromEntries(
     editableFields.filter((key) => !isEqual(baseline[key], draft[key])).map((key) => [key, draft[key]]),
   );
@@ -89,21 +94,27 @@ export function BookableItemConfigurationForm({
   onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation(["booking", "common"]);
+  const { t: bookingT } = useTranslation("booking");
   const serverValue = (field: EditableField): string => {
     switch (String(field)) {
       case "enabled":
       case "allowDoubleBooking":
         return baseline[field] ? t("common:actions.yes") : t("common:actions.no");
       case "slotGranularityMinutes":
-        return formatDurationMinutes(baseline.slotGranularityMinutes);
+      case "incrementUnit":
+        return formatIncrement(baseline, bookingT);
       case "openingHours":
         if (baseline.openingHours.length === 0) return t("bookableItemDetails.openingHours.closed");
-        return baseline.openingHours
-          .map(
-            ({ dayOfWeek, start, end }) =>
-              `${formatIsoWeekday(dayOfWeek)}: ${formatWallClockTime(start)} – ${formatWallClockTime(end)}`,
-          )
-          .join("; ");
+        return formatList(
+          baseline.openingHours.map((entry) =>
+            t("bookableItemDetails.audit.weekdayRange", {
+              day: formatIsoWeekday(entry.dayOfWeek),
+              hours: formatOpeningRange(entry),
+            }),
+          ),
+          bookingLocale(),
+          { type: "unit" },
+        );
       case "maxBookingDurationMinutes":
         return baseline[field] === 0
           ? t("bookableItemDetails.unlimited")
@@ -120,7 +131,7 @@ export function BookableItemConfigurationForm({
     input: BookingConfigurationsUpdate;
     version: number;
   } | null>(null);
-  // Remount on discard so remembered weekday hours do not outlive the draft.
+  // Remount on discard so remembered day hours do not outlive the draft.
   const [draftGeneration, setDraftGeneration] = useState(0);
   const form = useForm({
     schema: bookableItemConfigurationFormSchema,
@@ -229,7 +240,7 @@ export function BookableItemConfigurationForm({
                   disabled={pending}
                   onClick={() => setConflicts((current) => current.filter((key) => key !== field))}
                 >
-                  {t("bookableItems.keepDraft", {})}
+                  {t("bookableItems.keepDraft")}
                 </Button>
                 <Button
                   type="button"
@@ -241,7 +252,7 @@ export function BookableItemConfigurationForm({
                     setConflicts((current) => current.filter((key) => key !== field));
                   }}
                 >
-                  {t("bookableItems.useServer", {})}
+                  {t("bookableItems.useServer")}
                 </Button>
               </div>
             ))}
@@ -263,7 +274,7 @@ export function BookableItemConfigurationForm({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("bookableItemDetails.disableDialog.title", {})}</AlertDialogTitle>
+            <AlertDialogTitle>{t("bookableItemDetails.disableDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t("bookableItemDetails.disableDialog.description", {
                 item: configuration.target?.value.name ?? t("common:values.unknownItem"),
@@ -280,7 +291,7 @@ export function BookableItemConfigurationForm({
                 if (submission) void onSubmit(submission.input, submission.version).catch(() => undefined);
               }}
             >
-              {t("bookableItemDetails.disableDialog.confirm", {})}
+              {t("bookableItemDetails.disableDialog.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,9 +3,14 @@ import { TriangleAlertIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
+import {
+  BOOKING_ERROR_CLASS_NAME,
+  BOOKING_WARNING_CLASS_NAME,
+} from "@/modules/booking/components/bookingWarningStyles";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 
 type BookingFormAlertsProps = {
@@ -42,16 +47,26 @@ export function BookingFormAlerts({
               : t("bookings.errors.overlapBooking", { id: booking.id }));
         return (
           <li key={booking.id}>
-            <span className="font-medium">{label}</span>
-            {" · "}
-            <BookingInstrumentTimeTooltip
-              start={booking.start}
-              end={booking.end}
-              displayTimeZone={displayTimezone}
-              instrumentTimeZone={booking.instrumentTimeZone}
-            >
-              {formatAgendaPeriod(booking.start, booking.end, displayTimezone, undefined, timeFormat)}
-            </BookingInstrumentTimeTooltip>
+            <TransRichText
+              i18nKey="booking:time.labelWithPeriod"
+              components={{
+                event: (
+                  <span className="font-medium">
+                    {booking.kind === "MAINTENANCE" ? t("bookings.errors.maintenanceConflict", { label }) : label}
+                  </span>
+                ),
+                period: (
+                  <BookingInstrumentTimeTooltip
+                    start={booking.start}
+                    end={booking.end}
+                    displayTimeZone={displayTimezone}
+                    instrumentTimeZone={booking.instrumentTimeZone}
+                  >
+                    {formatAgendaPeriod(booking.start, booking.end, displayTimezone, undefined, timeFormat)}
+                  </BookingInstrumentTimeTooltip>
+                ),
+              }}
+            />
           </li>
         );
       })}
@@ -79,10 +94,7 @@ export function BookingFormAlerts({
   return (
     <div className="space-y-2">
       {warning ? (
-        <Alert
-          role="status"
-          className="border-amber-600 bg-amber-100 text-amber-950 *:data-[slot=alert-description]:text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:*:data-[slot=alert-description]:text-amber-200"
-        >
+        <Alert role="status" className={BOOKING_WARNING_CLASS_NAME}>
           <TriangleAlertIcon aria-hidden="true" />
           <AlertDescription>{warning}</AlertDescription>
         </Alert>
@@ -91,11 +103,7 @@ export function BookingFormAlerts({
         <Alert
           variant={conflictSeverity === "warning" ? "default" : "destructive"}
           role={conflictSeverity === "warning" ? "status" : "alert"}
-          className={
-            conflictSeverity === "warning"
-              ? "border-amber-600 bg-amber-100 text-amber-950 *:data-[slot=alert-description]:text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:*:data-[slot=alert-description]:text-amber-200"
-              : "border-red-700 bg-red-100 text-red-950 *:data-[slot=alert-description]:text-red-950 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200"
-          }
+          className={conflictSeverity === "warning" ? BOOKING_WARNING_CLASS_NAME : BOOKING_ERROR_CLASS_NAME}
         >
           <TriangleAlertIcon aria-hidden="true" />
           <AlertDescription>
@@ -103,14 +111,18 @@ export function BookingFormAlerts({
             {conflictMessage}
             {outcomeUncertain ? (
               <p className="mt-2">
-                {t("bookings.errors.outcomeUncertainGuidance")}{" "}
-                <Link
-                  className="font-medium underline underline-offset-4"
-                  to="/booking/my-bookings"
-                  search={{ period: "upcoming" }}
-                >
-                  {t("bookings.errors.checkExistingBookings")}
-                </Link>
+                <TransRichText
+                  i18nKey="booking:bookings.errors.outcomeUncertainGuidance"
+                  components={{
+                    myBookingsLink: (
+                      <Link
+                        className="font-medium underline underline-offset-4"
+                        to="/booking/my-bookings"
+                        search={{ period: "upcoming" }}
+                      />
+                    ),
+                  }}
+                />
               </p>
             ) : null}
           </AlertDescription>

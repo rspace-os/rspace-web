@@ -3,6 +3,7 @@ import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-reac
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { pickerDate, plainDateFromPicker } from "@/modules/booking/bookingDates";
+import { bookingDisplayLocale } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Calendar } from "@/modules/common/ui/calendar";
@@ -38,9 +39,13 @@ export function BookingDateControls({
   onDateChange: (date: string) => void;
   className?: string;
 }) {
-  const { i18n, t } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
-  const selectedDate = pickerDate(Temporal.PlainDate.from(date), timeZone);
+  const selectedPlainDate = Temporal.PlainDate.from(date);
+  const selectedDate = pickerDate(selectedPlainDate, timeZone);
+  const selectedDateLabel = new Intl.DateTimeFormat(bookingDisplayLocale(), { dateStyle: "medium", timeZone }).format(
+    selectedPlainDate.toZonedDateTime(timeZone).epochMilliseconds,
+  );
 
   return (
     <fieldset className={cn("flex min-w-0 flex-wrap items-center gap-2", className)}>
@@ -65,19 +70,11 @@ export function BookingDateControls({
               className="shrink-0"
               aria-label={t("toolbar.jumpToDateAccessible", {
                 label: jumpToDateLabel,
-                date: new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
-                  dateStyle: "medium",
-                  timeZone,
-                }).format(selectedDate),
+                date: selectedDateLabel,
               })}
             >
               <CalendarDaysIcon aria-hidden="true" />
-              <time dateTime={date}>
-                {new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
-                  dateStyle: "medium",
-                  timeZone,
-                }).format(selectedDate)}
-              </time>
+              <time dateTime={date}>{selectedDateLabel}</time>
             </Button>
           }
         />

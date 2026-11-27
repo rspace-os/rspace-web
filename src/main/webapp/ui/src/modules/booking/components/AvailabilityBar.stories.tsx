@@ -1,9 +1,10 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { AvailabilityBar } from "./AvailabilityBar";
 
-const periodStart = new Date("2026-08-12T00:00:00.000Z");
+const periodStart = Temporal.Instant.from("2026-08-12T00:00:00.000Z");
 
 const sourced = (
   id: string,
@@ -12,12 +13,12 @@ const sourced = (
   endsAt: string,
 ): SourcedAvailabilityInterval => ({
   kind,
-  startsAt: new Date(startsAt),
-  endsAt: new Date(endsAt),
+  startsAt: Temporal.Instant.from(startsAt),
+  endsAt: Temporal.Instant.from(endsAt),
   source: {
     id,
-    startsAt: new Date(startsAt),
-    endsAt: new Date(endsAt),
+    startsAt: Temporal.Instant.from(startsAt),
+    endsAt: Temporal.Instant.from(endsAt),
     ...(kind === "booking"
       ? {
           booking: {
@@ -71,8 +72,8 @@ export const TypicalDay: Story = {};
 
 export const WithPeriodLabels: Story = {
   args: {
-    periodStart: new Date("2026-08-12T08:00:00.000Z"),
-    periodEnd: new Date("2026-08-12T18:00:00.000Z"),
+    periodStart: Temporal.Instant.from("2026-08-12T08:00:00.000Z"),
+    periodEnd: Temporal.Instant.from("2026-08-12T18:00:00.000Z"),
     showPeriodLabels: true,
   },
 };
@@ -83,7 +84,7 @@ export const FullyAvailable: Story = {
 
 export const WithCurrentTime: Story = {
   args: {
-    now: new Date("2026-08-12T10:30:00.000Z"),
+    now: Temporal.Instant.from("2026-08-12T10:30:00.000Z"),
     showCurrentAvailability: true,
   },
 };
@@ -108,7 +109,7 @@ export const ManyEventsInOneSlice: Story = {
 
 export const ThreeDayPeriod: Story = {
   args: {
-    periodEnd: new Date("2026-08-15T00:00:00.000Z"),
+    periodEnd: Temporal.Instant.from("2026-08-15T00:00:00.000Z"),
     intervals: [
       ...typicalIntervals,
       sourced("booking:4", "booking", "2026-08-14T08:00:00.000Z", "2026-08-14T18:00:00.000Z"),

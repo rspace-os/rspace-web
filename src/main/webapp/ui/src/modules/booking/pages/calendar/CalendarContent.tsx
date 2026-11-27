@@ -4,13 +4,17 @@ import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { DroppedFilterNotice } from "../DroppedFilterNotice";
 import { hasAvailabilityFilter, withAvailability } from "./availability/availabilityQuickFilters";
 import { BookingEventsCalendar } from "./BookingEventsCalendar";
+import { calendarEventFocusRetryChanges } from "./calendarEventFocus";
 import { useCalendarContentData } from "./useCalendarContentData";
+
+const noRows: readonly never[] = Object.freeze([]);
 
 export function CalendarContent() {
   const {
     availabilityLayout,
     itemConfig,
     droppedFilterFields,
+    creationTarget,
     calendarSearch,
     view,
     setView,
@@ -44,6 +48,9 @@ export function CalendarContent() {
     targetName,
     replaceSearch,
     targetOption,
+    focusFallback,
+    focusUnavailableRequest,
+    setFocusUnavailableRequest,
   } = useCalendarContentData();
 
   return (
@@ -52,27 +59,29 @@ export function CalendarContent() {
       <BookingEventsCalendar
         availabilityLayout={availabilityLayout}
         itemFilterConfig={itemConfig}
-        onItemFilterChange={(expression) =>
+        onItemFilterChange={(expression) => {
           replaceSearch((search) => {
             if (expression) search.set("calendar-resources.where", serializeRsqlExpression(expression));
             else search.delete("calendar-resources.where");
             if (hasAvailabilityFilter(expression)) search.delete("date");
-          })
-        }
+          });
+        }}
         date={selectedDate}
         view={view}
         layout={layout}
         timezone={preferences.timeZone}
+        focusUnavailable={focusUnavailableRequest !== undefined}
+        focusFallback={focusFallback}
         availabilityStartMinute={preferences.availabilityWindow.startMinute}
         availabilityEndMinute={preferences.availabilityWindow.endMinute}
-        events={displayReady ? (events.data ?? []) : []}
-        blockingEvents={blockingEvents.data ?? []}
+        events={displayReady ? (events.data ?? noRows) : noRows}
+        blockingEvents={blockingEvents.data ?? noRows}
         availabilityError={layout === "resources" && view === "day" && blockingEvents.isError}
         onRetryAvailability={() => void blockingEvents.refetch()}
-        resources={filtersBlocked ? [] : resourceTargets}
+        resources={filtersBlocked ? noRows : resourceTargets}
         resourceConfigurations={resourceConfigurations}
         resourceTableProps={
-          filtersBlocked ? { ...resourceTable.tableProps, rows: [], status: "idle" } : resourceTable.tableProps
+          filtersBlocked ? { ...resourceTable.tableProps, rows: noRows, status: "idle" } : resourceTable.tableProps
         }
         eventFilterConfig={eventConfig}
         itemFilterExpression={itemExpression}
@@ -91,7 +100,7 @@ export function CalendarContent() {
                     : targetName === undefined && targetOption?.restoreStatus === "failed"
                       ? "failed"
                       : undefined,
-                onRemove: () => replaceSearch("target"),
+                onRemove: () => replaceSearch((search) => search.delete("target")),
               }
             : undefined
         }
@@ -107,12 +116,12 @@ export function CalendarContent() {
         }}
         mineOnly={mineOnly}
         onMineChange={(next) => {
-          setMineOnly(next);
+          void setMineOnly(next);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
         }}
         myItemsOnly={myItemsOnly}
         onMyItemsChange={(next) => {
-          setMyItemsOnly(next);
+          void setMyItemsOnly(next);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
         }}
         isLoading={
@@ -131,6 +140,10 @@ export function CalendarContent() {
           if (layout === "availability") {
             void availabilityLayout.refetch();
             return;
+          }
+          if (focusUnavailableRequest) {
+            setFocusUnavailableRequest(undefined);
+            replaceSearch((search) => calendarEventFocusRetryChanges(search, focusUnavailableRequest), false);
           }
           if (layout === "resources" && resourceTable.tableProps.status === "error") {
             void resourceTable.refetch();
@@ -166,7 +179,12 @@ export function CalendarContent() {
         onViewChange={setView}
         onLayoutChange={setLayout}
         creationAction={
-          <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
+          <BookingCreationButtonGroup
+            ownerId="calendar-toolbar"
+            target={creationTarget}
+            initialDate={selectedDate}
+            size="default"
+          />
         }
         creationDisabled={
           creationActive ||

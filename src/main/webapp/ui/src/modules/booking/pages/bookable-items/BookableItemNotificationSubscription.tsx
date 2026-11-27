@@ -107,6 +107,7 @@ function ItemNotificationEditor({
     },
   });
   const saved = feedback === "saved" && !dirty;
+
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -129,7 +130,7 @@ function ItemNotificationEditor({
         >
           <BookingNotificationChoiceFields
             form={form}
-            labelKey="notificationSubscriptions.item.label"
+            label={t("notificationSubscriptions.item.label")}
             disabled={mutation.isPending}
           />
           {feedback === "conflict" ? (
@@ -146,6 +147,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
               aria-busy={mutation.isPending}
               className={
                 saved
@@ -204,6 +206,8 @@ function ItemNotificationLoadError({ onRetry }: { onRetry: () => void }) {
 }
 
 function ItemNotificationSubscription({ configurationId, globalId }: { configurationId: number; globalId: string }) {
+  const { t } = useTranslation("booking");
+
   const [feedback, setFeedback] = useState<"saved" | "conflict" | "saveError" | null>(null);
   const subscription = useSuspenseQuery(bookingNotificationSubscriptionQuery(configurationId));
 
@@ -212,13 +216,18 @@ function ItemNotificationSubscription({ configurationId, globalId }: { configura
   }
 
   return (
-    <ItemNotificationEditor
-      configurationId={configurationId}
-      globalId={globalId}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        configurationId={configurationId}
+        globalId={globalId}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
   );
 }
 

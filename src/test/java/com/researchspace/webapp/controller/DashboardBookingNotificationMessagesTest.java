@@ -95,7 +95,7 @@ class DashboardBookingNotificationMessagesTest {
             List.of(structured, other), "recipient", session, null);
 
     assertEquals("Stored email text", structured.getNotificationMessage());
-    assertTrue(messages.get(1L).contains("Jan 1, 2026, 7:04 PM (America/Los_Angeles, UTC-08:00)"));
+    assertTrue(messages.get(1L).contains("Jan 1, 2026, 7:04 PM PST (America/Los_Angeles)"));
     assertTrue(
         messages.get(1L).startsWith("Booking <a href=\"/booking/calendar/bookings/42\">42</a>"),
         messages.get(1L));
@@ -141,14 +141,14 @@ class DashboardBookingNotificationMessagesTest {
             List.of(structured), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
 
     assertTrue(
-        british.get(5L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british.get(5L));
+        british.get(5L).contains("Oct 8, 2026, 06:00 CEST (Europe/Berlin)"), british.get(5L));
     assertTrue(british.get(5L).startsWith("Booking <a href="), british.get(5L));
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
         american
             .get(5L)
             .replace('\u202f', ' ')
-            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+            .contains("Oct 8, 2026, 6:00 AM CEST (Europe/Berlin)"),
         american.get(5L));
     assertFalse(american.get(5L).contains("06:00"), american.get(5L));
   }
@@ -204,8 +204,7 @@ class DashboardBookingNotificationMessagesTest {
             List.of(structured), "recipient", session, "en-US,en;q=0.9");
 
     assertTrue(
-        messages.get(7L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"),
-        messages.get(7L));
+        messages.get(7L).contains("Oct 8, 2026, 06:00 CEST (Europe/Berlin)"), messages.get(7L));
     assertFalse(messages.get(7L).contains("AM"), messages.get(7L));
   }
 

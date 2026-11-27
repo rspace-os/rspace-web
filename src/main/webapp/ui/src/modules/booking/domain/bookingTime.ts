@@ -20,6 +20,7 @@ function cachedValue<T>(cache: Map<string, T>, key: string, create: () => T): T 
 
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 const dayBounds = new Map<string, ZonedDayBounds>();
+const regionalClocks = new Map<string, { locale: string; hourCycle: Intl.DateTimeFormatOptions["hourCycle"] }>();
 
 export function bookingDateTimeFormatter(
   locale?: string,
@@ -233,7 +234,7 @@ export function wallClockDraftFromInstants(
 }
 
 /** One instant as its wall-clock date, time and repeated-hour occurrence in `timezone`. */
-export function wallClockEndpointFromInstant(instant: string, timezone: string) {
+export function wallClockEndpointFromInstant(instant: Temporal.Instant | string, timezone: string) {
   const draft = wallClockDraftFromInstants(instant, instant, timezone);
   return { date: draft.startDate, time: draft.startTime, occurrence: draft.startOccurrence };
 }
@@ -260,19 +261,40 @@ export function bookingLocale(): string {
 /** The Booking "Time format" preference: the browser region's clock, or an explicit 12- or 24-hour one. */
 export type { BookingTimeFormat };
 
+function regionalClock(format: BookingTimeFormat) {
+  const regionalLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
+  return cachedValue(regionalClocks, `${regionalLocale}|${format}`, () => {
+    const locale =
+      format === "AUTOMATIC"
+        ? regionalLocale
+        : new Intl.Locale(regionalLocale, { hourCycle: format === "H24" ? "h23" : "h12" }).toString();
+    return {
+      locale,
+      hourCycle: bookingDateTimeFormatter(locale, { hour: "numeric" }).resolvedOptions().hourCycle,
+    };
+  });
+}
+
 /**
  * The browser's regional format with the clock of `format`: the region's own for Automatic, otherwise a `-u-hc-`
  * extension for an explicit 12- or 24-hour clock. Numeric dates keep the region's order either way.
  */
 export function bookingDateTimeLocale(format: BookingTimeFormat = "AUTOMATIC"): string {
-  const locale = new Intl.DateTimeFormat().resolvedOptions().locale;
-  if (format === "AUTOMATIC") return locale;
-  return new Intl.Locale(locale, { hourCycle: format === "H24" ? "h23" : "h12" }).toString();
+  return regionalClock(format).locale;
 }
 
-/** The 12- or 24-hour clock of `bookingDateTimeLocale(format)`, so times written in the app language use it too. */
+/** The preferred regional clock, also used when words follow the app language. */
 export function bookingHourCycle(format: BookingTimeFormat = "AUTOMATIC"): Intl.DateTimeFormatOptions["hourCycle"] {
-  return new Intl.DateTimeFormat(bookingDateTimeLocale(format), { hour: "numeric" }).resolvedOptions().hourCycle;
+  return regionalClock(format).hourCycle;
+}
+
+/**
+ * The app language with the clock of `format`, for dates and times that contain words such as month or weekday
+ * names. Numeric-only formats keep `bookingDateTimeLocale`, whose order follows the browser region.
+ */
+export function bookingDisplayLocale(format: BookingTimeFormat = "AUTOMATIC"): string {
+  const hourCycle = bookingHourCycle(format);
+  return new Intl.Locale(bookingLocale(), hourCycle ? { hourCycle } : {}).toString();
 }
 
 /** A wall-clock `HH:mm` time as the locale writes it, which is also how native time inputs display it. */
@@ -349,7 +371,7 @@ function dateTimeFormatter(
   timeFormat: BookingTimeFormat,
   timeStyle: "short" | "long" = "short",
 ): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat(locale, {
+  return bookingDateTimeFormatter(locale, {
     dateStyle: "medium",
     timeStyle,
     hourCycle: bookingHourCycle(timeFormat),
@@ -357,17 +379,23 @@ function dateTimeFormatter(
   });
 }
 
-/** A date and time, with an optional long time style for audit records and a clock-change offset when needed. */
+/**
+ * A date and time, with an optional long time style for audit records and a clock-change offset when needed. Month
+ * names follow the app language unless `locale` is given.
+ */
 export function formatBookingDateTime(
   value: Temporal.Instant | string,
   timeZone: string,
-  locale = bookingLocale(),
+  locale: string | undefined = undefined,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
   options: { timeStyle?: "short" | "long" } = {},
 ): string {
-  const formatted = dateTimeFormatter(timeZone, locale, timeFormat, options.timeStyle).format(
-    Temporal.Instant.from(value).epochMilliseconds,
-  );
+  const formatted = dateTimeFormatter(
+    timeZone,
+    locale ?? bookingDisplayLocale(timeFormat),
+    timeFormat,
+    options.timeStyle,
+  ).format(Temporal.Instant.from(value).epochMilliseconds);
   const offset = clockChangeOffsetLabel(zonedDateTime(value, timeZone)).trim();
   return offset
     ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
@@ -376,31 +404,27 @@ export function formatBookingDateTime(
 
 /**
  * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
- * as the cancel confirmation. Words follow the app language; the clock follows the browser region. When either end
- * falls on a clock-change day, both ends are written as `formatBookingDateTime` writes them.
+ * as the cancel confirmation. Words follow the app language; the clock follows the browser region. The date appears
+ * once for same-day ranges; clock-change offsets remain on both endpoints.
  */
 export function formatBookingPeriod(
   start: Temporal.Instant | string,
   end: Temporal.Instant | string,
   timezone: string,
-  locale = bookingLocale(),
+  displayLocale: string | undefined = undefined,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
-  const formatter = dateTimeFormatter(timezone, locale, timeFormat);
+  const locale = displayLocale ?? bookingDisplayLocale(timeFormat);
   const startZoned = zonedDateTime(start, timezone);
   const endZoned = zonedDateTime(end, timezone);
-  const startOffset = clockChangeOffsetLabel(startZoned);
-  const endOffset = clockChangeOffsetLabel(endZoned);
-  if (!startOffset && !endOffset)
-    return formatter.formatRange(startZoned.epochMilliseconds, endZoned.epochMilliseconds);
   let endLabel: string;
   if (startZoned.toPlainDate().equals(endZoned.toPlainDate())) {
-    const formatted = new Intl.DateTimeFormat(locale, {
+    const formatted = bookingDateTimeFormatter(locale, {
       timeZone: timezone,
       timeStyle: "short",
       hourCycle: bookingHourCycle(timeFormat),
     }).format(endZoned.epochMilliseconds);
-    const offset = endOffset.trim();
+    const offset = clockChangeOffsetLabel(endZoned).trim();
     endLabel = offset
       ? i18n.t("booking:time.rangeWithOffset", { period: formatted, offset, lng: bookingLocale() })
       : formatted;
@@ -415,14 +439,9 @@ export function formatBookingPeriod(
 }
 
 /** Format both endpoints without Intl range elision or added date fields. */
-export function formatInstantRange(
-  formatter: Intl.DateTimeFormat,
-  start: Date | number,
-  end: Date | number,
-  separator: "–" | " – " = "–",
-): string {
+export function formatInstantRange(formatter: Intl.DateTimeFormat, start: number, end: number): string {
   const values = { start: formatter.format(start), end: formatter.format(end), lng: bookingLocale() };
-  return separator === " – " ? i18n.t("booking:time.dateTimeRange", values) : i18n.t("booking:time.range", values);
+  return i18n.t("booking:time.range", values);
 }
 
 export function formatAgendaPeriod(
@@ -435,38 +454,50 @@ export function formatAgendaPeriod(
   const resolvedLocale = locale ?? bookingDateTimeLocale(timeFormat);
   const hourCycle =
     locale !== undefined && timeFormat !== "AUTOMATIC" ? { hourCycle: bookingHourCycle(timeFormat) } : {};
-  const timeFormatter = new Intl.DateTimeFormat(resolvedLocale, {
+  const timeFormatter = bookingDateTimeFormatter(resolvedLocale, {
     timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",
     ...hourCycle,
   });
-  const offsetFormatter = new Intl.DateTimeFormat(resolvedLocale, {
+  const offsetFormatter = bookingDateTimeFormatter(resolvedLocale, {
     timeZone: timezone,
     hour: "2-digit",
     timeZoneName: "shortOffset",
   });
-  const startDate = new Date(Temporal.Instant.from(start).epochMilliseconds);
-  const endDate = new Date(Temporal.Instant.from(end).epochMilliseconds);
-  const offset = (date: Date) =>
-    offsetFormatter.formatToParts(date).find((part) => part.type === "timeZoneName")?.value;
-  const startOffset = offset(startDate);
-  const endOffset = offset(endDate);
+  const startMilliseconds = Temporal.Instant.from(start).epochMilliseconds;
+  const endMilliseconds = Temporal.Instant.from(end).epochMilliseconds;
+  const offset = (epochMilliseconds: number) =>
+    offsetFormatter.formatToParts(epochMilliseconds).find((part) => part.type === "timeZoneName")?.value;
+  const startOffset = offset(startMilliseconds);
+  const endOffset = offset(endMilliseconds);
 
   if (startOffset && startOffset === endOffset) {
-    return i18n.t("booking:time.rangeWithOffset", {
-      period: timeFormatter.formatRange(startDate, endDate),
-      offset: startOffset,
-      lng: bookingLocale(),
-    });
+    return formatInstantRange(timeFormatter, startMilliseconds, endMilliseconds);
   }
 
-  const withOffset = new Intl.DateTimeFormat(resolvedLocale, {
+  const withOffset = bookingDateTimeFormatter(resolvedLocale, {
     ...hourCycle,
     timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",
     timeZoneName: "shortOffset",
   });
-  return formatInstantRange(withOffset, startDate, endDate);
+  return formatInstantRange(withOffset, startMilliseconds, endMilliseconds);
+}
+
+export function bookingAddedNoticeValues(
+  start: Temporal.Instant,
+  end: Temporal.Instant,
+  timeZone: string,
+  timeFormat: BookingTimeFormat,
+) {
+  const locale = bookingDisplayLocale(timeFormat);
+  const clock = bookingDateTimeFormatter(locale, { timeZone, hour: "numeric", minute: "2-digit" });
+  const startMilliseconds = start.epochMilliseconds;
+  return {
+    date: bookingDateTimeFormatter(locale, { timeZone, dateStyle: "medium" }).format(startMilliseconds),
+    start: clock.format(startMilliseconds),
+    end: clock.format(end.epochMilliseconds),
+  };
 }

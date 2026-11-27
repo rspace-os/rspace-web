@@ -1,14 +1,17 @@
 import { type FormStore, useField, useForm } from "@formisch/react";
+import type { Namespace } from "i18next";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Switch } from "@/modules/common/ui/switch";
 import { instrumentRelationshipSources } from "@/modules/inventory/instrumentRelationshipSource";
 import { RenderFields } from "./RenderFields";
 import type { FormFieldConfig, RelationshipOptions, ToOneRelationshipValue } from "./RenderFields.types";
 import { FormWithValues } from "./renderFieldsStorySupport.story";
+import "./__tests__/i18n/collectionFormExamples";
 
 export type ExampleDocument = {
   id: string;
@@ -37,48 +40,48 @@ export const exampleConfig = resolveCollectionConfig<ExampleDocument>({
   slug: "records",
   idField: "id",
   labels: {
-    singularKey: "collectionForm.examples.record",
-    pluralKey: "collectionForm.examples.records",
+    singularKey: "collectionFormExamples:record",
+    pluralKey: "collectionFormExamples:records",
   },
   useAsTitle: "title",
   defaultColumns: ["title"],
   fields: [
-    { name: "id", type: "text", labelKey: "collectionForm.examples.fields.id", form: false },
+    { name: "id", type: "text", labelKey: "collectionFormExamples:fields.id", form: false },
     {
       name: "title",
       type: "text",
-      labelKey: "collectionForm.examples.fields.title",
+      labelKey: "collectionFormExamples:fields.title",
       required: true,
       maximumLength: 80,
     },
     {
       name: "notes",
       type: "text",
-      labelKey: "collectionForm.examples.fields.notes",
+      labelKey: "collectionFormExamples:fields.notes",
       form: {
         widget: "textarea",
-        descriptionKey: "collectionForm.examples.fields.titleDescription",
+        descriptionKey: "collectionFormExamples:fields.titleDescription",
         condition: ({ data, value }) => data.enabled === true && value !== "hide",
       },
     },
     {
       name: "score",
       type: "number",
-      labelKey: "collectionForm.examples.fields.score",
+      labelKey: "collectionFormExamples:fields.score",
       nullable: true,
       form: { width: "10rem" },
     },
-    { name: "enabled", type: "boolean", labelKey: "collectionForm.examples.fields.enabled" },
+    { name: "enabled", type: "boolean", labelKey: "collectionFormExamples:fields.enabled" },
     {
       name: "modifiedAt",
       type: "dateTime",
-      labelKey: "collectionForm.examples.fields.modified",
+      labelKey: "collectionFormExamples:fields.modified",
       nullable: true,
     },
     {
       name: "status",
       type: "select",
-      labelKey: "collectionForm.examples.fields.status",
+      labelKey: "collectionFormExamples:fields.status",
       nullable: true,
       options: [
         "draft",
@@ -93,14 +96,14 @@ export const exampleConfig = resolveCollectionConfig<ExampleDocument>({
     {
       name: "ownerId",
       type: "relationship",
-      labelKey: "collectionForm.examples.fields.owner",
+      labelKey: "collectionFormExamples:fields.owner",
       relationTo: "users",
       hasMany: false,
     },
     {
       name: "collaboratorIds",
       type: "relationship",
-      labelKey: "collectionForm.examples.fields.collaborators",
+      labelKey: "collectionFormExamples:fields.collaborators",
       relationTo: "users",
       hasMany: true,
     },
@@ -110,7 +113,7 @@ export const exampleConfig = resolveCollectionConfig<ExampleDocument>({
 const exampleFormFields: readonly FormFieldConfig<ExampleDocument>[] = [
   {
     type: "section",
-    labelKey: "collectionForm.examples.recordDetails",
+    labelKey: "collectionFormExamples:recordDetails",
     fields: [
       {
         type: "row",
@@ -129,7 +132,7 @@ const exampleFormFields: readonly FormFieldConfig<ExampleDocument>[] = [
   },
   {
     type: "section",
-    labelKey: "collectionForm.examples.relationships",
+    labelKey: "collectionFormExamples:relationships",
     fields: exampleConfig.fields.filter((field) => field.type === "relationship"),
   },
 ];
@@ -174,7 +177,7 @@ const conditionalFormFields: readonly FormFieldConfig<ExampleDocument>[] = [
   },
   {
     type: "section",
-    labelKey: "collectionForm.examples.relationships",
+    labelKey: "collectionFormExamples:relationships",
     fields: relationshipFormFields,
     condition: ({ data }) => data.enabled === true,
   },
@@ -255,7 +258,8 @@ export function RenderFieldsStory({
     | "conditional";
   sectionVariant?: "card" | "transparent";
 }) {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation<Namespace>("common");
+  const { fieldLabel } = useFieldLabels();
   const schema = v.object({
     id: v.string(),
     title: v.pipe(v.string(), v.nonEmpty("Title is required.")),
@@ -303,12 +307,12 @@ export function RenderFieldsStory({
               fields={[
                 {
                   type: "section",
-                  labelKey: "collectionForm.examples.recordDetails",
+                  labelKey: "collectionFormExamples:recordDetails",
                   fields: metadataFormFields,
                 },
                 {
                   type: "section",
-                  labelKey: "collectionForm.examples.relationships",
+                  labelKey: "collectionFormExamples:relationships",
                   fields: relationshipFormFields,
                 },
               ]}
@@ -322,11 +326,11 @@ export function RenderFieldsStory({
         <div className="space-y-6">
           <RenderFields {...fieldProps} fields={primaryFormFields} />
           <details className="rounded-sm border bg-card p-4">
-            <summary className="cursor-pointer font-medium">{t("collectionForm.examples.recordDetails")}</summary>
+            <summary className="cursor-pointer font-medium">{t("collectionFormExamples:recordDetails")}</summary>
             <RenderFields {...fieldProps} className="pt-5" fields={metadataFormFields} />
           </details>
           <details className="rounded-sm border bg-card p-4">
-            <summary className="cursor-pointer font-medium">{t("collectionForm.examples.relationships")}</summary>
+            <summary className="cursor-pointer font-medium">{t("collectionFormExamples:relationships")}</summary>
             <RenderFields {...fieldProps} className="pt-5" fields={relationshipFormFields} />
           </details>
         </div>
@@ -341,12 +345,12 @@ export function RenderFieldsStory({
               className="grid gap-5 px-6 py-5 md:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)] md:items-center"
             >
               <div className="space-y-1">
-                <h2 className="text-sm font-medium">{t(field.labelKey as never)}</h2>
+                <h2 className="text-sm font-medium">{fieldLabel(field)}</h2>
                 <p className="max-w-xl text-sm text-muted-foreground">{presentationDescriptions[field.name]}</p>
               </div>
               <div className="flex w-full justify-start md:justify-end">
                 {field.name === "enabled" ? (
-                  <SettingsBooleanToggle disabled={disabled} form={form} label={t(field.labelKey as never)} />
+                  <SettingsBooleanToggle disabled={disabled} form={form} label={fieldLabel(field)} />
                 ) : (
                   <RenderFields
                     {...fieldProps}
@@ -368,7 +372,7 @@ export function RenderFieldsStory({
               key={field.name}
               className="grid gap-2 border-b py-4 last:border-b-0 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6"
             >
-              <h2 className="pt-2 text-sm font-medium">{t(field.labelKey as never)}</h2>
+              <h2 className="pt-2 text-sm font-medium">{fieldLabel(field)}</h2>
               <div className="space-y-2">
                 <RenderFields {...fieldProps} className={controlOnlyClassName} fields={[field]} />
                 <p className="text-xs text-muted-foreground">{presentationDescriptions[field.name]}</p>
@@ -384,7 +388,7 @@ export function RenderFieldsStory({
       fields = (
         <Card>
           <CardHeader>
-            <CardTitle>{t("collectionForm.examples.recordDetails")}</CardTitle>
+            <CardTitle>{t("collectionFormExamples:recordDetails")}</CardTitle>
           </CardHeader>
           <CardContent>
             <RenderFields {...fieldProps} fields={itemDetailsFormFields} layout="inline" />
@@ -401,7 +405,7 @@ export function RenderFieldsStory({
           {presentationFormFields.map((field) => (
             <section key={field.name} className="flex flex-col gap-5 rounded-sm border bg-card p-5 shadow-sm">
               <div className="space-y-1">
-                <h2 className="font-medium">{t(field.labelKey as never)}</h2>
+                <h2 className="font-medium">{fieldLabel(field)}</h2>
                 <p className="text-sm text-muted-foreground">{presentationDescriptions[field.name]}</p>
               </div>
               <RenderFields {...fieldProps} className={`${controlOnlyClassName} mt-auto`} fields={[field]} />

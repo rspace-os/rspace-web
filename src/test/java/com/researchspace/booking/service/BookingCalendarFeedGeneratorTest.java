@@ -5,16 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.service.BookingCalendarFeedGenerator.CalendarTooLargeException;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarSource;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -27,7 +24,6 @@ import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.component.VEvent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -35,36 +31,14 @@ import org.junit.jupiter.params.provider.CsvSource;
 class BookingCalendarFeedGeneratorTest {
 
   private static final URI SERVER = URI.create("https://rspace.example.com");
-  private final MessageSourceUtils messages = mock(MessageSourceUtils.class);
+  private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   private final BookingCalendarFeedGenerator generator = new BookingCalendarFeedGenerator(messages);
-
-  @BeforeEach
-  void setUp() {
-    when(messages.getMessageForLocale("booking:calendar.feed.unknownItem", Locale.ENGLISH))
-        .thenReturn("Unknown item");
-    when(messages.getMessageForLocale("booking:calendar.feed.booking", Locale.ENGLISH))
-        .thenReturn("Booking");
-    when(messages.getMessageForLocale("booking:calendar.feed.maintenance", Locale.ENGLISH))
-        .thenReturn("Maintenance");
-    when(messages.getMessageForLocale("booking:calendar.feed.myBookings", Locale.ENGLISH))
-        .thenReturn("My RSpace bookings");
-    when(messages.getMessage(anyString(), any(Object[].class), any(Locale.class)))
-        .thenAnswer(
-            invocation -> {
-              String key = invocation.getArgument(0);
-              Object[] arguments = invocation.getArgument(1);
-              if (key.endsWith("itemSummary")) {
-                return arguments[0] + " - " + arguments[1];
-              }
-              return (key.endsWith("bookedBy") ? "Booked by: " : "Purpose: ") + arguments[0];
-            });
-  }
 
   @Test
   void personalFeedRedactsAnInaccessibleItem() throws Exception {
     CalendarSource source =
         new CalendarSource(
-            "booking:calendar.feed.myBookings",
+            "bookingCalendarFeed.myBookings",
             "UTC",
             List.of(event(7L, BookingPrivacy.FULL, "Ada (ada)", "My booking", false)),
             true);
@@ -79,7 +53,7 @@ class BookingCalendarFeedGeneratorTest {
   @Test
   void generatesAnEmptySubscriptionWithoutInventingEvents() throws Exception {
     CalendarSource source =
-        new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(), true);
+        new CalendarSource("bookingCalendarFeed.myBookings", "UTC", List.of(), true);
     byte[] bytes = generator.generate(source, SERVER, Locale.ENGLISH, 100_000);
     Calendar parsed = parse(bytes);
 
@@ -190,7 +164,7 @@ class BookingCalendarFeedGeneratorTest {
             true,
             "Confocal microscope");
     CalendarSource source =
-        new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(event), true);
+        new CalendarSource("bookingCalendarFeed.myBookings", "UTC", List.of(event), true);
 
     Calendar parsed = parse(generator.generate(source, SERVER, Locale.ENGLISH, 100_000));
 

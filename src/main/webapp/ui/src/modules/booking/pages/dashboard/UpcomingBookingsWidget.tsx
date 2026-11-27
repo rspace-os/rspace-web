@@ -1,7 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingAgenda } from "@/modules/booking/components/BookingAgenda";
 import { upcomingDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
@@ -47,7 +47,7 @@ export function UpcomingBookingsWidget({
 
     placeholderData: keepPreviousData,
   });
-  const rows = useMemo(() => (query.isSuccess ? query.data.map(dashboardBooking) : []), [query.data, query.isSuccess]);
+  const rows = query.isSuccess ? query.data.map(dashboardBooking) : [];
   useEffect(() => {
     if (!query.isSuccess) return;
     const resultIds = new Set(query.data.map(({ id }) => id));

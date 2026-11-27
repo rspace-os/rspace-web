@@ -2,7 +2,12 @@ import { Temporal } from "@js-temporal/polyfill";
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingHourCycle, formatInstantRange, instrumentZoneDiffers } from "@/modules/booking/domain/bookingTime";
+import {
+  bookingDisplayLocale,
+  bookingHourCycle,
+  formatInstantRange,
+  instrumentZoneDiffers,
+} from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
@@ -25,7 +30,7 @@ export function BookingInstrumentTimeTooltip({
   trigger,
   children,
 }: BookingInstrumentTimeTooltipProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const browserZone = browserTimeZone();
   const timeFormat = useBookingTimeFormat();
 
@@ -37,7 +42,7 @@ export function BookingInstrumentTimeTooltip({
 
   if (!showTooltip && !trigger) return children ?? null;
 
-  const formatter = new Intl.DateTimeFormat(i18n.language, {
+  const formatter = new Intl.DateTimeFormat(bookingDisplayLocale(timeFormat), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -54,7 +59,6 @@ export function BookingInstrumentTimeTooltip({
           formatter,
           Temporal.Instant.from(start).epochMilliseconds,
           Temporal.Instant.from(end).epochMilliseconds,
-          " – ",
         )
       : start
         ? formatter.format(Temporal.Instant.from(start).epochMilliseconds)

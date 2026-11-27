@@ -50,11 +50,9 @@ import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.ws.rs.NotFoundException;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -119,28 +117,9 @@ public final class TimeSlotBookingResourceOperations
                     "The interval violates the scheduling policy.")
                 .code(exception -> exception.reason().errorCode())
                 .arguments(
-                    exception -> {
-                      Locale locale = LocaleContextHolder.getLocale();
-                      if (exception.missingDayEnd().isPresent()) {
-                        BookingPolicyException.MissingDayEnd missing =
-                            exception.missingDayEnd().get();
-                        return new Object[] {
-                          missing.time().format(DateTimeFormatter.ofPattern("HH:mm")),
-                          missing
-                              .date()
-                              .format(
-                                  DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-                                      .withLocale(locale)),
-                          missing.zone().getId()
-                        };
-                      }
-                      return exception.maximumDurationMinutes().isEmpty()
-                          ? new Object[0]
-                          : new Object[] {
-                            BookingDurationWords.format(
-                                exception.maximumDurationMinutes().getAsLong(), messages, locale)
-                          };
-                    })
+                    exception ->
+                        BookingPolicyProblemArguments.of(
+                            exception, messages, LocaleContextHolder.getLocale()))
                 .extensions(
                     exception ->
                         exception.maximumDurationMinutes().isEmpty()
@@ -162,6 +141,7 @@ public final class TimeSlotBookingResourceOperations
                 .documentedError(
                     "errors.api.v2.booking.duration",
                     "The booking interval exceeds 527040 elapsed minutes.")
+                .arguments(exception -> BookingDurationException.messageArguments())
                 .build(),
             ApiV2ErrorMapping.forException(BookingTargetUnavailableException.class)
                 .status(HttpStatus.CONFLICT)

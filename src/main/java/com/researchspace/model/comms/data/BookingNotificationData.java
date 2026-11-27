@@ -8,13 +8,18 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class BookingNotificationData extends NotificationData {
-  private String emailDisplayTimezone;
-  private BookingTimeFormat emailTimeFormat;
 
   private String bookingId;
   private String instrumentName;
   private String instrumentGlobalIdentifier;
   private String startTime;
   private String endTime;
+  private String previousStartTime;
+  private String previousEndTime;
   private String cancellationReason;
+
+  /** Recipient display snapshot used by the email header as well as its saved body. */
+  private String emailDisplayTimezone;
+
+  private BookingTimeFormat emailTimeFormat;
 }

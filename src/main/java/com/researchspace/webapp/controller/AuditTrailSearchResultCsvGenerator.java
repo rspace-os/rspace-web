@@ -98,7 +98,10 @@ public class AuditTrailSearchResultCsvGenerator {
             desc =
                 StringUtils.defaultIfBlank(
                     BookingAuditDetails.combine(
-                        BookingAuditDetails.format(data, messages, CSV_LOCALE), desc2),
+                        BookingAuditDetails.format(data, messages, CSV_LOCALE),
+                        BookingAuditDetails.readableDescription(desc2, messages, CSV_LOCALE),
+                        messages,
+                        CSV_LOCALE),
                     desc);
           } else if (!StringUtils.isBlank(desc2)) {
             desc = desc2;

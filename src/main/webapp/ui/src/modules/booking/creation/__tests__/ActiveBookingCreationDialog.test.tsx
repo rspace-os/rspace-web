@@ -16,15 +16,18 @@ import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } fr
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { createBooking } from "@/modules/booking/domain/booking";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
+import { BookingNoticesProvider, useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import type { TableListAlert } from "@/modules/common/table-list/TableList";
 import { ActiveBookingCreationDialog } from "../ActiveBookingCreationDialog";
 import type { BookableItemOption } from "../bookableItemOption";
 import type { BookingCreationContext } from "../bookingCreationStore";
@@ -90,6 +93,22 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE", privacy: "full" | "bu
   };
 }
 
+function CalendarNoticeHost() {
+  const [alerts, setAlerts] = useState<readonly TableListAlert[]>([]);
+  const deliver = useCallback((alert: TableListAlert) => {
+    setAlerts((current) => [alert, ...current]);
+    return true;
+  }, []);
+  useBookingNoticeHost("calendar", deliver);
+  return (
+    <div>
+      {alerts.map((alert) => (
+        <p key={alert.id}>{alert.message}</p>
+      ))}
+    </div>
+  );
+}
+
 function renderDialog(dialogCreation: BookingCreationContext = creation, events: readonly unknown[] = []) {
   server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse(events))));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -102,12 +121,15 @@ function renderDialog(dialogCreation: BookingCreationContext = creation, events:
   });
   const root = createRootRoute({
     component: () => (
-      <BookingCreationStoreProvider>
-        <button type="button" id={creation.triggerId}>
-          {"Create"}
-        </button>
-        <ActiveBookingCreationDialog creation={dialogCreation} />
-      </BookingCreationStoreProvider>
+      <BookingNoticesProvider>
+        <BookingCreationStoreProvider>
+          <button type="button" id={creation.triggerId}>
+            {"Create"}
+          </button>
+          <ActiveBookingCreationDialog creation={dialogCreation} />
+          <CalendarNoticeHost />
+        </BookingCreationStoreProvider>
+      </BookingNoticesProvider>
     ),
   });
   const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
@@ -121,6 +143,46 @@ function renderDialog(dialogCreation: BookingCreationContext = creation, events:
 }
 
 describe("ActiveBookingCreationDialog", () => {
+  it("reports a confirmed compact create to the captured calendar host", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/bookings", () =>
+        HttpResponse.json(
+          {
+            id: 84,
+            version: 1,
+            target: { relationTo: "instruments", value: 123, globalId: "IN123" },
+            timezone: "UTC",
+            start: "2026-09-28T10:00:00Z",
+            end: "2026-09-28T11:00:00Z",
+            state: "CONFIRMED",
+            kind: "BOOKING",
+            privacy: "full",
+            purpose: null,
+            cancellationReason: null,
+            bookedBy: "Ada Lovelace",
+            canEdit: true,
+            canCancel: true,
+            createdAt: "2026-09-01T09:00:00Z",
+            updatedAt: "2026-09-01T09:00:00Z",
+            canViewConfiguration: true,
+            location: null,
+            createdBy: null,
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    renderDialog({ ...creation, originHost: "calendar" });
+
+    const dialog = await screen.findByTestId("compact-booking-dialog");
+    const submit = within(dialog).getByRole("button", { name: "booking:bookings.form.submit" });
+    await vi.waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    expect(await screen.findByText("booking:bookings.feedback.eventAdded")).toBeVisible();
+  });
+
   it("prevents dismissal while a creation request is pending", async () => {
     const user = userEvent.setup();
     let release: () => void = () => {};
@@ -147,15 +209,6 @@ describe("ActiveBookingCreationDialog", () => {
       release();
     }
     await vi.waitFor(() => expect(within(dialog).getByRole("button", { name: "common:actions.close" })).toBeEnabled());
-  });
-
-  it("blocks maintenance over an ordinary booking on a double-bookable target", async () => {
-    renderDialog(doubleBooking("MAINTENANCE"), [overlappingEvent("BOOKING")]);
-
-    const dialog = await screen.findByTestId("compact-booking-dialog");
-    const alert = await within(dialog).findByRole("alert");
-    expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
-    expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submitMaintenance" })).toBeDisabled();
   });
 
   it("blocks an ordinary booking over maintenance on a double-bookable target", async () => {
@@ -206,39 +259,54 @@ describe("ActiveBookingCreationDialog", () => {
     expect(createRequests).toBe(0);
   });
 
-  it("lists the booking a server buffer rejection names and keeps submission blocked", async () => {
-    const user = userEvent.setup();
-    vi.mocked(createBooking).mockRejectedValueOnce(
-      Object.assign(new ApiV2ProblemError(409, "errors.api.v2.booking.buffer", "private server detail"), {
-        problem: {
-          status: 409,
-          code: "errors.api.v2.booking.buffer",
-          conflict: { id: 59, kind: "BOOKING", start: "2026-09-28T08:00:00Z", end: "2026-09-28T10:00:00Z" },
-          bufferBeforeMinutes: 15,
-          bufferAfterMinutes: 15,
-        },
-      }),
-    );
-    renderDialog();
+  describe("conflict lists", () => {
+    // Each conflict is one translated label-and-period message, which cimode would reduce to its key.
+    setupRealAppI18n();
 
-    const dialog = await screen.findByTestId("compact-booking-dialog");
-    // Quick create stays in the viewer's zone; the full form offers the zone fields.
-    expect(
-      within(dialog).queryByRole("button", { name: "booking:bookings.form.changeTimezone" }),
-    ).not.toBeInTheDocument();
-    const submit = within(dialog).getByRole("button", { name: "booking:bookings.form.submit" });
-    await vi.waitFor(() => expect(submit).toBeEnabled());
-    await user.click(submit);
+    it("blocks maintenance over an ordinary booking on a double-bookable target", async () => {
+      renderDialog(doubleBooking("MAINTENANCE"), [overlappingEvent("BOOKING")]);
 
-    const alert = await within(dialog).findByRole("alert");
-    expect(alert).toMatchTextContent("booking:bookings.errors.buffer");
-    expect(alert).toMatchTextContent("booking:bookings.errors.bufferSummary");
-    expect(within(alert).getByRole("listitem")).toMatchTextContent(/booking:bookings\.errors\.overlapBooking · 0?8:00/);
-    expect(alert).not.toMatchTextContent("private server detail");
-    expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
+      const dialog = await screen.findByTestId("compact-booking-dialog");
+      const alert = await within(dialog).findByRole("alert");
+      expect(alert).toMatchTextContent("This period overlaps:");
+      expect(within(alert).getByRole("listitem")).toMatchTextContent("Private purpose");
+      expect(within(dialog).getByRole("button", { name: "Create maintenance event" })).toBeDisabled();
+    });
+
+    it("lists the booking a server buffer rejection names and keeps submission blocked", async () => {
+      const user = userEvent.setup();
+      vi.mocked(createBooking).mockRejectedValueOnce(
+        Object.assign(new ApiV2ProblemError(409, "errors.api.v2.booking.buffer", "private server detail"), {
+          problem: {
+            status: 409,
+            code: "errors.api.v2.booking.buffer",
+            conflict: { id: 59, kind: "BOOKING", start: "2026-09-28T08:00:00Z", end: "2026-09-28T10:00:00Z" },
+            bufferBeforeMinutes: 15,
+            bufferAfterMinutes: 15,
+          },
+        }),
+      );
+      renderDialog();
+
+      const dialog = await screen.findByTestId("compact-booking-dialog");
+      // Quick create stays in the viewer's zone; the full form offers the zone fields.
+      expect(within(dialog).queryByRole("button", { name: "Change time zone" })).not.toBeInTheDocument();
+      const submit = within(dialog).getByRole("button", { name: "Book" });
+      await vi.waitFor(() => expect(submit).toBeEnabled());
+      await user.click(submit);
+
+      const alert = await within(dialog).findByRole("alert");
+      expect(alert).toMatchTextContent("Too close to another event.");
+      expect(alert).toMatchTextContent("This period is within the buffer time of:");
+      expect(within(alert).getByRole("listitem")).toMatchTextContent(/Booking #59 · 0?8:00/);
+      expect(alert).not.toMatchTextContent("private server detail");
+      expect(within(dialog).getByRole("button", { name: "Book" })).toBeDisabled();
+    });
   });
 
   describe("on an item that allows double booking, over an existing booking", () => {
+    setupRealAppI18n();
+
     const doubleBooking = (eventKind: BookingCreationContext["eventKind"]): BookingCreationContext => ({
       ...creation,
       eventKind,
@@ -258,10 +326,10 @@ describe("ActiveBookingCreationDialog", () => {
 
       const dialog = await screen.findByTestId("compact-booking-dialog");
       const warning = await within(dialog).findByRole("status");
-      expect(warning).toMatchTextContent("booking:bookings.errors.overlapSummary");
+      expect(warning).toMatchTextContent("This period overlaps:");
       expect(within(warning).getByRole("listitem")).toMatchTextContent("Purpose 41");
       expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
-      expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeEnabled();
+      expect(within(dialog).getByRole("button", { name: "Book" })).toBeEnabled();
     });
 
     it("blocks a maintenance event, which the server rejects over any booking", async () => {
@@ -269,9 +337,9 @@ describe("ActiveBookingCreationDialog", () => {
 
       const dialog = await screen.findByTestId("compact-booking-dialog");
       const alert = await within(dialog).findByRole("alert");
-      expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
+      expect(alert).toMatchTextContent("This period overlaps:");
       expect(within(alert).getByRole("listitem")).toMatchTextContent("Purpose 41");
-      expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submitMaintenance" })).toBeDisabled();
+      expect(within(dialog).getByRole("button", { name: "Create maintenance event" })).toBeDisabled();
     });
   });
 });
