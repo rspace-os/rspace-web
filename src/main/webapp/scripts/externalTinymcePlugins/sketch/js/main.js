@@ -77,6 +77,30 @@ var sketchDialog = {
     editorSketch.style.height = window.innerHeight - 20 + "px";
 
     context = Zwibbler.create("image-editorSketch", ZwibblerOptions);
+
+    // Handle these shortcuts before Zwibbler routes them using its internal focus state.
+    editorSketch.addEventListener("keydown", function (event) {
+      if (event.target !== editorSketch && !(event.target instanceof HTMLCanvasElement)) {
+        return;
+      }
+      if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      var key = event.key.toLowerCase();
+      if (key !== "c" && key !== "l") {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (key === "c") {
+        context.useCurveTool();
+      } else {
+        context.useLineTool();
+      }
+    }, true);
+
     if (listElem !== null) {
       context.load("zwibbler3", listElem);
     }
