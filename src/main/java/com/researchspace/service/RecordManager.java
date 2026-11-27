@@ -63,6 +63,19 @@ public interface RecordManager {
       List<Long> ids, User subject, PermissionType permissionType);
 
   /**
+   * Gets the current names of the documents that unversioned internal links in a document's text
+   * fields point to, so that link labels saved before a target was renamed can be shown with its
+   * current name. Only documents the viewer can read, and that are neither temporary nor deleted,
+   * are included. Signed documents keep their saved link labels, so this returns an empty map for a
+   * signed source, and also for the anonymous guest user.
+   *
+   * @param source the document containing the links
+   * @param viewer the user viewing the source document
+   * @return a map from target global ID (e.g. SD123) to its current name, never null
+   */
+  Map<String, String> getCurrentNamesOfLinkedDocuments(StructuredDocument source, User viewer);
+
+  /**
    * Checks whether there is a record with given id.
    *
    * @param id

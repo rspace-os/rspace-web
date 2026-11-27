@@ -1,6 +1,10 @@
-import { expect } from "@playwright/test";
+import { expect, request } from "@playwright/test";
+import { JSDOM } from "jsdom";
+import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
+import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { test } from "@/__tests__/e2e/fixtures/flows";
+import { storageStateFor } from "@/__tests__/e2e/savedSessions";
 import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 import { readArchiveDocuments } from "@/__tests__/e2e/zipArchive";
 
@@ -234,4 +238,99 @@ dynamicUserTest.describe("Document recovery and downloadable exports", () => {
       },
     );
   }
+});
+
+test.describe("Internal links", () => {
+  test("As a user, a live internal link shows the current name of a renamed document without saving it, and a version-pinned link keeps its saved name", async ({
+    clientDocuments,
+    pageWorkspace,
+  }) => {
+    const savedName = uniqueName("e2e-link-target");
+    const currentName = `${savedName} renamed "Tom's" <b>&</b>`;
+    const unrelatedEdit = uniqueName("e2e-link-edit");
+    const target = await clientDocuments.create({ name: savedName });
+    const liveId = target.globalId;
+    const pinnedId = `${liveId}v1`;
+    const link = (globalId: string) =>
+      `<a id="${target.id}" data-globalid="${globalId}" class="linkedRecord mceNonEditable" href="/globalId/${globalId}" data-name="${savedName}">${globalId}: ${savedName}</a>`;
+    const source = await clientDocuments.create({
+      name: uniqueName("e2e-link-source"),
+      fields: [{ content: `<p>${link(liveId)}</p><p>${link(pinnedId)}</p><p>unrelated text</p>` }],
+    });
+    await clientDocuments.update(target.id, { name: currentName });
+
+    const document = await pageWorkspace.openDocument(source.id);
+    const content = await document.getFieldViewContent("", 0);
+    // Legacy JSP field content: internal links have no accessible role distinct from their label.
+    const liveLink = content.locator(`a.linkedRecord[data-globalid="${liveId}"]`);
+    const pinnedLink = content.locator(`a.linkedRecord[data-globalid="${pinnedId}"]`);
+    await expect(liveLink).toHaveText(`${liveId}: ${currentName}`);
+    await expect(liveLink).toHaveAttribute("data-name", currentName);
+    await expect(liveLink).toHaveAttribute("href", `/globalId/${liveId}`);
+    await expect(pinnedLink).toHaveText(`${pinnedId}: ${savedName}`);
+    await expect(pinnedLink).toHaveAttribute("href", `/globalId/${pinnedId}`);
+
+    const field = await document.editField("", 0);
+    await field.typeAtEnd(` ${unrelatedEdit}`);
+    await field.saveAndFinishEditing();
+    const stored = (await clientDocuments.getById(source.id)).fields[0].content;
+    expect(stored).toContain(unrelatedEdit);
+    expect(stored).not.toContain(`${savedName} renamed`);
+    const storedLiveLink = new JSDOM(stored).window.document.querySelector(`a[data-globalid="${liveId}"]`);
+    expect(storedLiveLink?.getAttribute("data-name")).toBe(savedName);
+    expect(storedLiveLink?.textContent).toBe(`${liveId}: ${savedName}`);
+    await expect(liveLink).toHaveText(`${liveId}: ${currentName}`);
+
+    await liveLink.click({ position: { x: 8, y: 8 } });
+    await expect(document.header.name).toHaveText(currentName);
+  });
+});
+
+dynamicUserTest.describe("Internal links shared with a group", () => {
+  dynamicUserTest(
+    "As a group member, the document page names only the linked documents I can read",
+    async ({ appUser, clientDocuments, clientShare, clientSysadmin }) => {
+      const reader = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eLinkReader");
+      const group = await clientSysadmin.createGroup({
+        displayName: uniqueName("e2e-link-group"),
+        type: "LAB_GROUP",
+        users: [
+          { username: appUser.username, roleInGroup: "PI" },
+          { username: reader.username, roleInGroup: "DEFAULT" },
+        ],
+      });
+      const sharedName = uniqueName("e2e-shared-target");
+      const privateName = uniqueName("e2e-private-target");
+      const sharedTarget = await clientDocuments.create({ name: sharedName });
+      const privateTarget = await clientDocuments.create({ name: privateName });
+      const link = ({ id, globalId }: { id: number; globalId: string }, name: string) =>
+        `<a id="${id}" data-globalid="${globalId}" class="linkedRecord mceNonEditable" href="/globalId/${globalId}" data-name="${name}">${globalId}: ${name}</a>`;
+      const source = await clientDocuments.create({
+        name: uniqueName("e2e-link-source"),
+        fields: [{ content: `<p>${link(sharedTarget, sharedName)}</p><p>${link(privateTarget, privateName)}</p>` }],
+      });
+      const sharedCurrentName = `${sharedName} renamed`;
+      const privateCurrentName = uniqueName("e2e-private-renamed");
+      await clientDocuments.update(sharedTarget.id, { name: sharedCurrentName });
+      await clientDocuments.update(privateTarget.id, { name: privateCurrentName });
+      await clientShare.shareWithGroup([source.id, sharedTarget.id], group.id, "READ");
+
+      // Raw HTML as served, so a title the reader may not see cannot hide anywhere in the page.
+      const readerContext = await request.newContext({
+        baseURL: env.baseURL,
+        ignoreHTTPSErrors: true,
+        storageState: await storageStateFor(reader),
+      });
+      try {
+        const response = await readerContext.get(`/workspace/editor/structuredDocument/${source.id}`);
+        expect(response.status()).toBe(200);
+        const html = await response.text();
+        expect(html).toContain(privateName);
+        expect(html).not.toContain(privateCurrentName);
+        expect(html).toContain(sharedCurrentName);
+      } finally {
+        await readerContext.dispose();
+      }
+    },
+  );
 });

@@ -100,6 +100,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1363,6 +1365,35 @@ public class RecordManagerImpl implements RecordManager {
     return recordDao.getRecordsById(ids).stream()
         .filter(record -> permissnUtils.isRecordAccessPermitted(subject, record, permissionType))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public Map<String, String> getCurrentNamesOfLinkedDocuments(
+      StructuredDocument source, User viewer) {
+    Map<String, String> names = new LinkedHashMap<>();
+    if (source.isSigned() || viewer.isAnonymousGuestAccount()) {
+      return names;
+    }
+    Set<Long> ids = new LinkedHashSet<>();
+    for (Field field : source.getFields()) {
+      if (field.isTextField()) {
+        ids.addAll(updater.findLiveLinkedDocumentIds(field.getFieldData()));
+      }
+    }
+    if (ids.isEmpty()) {
+      return names;
+    }
+    for (Record target :
+        getAuthorisedRecordsById(new ArrayList<>(ids), viewer, PermissionType.READ)) {
+      if (target.isStructuredDocument()
+          && !target.asStrucDoc().isTemporaryDoc()
+          && !target.isDeleted()
+          && !target.isDeletedForUser(target.getOwner())
+          && !target.isDeletedForUser(viewer)) {
+        names.put(GlobalIdPrefix.SD.toString() + target.getId(), target.getName());
+      }
+    }
+    return names;
   }
 
   @Override

@@ -93,6 +93,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
@@ -1992,5 +1993,29 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // when is shared Notebook and NO CREATE permission
     assertTrue(
         recordMgr.isSharedFolderOrSharedNotebookWithoutCreatePermission(anotherUser, notebook));
+  }
+
+  @Test
+  public void currentNamesOfLinkedDocumentsOnlyForReadableTargetsOfUnsignedSources() {
+    logoutAndLoginAs(anotherUser);
+    StructuredDocument privateTarget = createBasicDocumentInRootFolderWithText(anotherUser, "p");
+    String privateLink = richTextUpdater.generateURLStringForInternalLink(privateTarget);
+    recordMgr.renameRecord("private new title", privateTarget.getId(), anotherUser);
+
+    logoutAndLoginAs(user);
+    StructuredDocument target = createBasicDocumentInRootFolderWithText(user, "t");
+    String links =
+        richTextUpdater.generateURLStringForInternalLink(target)
+            + richTextUpdater.generateURLStringForVersionedInternalLink(target)
+            + privateLink;
+    StructuredDocument source = createBasicDocumentInRootFolderWithText(user, links);
+    recordMgr.renameRecord("target new title", target.getId(), user);
+
+    assertEquals(
+        Map.of(target.getGlobalIdentifier(), "target new title"),
+        recordMgr.getCurrentNamesOfLinkedDocuments(source, user));
+
+    source.setSigned(true);
+    assertTrue(recordMgr.getCurrentNamesOfLinkedDocuments(source, user).isEmpty());
   }
 }

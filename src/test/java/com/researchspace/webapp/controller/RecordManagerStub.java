@@ -362,6 +362,12 @@ public class RecordManagerStub implements RecordManager {
   }
 
   @Override
+  public Map<String, String> getCurrentNamesOfLinkedDocuments(
+      StructuredDocument source, User viewer) {
+    return Collections.emptyMap();
+  }
+
+  @Override
   public Optional<Record> getOptRecordWithLazyLoadedProperties(
       long id,
       User user,

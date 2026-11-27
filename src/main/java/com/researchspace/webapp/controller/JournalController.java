@@ -21,6 +21,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.JournalEntry;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.Principal;
@@ -79,10 +80,12 @@ public class JournalController extends BaseController {
   public JournalEntry retrieveEntry(
       @PathVariable("notebookId") Long notebookId,
       @PathVariable("recordId") Long recordId,
-      Principal principal) {
+      Principal principal,
+      HttpServletRequest request) {
 
     User user = userManager.getUserByUsername(principal.getName());
-    return retrieveEntryByRecordIdOrPosition(notebookId, recordId, null, null, user);
+    return retrieveEntryByRecordIdOrPosition(
+        notebookId, recordId, null, null, user, isPublicView(request));
   }
 
   /** Load notebook entry after opening the notebook or using previuos/next entry arrows */
@@ -93,14 +96,26 @@ public class JournalController extends BaseController {
       @PathVariable("position") Integer position,
       @PathVariable("positionmodifier")
           Integer positionModifier, // used when clicking on arrow tags
-      Principal principal) {
+      Principal principal,
+      HttpServletRequest request) {
 
     User user = userManager.getUserByUsername(principal.getName());
-    return retrieveEntryByRecordIdOrPosition(notebookId, null, position, positionModifier, user);
+    return retrieveEntryByRecordIdOrPosition(
+        notebookId, null, position, positionModifier, user, isPublicView(request));
+  }
+
+  /* Published notebooks show the snapshot their entries were published with, whoever views them. */
+  private boolean isPublicView(HttpServletRequest request) {
+    return request.getRequestURI().startsWith(request.getContextPath() + "/public/");
   }
 
   private JournalEntry retrieveEntryByRecordIdOrPosition(
-      Long notebookId, Long recordId, Integer position, Integer positionModifier, User user) {
+      Long notebookId,
+      Long recordId,
+      Integer position,
+      Integer positionModifier,
+      User user,
+      boolean publicView) {
 
     // this only retrieves structured documents
     List<Long> allRecordIds = recordManager.getDescendantRecordIdsExcludeFolders(notebookId);
@@ -135,7 +150,7 @@ public class JournalController extends BaseController {
           requestedEntryPosition != null && requestedEntryPosition.equals(readableRecordPosition)
               || recordId != null && recordId.equals(currentRecord.getId());
       if (recordFound) {
-        return retrieveJournalEntry(currentRecord, user, allRecordPosition);
+        return retrieveJournalEntry(currentRecord, user, allRecordPosition, publicView);
       }
 
       readableRecordPosition++;
@@ -152,7 +167,8 @@ public class JournalController extends BaseController {
   }
 
   /* Creates a journal entry based on the type of record */
-  private JournalEntry retrieveJournalEntry(BaseRecord currentRecord, User user, Integer position) {
+  private JournalEntry retrieveJournalEntry(
+      BaseRecord currentRecord, User user, Integer position, boolean publicView) {
 
     StructuredDocument doc =
         recordManager.getRecordWithFields(currentRecord.getId(), user).asStrucDoc();
@@ -174,6 +190,10 @@ public class JournalController extends BaseController {
 
     boolean canSign = doc.isAllFieldsValid() && !doc.isSigned();
     journalEntry.setCanSign(canSign);
+    if (!publicView) {
+      journalEntry.setLinkedDocumentNames(
+          recordManager.getCurrentNamesOfLinkedDocuments(doc, user));
+    }
 
     return journalEntry;
   }

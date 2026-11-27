@@ -51,7 +51,8 @@ function journal($, extensions = default_extensions) {
         baseURL: null,
         globalId: null,
         modificationDate: null,
-        uriFragment: null
+        uriFragment: null,
+        linkedDocumentNames: {}
       };
 
       reactToolbarHasRendered = new Promise((resolve) => {
@@ -213,6 +214,7 @@ function journal($, extensions = default_extensions) {
             $("#journalSearch").show();
 
             $("#cachedData").text(data.html);
+            journalPrivateVars.linkedDocumentNames = data.linkedDocumentNames || {};
 
             //rspac-1396
             document.title = data.name;
@@ -384,6 +386,7 @@ function journal($, extensions = default_extensions) {
 
       // some beautification of text field content
       updateAttachmentDivs($('.journalPageContent .attachmentDiv'));
+      refreshLinkedRecordNames($('.journalPageContent a.linkedRecord'), journalPrivateVars.linkedDocumentNames);
       updateInternalLinks($('.journalPageContent a.linkedRecord'));
       updateEmbedIframes($('.journalPageContent div.embedIframeDiv'));
       addImagePreviewToChems($('.journalPageContent img.chem'));

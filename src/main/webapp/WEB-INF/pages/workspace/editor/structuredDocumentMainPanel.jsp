@@ -84,6 +84,9 @@
             <div class="rs-record-header-line"></div>
         </div>
     </c:if>
+    <%-- current names of live internal link targets (RSDEV-1454), unset for signed, revision and public views;
+         EscapeXmlELResolver escapes the JSON for the attribute --%>
+    <div id="linkedDocumentNames" hidden data-names="${linkedDocumentNames}"></div>
     <table id="structuredDocument" name="mainTable" class="structuredDocumentTable">
         <tr>
         <c:if test="${param.publicDocument}">
