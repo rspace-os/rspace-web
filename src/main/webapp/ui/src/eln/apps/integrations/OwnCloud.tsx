@@ -1,6 +1,6 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/owncloud";
 import OwnCloudIcon from "../../../assets/branding/owncloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useOwncloudEndpoint } from "../useOwncloud";
-
-type OwnCloudArgs = {
-  integrationState: IntegrationStates["OWNCLOUD"];
-  update: (newIntegrationState: IntegrationStates["OWNCLOUD"]) => void;
-};
 
 export interface OwnCloudConnectedMessage extends Record<string, unknown> {
   type: "OWNCLOUD_CONNECTED";
@@ -46,11 +41,13 @@ export const OWNCLOUD_CONNECTION_CHANNEL = "rspace.apps.owncloud.connection";
  * The process of disconnecing is via a standard API call made by
  * ../useOwncloud.
  */
-function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
+function OwnCloud(): React.ReactNode {
+  const integrationState = useIntegrationState("OWNCLOUD");
+  const updateMode = useIntegrationModeUpdate("OWNCLOUD");
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useOwncloudEndpoint();
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("OWNCLOUD");
 
   useBroadcastChannel<OwnCloudConnectedMessage>(
     OWNCLOUD_CONNECTION_CHANNEL,
@@ -90,7 +87,7 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
         explanatoryText={t("integrations.ownCloud.description")}
         image={OwnCloudIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         helpLinkText={t("integrations.ownCloud.helpLink")}
         website="https://owncloud.com"
         docLink="owncloud"

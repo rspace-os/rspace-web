@@ -42,12 +42,13 @@ replaces it. For this to work:
   secret as `(unchanged)` and posts `null` back when it is left untouched.
   Its clear button posts `""`, which must remove the stored value, and then
   offers to undo, posting `null` again. For forms that can clear a saved
-  secret, pass `storedSecretExists` from the last saved settings and update it
-  only after a successful save. This removes Undo once a clear has been saved;
-  otherwise the field cannot distinguish an unsaved clear from a saved one.
-  Pass `clearable={false}` where the secret is required.
-- Once a save succeeds, set the field to `secretAfterSave(value)` so it shows
-  `(unchanged)` again, and set `storedSecretExists` to `value !== ""`.
+  secret, pass `storedSecretExists` from the saved state in the integrations
+  query, which changes only once a save succeeds. This removes Undo once a
+  clear has been saved; otherwise the field cannot distinguish an unsaved
+  clear from a saved one. Pass `clearable={false}` where the secret is required.
+- Once a save succeeds, reset the form to the value in the server's response,
+  where a stored secret comes back as `null`, so the field shows `(unchanged)`
+  again.
 
 ### Complex Configuration
 A few of the integrations require a complex set of configurations. This is
@@ -217,9 +218,9 @@ passed colour should then match the icon where the icon has a coloured
 background. If the logo has a white background then choose the most common
 colour.
 
-Once defined, add the new component to the `./CardListing` component where it
-will then appear in the UI in the enabled, disabled, or unavailable listing
-depending upon its current state.
+Once defined, add the new component, without any props, to the
+`./CardListing` component where it will then appear in the UI in the enabled,
+disabled, or unavailable listing depending upon its current state.
 
 #### 2.2 Dialog content
 
@@ -241,37 +242,46 @@ For the more complex configurations, this `setupSection` prop is where they
 need to provide all of the UI to enter all of these options. Each is unique, but
 they typically abstract out this code into a separate component, partially for
 code clarity and partially so that the Optional wrapper around each
-configuration option can be handled separately with `OptionalArray.all`. For
+configuration option can be handled separately with `ArrayUtils.all`. For
 examples of how these dialogs are implemented, take a look at
-[GitHub](integrations/GitHub.js), [Slack](integrations/Slack.js), or
-[Dataverse](integrations/Dataverse.js). One thing to be aware of about these
-dialogs is that they bring in the `useIntegrationsEndpoint` custom hook, as
-opposed to the other integration dialogs which just use the passed in `update`
-prop to make API calls. This is because whilst `update` needs to be passed down
-so that the card moves to the other listings when enabled/disabled, these
-components call `/saveAppOptions` and `/deleteAppOptions` directly and update
-the state themselves.
+[GitHub](integrations/GitHub.tsx), [Slack](integrations/Slack.tsx), or
+[Dataverse](integrations/Dataverse.tsx). These dialogs call `/saveAppOptions`
+and `/deleteAppOptions` through `useSaveAppOptionsMutation` and
+`useDeleteAppOptionsMutation` from [queries](queries.ts).
 
-#### A note on mobx
+#### A note on state
 
-When [./App.js](App.js) calls `useIntegrationsEndpoint`, it wraps the resulting
-data in both a `FetchingData.Fetched` wrapper and a `mobx` observable one. The
-former isn't significant when adding new integrations -- only something to pay
-attention to when making changes to the whole page -- but the use of mobx is
-important. It is this that means that when the components mutate the current
-state of the integrations, react re-renders with the updated state. For example,
-when a configuration option is deleted, the object in the current state is
-discarded by calling `splice` inside of a call to `runInAction`. This then
-triggers a minimal re-render to remove it from the UI. Whenever state is being
-mutated by an integration's component, be sure to check that `runInAction` is
-being called correctly otherwise the UI will be stale until some other operation
-updates things. Similarly, be sure to check that components that need to update
-when such state is mutated are wrappped in `observer` from `mobx-react-lite`.
+The state of every integration is server state, held in one TanStack Query
+query (see [queries](queries.ts) and the [README](README.md)). A card takes no
+props: it reads its own integration with `useIntegrationState("NAME")` and
+changes it through the mutation hooks, which write the server's response back
+into the query.
+
+- Pass `useIntegrationModeUpdate("NAME")` to `IntegrationCard`'s `update` prop
+  to enable and disable the integration.
+- Save simple credentials, such as an API key, with
+  `useUpdateIntegrationMutation("NAME")`, and configurations with
+  `useSaveAppOptionsMutation` and `useDeleteAppOptionsMutation`. Do not keep a
+  copy of their results in component state: render lists from
+  `useIntegrationState`, so they stay current when the dialog is reopened and
+  when requests overlap.
+- When the server reports a change outside these endpoints, such as an OAuth
+  window broadcasting a connection, record it with `useTokenConnection` or
+  `useRecordIntegrationChange`.
+- For fields the user edits before saving, use TanStack Form with a Valibot
+  schema, taking the default values from the query and resetting the form to
+  the saved values once a save succeeds. See [ApiKeyForm](integrations/ApiKeyForm.tsx)
+  for a single key and [Dataverse](integrations/Dataverse.tsx) for a list of
+  configurations with required fields. Keep only transient UI state, such as
+  an open menu or a pending request, in `useState`.
 
 ### 3. Unit test
 
 Finally, you may wish to add a unit test in
 [./intergations/\_\_tests\_\_](integrations/__tests__) to cover the new component
-and the other logic. Not all components are thoroughly tested, but the more
+and the other logic. Render the card with `renderWithIntegrations` from
+[\_\_tests\_\_/integrationsQueryClient](__tests__/integrationsQueryClient.tsx),
+which seeds a fresh query client with the integration's state, and mock the
+requests the card makes. Not all components are thoroughly tested, but the more
 complex the UI inside of the dialog and the more complex the data model, the more
 worthwhile testing this code is likely to be.

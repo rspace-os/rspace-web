@@ -1,32 +1,22 @@
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
-import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import { observer } from "mobx-react-lite";
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
-import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type ZenodoArgs = {
-  integrationState: IntegrationStates["ZENODO"];
-  update: (newIntegrationState: IntegrationStates["ZENODO"]) => Promise<void>;
-};
+import { useIntegrationModeUpdate, useIntegrationState, useUpdateIntegrationMutation } from "../queries";
+import ApiKeyForm from "./ApiKeyForm";
 
 /*
  * Zenodo uses API-key based authentication, as implemeted by the form below.
  */
-function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
+function Zenodo(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const [apiKey, setApiKey] = useState(integrationState.credentials.ZENODO_USER_TOKEN.orElse(""));
-  const [storedSecretExists, setStoredSecretExists] = useState(apiKey !== "");
-  const [saving, setSaving] = useState(false);
+  const integrationState = useIntegrationState("ZENODO");
+  const updateMode = useIntegrationModeUpdate("ZENODO");
+  const { mutateAsync: update } = useUpdateIntegrationMutation("ZENODO");
 
   return (
     <Grid
@@ -49,61 +39,23 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.zenodo.setup.instructions" />
-            <Card variant="outlined" sx={{ mt: 2 }}>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (saving) return;
-                  setSaving(true);
-                  void update({
-                    mode: integrationState.mode,
-                    credentials: {
-                      ZENODO_USER_TOKEN: Optional.present(apiKey),
-                    },
-                  })
-                    .then(
-                      () => {
-                        setStoredSecretExists(apiKey !== "");
-                        setApiKey(secretAfterSave(apiKey));
-                      },
-                      () => {
-                        // update() has already shown the error; keep the typed key so it can be retried
-                      },
-                    )
-                    .finally(() => setSaving(false));
-                }}
-              >
-                <CardContent>
-                  <SecretField
-                    fullWidth
-                    variant="outlined"
-                    label={t("integrations.zenodo.fields.apiKey")}
-                    size="small"
-                    autoComplete="new-password"
-                    value={apiKey}
-                    storedSecretExists={storedSecretExists}
-                    disabled={saving}
-                    onChange={setApiKey}
-                  />
-                </CardContent>
-                <CardActions>
-                  <Button type="submit" disabled={saving}>
-                    {t("common:actions.save")}
-                  </Button>
-                </CardActions>
-              </form>
-            </Card>
+            <ApiKeyForm
+              label={t("integrations.zenodo.fields.apiKey")}
+              storedKey={integrationState.credentials.ZENODO_USER_TOKEN}
+              save={async (apiKey) => {
+                const saved = await update({
+                  mode: integrationState.mode,
+                  credentials: { ZENODO_USER_TOKEN: Optional.present(apiKey) },
+                });
+                return saved.credentials.ZENODO_USER_TOKEN;
+              }}
+            />
           </>
         }
-        update={(newMode) => {
-          void update({
-            mode: newMode,
-            credentials: integrationState.credentials,
-          });
-        }}
+        update={updateMode}
       />
     </Grid>
   );
 }
 
-export default React.memo(observer(Zenodo));
+export default React.memo(Zenodo);

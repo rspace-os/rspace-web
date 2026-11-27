@@ -5,11 +5,8 @@ import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { mapValues } from "es-toolkit";
-import { observable } from "mobx";
-import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
@@ -18,11 +15,10 @@ import AppBar from "../../components/AppBar";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import * as FetchingData from "../../util/fetchingData";
 import { getByKey } from "../../util/optional";
 import CardListing from "./CardListing";
 import CardPlacementContext, { type FrozenModes } from "./CardPlacementContext";
-import { type IntegrationStates, useIntegrationsEndpoint } from "./useIntegrationsEndpoint";
+import { type IntegrationModes, useIntegrationModesQuery } from "./queries";
 
 function LoadingSkeleton() {
   return (
@@ -72,10 +68,13 @@ type AppsSectionArgs = {
   title: string;
   description: React.ReactNode;
   mode: React.ComponentProps<typeof CardListing>["mode"];
-  allStates: FetchingData.Fetched<IntegrationStates>;
+  modes: IntegrationModes | undefined;
+  loadingError: Error | null;
 };
 
-function AppsSection({ id, title, description, mode, allStates }: AppsSectionArgs): React.ReactNode {
+function AppsSection({ id, title, description, mode, modes, loadingError }: AppsSectionArgs): React.ReactNode {
+  // the error boundary reports a failure to load; a failed refetch keeps the loaded cards
+  if (!modes && loadingError) throw loadingError;
   return (
     <Box component="section" aria-labelledby={id}>
       <Box sx={{ mb: 2 }}>
@@ -104,73 +103,61 @@ function AppsSection({ id, title, description, mode, allStates }: AppsSectionArg
           {description}
         </Typography>
       </Box>
-      <Box sx={{ mt: 0.5 }}>
-        {FetchingData.match(allStates, {
-          success: (integrationStates) => <CardListing mode={mode} integrationStates={integrationStates} />,
-          loading: () => <LoadingSkeleton />,
-          error: (error) => {
-            throw new Error(error);
-          },
-        })}
-      </Box>
+      <Box sx={{ mt: 0.5 }}>{modes ? <CardListing mode={mode} modes={modes} /> : <LoadingSkeleton />}</Box>
     </Box>
   );
 }
 
 function App(): React.ReactNode {
   const { t } = useTranslation("apps");
-  const { allIntegrations } = useIntegrationsEndpoint();
-  const { trackEvent, isAvailable: analyticsIsAvailable } = useContext(AnalyticsContext);
+  const { data: modes, error: loadingError } = useIntegrationModesQuery();
+  const analytics = useContext(AnalyticsContext);
   const [, setLastDialogOpened] = useState<string | null>(null);
 
-  const [allStates, setAllStates] = useState<FetchingData.Fetched<IntegrationStates>>(observable({ tag: "loading" }));
   const [frozenModes, setFrozenModes] = useState<FrozenModes | null>(null);
-  const cardPlacement = {
-    frozenModes,
-    dialogOpened: () => {
-      if (allStates.tag === "success") setFrozenModes(mapValues(allStates.value, (state) => state.mode));
-    },
-    dialogClosed: () => setFrozenModes(null),
-  };
+  const cardPlacement = useMemo(
+    () => ({
+      frozenModes,
+      dialogOpened: () => {
+        if (modes) setFrozenModes(modes);
+      },
+      dialogClosed: () => setFrozenModes(null),
+    }),
+    [frozenModes, modes],
+  );
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        setAllStates(
-          observable({
-            tag: "success",
-            value: mapValues(await allIntegrations(), (v) => observable(v)),
-          }) as FetchingData.Fetched<IntegrationStates>,
-        );
-      } catch (e) {
-        if (e instanceof Error) setAllStates(observable({ tag: "error", error: e.message }));
-      }
-    })();
-  }, []);
+  /*
+   * The parent context's fields are read when used, rather than when this
+   * component renders, so that they stay current once analytics has loaded.
+   */
+  const analyticsContext = useMemo(
+    () => ({
+      get isAvailable() {
+        return analytics.isAvailable;
+      },
+      trackEvent: (event: string, properties?: Record<string, unknown>) => {
+        if (event === "Apps page dialog opened") {
+          if (typeof properties !== "undefined") {
+            getByKey("integrationName", properties).do((integrationName: unknown) => {
+              if (typeof integrationName === "string") {
+                setLastDialogOpened(integrationName);
+              }
+            });
+          }
+        } else {
+          analytics.trackEvent(event, properties);
+        }
+      },
+    }),
+    [analytics],
+  );
 
   return (
     <>
       <GoogleLoginProvider />
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <DialogBoundary>
-          <AnalyticsContext.Provider
-            value={{
-              isAvailable: analyticsIsAvailable,
-              trackEvent: (event, properties) => {
-                if (event === "Apps page dialog opened") {
-                  if (typeof properties !== "undefined") {
-                    getByKey("integrationName", properties).do((integrationName: unknown) => {
-                      if (typeof integrationName === "string") {
-                        setLastDialogOpened(integrationName);
-                      }
-                    });
-                  }
-                } else {
-                  trackEvent(event, properties);
-                }
-              },
-            }}
-          >
+          <AnalyticsContext.Provider value={analyticsContext}>
             <AppBar
               variant="page"
               currentPage="Apps"
@@ -203,28 +190,32 @@ function App(): React.ReactNode {
                       title={t("page.sections.enabled.title")}
                       description={t("page.sections.enabled.description")}
                       mode="ENABLED"
-                      allStates={allStates}
+                      modes={modes}
+                      loadingError={loadingError}
                     />
                     <AppsSection
                       id="disabled"
                       title={t("page.sections.disabled.title")}
                       description={t("page.sections.disabled.description")}
                       mode="DISABLED"
-                      allStates={allStates}
+                      modes={modes}
+                      loadingError={loadingError}
                     />
                     <AppsSection
                       id="unavailable"
                       title={t("page.sections.unavailable.title")}
                       description={t("page.sections.unavailable.description")}
                       mode="UNAVAILABLE"
-                      allStates={allStates}
+                      modes={modes}
+                      loadingError={loadingError}
                     />
                     <AppsSection
                       id="third-party-rspace-integrations"
                       title={t("page.sections.external.title")}
                       description={t("page.sections.external.description")}
                       mode="EXTERNAL"
-                      allStates={allStates}
+                      modes={modes}
+                      loadingError={loadingError}
                     />
                   </Stack>
                 </CardPlacementContext.Provider>
@@ -237,4 +228,4 @@ function App(): React.ReactNode {
   );
 }
 
-export default observer(App);
+export default App;

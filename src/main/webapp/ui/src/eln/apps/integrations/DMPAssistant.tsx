@@ -1,6 +1,5 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
@@ -9,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/dmpassistant";
 import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDmpAssistantEndpoint } from "../useDmpAssistantEndpoint";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type DMPAssistantArgs = {
-  integrationState: IntegrationStates["DMPASSISTANT"];
-  update: (newIntegrationState: IntegrationStates["DMPASSISTANT"]) => void;
-};
 
 export interface DMPAssistantConnectedMessage extends Record<string, unknown> {
   type: "DMPASSISTANT_CONNECTED";
@@ -23,11 +17,13 @@ export interface DMPAssistantConnectedMessage extends Record<string, unknown> {
 }
 export const DMPASSISTANT_CONNECTION_CHANNEL = "rspace.apps.dmpassistant.connection";
 
-function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.ReactNode {
+function DMPAssistant(): React.ReactNode {
+  const integrationState = useIntegrationState("DMPASSISTANT");
+  const updateMode = useIntegrationModeUpdate("DMPASSISTANT");
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpAssistantEndpoint();
-  const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("DMPASSISTANT");
 
   useBroadcastChannel<DMPAssistantConnectedMessage>(
     DMPASSISTANT_CONNECTION_CHANNEL,
@@ -96,11 +92,11 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
             )}
           </>
         }
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         integrationState={integrationState}
       />
     </Grid>
   );
 }
 
-export default React.memo(observer(DMPAssistant));
+export default React.memo(DMPAssistant);

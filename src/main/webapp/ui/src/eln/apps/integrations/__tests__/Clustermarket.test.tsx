@@ -8,6 +8,7 @@ import { Optional } from "../../../../util/optional";
 import Clustermarket from "../Clustermarket";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 /*
  * Clustermarket shares ../useDisconnect with the OMERO card, so these cover the
@@ -26,13 +27,16 @@ describe("Clustermarket", () => {
     );
 
     render(
-      <Clustermarket
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present(null) },
-        }}
-        update={() => {}}
-      />,
+      <WithIntegrations
+        client={createIntegrationsClient({
+          CLUSTERMARKET: {
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.present(null) },
+          },
+        })}
+      >
+        <Clustermarket />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -49,13 +53,16 @@ describe("Clustermarket", () => {
 
     render(
       <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
-        <Clustermarket
-          integrationState={{
-            mode: "DISABLED",
-            credentials: { ACCESS_TOKEN: Optional.present(null) },
-          }}
-          update={() => {}}
-        />
+        <WithIntegrations
+          client={createIntegrationsClient({
+            CLUSTERMARKET: {
+              mode: "DISABLED",
+              credentials: { ACCESS_TOKEN: Optional.present(null) },
+            },
+          })}
+        >
+          <Clustermarket />
+        </WithIntegrations>
       </AlertContext.Provider>,
     );
 

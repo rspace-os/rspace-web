@@ -7,6 +7,7 @@ import { Optional } from "../../../../util/optional";
 import DMPAssistant, { type DMPAssistantConnectedMessage } from "../DMPAssistant";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 const broadcastHandlers: Array<(e: MessageEvent<DMPAssistantConnectedMessage>) => void> = [];
 vi.mock("@/modules/common/hooks/broadcast", () => ({
@@ -25,15 +26,18 @@ describe("DMPAssistant", () => {
     test("Should have no axe violations.", async () => {
       const user = userEvent.setup();
       const { baseElement } = render(
-        <DMPAssistant
-          integrationState={{
-            mode: "DISABLED",
-            credentials: {
-              ACCESS_TOKEN: Optional.empty(),
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DMPASSISTANT: {
+              mode: "DISABLED",
+              credentials: {
+                ACCESS_TOKEN: Optional.empty(),
+              },
             },
-          }}
-          update={() => {}}
-        />,
+          })}
+        >
+          <DMPAssistant />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -46,15 +50,18 @@ describe("DMPAssistant", () => {
   test("Should have a connect button when the user is not authenticated.", async () => {
     const user = userEvent.setup();
     render(
-      <DMPAssistant
-        integrationState={{
-          mode: "DISABLED",
-          credentials: {
-            ACCESS_TOKEN: Optional.empty(),
+      <WithIntegrations
+        client={createIntegrationsClient({
+          DMPASSISTANT: {
+            mode: "DISABLED",
+            credentials: {
+              ACCESS_TOKEN: Optional.empty(),
+            },
           },
-        }}
-        update={() => {}}
-      />,
+        })}
+      >
+        <DMPAssistant />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -63,15 +70,18 @@ describe("DMPAssistant", () => {
   test("Should have a disconnect button when the user is authenticated.", async () => {
     const user = userEvent.setup();
     render(
-      <DMPAssistant
-        integrationState={{
-          mode: "DISABLED",
-          credentials: {
-            ACCESS_TOKEN: Optional.present("some token"),
+      <WithIntegrations
+        client={createIntegrationsClient({
+          DMPASSISTANT: {
+            mode: "DISABLED",
+            credentials: {
+              ACCESS_TOKEN: Optional.present("some token"),
+            },
           },
-        }}
-        update={() => {}}
-      />,
+        })}
+      >
+        <DMPAssistant />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -80,15 +90,18 @@ describe("DMPAssistant", () => {
   test("Should flip to connected when the DMPASSISTANT_CONNECTED event fires.", async () => {
     const user = userEvent.setup();
     render(
-      <DMPAssistant
-        integrationState={{
-          mode: "DISABLED",
-          credentials: {
-            ACCESS_TOKEN: Optional.empty(),
+      <WithIntegrations
+        client={createIntegrationsClient({
+          DMPASSISTANT: {
+            mode: "DISABLED",
+            credentials: {
+              ACCESS_TOKEN: Optional.empty(),
+            },
           },
-        }}
-        update={() => {}}
-      />,
+        })}
+      >
+        <DMPAssistant />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));
@@ -108,15 +121,18 @@ describe("DMPAssistant", () => {
     const mockAxios = new MockAdapter(axios);
     mockAxios.onDelete("/apps/dmpassistant/connect").reply(200);
     render(
-      <DMPAssistant
-        integrationState={{
-          mode: "DISABLED",
-          credentials: {
-            ACCESS_TOKEN: Optional.present("some token"),
+      <WithIntegrations
+        client={createIntegrationsClient({
+          DMPASSISTANT: {
+            mode: "DISABLED",
+            credentials: {
+              ACCESS_TOKEN: Optional.present("some token"),
+            },
           },
-        }}
-        update={() => {}}
-      />,
+        })}
+      >
+        <DMPAssistant />
+      </WithIntegrations>,
     );
 
     await user.click(screen.getByRole("button"));

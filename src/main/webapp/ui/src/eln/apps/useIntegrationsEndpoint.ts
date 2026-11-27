@@ -1229,6 +1229,36 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
 const ONE_MINUTE_IN_MS = 60 * 1000;
 
 /**
+ * Calls the `/allIntegrations` API endpoint. The Apps page reads it through
+ * the query in ./queries rather than calling this directly.
+ *
+ * @returns A promise of the current state of all of the integrations.
+ */
+export async function fetchAllIntegrations(): Promise<IntegrationStates> {
+  // created per call, not per module, so that tests can mock the shared axios instance first
+  const api = axios.create({
+    baseURL: "/integration",
+    timeout: ONE_MINUTE_IN_MS,
+  });
+  const states = await api.get<
+    | {
+        success: true;
+        data: { [integration in Integration]: FetchedState };
+        error: null;
+      }
+    | {
+        success: false;
+        data: null;
+        error: string;
+      }
+  >("allIntegrations");
+  if (states.data.success) {
+    return decodeIntegrationStates(states.data.data);
+  }
+  throw new Error(states.data.error);
+}
+
+/**
  * This is a custom hook that allows for react components to fetch the current
  * state of all of the integrations from the server and update the state when
  * the user makes a change.
@@ -1277,8 +1307,7 @@ export function useIntegrationsEndpoint(): {
    *         display an alert to indicate to the user that the action failed,
    *         displaying `error.message`. If it succeeds then an updated state
    *         for the integration will be returned, wrapped in Promise.resolve.
-   *         Called SHOULD update any UI state, using runInAction, so that the
-   *         UI updates.
+   *         The caller SHOULD update any UI state with the returned state.
    */
   saveAppOptions: <I extends Integration>(
     appName: I,
@@ -1303,26 +1332,6 @@ export function useIntegrationsEndpoint(): {
   });
   const { addAlert } = useContext(AlertContext);
   const { t } = useTranslation("apps");
-
-  const allIntegrations = async (): Promise<IntegrationStates> => {
-    const states = await api.get<
-      | {
-          success: true;
-          data: { [integration in Integration]: FetchedState };
-          error: null;
-        }
-      | {
-          success: false;
-          data: null;
-          error: string;
-        }
-    >("allIntegrations");
-    if (states.data.success) {
-      const data = states.data.data;
-      return decodeIntegrationStates(data);
-    }
-    throw new Error(states.data.error);
-  };
 
   const update = React.useCallback(
     async <I extends Integration>(integration: I, newState: IntegrationStates[I]): Promise<IntegrationStates[I]> => {
@@ -1541,5 +1550,5 @@ export function useIntegrationsEndpoint(): {
     }
   };
 
-  return { allIntegrations, update, saveAppOptions, deleteAppOptions };
+  return { allIntegrations: fetchAllIntegrations, update, saveAppOptions, deleteAppOptions };
 }

@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { observable } from "mobx";
 import { describe, expect, test } from "vitest";
 import axios from "@/common/axios";
 import Alerts from "../../../../components/Alerts/Alerts";
@@ -10,19 +9,23 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 
 import "@/__tests__/__mocks__/matchMedia";
 import DSW from "@/eln/apps/integrations/DSW";
+import { cachedState, createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 describe("DSW", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
       const user = userEvent.setup();
       const { baseElement } = render(
-        <DSW
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DSW: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <DSW />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -36,13 +39,16 @@ describe("DSW", () => {
     test("Add should be disabled whilst a new config is being added.", async () => {
       const user = userEvent.setup();
       render(
-        <DSW
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DSW: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <DSW />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -70,13 +76,16 @@ describe("DSW", () => {
           },
         },
       });
-      const integrationState = observable<IntegrationStates["DSW"]>({
+      const integrationState: IntegrationStates["DSW"] = {
         mode: "DISABLED",
         credentials: [],
-      });
+      };
+      const queryClient = createIntegrationsClient({ DSW: integrationState });
       render(
         <Alerts>
-          <DSW integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -92,7 +101,7 @@ describe("DSW", () => {
       await screen.findByRole("alert", {
         name: "apps:integrations.dsw.alerts.saveNewSuccess",
       });
-      expect(integrationState.credentials.length).toBe(1);
+      expect(cachedState(queryClient, "DSW").credentials.length).toBe(1);
     });
   });
   describe("Saving", () => {
@@ -102,20 +111,23 @@ describe("DSW", () => {
 
       mockAxios.onPost("integration/saveAppOptions");
       render(
-        <DSW
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                DSW_APIKEY: "apikey",
-                DSW_URL: "url",
-                DSW_ALIAS: "alias",
-                optionsId: "4",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DSW: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  DSW_APIKEY: "apikey",
+                  DSW_URL: "url",
+                  DSW_ALIAS: "alias",
+                  optionsId: "4",
+                }),
+              ],
+            },
+          })}
+        >
+          <DSW />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -139,13 +151,16 @@ describe("DSW", () => {
 
       mockAxios.onPost("integration/saveAppOptions");
       render(
-        <DSW
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DSW: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <DSW />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -190,26 +205,29 @@ describe("DSW", () => {
       });
       render(
         <Alerts>
-          <DSW
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DSW_APIKEY: "apikey",
-                  DSW_URL: "url",
-                  DSW_ALIAS: "new name",
-                  optionsId: "1",
-                }),
-                Optional.present({
-                  DSW_APIKEY: "apikey",
-                  DSW_URL: "url",
-                  DSW_ALIAS: "new name",
-                  optionsId: "2",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DSW: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DSW_APIKEY: "apikey",
+                    DSW_URL: "url",
+                    DSW_ALIAS: "new name",
+                    optionsId: "1",
+                  }),
+                  Optional.present({
+                    DSW_APIKEY: "apikey",
+                    DSW_URL: "url",
+                    DSW_ALIAS: "new name",
+                    optionsId: "2",
+                  }),
+                ],
+              },
+            })}
+          >
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -248,20 +266,23 @@ describe("DSW", () => {
       });
       render(
         <Alerts>
-          <DSW
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DSW_APIKEY: "apikey",
-                  DSW_URL: "url",
-                  DSW_ALIAS: "new name",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DSW: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DSW_APIKEY: "apikey",
+                    DSW_URL: "url",
+                    DSW_ALIAS: "new name",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -302,20 +323,23 @@ describe("DSW", () => {
       });
       render(
         <Alerts>
-          <DSW
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DSW_APIKEY: "apikey",
-                  DSW_URL: "url",
-                  DSW_ALIAS: "name",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DSW: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DSW_APIKEY: "apikey",
+                    DSW_URL: "url",
+                    DSW_ALIAS: "name",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -364,20 +388,23 @@ describe("DSW", () => {
         },
       });
       render(
-        <DSW
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                DSW_APIKEY: "apikey",
-                DSW_URL: "url",
-                DSW_ALIAS: "alias",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            DSW: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  DSW_APIKEY: "apikey",
+                  DSW_URL: "url",
+                  DSW_ALIAS: "alias",
+                  optionsId: "1",
+                }),
+              ],
+            },
+          })}
+        >
+          <DSW />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -401,20 +428,23 @@ describe("DSW", () => {
         .reply(200, "Success! Test connection OK!");
       render(
         <Alerts>
-          <DSW
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DSW_APIKEY: "apikey",
-                  DSW_URL: "url",
-                  DSW_ALIAS: "name",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DSW: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DSW_APIKEY: "apikey",
+                    DSW_URL: "url",
+                    DSW_ALIAS: "name",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -445,20 +475,23 @@ describe("DSW", () => {
       });
       render(
         <Alerts>
-          <DSW
-            integrationState={{
-              mode: "DISABLED",
-              credentials: [
-                Optional.present({
-                  DSW_APIKEY: "apikey",
-                  DSW_URL: "url",
-                  DSW_ALIAS: "name",
-                  optionsId: "1",
-                }),
-              ],
-            }}
-            update={() => {}}
-          />
+          <WithIntegrations
+            client={createIntegrationsClient({
+              DSW: {
+                mode: "DISABLED",
+                credentials: [
+                  Optional.present({
+                    DSW_APIKEY: "apikey",
+                    DSW_URL: "url",
+                    DSW_ALIAS: "name",
+                    optionsId: "1",
+                  }),
+                ],
+              },
+            })}
+          >
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -475,8 +508,8 @@ describe("DSW", () => {
     });
     test("Deleting a config should mutate the integration state being passed as a prop.", async () => {
       const user = userEvent.setup();
-      const integrationState = observable({
-        mode: "DISABLED" as const,
+      const integrationState: IntegrationStates["DSW"] = {
+        mode: "DISABLED",
         credentials: [
           Optional.present({
             DSW_APIKEY: "apikey",
@@ -485,7 +518,8 @@ describe("DSW", () => {
             optionsId: "1",
           }),
         ],
-      });
+      };
+      const queryClient = createIntegrationsClient({ DSW: integrationState });
       const mockAxios = new MockAdapter(axios);
       mockAxios.onPost("integration/deleteAppOptions").reply(200, {
         success: true,
@@ -498,7 +532,9 @@ describe("DSW", () => {
       });
       render(
         <Alerts>
-          <DSW integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <DSW />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -508,7 +544,7 @@ describe("DSW", () => {
       await waitFor(() => {
         expect(screen.queryByRole("textbox", { name: "apps:integrations.dsw.fields.label" })).not.toBeInTheDocument();
       });
-      expect(integrationState.credentials.length).toBe(0);
+      expect(cachedState(queryClient, "DSW").credentials.length).toBe(0);
     });
   });
 });

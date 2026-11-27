@@ -5,17 +5,14 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/googledrive";
 import GoogleDriveIcon from "../../../assets/branding/googledrive/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type GoogleDriveArgs = {
-  integrationState: IntegrationStates["GOOGLEDRIVE"];
-  update: (newIntegrationState: IntegrationStates["GOOGLEDRIVE"]) => void;
-};
+import { useIntegrationModeUpdate, useIntegrationState } from "../queries";
 
 /*
  * Authentication with Google happens when the user uses the dialog on the document editor page.
  */
-function GoogleDrive({ integrationState, update }: GoogleDriveArgs): React.ReactNode {
+function GoogleDrive(): React.ReactNode {
+  const integrationState = useIntegrationState("GOOGLEDRIVE");
+  const updateMode = useIntegrationModeUpdate("GOOGLEDRIVE");
   const { t } = useTranslation("apps");
   return (
     <Grid
@@ -31,7 +28,7 @@ function GoogleDrive({ integrationState, update }: GoogleDriveArgs): React.React
         explanatoryText={t("integrations.googleDrive.description")}
         image={GoogleDriveIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.googleDrive.usage")}
         helpLinkText={t("integrations.googleDrive.helpLink")}
         website="https://drive.google.com"

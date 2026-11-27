@@ -6,26 +6,29 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { observable, runInAction } from "mobx";
-import { observer, useLocalObservable } from "mobx-react-lite";
-import React, { useContext, useRef, useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
+import { lazyT } from "@/modules/common/i18n/lazyT";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
 import { ConfirmationDialog } from "../../../components/ConfirmationDialog";
-import SecretField, { type Secret, secretAfterSave } from "../../../components/Inputs/SecretField";
+import SecretField, { type Secret } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
 import {
-  type IntegrationState,
-  type IntegrationStates,
-  type OptionsId,
-  useIntegrationsEndpoint,
-} from "../useIntegrationsEndpoint";
+  useDeleteAppOptionsMutation,
+  useIntegrationModeUpdate,
+  useIntegrationState,
+  useSaveAppOptionsMutation,
+} from "../queries";
+import { useDataverseTestEndpoint } from "../useDataverseTestEndpoint";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { fieldErrorText } from "./fieldErrors";
 
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
@@ -41,131 +44,220 @@ type UnwrapArray<T extends Array<unknown>> = {
  * configuration.
  */
 type Configurations = UnwrapArray<IntegrationStates["DATAVERSE"]["credentials"]>;
+type Configuration = Configurations[number];
 
 /*
- * Within this component we model the state of the configurations slightly
- * differently, storing state information specific to the fields of the form.
+ * Every field is required; a stored API key (null) counts as provided.
  */
+const configurationSchema = v.object({
+  DATAVERSE_ALIAS: v.pipe(v.string(), v.nonEmpty(lazyT("apps:integrations.dataverse.fields.aliasRequired"))),
+  DATAVERSE_URL: v.pipe(v.string(), v.nonEmpty(lazyT("apps:integrations.dataverse.fields.urlRequired"))),
+  DATAVERSE_APIKEY: v.nullable(
+    v.pipe(v.string(), v.nonEmpty(lazyT("apps:integrations.dataverse.fields.apiKeyRequired"))),
+  ),
+});
 
-type ExistingConfig = {
+type ConfigurationValues = {
+  DATAVERSE_ALIAS: string;
+  DATAVERSE_URL: string;
   DATAVERSE_APIKEY: Secret;
-  DATAVERSE_URL: string;
-  DATAVERSE_ALIAS: string;
-  _label: string;
-  optionsId: OptionsId;
-  /** Stable React key: the optionsId, or a local id if the saved config was missing from the response. */
-  _key: string;
-  dirty: boolean;
 };
 
-type NewConfig = {
-  DATAVERSE_APIKEY: string;
-  DATAVERSE_URL: string;
-  DATAVERSE_ALIAS: string;
-};
+function valuesOf(config: Configuration): ConfigurationValues {
+  return {
+    DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
+    DATAVERSE_URL: config.DATAVERSE_URL,
+    DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
+  };
+}
 
-const DialogContent = observer(
-  ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DATAVERSE"] }) => {
-    const { t } = useTranslation(["apps", "common"]);
-    const { addAlert } = useContext(AlertContext);
-    const { test } = useDataverseTestEndpoint();
-    const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
-    const unsavedKeyCount = useRef(0);
+/**
+ * The form for one configuration, new or saved. It shows which fields are
+ * missing from the start, as an empty field cannot be saved.
+ */
+function useConfigurationForm(
+  defaultValues: ConfigurationValues,
+  save: (values: ConfigurationValues) => Promise<ConfigurationValues | null>,
+) {
+  const form = useForm({
+    defaultValues,
+    validators: { onChange: configurationSchema },
+    onSubmit: async ({ value, formApi }) => {
+      const saved = await save(value);
+      if (saved) formApi.reset(saved);
+    },
+  });
+  useEffect(() => {
+    void form.validate("change");
+  }, [form]);
+  return form;
+}
 
-    /*
-     * We take a copy of the current state for the user to edit in the UI. When
-     * they save it, it gets replaced with the new state returned from the API
-     * call in a careful manner so that each configuration can be
-     * independently edited and saved.
-     */
-    const copyOfState = useLocalObservable<IntegrationState<Array<ExistingConfig>>>(() => ({
-      mode: integrationState.mode,
-      credentials: configs.map((c) => observable({ ...c, _key: c.optionsId, dirty: false })),
-    }));
-    const observableConfigs = copyOfState.credentials;
+function ConfigurationFields({
+  form,
+  apiKeyClearable,
+}: {
+  form: ReturnType<typeof useConfigurationForm>;
+  apiKeyClearable: boolean;
+}) {
+  const { t } = useTranslation(["apps", "common"]);
+  return (
+    <Stack spacing={2}>
+      <form.Field name="DATAVERSE_ALIAS">
+        {(field) => (
+          <TextField
+            fullWidth
+            value={field.state.value}
+            onChange={({ target: { value } }) => {
+              field.handleChange(value);
+            }}
+            label={t("integrations.dataverse.fields.alias")}
+            error={field.state.meta.errors.length > 0}
+            helperText={field.state.meta.errors.length > 0 && fieldErrorText(field.state.meta.errors)}
+          />
+        )}
+      </form.Field>
+      <form.Field name="DATAVERSE_URL">
+        {(field) => (
+          <TextField
+            fullWidth
+            value={field.state.value}
+            onChange={({ target: { value } }) => {
+              field.handleChange(value);
+            }}
+            label={t("integrations.dataverse.fields.serverUrl")}
+            error={field.state.meta.errors.length > 0}
+            helperText={field.state.meta.errors.length > 0 && fieldErrorText(field.state.meta.errors)}
+          />
+        )}
+      </form.Field>
+      <form.Field name="DATAVERSE_APIKEY">
+        {(field) => (
+          <SecretField
+            fullWidth
+            clearable={apiKeyClearable}
+            value={field.state.value}
+            onChange={field.handleChange}
+            autoComplete="new-password"
+            label={t("integrations.dataverse.fields.apiKey")}
+            error={field.state.meta.errors.length > 0}
+            helperText={field.state.meta.errors.length > 0 && fieldErrorText(field.state.meta.errors)}
+          />
+        )}
+      </form.Field>
+    </Stack>
+  );
+}
 
-    const [configToDelete, setConfigToDelete] = useState<ExistingConfig | null>(null);
-    const [deletingKey, setDeletingKey] = useState<string | null>(null);
-    const [newConfig, setNewConfig] = useState<NewConfig | null>(null);
-
-    async function saveExistingConfig(config: ExistingConfig, index: number) {
-      try {
-        const newState = await saveAppOptions("DATAVERSE", Optional.present(config.optionsId), {
-          DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
-          DATAVERSE_URL: config.DATAVERSE_URL,
-          DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
-        });
-        runInAction(() => {
-          integrationState.credentials = newState.credentials;
-          ArrayUtils.all(newState.credentials)
-            // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
-            .map((newCreds) => {
-              const indexOfNewConfig = newCreds.findIndex((c) => c.optionsId === config.optionsId);
-              if (indexOfNewConfig === -1) throw new Error("Save completed but cannot show results.");
-
-              copyOfState.credentials.splice(
-                index,
-                1,
-                observable({
-                  ...newCreds[indexOfNewConfig],
-                  _key: config._key,
-                  dirty: false,
-                }),
-              );
-            })
-            .orElseGet(() => {
-              throw new Error("Save completed but cannot show results.");
-            });
-        });
+function SavedConfiguration({
+  config,
+  deleteDisabled,
+  onDelete,
+}: {
+  config: Configuration;
+  deleteDisabled: boolean;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation(["apps", "common"]);
+  const { addAlert } = useContext(AlertContext);
+  const { test } = useDataverseTestEndpoint();
+  const { mutateAsync: saveAppOptions } = useSaveAppOptionsMutation("DATAVERSE");
+  const form = useConfigurationForm(valuesOf(config), async (values) => {
+    try {
+      const newState = await saveAppOptions({ optionsId: Optional.present(config.optionsId), option: values });
+      const savedConfig = ArrayUtils.all(newState.credentials)
+        .map((newCreds) => newCreds.find((c) => c.optionsId === config.optionsId))
+        .orElse(undefined);
+      if (!savedConfig) throw new Error("Save completed but cannot show results.");
+      addAlert(
+        mkAlert({
+          variant: "success",
+          message: t("integrations.dataverse.alerts.saveExistingSuccess"),
+        }),
+      );
+      return valuesOf(savedConfig);
+    } catch (e) {
+      if (e instanceof Error)
         addAlert(
           mkAlert({
-            variant: "success",
-            message: t("integrations.dataverse.alerts.saveExistingSuccess"),
+            variant: "error",
+            title: t("integrations.dataverse.alerts.saveExistingError"),
+            message: e.message,
           }),
         );
-      } catch (e) {
-        if (e instanceof Error)
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: t("integrations.dataverse.alerts.saveExistingError"),
-              message: e.message,
-            }),
-          );
-      }
+      return null;
     }
+  });
 
-    async function saveNewConfig(config: NewConfig) {
+  return (
+    <Card variant="outlined">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void form.handleSubmit();
+        }}
+        aria-label={t("integrations.dataverse.configuredLabel", { name: config.DATAVERSE_ALIAS })}
+      >
+        <CardContent>
+          <ConfigurationFields form={form} apiKeyClearable={false} />
+        </CardContent>
+        <CardActions>
+          <Button disabled={deleteDisabled} onClick={onDelete}>
+            {t("common:actions.delete")}
+          </Button>
+          <form.Subscribe selector={(state) => [state.isDirty, state.isValid] as const}>
+            {([dirty, valid]) => (
+              <>
+                <Button
+                  disabled={dirty}
+                  onClick={() => {
+                    void (async () => {
+                      try {
+                        await test(config.optionsId);
+                        addAlert(
+                          mkAlert({
+                            variant: "success",
+                            message: t("integrations.dataverse.alerts.testValid"),
+                          }),
+                        );
+                      } catch (e) {
+                        if (e instanceof Error)
+                          addAlert(
+                            mkAlert({
+                              variant: "error",
+                              title: t("integrations.dataverse.alerts.testInvalid"),
+                              message: e.message,
+                            }),
+                          );
+                      }
+                    })();
+                  }}
+                >
+                  {t("actions.test")}
+                </Button>
+                <Button type="submit" disabled={!valid}>
+                  {t("common:actions.save")}
+                </Button>
+              </>
+            )}
+          </form.Subscribe>
+        </CardActions>
+      </form>
+    </Card>
+  );
+}
+
+function NewConfiguration({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation(["apps", "common"]);
+  const { addAlert } = useContext(AlertContext);
+  const { mutateAsync: saveAppOptions } = useSaveAppOptionsMutation("DATAVERSE");
+  const form = useConfigurationForm(
+    { DATAVERSE_ALIAS: "", DATAVERSE_URL: "", DATAVERSE_APIKEY: "" },
+    async (values) => {
       try {
-        const newState = await saveAppOptions("DATAVERSE", Optional.empty(), {
-          DATAVERSE_ALIAS: config.DATAVERSE_ALIAS,
-          DATAVERSE_URL: config.DATAVERSE_URL,
-          DATAVERSE_APIKEY: config.DATAVERSE_APIKEY,
-        });
-        runInAction(() => {
-          integrationState.credentials = newState.credentials;
-          const optionIdsOfExistingConfigs = new Set(copyOfState.credentials.map(({ optionsId }) => optionsId));
-          try {
-            const newlySavedConfig = ArrayUtils.mapOptional((credential) => credential, newState.credentials).find(
-              ({ optionsId }) => !optionIdsOfExistingConfigs.has(optionsId),
-            );
-            copyOfState.credentials.push(
-              observable({
-                ...(newlySavedConfig ?? {
-                  ...config,
-                  DATAVERSE_APIKEY: secretAfterSave(config.DATAVERSE_APIKEY),
-                  _label: config.DATAVERSE_ALIAS,
-                  optionsId: "",
-                }),
-                _key: newlySavedConfig?.optionsId ?? `unsaved-${++unsavedKeyCount.current}`,
-                dirty: false,
-              }),
-            );
-          } catch {
-            throw new Error("Save completed but cannot show results.");
-          }
-        });
-        setNewConfig(null);
+        await saveAppOptions({ optionsId: Optional.empty(), option: values });
+        onClose();
         addAlert(
           mkAlert({
             variant: "success",
@@ -182,273 +274,124 @@ const DialogContent = observer(
             }),
           );
       }
-    }
+      return null;
+    },
+  );
 
-    async function deleteConfig(config: ExistingConfig) {
-      setDeletingKey(config._key);
-      try {
-        await deleteAppOptions("DATAVERSE", config.optionsId);
-        runInAction(() => {
-          const deletedIndex = observableConfigs.findIndex(({ _key }) => _key === config._key);
-          observableConfigs.splice(deletedIndex, 1);
-          integrationState.credentials.splice(deletedIndex, 1);
-        });
+  return (
+    <Card variant="outlined">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void form.handleSubmit();
+        }}
+      >
+        <CardContent>
+          <ConfigurationFields form={form} apiKeyClearable />
+        </CardContent>
+        <CardActions>
+          <Button variant="outlined" onClick={onClose}>
+            {t("common:actions.delete")}
+          </Button>
+          <Button
+            variant="outlined"
+            // always disabled because it cannot be tested until saved
+            disabled
+            onClick={() => {}}
+          >
+            {t("actions.test")}
+          </Button>
+          <form.Subscribe selector={(state) => state.isValid}>
+            {(valid) => (
+              <Button variant="outlined" type="submit" disabled={!valid}>
+                {t("common:actions.save")}
+              </Button>
+            )}
+          </form.Subscribe>
+        </CardActions>
+      </form>
+    </Card>
+  );
+}
+
+function DialogContent({ configs }: { configs: Configurations }) {
+  const { t } = useTranslation(["apps", "common"]);
+  const { addAlert } = useContext(AlertContext);
+  const { mutateAsync: deleteAppOptions } = useDeleteAppOptionsMutation("DATAVERSE");
+  const [configToDelete, setConfigToDelete] = useState<Configuration | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [addingConfig, setAddingConfig] = useState(false);
+
+  async function deleteConfig(config: Configuration) {
+    setDeletingId(config.optionsId);
+    try {
+      await deleteAppOptions(config.optionsId);
+      addAlert(
+        mkAlert({
+          variant: "success",
+          message: t("integrations.dataverse.alerts.deleteConfigSuccess"),
+        }),
+      );
+    } catch (e) {
+      if (e instanceof Error)
         addAlert(
           mkAlert({
-            variant: "success",
-            message: t("integrations.dataverse.alerts.deleteConfigSuccess"),
+            variant: "error",
+            title: t("integrations.dataverse.alerts.deleteConfigError"),
+            message: e.message,
           }),
         );
-      } catch (e) {
-        if (e instanceof Error)
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: t("integrations.dataverse.alerts.deleteConfigError"),
-              message: e.message,
-            }),
-          );
-      } finally {
-        setDeletingKey(null);
-      }
+    } finally {
+      setDeletingId(null);
     }
+  }
 
-    return (
-      <Stack spacing={1} sx={{ mt: 1 }}>
-        {configToDelete && (
-          <ConfirmationDialog
-            title={t("integrations.dataverse.deleteConfirm.title")}
-            consequences={
-              <Typography>
-                {t("integrations.dataverse.deleteConfirm.message", {
-                  name: configToDelete.DATAVERSE_ALIAS,
-                })}
-              </Typography>
-            }
-            variant="warning"
-            callback={() => void deleteConfig(configToDelete)}
-            handleCloseDialog={() => setConfigToDelete(null)}
+  return (
+    <Stack spacing={1} sx={{ mt: 1 }}>
+      {configToDelete && (
+        <ConfirmationDialog
+          title={t("integrations.dataverse.deleteConfirm.title")}
+          consequences={
+            <Typography>
+              {t("integrations.dataverse.deleteConfirm.message", {
+                name: configToDelete.DATAVERSE_ALIAS,
+              })}
+            </Typography>
+          }
+          variant="warning"
+          callback={() => void deleteConfig(configToDelete)}
+          handleCloseDialog={() => setConfigToDelete(null)}
+        />
+      )}
+      <Stack spacing={1}>
+        {configs.map((config) => (
+          <SavedConfiguration
+            key={config.optionsId}
+            config={config}
+            deleteDisabled={deletingId !== null}
+            onDelete={() => setConfigToDelete(config)}
           />
-        )}
-        <Stack spacing={1}>
-          {observableConfigs.map((config, i) => (
-            <Card key={config._key} variant="outlined">
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void saveExistingConfig(config, i);
-                }}
-                aria-label={t("integrations.dataverse.configuredLabel", { name: config.DATAVERSE_ALIAS })}
-              >
-                <CardContent>
-                  <Stack spacing={2}>
-                    <TextField
-                      fullWidth
-                      value={config.DATAVERSE_ALIAS}
-                      onChange={({ target: { value } }) => {
-                        runInAction(() => {
-                          config.DATAVERSE_ALIAS = value;
-                          config.dirty = true;
-                        });
-                      }}
-                      label={t("integrations.dataverse.fields.alias")}
-                      error={config.DATAVERSE_ALIAS === ""}
-                      helperText={config.DATAVERSE_ALIAS === "" && t("integrations.dataverse.fields.aliasRequired")}
-                    />
-                    <TextField
-                      fullWidth
-                      value={config.DATAVERSE_URL}
-                      onChange={({ target: { value } }) => {
-                        runInAction(() => {
-                          config.DATAVERSE_URL = value;
-                          config.dirty = true;
-                        });
-                      }}
-                      label={t("integrations.dataverse.fields.serverUrl")}
-                      error={config.DATAVERSE_URL === ""}
-                      helperText={config.DATAVERSE_URL === "" && t("integrations.dataverse.fields.urlRequired")}
-                    />
-                    <SecretField
-                      fullWidth
-                      clearable={false}
-                      value={config.DATAVERSE_APIKEY}
-                      onChange={(value) => {
-                        runInAction(() => {
-                          config.DATAVERSE_APIKEY = value;
-                          config.dirty = true;
-                        });
-                      }}
-                      autoComplete="new-password"
-                      label={t("integrations.dataverse.fields.apiKey")}
-                      error={config.DATAVERSE_APIKEY === ""}
-                      helperText={config.DATAVERSE_APIKEY === "" && t("integrations.dataverse.fields.apiKeyRequired")}
-                    />
-                  </Stack>
-                </CardContent>
-                <CardActions>
-                  <Button disabled={deletingKey !== null} onClick={() => setConfigToDelete(config)}>
-                    {t("common:actions.delete")}
-                  </Button>
-                  <Button
-                    disabled={config.dirty}
-                    onClick={() => {
-                      void (async () => {
-                        try {
-                          await test(config.optionsId);
-                          addAlert(
-                            mkAlert({
-                              variant: "success",
-                              message: t("integrations.dataverse.alerts.testValid"),
-                            }),
-                          );
-                        } catch (e) {
-                          if (e instanceof Error)
-                            addAlert(
-                              mkAlert({
-                                variant: "error",
-                                title: t("integrations.dataverse.alerts.testInvalid"),
-                                message: e.message,
-                              }),
-                            );
-                        }
-                      })();
-                    }}
-                  >
-                    {t("actions.test")}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      config.DATAVERSE_ALIAS === "" || config.DATAVERSE_URL === "" || config.DATAVERSE_APIKEY === ""
-                    }
-                  >
-                    {t("common:actions.save")}
-                  </Button>
-                </CardActions>
-              </form>
-            </Card>
-          ))}
-          {newConfig && (
-            <Card variant="outlined">
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void saveNewConfig(newConfig);
-                }}
-              >
-                <CardContent>
-                  <Stack spacing={2}>
-                    <TextField
-                      fullWidth
-                      value={newConfig.DATAVERSE_ALIAS}
-                      onChange={({ target: { value } }) => {
-                        runInAction(() => {
-                          newConfig.DATAVERSE_ALIAS = value;
-                        });
-                      }}
-                      label={t("integrations.dataverse.fields.alias")}
-                      error={newConfig.DATAVERSE_ALIAS === ""}
-                      helperText={newConfig.DATAVERSE_ALIAS === "" && t("integrations.dataverse.fields.aliasRequired")}
-                    />
-                    <TextField
-                      fullWidth
-                      value={newConfig.DATAVERSE_URL}
-                      onChange={({ target: { value } }) => {
-                        runInAction(() => {
-                          newConfig.DATAVERSE_URL = value;
-                        });
-                      }}
-                      label={t("integrations.dataverse.fields.serverUrl")}
-                      error={newConfig.DATAVERSE_URL === ""}
-                      helperText={newConfig.DATAVERSE_URL === "" && t("integrations.dataverse.fields.urlRequired")}
-                    />
-                    <SecretField
-                      fullWidth
-                      value={newConfig.DATAVERSE_APIKEY}
-                      onChange={(value) => {
-                        runInAction(() => {
-                          newConfig.DATAVERSE_APIKEY = value;
-                        });
-                      }}
-                      autoComplete="new-password"
-                      label={t("integrations.dataverse.fields.apiKey")}
-                      error={newConfig.DATAVERSE_APIKEY === ""}
-                      helperText={
-                        newConfig.DATAVERSE_APIKEY === "" && t("integrations.dataverse.fields.apiKeyRequired")
-                      }
-                    />
-                  </Stack>
-                </CardContent>
-                <CardActions>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      setNewConfig(null);
-                    }}
-                  >
-                    {t("common:actions.delete")}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    // always disabled because it cannot be tested until saved
-                    disabled
-                    onClick={() => {}}
-                  >
-                    {t("actions.test")}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    type="submit"
-                    disabled={
-                      newConfig.DATAVERSE_ALIAS === "" ||
-                      newConfig.DATAVERSE_URL === "" ||
-                      newConfig.DATAVERSE_APIKEY === ""
-                    }
-                  >
-                    {t("common:actions.save")}
-                  </Button>
-                </CardActions>
-              </form>
-            </Card>
-          )}
-        </Stack>
-        <Button
-          sx={{ width: "fit-content" }}
-          disabled={Boolean(newConfig)}
-          onClick={() => {
-            setNewConfig(
-              observable({
-                DATAVERSE_ALIAS: "",
-                DATAVERSE_APIKEY: "",
-                DATAVERSE_URL: "",
-              }),
-            );
-          }}
-        >
-          {t("common:actions.add")}
-        </Button>
+        ))}
+        {addingConfig && <NewConfiguration onClose={() => setAddingConfig(false)} />}
       </Stack>
-    );
-  },
-);
+      <Button
+        sx={{ width: "fit-content" }}
+        disabled={addingConfig}
+        onClick={() => {
+          setAddingConfig(true);
+        }}
+      >
+        {t("common:actions.add")}
+      </Button>
+    </Stack>
+  );
+}
 
-type DataverseArgs = {
-  /*
-   * This is the current state of the Dataverse integration. It must be a mobx
-   * observable because this component will mutate it when a new dataverse is
-   * added or an existing one is removed from the configured credentials.
-   */
-  integrationState: IntegrationStates["DATAVERSE"];
-
-  /*
-   * Event handler that is called when the user enables or disabled the
-   * integration. Not called at any other time.
-   */
-  update: (newIntegrationState: IntegrationStates["DATAVERSE"]) => void;
-};
-
-function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode {
+function Dataverse(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
+  const integrationState = useIntegrationState("DATAVERSE");
+  const updateMode = useIntegrationModeUpdate("DATAVERSE");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -462,7 +405,7 @@ function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode
         explanatoryText={t("integrations.dataverse.description")}
         image={DataverseIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         integrationState={integrationState}
         helpLinkText={t("integrations.dataverse.helpLink")}
         website="https://dataverse.org"
@@ -473,7 +416,7 @@ function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode
             <Typography variant="body2">{t("integrations.dataverse.multipleConfig")}</Typography>
             <TransRichText i18nKey="apps:integrations.dataverse.setup.instructions" />
             {ArrayUtils.all(integrationState.credentials)
-              .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
+              .map((configs) => <DialogContent key={null} configs={configs} />)
               .orElse(t("integrations.dataverse.errorGettingConfigs"))}
           </>
         }
@@ -482,4 +425,4 @@ function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode
   );
 }
 
-export default React.memo(observer(Dataverse));
+export default React.memo(Dataverse);

@@ -7,19 +7,20 @@ import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
+import { useForm } from "@tanstack/react-form";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/box";
 import BoxIcon from "../../../assets/branding/box/logo.svg";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useIntegrationModeUpdate, useIntegrationState, useUpdateIntegrationMutation } from "../queries";
 
-type BoxArgs = {
-  integrationState: IntegrationStates["BOX"];
-  update: (newIntegrationState: IntegrationStates["BOX"]) => void;
-};
+const boxFormSchema = v.object({
+  linkType: v.picklist(["LIVE", "VERSIONED", "ASK"]),
+});
 
 /*
  * Note that authentication with box is performaned when the user goes to
@@ -31,9 +32,29 @@ type BoxArgs = {
  * false then the import file button will not be available in the RSpace
  * document editor.
  */
-function Box({ integrationState, update }: BoxArgs): React.ReactNode {
+function Box(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const [linkType, setLinkType] = React.useState(integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE"));
+  const integrationState = useIntegrationState("BOX");
+  const updateMode = useIntegrationModeUpdate("BOX");
+  const { mutateAsync: update } = useUpdateIntegrationMutation("BOX");
+  const form = useForm({
+    defaultValues: { linkType: integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE") },
+    validators: { onChange: boxFormSchema },
+    onSubmit: async ({ value, formApi }) => {
+      try {
+        const saved = await update({
+          mode: integrationState.mode,
+          credentials: {
+            BOX_LINK_TYPE: Optional.present(value.linkType),
+            "box.api.enabled": integrationState.credentials["box.api.enabled"],
+          },
+        });
+        formApi.reset({ linkType: saved.credentials.BOX_LINK_TYPE.orElse("LIVE") });
+      } catch {
+        // update() has already shown the error; keep the chosen link type so it can be retried
+      }
+    },
+  });
 
   return (
     <Grid
@@ -48,12 +69,7 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
         explanatoryText={t("integrations.box.description")}
         image={BoxIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({
-            mode: newMode,
-            credentials: integrationState.credentials,
-          })
-        }
+        update={updateMode}
         integrationState={integrationState}
         usageText={t("integrations.box.usage")}
         setupSection={
@@ -63,67 +79,66 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void update({
-                    mode: integrationState.mode,
-                    credentials: {
-                      BOX_LINK_TYPE: Optional.present(linkType),
-                      "box.api.enabled": integrationState.credentials["box.api.enabled"],
-                    },
-                  });
+                  event.stopPropagation();
+                  void form.handleSubmit();
                 }}
               >
                 <CardContent>
                   {!integrationState.credentials["box.api.enabled"].orElse(false) && (
                     <Typography variant="body2">{t("integrations.box.sysadminNote")}</Typography>
                   )}
-                  <RadioGroup
-                    value={linkType}
-                    sx={{ alignItems: "flex-start" }}
-                    onChange={(_event, value) => {
-                      setLinkType(value as typeof linkType);
-                    }}
-                  >
-                    <FormControlLabel
-                      value="LIVE"
-                      control={<Radio />}
-                      label={
-                        <>
-                          <Typography variant="body1">{t("integrations.box.linkType.live")}</Typography>
-                          <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
-                            {t("integrations.box.linkType.liveDescription")}
-                          </Typography>
-                        </>
-                      }
-                    />
-                    <FormControlLabel
-                      value="VERSIONED"
-                      sx={{ alignItems: "flex-start" }}
-                      disabled={!integrationState.credentials["box.api.enabled"].orElse(false)}
-                      control={<Radio />}
-                      label={
-                        <>
-                          <Typography variant="body1">{t("integrations.box.linkType.versioned")}</Typography>
-                          <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
-                            {t("integrations.box.linkType.versionedDescription")}
-                          </Typography>
-                        </>
-                      }
-                    />
-                    <FormControlLabel
-                      value="ASK"
-                      sx={{ alignItems: "flex-start" }}
-                      disabled={!integrationState.credentials["box.api.enabled"].orElse(false)}
-                      control={<Radio />}
-                      label={
-                        <>
-                          <Typography variant="body1">{t("integrations.box.linkType.ask")}</Typography>
-                          <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
-                            {t("integrations.box.linkType.askDescription")}
-                          </Typography>
-                        </>
-                      }
-                    />
-                  </RadioGroup>
+                  <form.Field name="linkType">
+                    {(field) => (
+                      <RadioGroup
+                        value={field.state.value}
+                        sx={{ alignItems: "flex-start" }}
+                        onChange={(_event, value) => {
+                          field.handleChange(v.parse(boxFormSchema.entries.linkType, value));
+                        }}
+                      >
+                        <FormControlLabel
+                          value="LIVE"
+                          control={<Radio />}
+                          label={
+                            <>
+                              <Typography variant="body1">{t("integrations.box.linkType.live")}</Typography>
+                              <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
+                                {t("integrations.box.linkType.liveDescription")}
+                              </Typography>
+                            </>
+                          }
+                        />
+                        <FormControlLabel
+                          value="VERSIONED"
+                          sx={{ alignItems: "flex-start" }}
+                          disabled={!integrationState.credentials["box.api.enabled"].orElse(false)}
+                          control={<Radio />}
+                          label={
+                            <>
+                              <Typography variant="body1">{t("integrations.box.linkType.versioned")}</Typography>
+                              <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
+                                {t("integrations.box.linkType.versionedDescription")}
+                              </Typography>
+                            </>
+                          }
+                        />
+                        <FormControlLabel
+                          value="ASK"
+                          sx={{ alignItems: "flex-start" }}
+                          disabled={!integrationState.credentials["box.api.enabled"].orElse(false)}
+                          control={<Radio />}
+                          label={
+                            <>
+                              <Typography variant="body1">{t("integrations.box.linkType.ask")}</Typography>
+                              <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
+                                {t("integrations.box.linkType.askDescription")}
+                              </Typography>
+                            </>
+                          }
+                        />
+                      </RadioGroup>
+                    )}
+                  </form.Field>
                 </CardContent>
                 <CardActions>
                   <Button type="submit">{t("common:actions.save")}</Button>

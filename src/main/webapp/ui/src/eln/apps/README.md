@@ -33,9 +33,10 @@ to enable and configure the services they need:
 
 ## Core Components
 
-- **`App.tsx`** - Main application shell with four categorized sections and state management
+- **`App.tsx`** - Main application shell with four categorized sections; places cards by each integration's mode
 - **`CardListing.tsx`** - Grid layout component that renders integration cards filtered by status
 - **`IntegrationCard.tsx`** - Reusable card component with theming and dialog management
+- **`queries.ts`** - TanStack Query hooks: the integrations query, each card's slice of it, and the mutations that keep it current
 - **`useIntegrationsEndpoint.ts`** - Central API communication hub with type-safe serialization/deserialization
 - **`useDisconnect.ts`** - Shared hook that DELETEs `{basePath}/connect` for apps whose credentials live server-side; resolves `false` if the deletion failed, so callers do not report a disconnection that did not happen
 - **Individual service hooks** (e.g., `useFigshare.tsx`) - Service-specific API wrappers
@@ -67,10 +68,36 @@ All integration states pass through encoder/decoder functions that:
 - **Encode**: Convert TypeScript state back to API-compatible JSON
 - **Validate**: Use `Optional` types to handle parsing failures gracefully
 
-The system uses MobX for reactive state management:
-- **Observable State**: All integration states are wrapped in MobX observables
-- **Automatic Re-rendering**: Components automatically update when state changes
-- **Optimized Updates**: Memoized update functions prevent unnecessary re-renders
+Integration states are server state, held by TanStack Query (`queries.ts`):
+- **One query**: `allIntegrationsQueryOptions` fetches `/allIntegrations` once,
+  under `integrationsQueryKeys.all`. Its `staleTime` is infinite, so cards that
+  remount when they move between sections do not refetch.
+- **Per-card selection**: each card calls `useIntegrationState("NAME")`, which
+  selects its own integration from the query, and `App` selects only the modes.
+  A change to one integration therefore re-renders only that integration's card.
+- **Mutations**: `useUpdateIntegrationMutation` (`/update`),
+  `useSaveAppOptionsMutation` (`/saveAppOptions`) and
+  `useDeleteAppOptionsMutation` (`/deleteAppOptions`) write their result into
+  the query; `useIntegrationModeUpdate` enables or disables an integration. A
+  result is written only when no other change to the same integration has
+  been written since its request began; otherwise it may be older than what
+  the cache holds, so it is discarded and the integrations are refetched once
+  the last overlapping change settles. A response can never overwrite newer
+  data.
+- **Changes made elsewhere**: `useRecordIntegrationChange` and
+  `useTokenConnection` record what the server reports outside these endpoints,
+  such as an OAuth window broadcasting that it has connected, through the same
+  ordering.
+- **Forms**: dialogs that edit fields use TanStack Form, validated by a Valibot
+  schema. Each saved configuration has its own form, keyed by its `optionsId`,
+  whose default values come from the query; a field the user has not touched
+  follows the server, and a touched one keeps the user's edit until it is saved.
+- **Local state**: only transient UI state stays in components, such as open
+  dialogs and menus, a configuration being added, or requests still pending.
+
+Card tests render a card inside a fresh `QueryClient` seeded with its
+integration's state (see `__tests__/integrationsQueryClient.tsx`) and mock the
+requests, rather than passing callbacks.
 
 ## Authentication Patterns
 
@@ -174,6 +201,7 @@ implementation instructions covering:
 ├── App.tsx                      # Main application component
 ├── CardListing.tsx              # Cards, filtered by status
 ├── IntegrationCard.tsx          # Reusable card component
+├── queries.ts                   # Integrations query and mutations
 ├── useIntegrationsEndpoint.ts   # Central API management
 ├── use[Service].tsx             # Individual service hooks
 ├── AddingANewIntegration.md     # Developer documentation

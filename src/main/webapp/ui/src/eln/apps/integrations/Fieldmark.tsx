@@ -1,33 +1,24 @@
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
-import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 import FieldmarktIcon from "../../../assets/branding/fieldmark/logo.svg";
-import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type FieldmarkArgs = {
-  integrationState: IntegrationStates["FIELDMARK"];
-  update: (newIntegrationState: IntegrationStates["FIELDMARK"]) => Promise<void>;
-};
+import { useIntegrationModeUpdate, useIntegrationState, useUpdateIntegrationMutation } from "../queries";
+import ApiKeyForm from "./ApiKeyForm";
 
 /*
  * Fieldmark uses an API-key-like authentication mechanism, wherein the user
  * copies a string from the Fieldmark website into the text field provided
  * below..
  */
-function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode {
+function Fieldmark(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const [apiKey, setApiKey] = React.useState(integrationState.credentials.FIELDMARK_USER_TOKEN.orElse(""));
-  const [storedSecretExists, setStoredSecretExists] = React.useState(apiKey !== "");
-  const [saving, setSaving] = React.useState(false);
+  const integrationState = useIntegrationState("FIELDMARK");
+  const updateMode = useIntegrationModeUpdate("FIELDMARK");
+  const { mutateAsync: update } = useUpdateIntegrationMutation("FIELDMARK");
 
   return (
     <Grid
@@ -43,7 +34,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
         explanatoryText={t("integrations.fieldmark.description")}
         image={FieldmarktIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         helpLinkText={t("integrations.fieldmark.helpLink")}
         website="https://fieldnote.au/fieldmark"
         docLink="fieldmark"
@@ -51,50 +42,17 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.fieldmark.setup.instructions" />
-            <Card variant="outlined" sx={{ mt: 2 }}>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (saving) return;
-                  setSaving(true);
-                  void update({
-                    mode: integrationState.mode,
-                    credentials: {
-                      FIELDMARK_USER_TOKEN: Optional.present(apiKey),
-                    },
-                  })
-                    .then(
-                      () => {
-                        setStoredSecretExists(apiKey !== "");
-                        setApiKey(secretAfterSave(apiKey));
-                      },
-                      () => {
-                        // update() has already shown the error; keep the typed key so it can be retried
-                      },
-                    )
-                    .finally(() => setSaving(false));
-                }}
-              >
-                <CardContent>
-                  <SecretField
-                    fullWidth
-                    variant="outlined"
-                    label={t("integrations.fieldmark.fields.apiKey")}
-                    size="small"
-                    autoComplete="new-password"
-                    value={apiKey}
-                    storedSecretExists={storedSecretExists}
-                    disabled={saving}
-                    onChange={setApiKey}
-                  />
-                </CardContent>
-                <CardActions>
-                  <Button type="submit" disabled={saving}>
-                    {t("common:actions.save")}
-                  </Button>
-                </CardActions>
-              </form>
-            </Card>
+            <ApiKeyForm
+              label={t("integrations.fieldmark.fields.apiKey")}
+              storedKey={integrationState.credentials.FIELDMARK_USER_TOKEN}
+              save={async (apiKey) => {
+                const saved = await update({
+                  mode: integrationState.mode,
+                  credentials: { FIELDMARK_USER_TOKEN: Optional.present(apiKey) },
+                });
+                return saved.credentials.FIELDMARK_USER_TOKEN;
+              }}
+            />
           </>
         }
       />

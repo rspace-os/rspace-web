@@ -16,7 +16,6 @@ import Stack from "@mui/material/Stack";
 import { svgIconClasses } from "@mui/material/SvgIcon";
 import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography, { typographyClasses } from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -123,7 +122,7 @@ function IntegrationCard<Credentials>({
   const { dialogOpened, dialogClosed } = useContext(CardPlacementContext);
   const mode = integrationState.mode;
   const theme = useTheme();
-  const { trackEvent } = useContext(AnalyticsContext);
+  const analytics = useContext(AnalyticsContext);
 
   const cardMediaWrapperSx = {
     borderRadius: theme.spacing(0.75),
@@ -360,7 +359,7 @@ function IntegrationCard<Credentials>({
           onClick={() => {
             setOpen(true);
             dialogOpened();
-            trackEvent("Apps page dialog opened", {
+            analytics.trackEvent("Apps page dialog opened", {
               integrationName: name,
             });
           }}
@@ -508,4 +507,4 @@ function IntegrationCard<Credentials>({
     </ThemeProvider>
   );
 }
-export default observer(IntegrationCard);
+export default IntegrationCard;

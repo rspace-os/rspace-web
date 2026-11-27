@@ -1,6 +1,6 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/dryad";
 import DryadIcon from "../../../assets/branding/dryad/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useDryadEndpoint } from "../useDryad";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type DryadArgs = {
-  integrationState: IntegrationStates["DRYAD"];
-  update: (newIntegrationState: IntegrationStates["DRYAD"]) => void;
-};
 
 export interface DryadConnectedMessage extends Record<string, unknown> {
   type: "DRYAD_CONNECTED";
@@ -46,11 +41,13 @@ export const DRYAD_CONNECTION_CHANNEL = "rspace.apps.dryad.connection";
  * The process of disconnecing is via a standard API call made by
  * ../useDryad.
  */
-function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
+function Dryad(): React.ReactNode {
+  const integrationState = useIntegrationState("DRYAD");
+  const updateMode = useIntegrationModeUpdate("DRYAD");
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useDryadEndpoint();
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("DRYAD");
 
   useBroadcastChannel<DryadConnectedMessage>(DRYAD_CONNECTION_CHANNEL, (e: MessageEvent<DryadConnectedMessage>) => {
     if (e.data?.type !== "DRYAD_CONNECTED") return;
@@ -87,7 +84,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
         explanatoryText={t("integrations.dryad.description")}
         image={DryadIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.dryad.usage")}
         helpLinkText={t("integrations.dryad.helpLink")}
         website="https://datadryad.org"

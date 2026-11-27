@@ -1,7 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { observable } from "mobx";
 import { describe, expect, test } from "vitest";
 
 import { findTableCell } from "@/__tests__/tableQueries";
@@ -12,25 +11,29 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import MSTeams from "../MSTeams";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { cachedState, createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 describe("MSTeams", () => {
   describe("Should render correctly.", () => {
     test("Channel names should be shown in a table.", async () => {
       const user = userEvent.setup();
       render(
-        <MSTeams
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                optionsId: "1",
-                MSTEAMS_CHANNEL_LABEL: "foo",
-                MSTEAMS_WEBHOOK_URL: "example.com",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            MSTEAMS: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  optionsId: "1",
+                  MSTEAMS_CHANNEL_LABEL: "foo",
+                  MSTEAMS_WEBHOOK_URL: "example.com",
+                }),
+              ],
+            },
+          })}
+        >
+          <MSTeams />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -54,8 +57,8 @@ describe("MSTeams", () => {
           options: {},
         },
       });
-      const integrationState = observable({
-        mode: "DISABLED" as const,
+      const integrationState: IntegrationStates["MSTEAMS"] = {
+        mode: "DISABLED",
         credentials: [
           Optional.present({
             optionsId: "1",
@@ -63,10 +66,13 @@ describe("MSTeams", () => {
             MSTEAMS_WEBHOOK_URL: "example.com",
           }),
         ],
-      });
+      };
+      const queryClient = createIntegrationsClient({ MSTEAMS: integrationState });
       render(
         <Alerts>
-          <MSTeams integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <MSTeams />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -83,9 +89,9 @@ describe("MSTeams", () => {
 
       const table = screen.getByRole("table");
       await waitFor(() => {
-        expect(within(table).queryByText("username/someRepo")).not.toBeInTheDocument();
+        expect(within(table).queryByText("foo")).not.toBeInTheDocument();
       });
-      expect(integrationState.credentials.length).toBe(0);
+      expect(cachedState(queryClient, "MSTEAMS").credentials.length).toBe(0);
     });
     test("Add button should make the right API call.", async () => {
       const user = userEvent.setup();
@@ -104,13 +110,16 @@ describe("MSTeams", () => {
           },
         },
       });
-      const integrationState = observable<IntegrationStates["MSTEAMS"]>({
+      const integrationState: IntegrationStates["MSTEAMS"] = {
         mode: "DISABLED",
         credentials: [],
-      });
+      };
+      const queryClient = createIntegrationsClient({ MSTEAMS: integrationState });
       render(
         <Alerts>
-          <MSTeams integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <MSTeams />
+          </WithIntegrations>
         </Alerts>,
       );
 
@@ -137,7 +146,8 @@ describe("MSTeams", () => {
         MSTEAMS_WEBHOOK_URL: "example.com",
       });
 
-      expect(integrationState.credentials.length).toBe(1);
+      expect(cachedState(queryClient, "MSTEAMS").credentials.length).toBe(1);
+      expect(within(screen.getByRole("table")).getByText("new name")).toBeVisible();
       expect(screen.getByRole("button", { name: "common:actions.add" })).toBeVisible();
     });
   });

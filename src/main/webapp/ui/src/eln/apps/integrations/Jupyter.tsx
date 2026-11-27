@@ -1,6 +1,5 @@
 import Grid from "@mui/material/Grid";
 import { ChatCodeBlock } from "@mui/x-chat";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/Jupyter";
@@ -57,4 +56,4 @@ rspace_username="user1a")`}
   );
 }
 
-export default React.memo(observer(Jupyter));
+export default React.memo(Jupyter);

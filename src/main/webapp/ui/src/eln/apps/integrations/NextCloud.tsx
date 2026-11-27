@@ -1,6 +1,6 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useNextcloudEndpoint } from "../useNextcloud";
-
-type NextCloudArgs = {
-  integrationState: IntegrationStates["NEXTCLOUD"];
-  update: (newIntegrationState: IntegrationStates["NEXTCLOUD"]) => void;
-};
 
 export interface NextCloudConnectedMessage extends Record<string, unknown> {
   type: "NEXTCLOUD_CONNECTED";
@@ -46,11 +41,13 @@ export const NEXTCLOUD_CONNECTION_CHANNEL = "rspace.apps.nextcloud.connection";
  * The process of disconnecing is via a standard API call made by
  * ../useNextcloud.
  */
-function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode {
+function NextCloud(): React.ReactNode {
+  const integrationState = useIntegrationState("NEXTCLOUD");
+  const updateMode = useIntegrationModeUpdate("NEXTCLOUD");
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useNextcloudEndpoint();
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("NEXTCLOUD");
 
   useBroadcastChannel<NextCloudConnectedMessage>(
     NEXTCLOUD_CONNECTION_CHANNEL,
@@ -90,7 +87,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
         explanatoryText={t("integrations.nextCloud.description")}
         image={NextCloudIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.nextCloud.usage")}
         helpLinkText={t("integrations.nextCloud.helpLink")}
         website="https://nextcloud.com"

@@ -1,7 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { observable } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import allIntegrationsAreDisabled from "@/eln/apps/__tests__/allIntegrationsAreDisabled.json";
@@ -11,19 +10,23 @@ import type { IntegrationStates } from "../../useIntegrationsEndpoint";
 import Slack, { SLACK_CONNECTION_CHANNEL } from "../Slack";
 
 import "@/__tests__/__mocks__/matchMedia";
+import { cachedState, createIntegrationsClient, WithIntegrations } from "../../__tests__/integrationsQueryClient";
 
 describe("Slack", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
       const user = userEvent.setup();
       const { baseElement } = render(
-        <Slack
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />,
+        <WithIntegrations
+          client={createIntegrationsClient({
+            SLACK: {
+              mode: "DISABLED",
+              credentials: [],
+            },
+          })}
+        >
+          <Slack />
+        </WithIntegrations>,
       );
 
       await user.click(screen.getByRole("button"));
@@ -88,13 +91,16 @@ describe("Slack", () => {
       },
       error: null,
     });
-    const integrationState = observable<IntegrationStates["SLACK"]>({
+    const integrationState: IntegrationStates["SLACK"] = {
       mode: "DISABLED",
       credentials: [],
-    });
+    };
+    const queryClient = createIntegrationsClient({ SLACK: integrationState });
     render(
       <Alerts>
-        <Slack integrationState={integrationState} update={() => {}} />
+        <WithIntegrations client={queryClient}>
+          <Slack />
+        </WithIntegrations>
       </Alerts>,
     );
 
@@ -108,7 +114,7 @@ describe("Slack", () => {
 
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" })).toBeVisible();
     expect(screen.getByText("RSpace Dev")).toBeVisible();
-    expect(integrationState.credentials.length).toBe(1);
+    expect(cachedState(queryClient, "SLACK").credentials.length).toBe(1);
     expect(mockAxios.history.post.length).toBe(0);
   });
   describe("Refetching after Slack connects", () => {
@@ -148,13 +154,16 @@ describe("Slack", () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
       mockServerChannels(mockAxios, [channel("1", "#one")]);
-      const integrationState = observable<IntegrationStates["SLACK"]>({
+      const integrationState: IntegrationStates["SLACK"] = {
         mode: "DISABLED",
         credentials: [Optional.present(channel("1", "#one"))],
-      });
+      };
+      const queryClient = createIntegrationsClient({ SLACK: integrationState });
       render(
         <Alerts>
-          <Slack integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <Slack />
+          </WithIntegrations>
         </Alerts>,
       );
       await user.click(screen.getByRole("button"));
@@ -177,13 +186,16 @@ describe("Slack", () => {
       mockAxios.onPost("integration/deleteAppOptions").reply(200, { success: true, data: null });
       // channel 1 was removed in another tab and channel 3 was just connected
       mockServerChannels(mockAxios, [channel("2", "#two"), channel("3", "#three")]);
-      const integrationState = observable<IntegrationStates["SLACK"]>({
+      const integrationState: IntegrationStates["SLACK"] = {
         mode: "DISABLED",
         credentials: [Optional.present(channel("1", "#one")), Optional.present(channel("2", "#two"))],
-      });
+      };
+      const queryClient = createIntegrationsClient({ SLACK: integrationState });
       render(
         <Alerts>
-          <Slack integrationState={integrationState} update={() => {}} />
+          <WithIntegrations client={queryClient}>
+            <Slack />
+          </WithIntegrations>
         </Alerts>,
       );
       await user.click(screen.getByRole("button"));
@@ -202,31 +214,71 @@ describe("Slack", () => {
       await user.click(screen.getAllByRole("button", { name: "common:actions.remove" })[0]);
       expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("2");
-      expect(integrationState.credentials.map((c) => c.map(({ optionsId }) => optionsId).orElse(null))).toEqual(["3"]);
+      expect(
+        cachedState(queryClient, "SLACK").credentials.map((c) => c.map(({ optionsId }) => optionsId).orElse(null)),
+      ).toEqual(["3"]);
       expect(screen.getAllByRole("textbox").map((t) => (t as HTMLInputElement).value)).toEqual(["#three"]);
+    });
+
+    test("Reopening the dialog should show the channels added and removed while it was open.", async () => {
+      const user = userEvent.setup();
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
+      mockAxios.onPost("integration/deleteAppOptions").reply(200, { success: true, data: null });
+      mockServerChannels(mockAxios, [channel("1", "#one"), channel("2", "#two")]);
+      render(
+        <Alerts>
+          <WithIntegrations
+            client={createIntegrationsClient({
+              SLACK: { mode: "DISABLED", credentials: [Optional.present(channel("1", "#one"))] },
+            })}
+          >
+            <Slack />
+          </WithIntegrations>
+        </Alerts>,
+      );
+      await user.click(screen.getByRole("button"));
+      await connect();
+      await user.click(screen.getAllByRole("button", { name: "common:actions.remove" })[0]);
+      await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" });
+
+      await user.click(screen.getByRole("button", { name: "common:actions.close" }));
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+      await user.click(screen.getByRole("button", { name: "apps:integrations.slack.name" }));
+
+      expect(
+        within(await screen.findByRole("dialog"))
+          .getAllByRole("textbox")
+          .map((t) => (t as HTMLInputElement).value),
+      ).toEqual(["#two"]);
     });
   });
   test("Should render the existing channels.", async () => {
     const user = userEvent.setup();
     render(
       <Alerts>
-        <Slack
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                SLACK_TEAM_NAME: "RSpace Dev",
-                SLACK_CHANNEL_ID: "CQ391L249",
-                SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
-                SLACK_USER_ID: "U01A48677SP",
-                SLACK_CHANNEL_LABEL: "custom label",
-                SLACK_TEAM_ID: "T1R89S3MG",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />
+        <WithIntegrations
+          client={createIntegrationsClient({
+            SLACK: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  SLACK_TEAM_NAME: "RSpace Dev",
+                  SLACK_CHANNEL_ID: "CQ391L249",
+                  SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
+                  SLACK_USER_ID: "U01A48677SP",
+                  SLACK_CHANNEL_LABEL: "custom label",
+                  SLACK_TEAM_ID: "T1R89S3MG",
+                  optionsId: "1",
+                }),
+              ],
+            },
+          })}
+        >
+          <Slack />
+        </WithIntegrations>
       </Alerts>,
     );
 
@@ -258,23 +310,26 @@ describe("Slack", () => {
     });
     render(
       <Alerts>
-        <Slack
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                SLACK_TEAM_NAME: "RSpace Dev",
-                SLACK_CHANNEL_ID: "CQ391L249",
-                SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
-                SLACK_USER_ID: "U01A48677SP",
-                SLACK_CHANNEL_LABEL: "old label",
-                SLACK_TEAM_ID: "T1R89S3MG",
-                optionsId: "1",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />
+        <WithIntegrations
+          client={createIntegrationsClient({
+            SLACK: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  SLACK_TEAM_NAME: "RSpace Dev",
+                  SLACK_CHANNEL_ID: "CQ391L249",
+                  SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
+                  SLACK_USER_ID: "U01A48677SP",
+                  SLACK_CHANNEL_LABEL: "old label",
+                  SLACK_TEAM_ID: "T1R89S3MG",
+                  optionsId: "1",
+                }),
+              ],
+            },
+          })}
+        >
+          <Slack />
+        </WithIntegrations>
       </Alerts>,
     );
 
@@ -325,32 +380,35 @@ describe("Slack", () => {
     });
     render(
       <Alerts>
-        <Slack
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [
-              Optional.present({
-                SLACK_TEAM_NAME: "RSpace Dev",
-                SLACK_CHANNEL_ID: "CQ391L249",
-                SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
-                SLACK_USER_ID: "U01A48677SP",
-                SLACK_CHANNEL_LABEL: "old label",
-                SLACK_TEAM_ID: "T1R89S3MG",
-                optionsId: "1",
-              }),
-              Optional.present({
-                SLACK_TEAM_NAME: "RSpace Dev",
-                SLACK_CHANNEL_ID: "CQ391L249",
-                SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
-                SLACK_USER_ID: "U01A48677SP",
-                SLACK_CHANNEL_LABEL: "old label",
-                SLACK_TEAM_ID: "T1R89S3MG",
-                optionsId: "2",
-              }),
-            ],
-          }}
-          update={() => {}}
-        />
+        <WithIntegrations
+          client={createIntegrationsClient({
+            SLACK: {
+              mode: "DISABLED",
+              credentials: [
+                Optional.present({
+                  SLACK_TEAM_NAME: "RSpace Dev",
+                  SLACK_CHANNEL_ID: "CQ391L249",
+                  SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
+                  SLACK_USER_ID: "U01A48677SP",
+                  SLACK_CHANNEL_LABEL: "old label",
+                  SLACK_TEAM_ID: "T1R89S3MG",
+                  optionsId: "1",
+                }),
+                Optional.present({
+                  SLACK_TEAM_NAME: "RSpace Dev",
+                  SLACK_CHANNEL_ID: "CQ391L249",
+                  SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
+                  SLACK_USER_ID: "U01A48677SP",
+                  SLACK_CHANNEL_LABEL: "old label",
+                  SLACK_TEAM_ID: "T1R89S3MG",
+                  optionsId: "2",
+                }),
+              ],
+            },
+          })}
+        >
+          <Slack />
+        </WithIntegrations>
       </Alerts>,
     );
 
@@ -378,8 +436,8 @@ describe("Slack", () => {
         options: {},
       },
     });
-    const integrationState = observable({
-      mode: "DISABLED" as const,
+    const integrationState: IntegrationStates["SLACK"] = {
+      mode: "DISABLED",
       credentials: [
         Optional.present({
           SLACK_TEAM_NAME: "RSpace Dev",
@@ -391,10 +449,13 @@ describe("Slack", () => {
           optionsId: "1",
         }),
       ],
-    });
+    };
+    const queryClient = createIntegrationsClient({ SLACK: integrationState });
     render(
       <Alerts>
-        <Slack integrationState={integrationState} update={() => {}} />
+        <WithIntegrations client={queryClient}>
+          <Slack />
+        </WithIntegrations>
       </Alerts>,
     );
 
@@ -406,6 +467,6 @@ describe("Slack", () => {
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
 
     expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
-    expect(integrationState.credentials.length).toBe(0);
+    expect(cachedState(queryClient, "SLACK").credentials.length).toBe(0);
   });
 });

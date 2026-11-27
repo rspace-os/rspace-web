@@ -5,18 +5,15 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/chemistry";
 import ChemistryIcon from "../../../assets/branding/chemistry/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type ChemistryArgs = {
-  integrationState: IntegrationStates["CHEMISTRY"];
-  update: (newIntegrationState: IntegrationStates["CHEMISTRY"]) => void;
-};
+import { useIntegrationModeUpdate, useIntegrationState } from "../queries";
 
 /*
  * There is no authentication mechanism with Chemistry. All users can
  * enable the integration to be able to use it when editing a document.
  */
-function Chemistry({ integrationState, update }: ChemistryArgs): React.ReactNode {
+function Chemistry(): React.ReactNode {
+  const integrationState = useIntegrationState("CHEMISTRY");
+  const updateMode = useIntegrationModeUpdate("CHEMISTRY");
   const { t } = useTranslation("apps");
   return (
     <Grid
@@ -32,7 +29,7 @@ function Chemistry({ integrationState, update }: ChemistryArgs): React.ReactNode
         explanatoryText={t("integrations.chemistry.description")}
         image={ChemistryIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: {} })}
+        update={updateMode}
         usageText={t("integrations.chemistry.usage")}
         helpLinkText={t("integrations.chemistry.helpLink")}
         docLink="chemistry"

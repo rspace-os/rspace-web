@@ -1,6 +1,6 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -8,13 +8,8 @@ import { LOGO_COLOR } from "../../../assets/branding/figshare";
 import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
+import { useIntegrationModeUpdate, useIntegrationState, useTokenConnection } from "../queries";
 import { useFigshareEndpoint } from "../useFigshare";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
-
-type FigshareArgs = {
-  integrationState: IntegrationStates["FIGSHARE"];
-  update: (newIntegrationState: IntegrationStates["FIGSHARE"]) => void;
-};
 
 export interface FigshareConnectedMessage extends Record<string, unknown> {
   type: "FIGSHARE_CONNECTED";
@@ -46,11 +41,13 @@ export const FIGSHARE_CONNECTION_CHANNEL = "rspace.apps.figshare.connection";
  * The process of disconnecing is via a standard API call made by
  * ../useFigshare.
  */
-function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
+function Figshare(): React.ReactNode {
+  const integrationState = useIntegrationState("FIGSHARE");
+  const updateMode = useIntegrationModeUpdate("FIGSHARE");
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useFigshareEndpoint();
-  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
+  const { connected, setConnected } = useTokenConnection("FIGSHARE");
 
   useBroadcastChannel<FigshareConnectedMessage>(
     FIGSHARE_CONNECTION_CHANNEL,
@@ -90,7 +87,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
         explanatoryText={t("integrations.figshare.description")}
         image={FigshareIcon}
         color={LOGO_COLOR}
-        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
+        update={updateMode}
         usageText={t("integrations.figshare.usage")}
         helpLinkText={t("integrations.figshare.helpLink")}
         website="https://figshare.com"

@@ -4,26 +4,49 @@ import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
-import React, { useState } from "react";
+import { useForm } from "@tanstack/react-form";
+import React from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/egnyte";
 import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
-import type { IntegrationStates } from "../useIntegrationsEndpoint";
+import { useIntegrationModeUpdate, useIntegrationState, useUpdateIntegrationMutation } from "../queries";
 
-type EgnyteArgs = {
-  integrationState: IntegrationStates["EGNYTE"];
-  update: (newIntegrationState: IntegrationStates["EGNYTE"]) => void;
-};
+const egnyteFormSchema = v.object({
+  domainUrl: v.string(),
+});
 
 /*
  * Egnyte has a domain URL that is configured by the this text field.
  */
-function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
+function Egnyte(): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
-  const [url, setUrl] = useState(integrationState.credentials.EGNYTE_DOMAIN);
+  const integrationState = useIntegrationState("EGNYTE");
+  const updateMode = useIntegrationModeUpdate("EGNYTE");
+  const { mutateAsync: update } = useUpdateIntegrationMutation("EGNYTE");
+  const form = useForm({
+    defaultValues: { domainUrl: integrationState.credentials.EGNYTE_DOMAIN.orElse("") },
+    validators: { onChange: egnyteFormSchema },
+    onSubmit: async ({ value, formApi }) => {
+      try {
+        const saved = await update({
+          mode: integrationState.mode,
+          credentials: {
+            // an untouched field keeps the domain as stored, even when there is none
+            EGNYTE_DOMAIN: formApi.state.isDirty
+              ? Optional.present(value.domainUrl)
+              : integrationState.credentials.EGNYTE_DOMAIN,
+          },
+        });
+        formApi.reset({ domainUrl: saved.credentials.EGNYTE_DOMAIN.orElse("") });
+      } catch {
+        // update() has already shown the error; keep the typed domain so it can be retried
+      }
+    },
+  });
 
   return (
     <Grid
@@ -39,12 +62,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
         explanatoryText={t("integrations.egnyte.description")}
         image={EgnyteIcon}
         color={LOGO_COLOR}
-        update={(newMode) => {
-          return update({
-            mode: newMode,
-            credentials: integrationState.credentials,
-          });
-        }}
+        update={updateMode}
         usageText={t("integrations.egnyte.usage")}
         helpLinkText={t("integrations.egnyte.helpLink")}
         website="https://egnyte.com"
@@ -56,25 +74,25 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void update({
-                    mode: integrationState.mode,
-                    credentials: {
-                      EGNYTE_DOMAIN: url,
-                    },
-                  });
+                  event.stopPropagation();
+                  void form.handleSubmit();
                 }}
               >
                 <CardContent>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    label={t("integrations.egnyte.fields.domainUrl")}
-                    size="small"
-                    value={url.orElse("")}
-                    onChange={({ target: { value } }) => {
-                      setUrl(Optional.present(value));
-                    }}
-                  />
+                  <form.Field name="domainUrl">
+                    {(field) => (
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        label={t("integrations.egnyte.fields.domainUrl")}
+                        size="small"
+                        value={field.state.value}
+                        onChange={({ target: { value } }) => {
+                          field.handleChange(value);
+                        }}
+                      />
+                    )}
+                  </form.Field>
                 </CardContent>
                 <CardActions>
                   <Button type="submit">{t("common:actions.save")}</Button>
