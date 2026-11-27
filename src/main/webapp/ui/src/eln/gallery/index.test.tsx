@@ -828,6 +828,34 @@ describe("Gallery", () => {
       expect(screen.getByRole("gridcell", { name: /middle\.png/ })).toBeInTheDocument();
     });
 
+    test("a page still loading for the old listing does not hold up Load more after a search", async () => {
+      const user = userEvent.setup();
+      let releasePages = () => {};
+      const slowPage = new Promise<void>((resolve) => {
+        releasePages = resolve;
+      });
+      mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
+        slowPage,
+      });
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      await waitFor(() => {
+        expect(requestedPages()).toEqual(["0", "1"]);
+      });
+      await user.type(screen.getByPlaceholderText("gallery:mainPanel.searchPlaceholder"), "newest{Enter}");
+      await waitFor(() => {
+        expect(requestedPages("newest")).toEqual(["0"]);
+      });
+      await user.click(await screen.findByRole("button", { name: "gallery:loadMore" }));
+
+      // the old listing's page 1 is still pending
+      await waitFor(() => {
+        expect(requestedPages("newest")).toEqual(["0", "1"]);
+      });
+      releasePages();
+    });
+
     test("a failed page is not retried on its own, and a search afterwards pages only on request", async () => {
       const user = userEvent.setup();
       const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);

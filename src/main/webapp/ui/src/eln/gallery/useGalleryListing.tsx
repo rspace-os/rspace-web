@@ -1187,7 +1187,7 @@ export function useGalleryListing({
 
   const [page, setPage] = React.useState<number>(0);
   const listingGeneration = React.useRef(0);
-  const loadingMore = React.useRef(false);
+  const loadingMoreFor = React.useRef<number | null>(null);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([new Error("Parent Id is not yet known")]));
@@ -1688,13 +1688,14 @@ export function useGalleryListing({
    * A page requested before the listing was reloaded (a new search, sort or
    * folder) belongs to the old listing, so its response is dropped. The page
    * only advances once its response is accepted, so a failed one can be
-   * requested again. Only one page is requested at a time: a second request
-   * for the same page could land after the next one and drop it.
+   * requested again. Only one page per listing is requested at a time: a
+   * second request for the same page could land after the next one and drop
+   * it. A request for an old listing does not hold up the new one's.
    */
   async function loadMore(): Promise<void> {
-    if (loadingMore.current) return;
-    loadingMore.current = true;
     const generation = listingGeneration.current;
+    if (loadingMoreFor.current === generation) return;
+    loadingMoreFor.current = generation;
     try {
       const token = await getToken();
       const s = FetchingData.getSuccessValue(section).elseThrow();
@@ -1717,7 +1718,7 @@ export function useGalleryListing({
     } catch (e) {
       console.error(e);
     } finally {
-      loadingMore.current = false;
+      if (loadingMoreFor.current === generation) loadingMoreFor.current = null;
     }
   }
 
