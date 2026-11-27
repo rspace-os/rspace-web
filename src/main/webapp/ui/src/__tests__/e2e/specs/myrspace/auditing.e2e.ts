@@ -25,6 +25,27 @@ test.describe("Auditing (ELN)", () => {
     await expect(pageAuditTrail.rowsWithName(name).first()).toBeVisible();
   });
 
+  test("As a user, I can find instrument activity with the Inventory activity area selected", async ({
+    clientInventory,
+    pageAuditTrail,
+    pageMyRSpace,
+  }) => {
+    const name = uniqueName("e2e-audit-instrument");
+    const instrument = await clientInventory.createInstrument({ name });
+
+    await pageMyRSpace.open();
+    await pageMyRSpace.openAuditTrail();
+    await pageAuditTrail.isLoaded();
+    await pageAuditTrail.filterByGlobalId(instrument.globalId);
+    await pageAuditTrail.setDomains(["Inventory"]);
+    await pageAuditTrail.submitQuery();
+    await expect(pageAuditTrail.rowsWithName(name).first()).toBeVisible();
+
+    await pageAuditTrail.setDomains(["ELN"]);
+    await pageAuditTrail.submitQuery();
+    expect(await pageAuditTrail.hitCount()).toBe(0);
+  });
+
   test("As a user, I can filter the audit trail by date range", async ({
     clientDocuments,
     pageAuditTrail,
