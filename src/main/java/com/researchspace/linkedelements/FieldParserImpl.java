@@ -5,8 +5,14 @@ import static com.researchspace.core.util.FieldParserConstants.*;
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.field.Field;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,8 +40,12 @@ import org.springframework.stereotype.Component;
  * class="linkedRecord" href="/workspace/editor/structuredDocument/recordLinkedId"
  * data-name="recordName">recordName</a>
  */
+@Slf4j
 @Component("fieldParser")
 public class FieldParserImpl implements FieldParser {
+
+  // at most 18 digits, so the id always fits in a long
+  private static final Pattern COMPOSITE_ID = Pattern.compile("^\\d{1,18}-(\\d{1,18})$");
 
   private @Autowired FieldParserFactoryImpl fieldParserFactory;
 
@@ -71,6 +81,27 @@ public class FieldParserImpl implements FieldParser {
     Element doc = Jsoup.parse(content);
     sel.select(doc).forEach(el -> convertToLinkableElement(fieldContents, cssClass, el));
     return fieldContents;
+  }
+
+  @Override
+  public Set<Long> findAnnotatedImageIds(String content) {
+    Set<Long> imageIds = new LinkedHashSet<>();
+    String selector =
+        "img." + IMAGE_DROPPED_CLASS_NAME + "[data-type=" + DATA_TYPE_ANNOTATION + "]";
+    for (Element el : Jsoup.parse(content).select(selector)) {
+      parseImageId(el.attr("id")).ifPresent(imageIds::add);
+    }
+    return imageIds;
+  }
+
+  /* The image id from a composite "fieldId-imageId" element id, if it has exactly that form. */
+  private static Optional<Long> parseImageId(String elementId) {
+    Matcher matcher = COMPOSITE_ID.matcher(elementId);
+    if (matcher.matches()) {
+      return Optional.of(Long.parseLong(matcher.group(1)));
+    }
+    log.warn("unparsable annotated image id: {}", elementId);
+    return Optional.empty();
   }
 
   private void convertToLinkableElement(FieldContents fieldContents, String cssClass, Element el) {

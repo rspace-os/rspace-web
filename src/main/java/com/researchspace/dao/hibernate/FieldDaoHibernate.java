@@ -4,8 +4,10 @@ import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.field.Field;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -70,6 +72,37 @@ public class FieldDaoHibernate extends GenericDaoHibernate<Field, Long> implemen
         .createQuery("from Field where rtfData like :data", Field.class)
         .setParameter("data", "%" + text + "%")
         .list();
+  }
+
+  private static final String CURRENT_TEXT_FIELDS =
+      "select f.id from TextField f join f.structuredDocument doc"
+          + " where doc.deleted = false and doc.temporaryDoc = false"
+          + " and not exists (select p.id from Field p where p.tempField.id = f.id)";
+
+  @Override
+  public List<Long> getCurrentTextFieldIdsContaining(String text) {
+    return getSession()
+        .createQuery(CURRENT_TEXT_FIELDS + " and f.rtfData like :data order by f.id", Long.class)
+        .setParameter("data", "%" + text + "%")
+        .list();
+  }
+
+  @Override
+  public Optional<Field> getForUpdate(Long fieldId) {
+    return getSession()
+        .createQuery("from Field where id = :id", Field.class)
+        .setParameter("id", fieldId)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public boolean isCurrentTextField(Long fieldId) {
+    return !getSession()
+        .createQuery(CURRENT_TEXT_FIELDS + " and f.id = :id", Long.class)
+        .setParameter("id", fieldId)
+        .list()
+        .isEmpty();
   }
 
   @Override

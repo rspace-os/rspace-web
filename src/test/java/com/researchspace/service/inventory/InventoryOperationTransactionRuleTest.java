@@ -1,13 +1,16 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.service.DevOpsManager;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,9 @@ import org.xml.sax.SAXException;
  * InventoryOperationManager#performOperation} would silently drop it with no test going red. This
  * test matches the declared patterns the way {@code NameMatchTransactionAttributeSource} does,
  * against the interface's real methods, so a rename fails here.
+ *
+ * <p>It also pins the read-only rules for {@link DevOpsManager}'s annotated-image report, which
+ * must not flush the document state Hibernate changes on load (RSDEV-1837).
  */
 class InventoryOperationTransactionRuleTest {
 
@@ -70,6 +76,11 @@ class InventoryOperationTransactionRuleTest {
   private static Map<String, String> txAdviceTimeouts(Path context)
       throws IOException, SAXException, ParserConfigurationException {
     return txAdviceAttribute(context, "timeout");
+  }
+
+  private static Map<String, String> txAdviceReadOnly(Path context)
+      throws IOException, SAXException, ParserConfigurationException {
+    return txAdviceAttribute(context, "read-only");
   }
 
   private static String bestMatch(Map<String, String> rules, String methodName) {
@@ -128,5 +139,28 @@ class InventoryOperationTransactionRuleTest {
         txAdviceTimeouts(PRODUCTION),
         txAdviceTimeouts(TEST_MIRROR),
         "the test context's txAdvice timeouts have drifted from production");
+  }
+
+  @Test
+  void devOpsAnnotatedImageReportRunsReadOnlyInProductionAndTests() throws Exception {
+    List<String> devOpsMethods =
+        Arrays.stream(DevOpsManager.class.getDeclaredMethods()).map(Method::getName).toList();
+    for (Path context : List.of(PRODUCTION, TEST_MIRROR)) {
+      Map<String, String> readOnly = txAdviceReadOnly(context);
+      for (String methodName :
+          List.of("findFieldIdsWithAnnotatedImages", "reportAnnotatedImagesInField")) {
+        // a renamed interface method would silently lose its rule
+        assertTrue(devOpsMethods.contains(methodName), "DevOpsManager has no " + methodName);
+        String pattern = bestMatch(readOnly, methodName);
+        assertEquals(
+            "true",
+            readOnly.get(pattern),
+            methodName + " is not read-only in " + context + " (tx:method \"" + pattern + "\")");
+      }
+      assertNotEquals(
+          "true",
+          readOnly.get(bestMatch(readOnly, "relinkAnnotatedImagesInField")),
+          "the repair must run in a writable transaction: " + context);
+    }
   }
 }

@@ -82,6 +82,11 @@
                  InventoryOperationTransactionRuleTest pins this to the interface. -->
             <tx:method name="performOperation"
                 rollback-for="org.springframework.validation.BindException"/>
+            <!-- DevOpsManager's annotated-image repair report must not write: loading a document
+                 clears its delta (StructuredDocumentLoadListener), which a writable transaction
+                 would flush. Named exactly, as txAdvice is shared by every *Manager. -->
+            <tx:method name="findFieldIdsWithAnnotatedImages" read-only="true"/>
+            <tx:method name="reportAnnotatedImagesInField" read-only="true"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>

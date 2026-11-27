@@ -4,12 +4,17 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.AnnotatedImageRelink;
+import com.researchspace.service.AnnotatedImageRelink.LinkState;
+import com.researchspace.service.AnnotatedImageRelink.Outcome;
 import com.researchspace.service.DevOpsManager;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -92,6 +97,157 @@ public class SysAdminDevOpsController extends BaseController {
     String result = devOpsManager.fixRecord(globalId, subject, update);
     result += "<br/>If that doesn't seem right, please contact RSpace Support.";
     return result;
+  }
+
+  /**
+   * Fixes SUPPORT-536 (RSDEV-1837): before RSDEV-1419, annotating an image with the Sketch tool
+   * removed or deleted the link between the text field and its Gallery image, so Gallery "Show
+   * linked docs", the image Info panel and the API's document files missed the document.
+   *
+   * <p>Scans current text fields of non-deleted documents for annotated images without an active
+   * link, and lists each with its document, owner, field, Gallery image and status. A link is
+   * restored only if it gives nobody new access to the Gallery image: the document owner must be
+   * able to read it, and, because a link lets every reader of the document download the original
+   * image, so must everyone the document is shared with and the owner's PIs and admins (who can
+   * read the image when it belongs to the owner, or is linked from another of the owner's records).
+   * Links in published documents, templates and to deleted Gallery images are skipped too. Each
+   * skip is reported with its reason and left for manual review. A repeat run after a repair
+   * reports nothing left to repair; skipped links are listed on every run.
+   *
+   * <p>Candidates are found by a LIKE scan for <code>data-type="annotation"</code> over the content
+   * of all text fields, so expect a full scan of the text field table. Only that markup, written
+   * for every annotation since RSpace 1.29, is checked: older annotated-image markup without it is
+   * not scanned. The report runs read-only; the repair writes only fields with a link to restore.
+   * An error in one field is reported and the scan continues.
+   *
+   * <p>To run, log in as sysadmin and navigate to /system/devops/ajax/relinkAnnotatedImages to see
+   * the report. GET only reports; to repair, send a POST to the same URL from that page (see the
+   * report), so the request passes the Origin/Referer CSRF check. Run the repair at a quiet time:
+   * it locks each field it repairs, so a user saving the same document at that moment may see the
+   * save fail and need to retry.
+   */
+  @GetMapping(value = "/ajax/relinkAnnotatedImages", produces = "text/plain;charset=UTF-8")
+  @ResponseBody
+  public String reportAnnotatedImageLinks() {
+    return relinkAnnotatedImages(false);
+  }
+
+  /** Repairs the links {@link #reportAnnotatedImageLinks()} reports as to repair. */
+  @PostMapping(value = "/ajax/relinkAnnotatedImages", produces = "text/plain;charset=UTF-8")
+  @ResponseBody
+  public String repairAnnotatedImageLinks() {
+    return relinkAnnotatedImages(true);
+  }
+
+  private String relinkAnnotatedImages(boolean update) {
+    assertSubjectIsSysadmin();
+
+    List<AnnotatedImageRelink> results = new ArrayList<>();
+    List<String> errors = new ArrayList<>();
+    // one transaction per field, so a large scan does not hold every field in one session
+    for (Long fieldId : devOpsManager.findFieldIdsWithAnnotatedImages()) {
+      List<AnnotatedImageRelink> reported = List.of();
+      try {
+        reported = devOpsManager.reportAnnotatedImagesInField(fieldId);
+        List<AnnotatedImageRelink> found = reported;
+        if (update && found.stream().anyMatch(result -> result.outcome() == Outcome.TO_REPAIR)) {
+          found = devOpsManager.relinkAnnotatedImagesInField(fieldId);
+        }
+        results.addAll(found);
+      } catch (RuntimeException e) {
+        log.warn("Checking annotated-image links in field {} failed", fieldId, e);
+        errors.add(describeError(fieldId, reported, e));
+      }
+    }
+
+    StringBuilder report = new StringBuilder();
+    report.append(update ? "Repairing" : "Reporting").append(" annotated-image links.\n");
+    report.append("document\towner\tfield\timage\tstatus\n");
+    for (AnnotatedImageRelink result : results) {
+      report
+          .append(result.documentGlobalId())
+          .append('\t')
+          .append(result.ownerUsername())
+          .append('\t')
+          .append(result.fieldId())
+          .append('\t')
+          .append(result.imageGlobalId())
+          .append('\t')
+          .append(describe(result))
+          .append('\n');
+    }
+    if (!errors.isEmpty()) {
+      report.append("Errors:\n");
+      errors.forEach(error -> report.append(error).append('\n'));
+    }
+    report
+        .append("Total: ")
+        .append(results.size())
+        .append(" (missing rows: ")
+        .append(countLinkState(results, LinkState.MISSING_ROW))
+        .append(", deleted rows: ")
+        .append(countLinkState(results, LinkState.DELETED_ROW))
+        .append("); to repair: ")
+        .append(countOutcome(results, Outcome.TO_REPAIR))
+        .append(", repaired: ")
+        .append(countOutcome(results, Outcome.REPAIRED))
+        .append(", skipped: ")
+        .append(countOutcome(results, Outcome.SKIPPED))
+        .append(", errors: ")
+        .append(errors.size())
+        .append(".\n");
+    log.info(
+        "Annotated-image relink (update={}): {} links found, {} repaired, {} skipped, {} errors",
+        update,
+        results.size(),
+        countOutcome(results, Outcome.REPAIRED),
+        countOutcome(results, Outcome.SKIPPED),
+        errors.size());
+    if (!update && countOutcome(results, Outcome.TO_REPAIR) > 0) {
+      report.append(
+          "To repair, send a POST to this URL, for example by running this in the browser"
+              + " console on this page:\n"
+              + "fetch(location.pathname, {method: 'POST'}).then(r => r.text())"
+              + ".then(console.log)\n");
+    }
+    return report.toString();
+  }
+
+  /* If the repair failed after the report, names the document and images the report found. */
+  private static String describeError(
+      Long fieldId, List<AnnotatedImageRelink> reported, RuntimeException e) {
+    StringBuilder line = new StringBuilder("field ").append(fieldId);
+    if (!reported.isEmpty()) {
+      line.append(" of ")
+          .append(reported.get(0).documentGlobalId())
+          .append(" (images ")
+          .append(
+              String.join(
+                  ", ", reported.stream().map(AnnotatedImageRelink::imageGlobalId).toList()))
+          .append(')');
+    }
+    return line.append(": ")
+        .append(e.getClass().getSimpleName())
+        .append(": ")
+        .append(e.getMessage())
+        .toString();
+  }
+
+  private static String describe(AnnotatedImageRelink result) {
+    String state = result.linkState() == LinkState.MISSING_ROW ? "missing row" : "deleted row";
+    return switch (result.outcome()) {
+      case TO_REPAIR -> state;
+      case REPAIRED -> state + ", repaired";
+      case SKIPPED -> state + ", skipped: " + result.skipReason();
+    };
+  }
+
+  private static long countLinkState(List<AnnotatedImageRelink> results, LinkState state) {
+    return results.stream().filter(result -> result.linkState() == state).count();
+  }
+
+  private static long countOutcome(List<AnnotatedImageRelink> results, Outcome outcome) {
+    return results.stream().filter(result -> result.outcome() == outcome).count();
   }
 
   private User assertSubjectIsSysadmin() {
