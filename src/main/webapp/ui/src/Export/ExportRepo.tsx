@@ -12,7 +12,7 @@ import Switch from "@mui/material/Switch";
 import { observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DEFAULT_STATE } from "@/Export/constants";
@@ -167,6 +167,7 @@ function ExportRepo({
     }),
   );
   const [fetchingTags, setFetchingTags] = useState(false);
+  const savedSinceMount = useRef(false);
   const plansToSend = (): Array<DMPUserInternalId> =>
     state.linkDMP ? listedPlans(state.selectedPlans, repoList[state.repoChoice].linkedDMPs) : [];
 
@@ -179,6 +180,8 @@ function ExportRepo({
         state.tags = tags;
       });
       setFetchingTags(false);
+      // a save made while the tags loaded holds an empty list, which would read as cleared on return
+      if (savedSinceMount.current) updateRemoteConfig();
     })();
   }, []);
 
@@ -242,6 +245,7 @@ function ExportRepo({
 
   const updateRemoteConfig = () => {
     const params = getParams();
+    savedSinceMount.current = true;
     updateRepoConfig(params);
   };
 

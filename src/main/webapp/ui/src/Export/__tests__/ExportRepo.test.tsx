@@ -380,6 +380,24 @@ describe("ExportRepo", () => {
       await waitFor(() => expect(sentMeta()?.tags).toEqual(tags));
     });
 
+    test("saves record tags that finish loading after the form was saved, so going back keeps them", async () => {
+      const tags: Array<Tag> = [{ value: "soil", vocabulary: "RSpace", uri: "", version: "" }];
+      let loadTags: (loaded: Array<Tag>) => void = () => {};
+      const { user, sentMeta } = await renderDataverse(
+        props.repoDetails,
+        () =>
+          new Promise<Array<Tag>>((resolve) => {
+            loadTags = resolve;
+          }),
+      );
+      await user.type(screen.getByRole("textbox", { name: /Title/ }), "Survey data");
+      expect(sentMeta()?.tags).toEqual([]);
+
+      loadTags(tags);
+
+      await waitFor(() => expect(sentMeta()?.tags).toEqual(tags));
+    });
+
     test("switches to a repository with fewer licences after the saved licence was restored", async () => {
       const user = userEvent.setup();
       const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
