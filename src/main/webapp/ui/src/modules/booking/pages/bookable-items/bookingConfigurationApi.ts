@@ -1,3 +1,5 @@
+import type { QueryClient } from "@tanstack/react-query";
+import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
   getSearchBookingConfigurationTargetsQueryOptions,
@@ -142,6 +144,15 @@ export async function fetchBookingOwnershipCandidates(
       { signal },
     )
   ).docs.map(mapBookingConfiguration);
+}
+
+export async function invalidateBookingCatalogueQueries(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    invalidateBookingListOperation(queryClient, "catalogue"),
+    invalidateBookingListOperation(queryClient, "locations"),
+    invalidateBookingListOperation(queryClient, "calendarCatalogue"),
+    invalidateBookingListOperation(queryClient, "availabilityCounts"),
+  ]);
 }
 
 export function bookingRouteTargetQuery(globalId: string | undefined) {

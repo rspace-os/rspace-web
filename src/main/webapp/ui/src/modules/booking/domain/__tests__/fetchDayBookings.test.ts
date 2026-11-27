@@ -26,6 +26,7 @@ const busy = {
   createdAt: bounds.start,
   updatedAt: bounds.start,
   canViewConfiguration: true,
+  location: null,
   createdBy: null,
 } satisfies v.InferInput<typeof BookingsReadSchema>;
 const pageEnvelope = (

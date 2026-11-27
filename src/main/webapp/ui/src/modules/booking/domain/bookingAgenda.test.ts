@@ -27,6 +27,7 @@ function booking(id: number, start: Temporal.Instant, end: Temporal.Instant) {
     start,
     end,
     canViewConfiguration: false,
+    location: null,
   });
 }
 

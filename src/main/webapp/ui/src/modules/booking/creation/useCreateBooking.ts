@@ -14,7 +14,6 @@ import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
 import {
   invalidateCountBookingConfigurations,
   invalidateGetBookingConfiguration,
-  invalidateGetBookingConfigurationAccess,
   invalidateListBookingConfigurationAuditEvents,
   invalidateListBookingConfigurations,
 } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
@@ -239,6 +238,7 @@ export function useCreateBooking() {
           invalidateListBookings(queryClient),
           invalidateCountBookings(queryClient),
           invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "availabilityCounts"),
           invalidateBookingListOperation(queryClient, "locations"),
           invalidateBookingListOperation(queryClient, "calendarCatalogue"),
           invalidateBookingListOperation(queryClient, "calendarEvents"),
@@ -250,9 +250,9 @@ export function useCreateBooking() {
           invalidateListBookingConfigurations(queryClient),
           invalidateCountBookingConfigurations(queryClient),
           invalidateGetBookingConfiguration(queryClient, id),
-          invalidateGetBookingConfigurationAccess(queryClient, id),
           invalidateListBookingConfigurationAuditEvents(queryClient, id),
           invalidateBookingListOperation(queryClient, "catalogue"),
+          invalidateBookingListOperation(queryClient, "availabilityCounts"),
           invalidateBookingListOperation(queryClient, "calendarCatalogue"),
         ]);
       }

@@ -25,6 +25,11 @@ const busyBooking = bookingListDocument({
     },
     globalId: "IN42",
   },
+  location: {
+    relationTo: "containers",
+    globalId: "IC23",
+    value: { id: 23, globalId: "IC23", name: "Imaging suite" },
+  },
   start: Temporal.Instant.from("2026-09-24T08:00:00.000Z"),
   end: Temporal.Instant.from("2026-09-24T09:00:00.000Z"),
   privacy: "busy",

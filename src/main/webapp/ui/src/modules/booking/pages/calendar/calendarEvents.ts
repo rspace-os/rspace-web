@@ -16,6 +16,7 @@ export const CALENDAR_BOOKING_FIELDS = [
   "id",
   "version",
   "target",
+  "location",
   "requester",
   "canViewConfiguration",
   "timezone",

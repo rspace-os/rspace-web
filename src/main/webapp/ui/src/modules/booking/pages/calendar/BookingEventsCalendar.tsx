@@ -9,6 +9,10 @@ import { TableList, type TableListProps, type TableListRuntimeFields } from "@/m
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/types";
 import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
+import { availabilityFilterButtons } from "./availability/availabilityFilterButtons";
+import type { AllBookableItem } from "./availability/availabilityQuickFilters";
+import { CalendarAvailabilityRows } from "./availability/CalendarAvailabilityRows";
+import type { useCalendarAvailabilityLayout } from "./availability/useCalendarAvailabilityLayout";
 import { CalendarAgenda } from "./CalendarAgenda";
 import { CalendarFilterControls } from "./CalendarFilterControls";
 import {
@@ -48,6 +52,9 @@ function additionalEventResourceCount(
 }
 
 export function BookingEventsCalendar({
+  availabilityLayout,
+  itemFilterConfig,
+  onItemFilterChange,
   date,
   view,
   layout,
@@ -86,6 +93,9 @@ export function BookingEventsCalendar({
   creationDisabled = false,
   onResourceRangeSelect,
 }: {
+  availabilityLayout?: ReturnType<typeof useCalendarAvailabilityLayout>;
+  itemFilterConfig?: ResolvedCollectionConfig<AllBookableItem>;
+  onItemFilterChange?: (expression: FilterExpression<AllBookableItem> | null) => void;
   date: string;
   view: CalendarView;
   layout: CalendarLayout;
@@ -131,7 +141,20 @@ export function BookingEventsCalendar({
     trigger: HTMLElement,
   ) => void;
 }) {
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
+  const availabilityFilters = availabilityLayout
+    ? availabilityFilterButtons(
+        t,
+        i18n.resolvedLanguage ?? i18n.language,
+        availabilityLayout,
+        { search: searchControl?.value ?? "", expression: itemFilterExpression },
+        onControlsReset,
+        (next) => {
+          searchControl?.onChange(next.search);
+          onItemFilterChange?.(next.expression);
+        },
+      )
+    : undefined;
   const todayValue = todayInTimeZone(timezone);
   const [editors, setEditors] = React.useState(() => new Map<string, BookingListDocument>());
   // Pin open cards by booking id so reconciliation can show new times without unmounting their drafts.
@@ -193,6 +216,67 @@ export function BookingEventsCalendar({
       onLayoutChange={onLayoutChange}
     />
   );
+  if (layout === "availability" && availabilityLayout && itemFilterConfig && availabilityFilters) {
+    return (
+      <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">
+        {isLoading ? (
+          <p role="status" className="sr-only">
+            {t("availabilityLayout.quickFilters.loading")}
+          </p>
+        ) : null}
+        {isError ? (
+          <div role="alert" className="flex items-center gap-3">
+            <span>{t("calendar.unavailable")}</span>
+            <Button variant="outline" onClick={onRetry}>
+              {t("calendar.retry")}
+            </Button>
+          </div>
+        ) : null}
+        {availabilityLayout.queryReady && availabilityLayout.counts.isError ? (
+          <div role="alert" className="flex items-center gap-3">
+            <span>{t("availabilityLayout.quickFilters.error")}</span>
+            <Button variant="outline" onClick={() => void availabilityLayout.counts.refetch()}>
+              {t("availabilityLayout.quickFilters.retry")}
+            </Button>
+          </div>
+        ) : null}
+        <TableList
+          config={{ ...itemFilterConfig, labels: eventFilterConfig.labels }}
+          rows={[]}
+          getRowId={(row) => String(row.id)}
+          clientSide={false}
+          headingClassName="text-2xl font-semibold"
+          createAction={creationAction}
+          features={{
+            filtering: {
+              value: { search: searchControl?.value ?? "", expression: itemFilterExpression },
+              onChange: (next) => {
+                searchControl?.onChange(next.search);
+                onItemFilterChange?.(next.expression);
+              },
+            },
+            sorting: false,
+            columns: false,
+            pagination: false,
+          }}
+          filterButtons={{
+            ...availabilityFilters,
+            controls: filterControls,
+            hasChanges: true,
+            onReset: onControlsReset,
+          }}
+          renderRowsWhenEmpty
+          renderRows={() => (
+            <>
+              {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
+              {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
+              <CalendarAvailabilityRows data={availabilityLayout} />
+            </>
+          )}
+        />
+      </main>
+    );
+  }
   return (
     <main className="min-h-screen w-full min-w-0 space-y-5 overflow-hidden bg-background p-4 sm:p-8">
       {isLoading && !isError && (
@@ -285,7 +369,10 @@ export function BookingEventsCalendar({
             <BookingEditorsContext.Provider value={editorContext}>
               {targetFilter ? <CalendarTargetFilterChip {...targetFilter} /> : null}
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
-              {eventFilterIssue ? <CalendarFilterIssue {...eventFilterIssue} /> : null}
+              {availabilityLayout && layout === "availability" ? (
+                <CalendarAvailabilityRows data={availabilityLayout} />
+              ) : null}
+              {eventFilterIssue && layout !== "availability" ? <CalendarFilterIssue {...eventFilterIssue} /> : null}
               {layout === "resources" && resourceTableProps?.status !== "loading" && extraEventResourceCount > 0 ? (
                 <p className="border-b px-3 py-2 text-sm text-muted-foreground">
                   {t("calendar.additionalEventResources", { count: extraEventResourceCount })}

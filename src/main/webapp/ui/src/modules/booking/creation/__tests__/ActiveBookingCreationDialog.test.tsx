@@ -84,6 +84,7 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE", privacy: "full" | "bu
     createdAt: "2030-10-01T09:00:00Z",
     updatedAt: "2030-10-01T09:00:00Z",
     canViewConfiguration: true,
+    location: null,
     createdBy: null,
   };
 }

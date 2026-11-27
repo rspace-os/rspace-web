@@ -23,3 +23,8 @@ export function useQueryIdentityScope(fallback?: string | number): QueryIdentity
   const user = useSyncExternalStore(subscribe, snapshot, snapshot);
   return queryIdentityScope(user, fallback);
 }
+
+/** A query-key segment that keeps cached data apart per signed-in subject, operator and caller auth scope. */
+export function useQueryKeyScope(authScope?: string | number): string {
+  return JSON.stringify([useQueryIdentityScope(authScope), authScope ?? null]);
+}

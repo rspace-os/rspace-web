@@ -24,8 +24,14 @@ export function bookingTarget(id: number, name: string, location?: { name: strin
   };
 }
 
-const target = (id: number, name: string, location?: { name: string; globalId: string } | null) =>
-  bookingTarget(id, name, location === undefined ? { name: `${name} room`, globalId: `IC${id}` } : location);
+/**
+ * A booking's readable parent location as `depth=1` renders it: the reference uses the IC prefix,
+ * and the expanded value keeps a workbench's BE global ID.
+ */
+export function bookingLocation(name: string, globalId: string) {
+  const id = Number(globalId.slice(2));
+  return { relationTo: "containers" as const, value: { id, globalId, name }, globalId: `IC${id}` };
+}
 
 const timestamps = {
   version: 0,
@@ -38,7 +44,8 @@ const timestamps = {
 
 export const ownBooking: BookingListDocument = {
   id: 41,
-  target: target(123, "Confocal microscope"),
+  target: bookingTarget(123, "Confocal microscope"),
+  location: bookingLocation("Confocal microscope room", "IC123"),
   canViewConfiguration: true,
   requester: { relationTo: "users", value: { id: 1 } },
   timezone: "Europe/Berlin",
@@ -55,7 +62,8 @@ export const ownBooking: BookingListDocument = {
 export const otherBooking: BookingListDocument = {
   ...ownBooking,
   id: 42,
-  target: target(124, "Electron microscope", { name: "Workbench", globalId: "BE124" }),
+  target: bookingTarget(124, "Electron microscope"),
+  location: bookingLocation("Workbench", "BE124"),
   requester: { relationTo: "users", value: 2 },
   start: Temporal.Instant.from("2026-08-19T12:00:00Z"),
   end: Temporal.Instant.from("2026-08-19T13:30:00Z"),
