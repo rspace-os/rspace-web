@@ -17,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.jayway.jsonpath.JsonPath;
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.EcatImage;
@@ -50,6 +52,7 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.webapp.filter.SessionProblem;
 import java.security.Principal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -62,8 +65,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -194,7 +201,8 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     // and now make sure we can edit
     recordMgr.requestRecordEdit(sd.getId(), user, anySessionTracker());
 
-    AjaxReturnObject<String> url = controller.saveNewStructuredDocument(sd.getId(), principal);
+    AjaxReturnObject<String> url =
+        controller.saveNewStructuredDocument(sd.getId(), user.getUsername(), principal);
     assertNotNull(url.getData());
     Long fieldId = sd.getFields().iterator().next().getId();
     Long commentid = controller.insertComment(fieldId + "", "any").getData();
@@ -218,7 +226,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     AjaxReturnObject<String> url =
         controller.saveCopyStructuredDocument(
-            sd.getId(), sd.getName(), new MockPrincipal(u.getUsername()));
+            sd.getId(), sd.getName(), u.getUsername(), new MockPrincipal(u.getUsername()));
     assertNotNull(url.getData());
     assertThat(url.getData()).doesNotContain(sd.getId().toString());
     verify(auditTrailService).notify(any(DuplicateAuditEvent.class));
@@ -240,7 +248,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     // save and clone
     AjaxReturnObject<String> cloneUrl =
         controller.saveCopyStructuredDocument(
-            nbEntryId, "entry", new MockPrincipal(u.getUsername()));
+            nbEntryId, "entry", u.getUsername(), new MockPrincipal(u.getUsername()));
     Long clonedEntryId = folderMgr.getFolderChildrenIds(nb).get(1);
     assertNotEquals(nbEntryId, clonedEntryId);
 
@@ -255,7 +263,8 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     // save and new
     AjaxReturnObject<String> newUrl =
-        controller.saveNewStructuredDocument(nbEntryId, new MockPrincipal(u.getUsername()));
+        controller.saveNewStructuredDocument(
+            nbEntryId, u.getUsername(), new MockPrincipal(u.getUsername()));
     Long newEntryId = folderMgr.getFolderChildrenIds(nb).get(2);
     assertNotEquals(clonedEntryId, newEntryId);
 
@@ -273,6 +282,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
             nbEntryId,
             anyWorkspaceSettingsToken,
             true,
+            u.getUsername(),
             new MockPrincipal(u.getUsername()),
             mockHttpSession);
     String expectedCloseUrl =
@@ -295,11 +305,12 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     assertThat(field.getData()).as("field should be initially empty").isEmpty();
 
     // request edit
-    EditStatus requestEdit = controller.requestEdit(sd.getId(), mockPrincipal);
+    EditStatus requestEdit =
+        controller.requestEdit(sd.getId(), mockPrincipal.getName(), mockPrincipal);
     assertEquals(EditStatus.EDIT_MODE, requestEdit, "user should be able to edit created document");
 
     // autosave
-    controller.autosaveField(textToAutosave, field.getId(), mockPrincipal);
+    controller.autosaveField(textToAutosave, field.getId(), mockPrincipal.getName(), mockPrincipal);
 
     StructuredDocument sdAfterAutosave =
         recordMgr.getRecordWithFields(sd.getId(), piUser).asStrucDoc();
@@ -315,7 +326,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     assertEquals(textToAutosave, tempField.getData(), "temp field should hold autosaved text");
 
     // cancel
-    controller.cancelAutosavedEdits(sd.getId(), mockPrincipal);
+    controller.cancelAutosavedEdits(sd.getId(), mockPrincipal.getName(), mockPrincipal);
 
     StructuredDocument sdAfterCancel =
         recordMgr.getRecordWithFields(sd.getId(), piUser).asStrucDoc();
@@ -370,6 +381,97 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     assertThat(deleteOk.getData())
         .as("expected " + parentId + " , but got: " + deleteOk.getData())
         .contains(parentId.toString());
+  }
+
+  @Test
+  public void wrongAccountCannotChangeEditorDraftOrAcquireLock() throws Exception {
+    StructuredDocument document = setUpLoginAsPIUserAndCreateADocument();
+    User editor = createAndSaveUser(getRandomName(MIN_USERNAMELENGTH));
+    initUser(editor);
+    Group group = createGroupForUsersWithDefaultPi(piUser, editor);
+    sharingMgr.shareRecord(
+        piUser,
+        document.getId(),
+        new ShareConfigElement[] {new ShareConfigElement(group.getId(), "WRITE")});
+    long documentId = document.getId();
+    Field field = document.getFields().get(0);
+    String originalDraft = "Original unsaved text";
+    recordMgr.saveTemporaryDocument(field.getId(), piUser, originalDraft);
+    MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    String editorUrl = "/workspace/editor/structuredDocument/ajax/";
+
+    for (String action :
+        List.of(
+            "autosaveField",
+            "rename",
+            "saveStructuredDocument",
+            "saveCopyStructuredDocument",
+            "saveNewStructuredDocument",
+            "requestEdit",
+            "cancelAutosavedEdits")) {
+      MockHttpServletResponse response =
+          mvc.perform(
+                  post(editorUrl + action)
+                      .principal(mockPrincipal)
+                      .param("expectedUsername", editor.getUsername())
+                      .param("fieldId", field.getId().toString())
+                      .param("dataValue", "Wrong account's draft")
+                      .param("recordId", Long.toString(documentId))
+                      .param("newName", "Wrong account's title")
+                      .param("structuredDocumentId", Long.toString(documentId))
+                      .param("recordName", document.getName())
+                      .param("unlock", "false"))
+              .andReturn()
+              .getResponse();
+      assertEquals(403, response.getStatus(), action);
+      assertEditorAccountChangedProblem(response, action);
+    }
+    StructuredDocument unchanged = recordMgr.getRecordWithFields(documentId, piUser).asStrucDoc();
+    assertEquals(document.getName(), unchanged.getName());
+    assertEquals(field.getData(), unchanged.getFields().get(0).getData());
+    assertEquals(originalDraft, unchanged.getFields().get(0).getTempField().getData());
+    assertNull(recordEditorTracker.getEditingUserForRecord(documentId));
+
+    logoutAndLoginAs(editor);
+    Principal editorPrincipal = editor::getUsername;
+    assertEquals(
+        EditStatus.EDIT_MODE,
+        controller.requestEdit(documentId, editor.getUsername(), editorPrincipal));
+    controller.unlockRecord(documentId, editor.getUsername(), editorPrincipal);
+  }
+
+  @Test
+  public void wrongAccountCannotReleaseCurrentEditorsLock() throws Exception {
+    StructuredDocument document = setUpLoginAsPIUserAndCreateADocument();
+    long documentId = document.getId();
+    String currentEditor = mockPrincipal.getName();
+    assertEquals(
+        EditStatus.EDIT_MODE, controller.requestEdit(documentId, currentEditor, mockPrincipal));
+    assertEquals(currentEditor, recordEditorTracker.getEditingUserForRecord(documentId));
+
+    MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    MockHttpServletResponse response =
+        mvc.perform(
+                post("/workspace/editor/structuredDocument/ajax/unlockrecord")
+                    .session(mockHttpSession)
+                    .principal(mockPrincipal)
+                    .param("expectedUsername", "previous-editor")
+                    .param("id", Long.toString(documentId)))
+            .andReturn()
+            .getResponse();
+
+    assertEquals(currentEditor, recordEditorTracker.getEditingUserForRecord(documentId));
+    assertEquals(403, response.getStatus());
+    assertEditorAccountChangedProblem(response, "unlockrecord");
+  }
+
+  private void assertEditorAccountChangedProblem(MockHttpServletResponse response, String action)
+      throws Exception {
+    assertEquals(MediaType.APPLICATION_PROBLEM_JSON_VALUE, response.getContentType(), action);
+    assertEquals(
+        SessionProblem.EDITOR_ACCOUNT_CHANGED.getType().toString(),
+        JsonPath.read(response.getContentAsString(), "$.type"),
+        action);
   }
 
   @Test
@@ -532,25 +634,30 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
         sd.getId(), "", false, false, null, modelTss, mockHttpSession, otherPcpal);
     assertEquals(EditStatus.VIEW_MODE, getEditStatus());
     // and can get edit permission if need be
-    assertEquals(EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), otherPcpal));
+    assertEquals(
+        EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), other.getUsername(), otherPcpal));
 
-    controller.unlockRecord(sd.getId(), otherPcpal);
+    controller.unlockRecord(sd.getId(), null, otherPcpal);
 
     /* Login as user, who shared the document */
     // now update to write permission
     logoutAndLoginAs(piUser);
     // other still logged in with edit access
     getCurrentActiveUsers().addUser(other.getUsername(), new MockHttpSession());
-    assertEquals(EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), otherPcpal));
     assertEquals(
-        EditStatus.CANNOT_EDIT_OTHER_EDITING, controller.requestEdit(sd.getId(), mockPrincipal));
-    controller.unlockRecord(sd.getId(), otherPcpal);
+        EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), other.getUsername(), otherPcpal));
+    assertEquals(
+        EditStatus.CANNOT_EDIT_OTHER_EDITING,
+        controller.requestEdit(sd.getId(), mockPrincipal.getName(), mockPrincipal));
+    controller.unlockRecord(sd.getId(), null, otherPcpal);
 
     // Now login again as 'other'; we'll save (relinquishing edit lock)
     logoutAndLoginAs(other);
     currentSecond = Date.from(Instant.now().truncatedTo(ChronoUnit.SECONDS));
-    assertEquals(EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), otherPcpal));
-    controller.saveStructuredDocument(sd.getId(), "", true, otherPcpal, mockHttpSession);
+    assertEquals(
+        EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), other.getUsername(), otherPcpal));
+    controller.saveStructuredDocument(
+        sd.getId(), "", true, other.getUsername(), otherPcpal, mockHttpSession);
 
     // as an aside, check that 'user' receieves a ' document edited' notification
     assertUserHasNotificationOfTypeSince(
@@ -558,7 +665,9 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     // now login again as 'user'; can now obtain edit lock
     logoutAndLoginAs(piUser);
-    assertEquals(EditStatus.EDIT_MODE, controller.requestEdit(sd.getId(), mockPrincipal));
+    assertEquals(
+        EditStatus.EDIT_MODE,
+        controller.requestEdit(sd.getId(), mockPrincipal.getName(), mockPrincipal));
 
     removeUserFromServletContext(other);
   }

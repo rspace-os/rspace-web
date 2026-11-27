@@ -202,6 +202,13 @@ public class SSOShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt {
       return getStandaloneShiroAuthFilter().onAccessDenied(request, response);
     }
 
+    if (RequestUtil.isAjaxRequest(request)
+        && SessionProblem.isAcceptedBy(WebUtils.toHttp(request))
+        && !response.isCommitted()
+        && !isResponseAlreadyRedirected(response)) {
+      SessionProblem.SESSION_ENDED.write(WebUtils.toHttp(response));
+    }
+
     /* if it's an SSO request, we've got here because isAccessAllowed returned false.
      * but in this case we've already redirected, so shouldn't redirect again. */
     return false;

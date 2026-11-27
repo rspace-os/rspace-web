@@ -64,6 +64,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
+import com.researchspace.webapp.filter.SessionProblem;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,8 +86,10 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -454,8 +457,10 @@ public class StructuredDocumentController extends BaseController {
   public AjaxReturnObject<String> rename(
       @RequestParam("recordId") long recordId,
       @RequestParam("newName") String newname,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
       Principal principal) {
 
+    requireOriginalEditor(expectedUsername, principal);
     String validationError = validateNewRecordName(newname);
     if (validationError != null) {
       return new AjaxReturnObject<String>(null, ErrorList.of(validationError));
@@ -705,15 +710,34 @@ public class StructuredDocumentController extends BaseController {
 
   /**
    * @param recordId
+   * @param expectedUsername the optional username of the original editor
    * @param principal
    * @return EditStatus
    */
   @PostMapping("ajax/requestEdit")
   @ResponseBody
-  public EditStatus requestEdit(@RequestParam("recordId") long recordId, Principal principal) {
+  public EditStatus requestEdit(
+      @RequestParam("recordId") long recordId,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
+      Principal principal) {
+    requireOriginalEditor(expectedUsername, principal);
     UserSessionTracker activeUsers = getCurrentActiveUsers();
     User user = getUserByUsername(principal.getName());
     return recordManager.requestRecordEdit(recordId, user, activeUsers);
+  }
+
+  private void requireOriginalEditor(String expectedUsername, Principal principal) {
+    // Usernames are unique ignoring case, and LDAP principals keep the directory's casing.
+    if (expectedUsername != null && !expectedUsername.equalsIgnoreCase(principal.getName())) {
+      throw new EditorAccountChangedException();
+    }
+  }
+
+  private static class EditorAccountChangedException extends RuntimeException {}
+
+  @ExceptionHandler(EditorAccountChangedException.class)
+  ResponseEntity<String> editorAccountChanged() {
+    return SessionProblem.EDITOR_ACCOUNT_CHANGED.toResponseEntity();
   }
 
   /**
@@ -809,12 +833,16 @@ public class StructuredDocumentController extends BaseController {
 
   /**
    * @param recordId
+   * @param expectedUsername the optional username of the original editor
    * @return true
    */
   @ResponseBody
   @PostMapping("/ajax/unlockrecord")
   public AjaxReturnObject<Boolean> unlockRecord(
-      @RequestParam("id") long recordId, Principal principal) {
+      @RequestParam("id") long recordId,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
+      Principal principal) {
+    requireOriginalEditor(expectedUsername, principal);
     recordManager.unlockRecord(recordId, principal.getName());
     return new AjaxReturnObject<Boolean>(true, null);
   }
@@ -833,9 +861,11 @@ public class StructuredDocumentController extends BaseController {
   public AjaxReturnObject<String> saveCopyStructuredDocument(
       @RequestParam("structuredDocumentId") long structuredDocumentId,
       @RequestParam("recordName") String recordName,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
       Principal principal)
       throws DocumentAlreadyEditedException {
 
+    requireOriginalEditor(expectedUsername, principal);
     String uname = principal.getName();
     User user = getUserByUsername(uname);
     String newName = recordName + "-copy";
@@ -876,9 +906,12 @@ public class StructuredDocumentController extends BaseController {
   @ResponseBody
   @PostMapping("ajax/saveNewStructuredDocument")
   public AjaxReturnObject<String> saveNewStructuredDocument(
-      @RequestParam("structuredDocumentId") long structuredDocumentId, Principal principal)
+      @RequestParam("structuredDocumentId") long structuredDocumentId,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
+      Principal principal)
       throws DocumentAlreadyEditedException {
 
+    requireOriginalEditor(expectedUsername, principal);
     String uname = principal.getName();
     User user = getUserByUsername(uname);
     FolderRecordPair folderRecordPair =
@@ -899,9 +932,10 @@ public class StructuredDocumentController extends BaseController {
   }
 
   /**
-   * Cancels autosave edits by deleting temporary fields and data. Doesn't unlock the record.
+   * Cancels autosave edits by deleting temporary fields and data and releasing the edit lock.
    *
    * @param structuredDocumentId
+   * @param expectedUsername the optional username of the original editor
    * @param principal
    * @return AjaxReturnObject<String> url
    * @throws DocumentAlreadyEditedException
@@ -909,9 +943,11 @@ public class StructuredDocumentController extends BaseController {
   @ResponseBody
   @PostMapping("ajax/cancelAutosavedEdits")
   public AjaxReturnObject<String> cancelAutosavedEdits(
-      @RequestParam("structuredDocumentId") long structuredDocumentId, Principal principal)
+      @RequestParam("structuredDocumentId") long structuredDocumentId,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
+      Principal principal)
       throws DocumentAlreadyEditedException {
-
+    requireOriginalEditor(expectedUsername, principal);
     recordManager.cancelStructuredDocumentAutosavedEdits(structuredDocumentId, principal.getName());
     String urlToReturn = "/workspace/editor/structuredDocument/" + structuredDocumentId;
     return new AjaxReturnObject<String>(urlToReturn, null);
@@ -930,10 +966,12 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam("structuredDocumentId") long structuredDocumentId,
       @RequestParam(value = "settingsKey", required = false) String settingsKey,
       @RequestParam("unlock") boolean unlock,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
       Principal principal,
       HttpSession session)
       throws DocumentAlreadyEditedException {
 
+    requireOriginalEditor(expectedUsername, principal);
     User subject = userManager.getAuthenticatedUserInSession();
     ErrorList warningsList = new ErrorList();
     FolderRecordPair fldRecPair =
@@ -1035,7 +1073,10 @@ public class StructuredDocumentController extends BaseController {
   public AjaxReturnObject<Boolean> autosaveField(
       @RequestParam("dataValue") String data,
       @RequestParam("fieldId") long fieldId,
+      @RequestParam(value = "expectedUsername", required = false) String expectedUsername,
       Principal principal) {
+
+    requireOriginalEditor(expectedUsername, principal);
     User user = getUserByUsername(principal.getName());
 
     Field field = fieldManager.get(fieldId, user).get();

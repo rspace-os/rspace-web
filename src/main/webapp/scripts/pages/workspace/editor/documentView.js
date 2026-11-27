@@ -44,28 +44,30 @@ function DirtyTextManager() {
 
   /* adds a field with given id and content as dirty */
   this.markDirty = function (id, html) {
-    var id2Data = {};
-    id2Data[id] = html;
-    this._dirtyFieldList.push(id2Data);
-    console.log("Field " + id + " added to _dirtyFieldList");
-  };
-
-  /* Removes an element from the dirty list (after saving) */
-  this.remove = function (id) {
     var indx = this._dirtyListIndx(id);
     if (indx != -1) {
-      this._dirtyFieldList.splice(indx, 1);
-      console.log("Field " + id + " removed from _dirtyFieldList");
+      this._dirtyFieldList[indx][id] = { html: html };
+    } else {
+      var id2Data = {};
+      id2Data[id] = { html: html };
+      this._dirtyFieldList.push(id2Data);
     }
   };
 
-  /* Gets text field value for a given id, or "" if no text area of that id found */
-  this.getDataForId = function (id) {
+  /* Removes only the cached edit acknowledged by the server. */
+  this.remove = function (id, acknowledgedEdit) {
+    var indx = this._dirtyListIndx(id);
+    if (indx != -1 && this._dirtyFieldList[indx][id] === acknowledgedEdit) {
+      this._dirtyFieldList.splice(indx, 1);
+    }
+  };
+
+  /* Returns the cached edit so an acknowledgment can identify it by reference. */
+  this.getEdit = function (id) {
     var indx = this._dirtyListIndx(id);
     if (indx != -1) {
       return this._dirtyFieldList[indx][id];
     }
-    return "";
   };
 }
 
@@ -333,7 +335,8 @@ function disableLastTextField() {
   if (lastTextEdited != -1) {
     var lastTextFieldId = getTextFieldId(lastTextEdited);
     var $lastTextField = get$textField(lastTextEdited);
-    var dataText = $lastTextField.html();
+    var lastTextTinyMCE = tinyMCE.get(lastTextFieldId);
+    var dataText = lastTextTinyMCE?.initialized ? lastTextTinyMCE.getContent() : $lastTextField.val();
 
     // Rewrite the width and height of img src urls to their resized values if present
     var tempDiv = document.createElement('div');
@@ -351,14 +354,14 @@ function disableLastTextField() {
 
     dataText = tempDiv.innerHTML;
 
-    var lastTextTinyMCE = tinyMCE.get(lastTextFieldId);
-    if (lastTextTinyMCE && lastTextTinyMCE.isDirty()) {
+    if (lastTextTinyMCE?.isDirty()) {
       dirtyFieldsMgr.markDirty(lastTextFieldId, dataText);
     }
 
     //If you add dataText before remove tinyMCE instance pictures don't showed.
     tinyMCE.execCommand('mceRemoveControl', false, lastTextFieldId);
     tinyMCE.remove("#" + lastTextFieldId);
+    $lastTextField.val(dataText);
     showRichTextInViewMode(lastTextFieldId);
     $lastTextField.hide();
 

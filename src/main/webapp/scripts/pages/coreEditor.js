@@ -1019,11 +1019,7 @@ function initInlineRenameRecordForm(formSelector) {
       newName: newName,
     };
 
-    makeRenameRequest(data, formSelector, editorSelector, fieldSelector);
-
-    $(formSelector).find("#renameRecordEdit").show(fadeTime);
-    $(formSelector).find("#renameRecordSubmit").hide(fadeTime);
-    nameEditMode = false;
+    makeRenameRequest(data);
     return false;
   });
 
@@ -1052,18 +1048,23 @@ function initInlineRenameRecordForm(formSelector) {
 }
 
 function makeRenameRequest(data) {
+  const editingDocument = isDocumentEditor && typeof handleEditorSessionExpiry === "function";
+  if (editingDocument) {
+    data.expectedUsername = currentUser;
+  }
   var editorSelector = nameFeatureSelectors.editorSelector;
   var fieldSelector = nameFeatureSelectors.fieldSelector;
   var formSelector = nameFeatureSelectors.formSelector;
   var newName = data.newName;
   var jqxhr = $.post("/workspace/editor/structuredDocument/ajax/rename", data, function (data) {
-    // if there were errors while saving new name, fall back to original name
     if (data.errorMsg !== null) {
+      apprise(getValidationErrorString(data.errorMsg));
+      if (editingDocument) return;
       $(formSelector).find("#renameRecordEdit").show(fadeTime);
       $(formSelector).find("#renameRecordSubmit").hide(fadeTime);
       $(formSelector).find(editorSelector).val("").animate({ opacity: 0 }, fadeTime).hide();
       $(formSelector).find(fieldSelector).text($('#recordNameInBreadcrumb').text()).show().animate({ display: 'inline', opacity: 1 }, fadeTime);
-      apprise(getValidationErrorString(data.errorMsg));
+      nameEditMode = false;
     } else {
       // saving new name was successful
       console.log("Entry renamed from '" + recordName + "' to '" + newName + "'");
@@ -1087,7 +1088,8 @@ function makeRenameRequest(data) {
       nameEditMode = false;
       RS.trackEvent("user:rename:document:document_editor");
     }
-  }).fail(function () {
+  }, "json").fail(function () {
+    if (editingDocument && handleEditorSessionExpiry(jqxhr, true)) return;
     RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxRenamingRecord"), false, jqxhr);
   });
   return jqxhr;
@@ -1153,11 +1155,10 @@ function renameDocumentBeforeSaving() {
 
     // valid and changed name is to be saved, now create the renaming request promise
     if (checkName.valid && checkName.saveName) {
-      renameRequestPromise = makeRenameRequest(data);
-      renameRequestPromise.done(function (response) {
+      renameRequestPromise = makeRenameRequest(data).then(function (response) {
         if (response.errorMsg) {
           console.log("Errors occured while saving new name. Saving stopps.");
-          renameRequestPromise = $.Deferred().reject().promise();
+          return $.Deferred().reject().promise();
         } else {
           console.log("New name saved, now saving the document.");
           unchangedContentCounter = 0; // optional and questionable

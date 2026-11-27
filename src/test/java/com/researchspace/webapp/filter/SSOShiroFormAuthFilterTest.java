@@ -4,12 +4,15 @@ import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMM
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.jayway.jsonpath.JsonPath;
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginAuthorizer;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
+import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IMutablePropertyHolder;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -132,6 +136,29 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   @Test
   public void testOnAccessDenied() throws Exception {
     assertFalse(filter.onAccessDenied(req, resp));
+  }
+
+  @Test
+  public void deniedSsoAjaxRequestAcceptingProblemDetailsGetsSessionEndedProblem()
+      throws Exception {
+    req.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
+    req.addHeader("Accept", "*/*, application/problem+json;q=0.5");
+    assertFalse(filter.onAccessDenied(req, resp));
+    assertEquals(403, resp.getStatus());
+    assertThat(resp.getContentType()).startsWith(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    assertEquals(
+        SessionProblem.SESSION_ENDED.getType().toString(),
+        JsonPath.read(resp.getContentAsString(), "$.type"));
+    assertNull(resp.getRedirectedUrl());
+  }
+
+  @Test
+  public void deniedSsoAjaxRequestWithoutProblemDetailsIsUnchanged() throws Exception {
+    req.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
+    req.addHeader("Accept", "*/*");
+    assertFalse(filter.onAccessDenied(req, resp));
+    assertEquals(200, resp.getStatus());
+    assertEquals("", resp.getContentAsString());
   }
 
   @Test
