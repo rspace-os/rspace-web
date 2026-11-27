@@ -1,8 +1,10 @@
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
+import type { DeclaredResourceRoleSource } from "@/modules/common/api/v2/generated/models/declaredResourceRoleSource";
 
 export const ownerBookingAccess = {
   effectiveRole: "OWNER",
-  roleSources: [],
+  // Mutable, as wire fixture types expect; `as const` would make it a readonly tuple.
+  roleSources: [] as DeclaredResourceRoleSource[],
   capabilities: {
     canEditConfiguration: true,
     canViewAudit: true,
@@ -21,7 +23,7 @@ export const ownerBookingAccess = {
 
 export const bookerBookingAccess = {
   effectiveRole: "BOOKER",
-  roleSources: [],
+  roleSources: [] as DeclaredResourceRoleSource[],
   capabilities: {
     canEditConfiguration: false,
     canViewAudit: false,

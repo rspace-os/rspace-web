@@ -1,17 +1,17 @@
-import type { ListBookingConfigurations200 as DecodedListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { ListBookingConfigurationsResponse } from "@/modules/common/api/v2/generated/valibot/native";
 import "@/__tests__/__mocks__/matchMedia";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import type { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";
 
-type ListBookingConfigurations200 = ApiV2Wire<DecodedListBookingConfigurations200>;
+type ListBookingConfigurations200 = v.InferInput<typeof ListBookingConfigurationsResponse>;
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 

@@ -1,7 +1,9 @@
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
-import type { BookingConfigurationsBulkResult as DecodedBookingConfigurationsBulkResult } from "@/modules/common/api/v2/generated/models/bookingConfigurationsBulkResult";
-import type { BookingConfigurationsRead as DecodedBookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
-import type { ListBookingConfigurations200 as DecodedListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { ListBookingConfigurationsResponse } from "@/modules/common/api/v2/generated/valibot/native";
+import type {
+  BookingConfigurationsBulkResultSchema,
+  BookingConfigurationsReadSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -16,9 +18,9 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, HttpResponse, http } from "msw";
 import { type ComponentType, type ReactNode, Suspense } from "react";
+import type * as v from "valibot";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
@@ -43,9 +45,9 @@ import {
 import { mutateBookableItems } from "./AllBookableItemsContent";
 
 /** Response bodies as JSON carries them, before the transport decodes their date-times. */
-type BookingConfigurationsRead = ApiV2Wire<DecodedBookingConfigurationsRead>;
-type ListBookingConfigurations200 = ApiV2Wire<DecodedListBookingConfigurations200>;
-type BookingConfigurationsBulkResult = ApiV2Wire<DecodedBookingConfigurationsBulkResult>;
+type BookingConfigurationsRead = v.InferInput<typeof BookingConfigurationsReadSchema>;
+type ListBookingConfigurations200 = v.InferInput<typeof ListBookingConfigurationsResponse>;
+type BookingConfigurationsBulkResult = v.InferInput<typeof BookingConfigurationsBulkResultSchema>;
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
