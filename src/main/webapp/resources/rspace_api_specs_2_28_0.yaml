@@ -4976,6 +4976,7 @@ components:
         parentFolderId:
           type: integer
           format: int64
+          nullable: true
           description: |
             The folder through which the requesting user reaches this snippet in their Gallery:
             the owner's folder for the owner, otherwise a folder the snippet is shared into,
