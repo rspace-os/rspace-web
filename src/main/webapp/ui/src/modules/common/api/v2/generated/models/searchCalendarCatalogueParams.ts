@@ -18,6 +18,7 @@ export type SearchCalendarCatalogueParams = {
   /** RSQL event filters, including requester.value==me and targetOwner==me. Owner comparisons must be outside OR groups. */
   eventWhere?: string;
   q?: string;
+  mine: boolean;
   page: number;
   limit: number;
 };

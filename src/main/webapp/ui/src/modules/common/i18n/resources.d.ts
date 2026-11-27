@@ -762,8 +762,8 @@ export default interface Resources {
   },
   "booking": {
     "access": {
-      "allUsers": "All users",
-      "leave": "Leave configuration",
+      "editInventoryPermissions": "To edit the permissions, <inventoryLink>go to the inventory item's settings</inventoryLink>.",
+      "ownerGroupsDescription": "Accessible to only those who are in a lab or collaboration group with the owner.",
       "roles": {
         "booker": {
           "description": "Can view the schedule, subscribe, create bookings, and manage their own bookings.",
@@ -1071,7 +1071,6 @@ export default interface Resources {
         "saved": "Booking configuration saved."
       },
       "view": "View configuration",
-      "viewInventory": "View {name} in Inventory",
       "yes": "Yes"
     },
     "bookableItems": {

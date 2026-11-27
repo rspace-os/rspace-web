@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingCalendarQuery;
+import com.researchspace.booking.dao.BookingItemQuery;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -23,13 +24,19 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
 
   private final TimeSlotBookingManager bookings;
   private final BookingCalendarQuery query;
+  private final BookingItemQuery itemQuery;
   private final FeatureFlagManager flags;
   private final BookingLocationFilterManager locations;
 
   /** Returns one visible event page under the complete item, event, interval and search scope. */
   @Override
   public ResourcePage<TimeSlotBooking> events(
-      ResourceRequest request, Instant start, Instant end, String text, User caller) {
+      ResourceRequest request,
+      Instant start,
+      Instant end,
+      String text,
+      boolean ownedByCaller,
+      User caller) {
     if (!flags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) throw new NotFoundException();
     // Item filters reused as event filters may name a location, which only Inventory can resolve.
     BookingLocationFilterManager.Resolved scoped =
@@ -46,6 +53,8 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
     return bookings.getBookings(
         unfiltered.restrict(BookingCalendarQuery.interval(start, end)),
         caller,
-        Predicate.and(query.eventFilter(scoped.request(), text, caller), scoped.restriction()));
+        Predicate.and(
+            Predicate.and(query.eventFilter(scoped.request(), text, caller), scoped.restriction()),
+            ownedByCaller ? itemQuery.ownedBy(caller, EVENT_TARGET) : null));
   }
 }

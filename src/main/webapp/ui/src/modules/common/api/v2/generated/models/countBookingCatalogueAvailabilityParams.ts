@@ -18,6 +18,7 @@ export type CountBookingCatalogueAvailabilityParams = {
   type?: string[];
   location?: string[];
   capability?: BookingCatalogueCapability;
+  mine: boolean;
   /** Inclusive interval start. */
   start?: Temporal.Instant;
   /** Exclusive interval end. */
