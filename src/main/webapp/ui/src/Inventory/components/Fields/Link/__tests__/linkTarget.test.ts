@@ -99,6 +99,26 @@ describe("filestoreTargetOf", () => {
     expect(filestoreTargetOf(root)).toBeNull();
   });
 
+  it.each([" ", "/data/./run.dat", "/data/..", "./run.dat"])(
+    "refuses %j, which names no item the server can save",
+    (remotePath) => {
+      const file = { id: null, name: "x", path: [filestoreNode], remotePath } as unknown as GalleryFile;
+
+      expect(filestoreTargetOf(file)).toBeNull();
+    },
+  );
+
+  it("keeps a name that only starts with a dot", () => {
+    const hidden = {
+      id: null,
+      name: ".hidden",
+      path: [filestoreNode],
+      remotePath: "/data/.hidden",
+    } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(hidden)?.target.remotePath).toBe("/data/.hidden");
+  });
+
   it("refuses a file of another Gallery section", () => {
     const gallerySubfolder = { id: 7, name: "Gels", path: [] };
     const local = { id: 5, name: "gel.png", globalId: "GL5", path: [gallerySubfolder] } as unknown as GalleryFile;

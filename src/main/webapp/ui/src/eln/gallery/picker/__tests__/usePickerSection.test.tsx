@@ -36,4 +36,16 @@ describe("usePickerSection", () => {
     expect(result.current[0]).toBe("Images");
     expect(mockSetPreference).not.toHaveBeenCalled();
   });
+
+  it("opens on that section again each time a picker that stays mounted is reopened", () => {
+    const { result, rerender } = renderHook(({ open }) => usePickerSection("NetworkFiles", open), {
+      initialProps: { open: true },
+    });
+
+    act(() => result.current[1]("Images"));
+    rerender({ open: false });
+    rerender({ open: true });
+
+    expect(result.current[0]).toBe("NetworkFiles");
+  });
 });

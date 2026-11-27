@@ -70,7 +70,7 @@ const Picker = observer(
     const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(PREFERENCES.GALLERY_SORT_ORDER, {
       defaultValue: "DESC",
     });
-    const [selectedSection, setSelectedSection] = usePickerSection(initialSection);
+    const [selectedSection, setSelectedSection] = usePickerSection(initialSection, open);
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
       PREFERENCES.GALLERY_SIDEBAR_OPEN,
       {

@@ -79,7 +79,8 @@ export function filestoreTargetOf(file: GalleryFile): { target: FilestoreLinkTar
   const filestore = file.path[0];
   if (!("remotePath" in file) || typeof file.remotePath !== "string" || typeof filestore?.id !== "number") return null;
   const relativePath = file.remotePath.replace(/^\/+|\/+$/g, "");
-  if (relativePath === "") return null;
+  // the server's rule: a blank path is the filestore's root, and a "." or ".." segment resolves to nothing
+  if (relativePath.trim() === "" || relativePath.split("/").some((s) => s === "." || s === "..")) return null;
   return {
     target: { filestoreId: filestore.id, remotePath: `/${relativePath}` },
     filestoreName: filestore.name,
