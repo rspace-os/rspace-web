@@ -22,6 +22,10 @@ export interface ApiV2OperationSet {
   createMany?: ApiV2AsyncFunction;
   updateMany?: ApiV2AsyncFunction;
   deleteMany?: ApiV2AsyncFunction;
+  access?: ApiV2ReadOperation;
+  replaceAccess?: ApiV2AsyncFunction;
+  leaveAccess?: ApiV2AsyncFunction;
+  grantees?: ApiV2ReadOperation;
   audit?: ApiV2ReadOperation;
   runtimeFields?: ApiV2ReadOperation;
   runtimeFieldSearch?: ApiV2ReadOperation;
