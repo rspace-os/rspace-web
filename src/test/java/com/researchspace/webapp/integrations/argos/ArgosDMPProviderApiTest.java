@@ -5,12 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.model.User;
+import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.argos.ArgosDMP;
 import com.researchspace.model.dmps.argos.ArgosDMPListing;
 import com.researchspace.model.dmps.argos.DataTableData;
@@ -31,11 +34,13 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.web.client.RestClientException;
 
 /** Runs the provider against a local server that speaks Argos's current public plan API. */
@@ -148,7 +153,7 @@ class ArgosDMPProviderApiTest {
 
   @Test
   void getPlanByIdFetchesPublicPlanAndKeepsSavedDmpLayout() throws Exception {
-    ArgosDMP plan = provider.getPlanById(PLAN_ID);
+    ArgosDMP plan = provider.getPlanById(UUID.fromString(PLAN_ID));
 
     Request request = requests.get(0);
     assertEquals("GET", request.method());
@@ -176,14 +181,27 @@ class ArgosDMPProviderApiTest {
     provider.dmpManager = dmpManager;
     provider.userManager = mock(UserManager.class);
 
-    assertThrows(RestClientException.class, () -> provider.importDmp(id));
+    assertThrows(RestClientException.class, () -> provider.importDmp(UUID.fromString(id)));
     verifyNoInteractions(mediaManager, dmpManager);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"..", "../../reference/query", "plan-1", ""})
-  void getPlanByIdRejectsAnIdThatIsNotAUuidWithoutARequest(String id) {
-    assertThrows(IllegalArgumentException.class, () -> provider.getPlanById(id));
-    assertTrue(requests.isEmpty());
+  @Test
+  void importStoresTheCanonicalPlanIdWhateverTheRequestSpelling() throws Exception {
+    MediaManager mediaManager = mock(MediaManager.class);
+    DMPManager dmpManager = mock(DMPManager.class);
+    UserManager userManager = mock(UserManager.class);
+    User user = new User("argosImporter");
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
+    provider.mediaManager = mediaManager;
+    provider.dmpManager = dmpManager;
+    provider.userManager = userManager;
+
+    provider.importDmp(UUID.fromString(PLAN_ID.toUpperCase()));
+
+    assertThat(requests.get(0).uri()).startsWith("/api/plan/public/" + PLAN_ID + "?");
+    verify(dmpManager).findByDmpId(PLAN_ID, user);
+    ArgumentCaptor<DMPUser> saved = ArgumentCaptor.forClass(DMPUser.class);
+    verify(dmpManager).save(saved.capture());
+    assertEquals(PLAN_ID, saved.getValue().getDmpId());
   }
 }

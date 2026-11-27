@@ -7,6 +7,7 @@ import com.researchspace.model.dmps.argos.ArgosDMP;
 import com.researchspace.model.dmps.argos.ArgosDMPListing;
 import com.researchspace.model.dmps.argos.DataTableData;
 import java.net.URL;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -34,7 +35,7 @@ public class ArgosApiRealConnectionTest {
   public void getPlanByIdTest() {
     DataTableData<ArgosDMPListing> list = argosClient.listPlans(1, 0, null);
     String id = list.getData().get(0).id;
-    ArgosDMP plan = argosClient.getPlanById(id);
+    ArgosDMP plan = argosClient.getPlanById(UUID.fromString(id));
     assertEquals(id, plan.id);
   }
 }

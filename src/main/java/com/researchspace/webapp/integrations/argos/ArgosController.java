@@ -6,6 +6,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.BaseController;
 import java.io.IOException;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,13 +27,19 @@ public class ArgosController extends BaseController {
   @PostMapping("/importPlan/{id}")
   @ResponseBody
   public AjaxReturnObject<Boolean> importDmp(@PathVariable("id") String id) {
+    // Argos plan ids are UUIDs. Parsing here keeps request paths out of the outbound URL and
+    // gives one stored id per plan, whatever spelling the request used.
+    UUID planId;
     try {
-      return new AjaxReturnObject<>(client.importDmp(id), null);
-    } catch (RestClientException e) {
-      logUpstreamFailure("importing DMP", e);
-      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
+      planId = UUID.fromString(id);
     } catch (IllegalArgumentException e) {
       log.warn("Rejected DMP import with an id that is not a UUID");
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
+    }
+    try {
+      return new AjaxReturnObject<>(client.importDmp(planId), null);
+    } catch (RestClientException e) {
+      logUpstreamFailure("importing DMP", e);
       return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
     } catch (IOException e) {
       log.error("Failure on importing DMP", e);

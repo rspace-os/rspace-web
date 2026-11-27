@@ -93,12 +93,7 @@ public class ArgosDMPProvider {
   @Autowired UserManager userManager;
   @Autowired DMPManager dmpManager;
 
-  /**
-   * @param id an Argos plan id (a UUID)
-   * @throws IllegalArgumentException if {@code id} is not a UUID; nothing is requested
-   */
-  public ArgosDMP getPlanById(String id) {
-    UUID planId = UUID.fromString(id);
+  public ArgosDMP getPlanById(UUID planId) {
     UriComponentsBuilder builder = apiUri().pathSegment("plan", "public", planId.toString());
     PLAN_FIELDS.forEach(field -> builder.queryParam("f", field));
     URI uri = builder.encode().build().toUri();
@@ -150,17 +145,18 @@ public class ArgosDMPProvider {
     return result;
   }
 
-  public Boolean importDmp(String id) throws JsonProcessingException, IOException {
+  public Boolean importDmp(UUID planId) throws JsonProcessingException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
-    ArgosDMP dmpDetails = getPlanById(id);
-    log.info("Importing DMP: " + id + ", " + dmpDetails.getLabel());
+    ArgosDMP dmpDetails = getPlanById(planId);
+    log.info("Importing DMP: " + planId + ", " + dmpDetails.getLabel());
 
     String json = OBJECT_MAPPER.writeValueAsString(dmpDetails);
     InputStream is = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
     EcatDocumentFile file =
         mediaManager.saveNewDMP(dmpDetails.getLabel() + ".json", is, user, null);
 
-    DmpDto dmpDto = new DmpDto(id, dmpDetails.getLabel(), DMPSource.ARGOS, null, null);
+    DmpDto dmpDto =
+        new DmpDto(planId.toString(), dmpDetails.getLabel(), DMPSource.ARGOS, null, null);
     DMPUser dmpUser =
         dmpManager.findByDmpId(dmpDto.getDmpId(), user).orElse(new DMPUser(user, dmpDto));
     if (file != null) {
