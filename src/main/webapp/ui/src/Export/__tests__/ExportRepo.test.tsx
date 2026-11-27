@@ -301,6 +301,55 @@ describe("ExportRepo", () => {
       expect(lastSentPlans(updateRepoConfig)).toEqual([]);
     });
 
+    test("keeps the saved licence and metadata when only the plans change after going back", async () => {
+      const user = userEvent.setup();
+      const updateRepoConfig = vi.fn<(repoDetails: RepoDetails) => void>();
+      const zenodo = zenodoRepoList[0];
+      const savedRequest: RepoDetails = {
+        ...props.repoDetails,
+        meta: {
+          ...props.repoDetails.meta,
+          title: "Survey data",
+          description: "Survey data",
+          licenseName: "CC-BY-4.0",
+          otherProperties: { metadataLanguage: "fr" },
+        },
+      };
+      await renderWithRealI18n(
+        <ExportRepo
+          repoDetails={savedRequest}
+          repoList={[
+            {
+              ...zenodo,
+              license: {
+                ...zenodo.license,
+                licenses: [
+                  ...zenodo.license.licenses,
+                  {
+                    licenseDefinition: { name: "CC-BY-4.0", url: "https://creativecommons.org/licenses/by/4.0/" },
+                    defaultLicense: false,
+                  },
+                ],
+              },
+              linkedDMPs: plans,
+              repoCfg: -1,
+            },
+          ]}
+          state={DEFAULT_STATE}
+          updateRepoConfig={updateRepoConfig}
+          validator={mkValidator()}
+          fetchTags={props.fetchTags}
+        />,
+        { resources: { workspace: workspaceEn, apps: appsEn, common: commonEn }, defaultNS: "workspace" },
+      );
+      await user.click(
+        await screen.findByRole("checkbox", { name: "Associate export with a Data Management Plans (DMPs)" }),
+      );
+      await tick(user, "River survey plan");
+
+      expect(updateRepoConfig.mock.lastCall?.[0]).toEqual({ ...savedRequest, selectedDMPs: [2] });
+    });
+
     test("restores the switch and ticked plans from the saved request when reopened", async () => {
       const { associateSwitch } = await renderWithPlans([2]);
       expect(associateSwitch).toBeChecked();
