@@ -619,6 +619,55 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertFalse(permissionUtils.isPermitted(userDoc1, PermissionType.READ, piUser));
   }
 
+  // RSDEV-1636: the item is unlinked from the sharer's folder whoever unshares it
+  @Test
+  public void shareeRemovingShareUnlinksItFromTheSharersFolder() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("own"));
+    User sharee = createAndSaveUserIfNotExists(getRandomAlphabeticString("shr"));
+    initialiseContentWithEmptyContent(pi, owner, sharee);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, owner, sharee);
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "any");
+    sharingMgr.shareRecord(owner, doc.getId(), getIndividualShareCommand(sharee, "read"));
+    Folder pairFolder = folderDao.getIndividualSharedFolderForUsers(owner, sharee, null);
+    assertThat(folderDao.getChildren(pairFolder)).contains(doc);
+
+    logoutAndLoginAs(sharee);
+    sharingMgr.unshareRecord(sharee, doc.getId(), getIndividualShareCommand(sharee, "read"));
+
+    assertThat(folderDao.getChildren(pairFolder)).doesNotContain(doc);
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.READ, sharee));
+  }
+
+  // RSDEV-1636: a separately shared notebook entry loses its own, higher permission
+  @Test
+  public void unsharingNotebookRemovesSeparatelySharedEntryWithItsOwnPermission()
+      throws InterruptedException {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("own"));
+    User sharee = createAndSaveUserIfNotExists(getRandomAlphabeticString("shr"));
+    initialiseContentWithEmptyContent(pi, owner, sharee);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, owner, sharee);
+    logoutAndLoginAs(owner);
+    Notebook notebook = createNotebookWithNEntries(owner.getRootFolder().getId(), "nb", 1, owner);
+    BaseRecord entry = folderDao.getChildren(notebook).get(0);
+    sharingMgr.shareRecord(owner, notebook.getId(), getIndividualShareCommand(sharee, "read"));
+    sharingMgr.shareRecord(owner, entry.getId(), getIndividualShareCommand(sharee, "write"));
+    Folder pairFolder = folderDao.getIndividualSharedFolderForUsers(owner, sharee, null);
+
+    sharingMgr.unshareRecord(owner, notebook.getId(), getIndividualShareCommand(sharee, "read"));
+
+    assertThat(folderDao.getChildren(notebook)).contains(entry);
+    assertThat(folderDao.getChildren(pairFolder)).doesNotContain(entry, notebook);
+    assertThat(sharingMgr.getRecordSharingInfo(entry.getId())).isEmpty();
+    logoutAndLoginAs(sharee);
+    assertFalse(permissionUtils.isPermitted(entry, PermissionType.READ, sharee));
+    assertFalse(permissionUtils.isPermitted(entry, PermissionType.WRITE, sharee));
+  }
+
   @Test
   public void cannotShareWithUnrelatedUserOrGroup() throws Exception {
 

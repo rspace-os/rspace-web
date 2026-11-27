@@ -6,6 +6,7 @@ import static java.lang.String.format;
 import com.researchspace.dao.UserDao;
 import com.researchspace.dao.UserDeletionDao;
 import com.researchspace.model.User;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy;
 import java.util.LinkedHashMap;
@@ -96,6 +97,21 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
       return doForceDeleteUser(userId);
     }
     return new ServiceOperationResult<>(null, false, "Could not delete user, not yet enabled");
+  }
+
+  @Override
+  public List<BaseRecord> getOtherUsersRecordsNamingUserInAcl(User user) {
+    String name = user.getUsername().replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from BaseRecord br where br.owner.id <> :id and (br.sharingACL.acl like :first"
+                + " escape '!' or br.sharingACL.acl like :later escape '!')",
+            BaseRecord.class)
+        .setParameter("id", user.getId())
+        .setParameter("first", name + "=%")
+        .setParameter("later", "%&" + name + "=%")
+        .list();
   }
 
   private ServiceOperationResult<User> doForceDeleteUser(Long userId) {

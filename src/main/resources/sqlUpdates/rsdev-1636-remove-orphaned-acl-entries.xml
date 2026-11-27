@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-11-26-rsdev-1636-acl-backup-table" context="run" author="tchoi-rs">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <tableExists tableName="RSDEV1636_RemovedAclEntries"/>
+      </not>
+    </preConditions>
+    <comment>RSDEV-1636: backup of access lists changed by the orphaned entry cleanup</comment>
+    <createTable tableName="RSDEV1636_RemovedAclEntries">
+      <column name="record_id" type="BIGINT">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="old_acl" type="VARCHAR(2500)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="new_acl" type="VARCHAR(2500)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="removed_count" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="changedAt" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="2026-11-26-rsdev-1636-remove-orphaned-acl-entries" context="run"
+    author="tchoi-rs">
+    <comment>RSDEV-1636: remove access-list entries naming no existing user, group or community.
+      Restore with: update BaseRecord b join RSDEV1636_RemovedAclEntries r on r.record_id = b.id
+      set b.acl = r.old_acl where BINARY b.acl = BINARY r.new_acl</comment>
+    <customChange
+      class="com.researchspace.dao.customliquibaseupdates.RemoveOrphanedAclEntries_RSDEV1636"/>
+  </changeSet>
+
+</databaseChangeLog>

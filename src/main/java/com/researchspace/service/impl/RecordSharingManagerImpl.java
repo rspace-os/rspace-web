@@ -25,6 +25,9 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditTrailService;
+import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.comms.CommunicationStatus;
 import com.researchspace.model.comms.ShareRecordMessageOrRequest;
 import com.researchspace.model.core.RecordType;
@@ -68,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -121,6 +125,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private @Autowired DocumentSharedStateCalculator docSharedStatusCalculator;
   private @Autowired IPropertyHolder properties;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired AuditTrailService auditService;
   private PermissionFactory permFac = new DefaultPermissionFactory();
 
   @Override
@@ -364,7 +369,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   public void unshareRecord(
       User unsharing, Long recordToUnshareId, ShareConfigElement[] groupIdsToUnshareWith)
       throws IllegalAddChildOperation {
+    unshareAndListRemoved(unsharing, recordToUnshareId, groupIdsToUnshareWith);
+  }
 
+  private List<RecordGroupSharing> unshareAndListRemoved(
+      User unsharing, Long recordToUnshareId, ShareConfigElement[] groupIdsToUnshareWith) {
     BaseRecord recordOrNotebook = getRecordOrNotebook(recordToUnshareId);
     List<RecordGroupSharing> unshared =
         doRecordOrNotebookShare(unsharing, recordOrNotebook, groupIdsToUnshareWith, false);
@@ -380,6 +389,67 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       commMgr.notify(
           unsharing, recordOrNotebook, cfg, createUnsharingMsg(unsharing, recordOrNotebook));
     }
+    return unshared;
+  }
+
+  @Override
+  public List<RecordGroupSharing> getIndividualSharesWithUser(User sharee) {
+    return groupshareRecordDao.getIndividualSharesWithUser(sharee.getId());
+  }
+
+  @Override
+  public boolean revokeIndividualShare(RecordGroupSharing share, boolean notifySharee) {
+    AbstractUserOrGroupImpl sharee = share.getSharee();
+    BaseRecord shared = share.getShared();
+    if (!sharee.isUser()
+        || sharee.asUser().hasRole(Role.ANONYMOUS_ROLE)
+        || groupshareRecordDao
+            .findByRecordAndUserOrGroup(sharee.getId(), shared.getId())
+            .isEmpty()) {
+      return false;
+    }
+    ConstraintBasedPermission perm =
+        permissnUtils.findBy(
+            sharee.getPermissions(), PermissionDomain.RECORD, new IdConstraint(shared.getId()));
+    if (perm == null || perm.getActions().isEmpty()) {
+      log.warn(
+          "Share [{}] of record [{}] has no permission to revoke", share.getId(), shared.getId());
+      return false;
+    }
+    User unsharer = resolveUnsharer(share);
+    if (unsharer == null) {
+      log.warn("Neither sharer nor owner may unshare record [{}]", shared.getId());
+      return false;
+    }
+    ShareConfigElement config =
+        new ShareConfigElement(share, perm.getActions().iterator().next().toString());
+    config.setAutoshare(!notifySharee);
+    List<RecordGroupSharing> removed =
+        unshareAndListRemoved(unsharer, shared.getId(), new ShareConfigElement[] {config});
+    Object principal = SecurityUtils.getSubject().getPrincipal();
+    User initiator = principal == null ? unsharer : userDao.getUserByUsername(principal.toString());
+    removed.forEach(
+        rgs -> auditService.notify(new GenericEvent(initiator, rgs, AuditAction.UNSHARE)));
+    return !removed.isEmpty();
+  }
+
+  // the user who made the share while they may still unshare it, otherwise the owner
+  User resolveUnsharer(RecordGroupSharing share) {
+    BaseRecord shared = share.getShared();
+    User sharedBy = share.getSharedBy();
+    if (sharedBy != null && !sharedBy.equals(share.getSharee()) && mayUnshare(shared, sharedBy)) {
+      return sharedBy;
+    }
+    return mayUnshare(shared, shared.getOwner()) ? shared.getOwner() : null;
+  }
+
+  // mirrors assertHasSharePermission for an unshare
+  private boolean mayUnshare(BaseRecord docOrNotebook, User user) {
+    if (!docOrNotebook.isStructuredDocument() && !docOrNotebook.isNotebook()) {
+      return true;
+    }
+    return permissnUtils.isPermitted(docOrNotebook, PermissionType.SHARE, user)
+        || permissnUtils.isPermitted(docOrNotebook, PermissionType.DELETE, user);
   }
 
   private String createUnsharingMsg(User unsharing, BaseRecord recordOrNotebook) {
@@ -884,7 +954,10 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         unshared.add(rgsToDelete.get());
         groupshareRecordDao.removeRecordFromGroupShare(toUnshareWith.getId(), toUnshare.getId());
       }
-      PermissionType permType = permissnUtils.createFromString(groupShareCfg.getOperation());
+      PermissionType permType =
+          toUnshare.equals(docOrNotebook)
+              ? permissnUtils.createFromString(groupShareCfg.getOperation())
+              : getEntryPermissionType(groupShareCfg, toUnshareWith, toUnshare);
       toUnshareWith.removePermission(
           permFac.createIdPermission(PermissionDomain.RECORD, permType, toUnshare.getId()));
       saveUserOrGroup(toUnshareWith);
@@ -902,7 +975,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         Folder userSharedFolder = folderDao.getUserSharedFolder(user);
         if (userSharedFolder != null) {
           sharedTopLevelFolder =
-              getTopLevelSharingFolder(subject, toUnshareWith, user, docOrNotebook);
+              findIndividualSharedFolder(toUnshare, user, rgsToDelete, subject, docOrNotebook);
         }
       } else {
         sharedTopLevelFolder =
@@ -943,6 +1016,40 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       updateACL(toUnshare, removed, List.of());
     }
     return unshared;
+  }
+
+  // The item is linked in the folder of the user who shared it, who may not be the subject (for
+  // example the sharee removing a share). Looks the folder up and never creates one.
+  private Folder findIndividualSharedFolder(
+      BaseRecord item,
+      User sharee,
+      Optional<RecordGroupSharing> share,
+      User subject,
+      BaseRecord docOrNotebook) {
+    Set<User> sharers = new LinkedHashSet<>();
+    share.map(RecordGroupSharing::getSharedBy).ifPresent(sharers::add);
+    sharers.add(item.getOwner());
+    sharers.add(subject);
+    sharers.remove(sharee);
+    for (User sharer : sharers) {
+      Folder folder = folderDao.getIndividualSharedFolderForUsers(sharer, sharee, docOrNotebook);
+      if (folder != null && item.getParentFolders().contains(folder)) {
+        return folder;
+      }
+    }
+    return null;
+  }
+
+  // a separately shared notebook entry may have been shared with another permission
+  private PermissionType getEntryPermissionType(
+      ShareConfigElement groupShareCfg, AbstractUserOrGroupImpl sharee, BaseRecord entry) {
+    ConstraintBasedPermission own =
+        permissnUtils.findBy(
+            sharee.getPermissions(), PermissionDomain.RECORD, new IdConstraint(entry.getId()));
+    if (own != null && !own.getActions().isEmpty()) {
+      return own.getActions().iterator().next();
+    }
+    return permissnUtils.createFromString(groupShareCfg.getOperation());
   }
 
   /**

@@ -158,6 +158,17 @@ public class RecordGroupSharingDaoHibernateImpl
   }
 
   @Override
+  public List<RecordGroupSharing> getIndividualSharesWithUser(Long shareeId) {
+    return getSession()
+        .createQuery(
+            "from RecordGroupSharing rgs where rgs.sharee.id = :id and rgs.publicLink is null"
+                + " order by rgs.id",
+            RecordGroupSharing.class)
+        .setParameter("id", shareeId)
+        .list();
+  }
+
+  @Override
   public List<BaseRecord> getSharedRecordsWithUser(User user) {
     return getSession()
         .createQuery("select distinct shared" + SHARED_WITH_USER_BASE, BaseRecord.class)
