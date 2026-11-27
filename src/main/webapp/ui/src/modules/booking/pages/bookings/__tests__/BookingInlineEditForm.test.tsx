@@ -277,8 +277,8 @@ describe("BookingInlineEditForm", () => {
         return HttpResponse.json({
           ...document,
           version: 8,
-          start: "2026-10-19T08:05:00Z",
-          end: "2026-10-19T10:05:00Z",
+          start: "2026-10-19T08:01:00Z",
+          end: "2026-10-19T10:01:00Z",
         });
       }),
     );
@@ -297,8 +297,8 @@ describe("BookingInlineEditForm", () => {
     const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     await waitFor(() => {
-      expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("10:05");
-      expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveValue("12:05");
+      expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("10:01");
+      expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveValue("12:01");
     });
     const save = screen.getByRole("button", { name: "booking:bookings.form.save" });
     await waitFor(() => expect(save).toBeEnabled());
@@ -306,7 +306,7 @@ describe("BookingInlineEditForm", () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
     expect(patch?.headers.get("If-Match")).toBe('"7"');
-    expect(await patch?.json()).toEqual({ start: "2026-10-19T08:05:00Z", end: "2026-10-19T10:05:00Z" });
+    expect(await patch?.json()).toEqual({ start: "2026-10-19T08:01:00Z", end: "2026-10-19T10:01:00Z" });
   });
 
   it("keeps the draft and permanently blocks save after a conflict without refetching", async () => {
