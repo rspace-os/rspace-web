@@ -9,10 +9,10 @@ import Divider from "@mui/material/Divider";
 import MobileStepper from "@mui/material/MobileStepper";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { useStore } from "@tanstack/react-form";
 import React, { Suspense, startTransition, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios, { isAxiosError } from "@/common/axios";
-import { DEFAULT_STATE, type ExportConfig } from "@/Export/constants";
 import ExportDialogRaid from "@/Export/ExportDialogRaid";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { GroupInfo } from "@/modules/groups/schema";
@@ -30,23 +30,15 @@ import * as ArrayUtils from "../util/ArrayUtils";
 import { lift3 } from "../util/optional";
 import * as Parsers from "../util/parsers";
 import Result from "../util/result";
-import type { ExportSelection } from "./common";
-import ExportFileStore from "./ExportFileStore";
-import ExportRepo from "./ExportRepo";
-import FormatChoice, { type ArchiveType } from "./FormatChoice";
-import FormatSpecificOptions from "./FormatSpecificOptions";
-import type { HtmlXmlExportDetails } from "./HtmlXmlExport";
-import type { PdfExportDetails } from "./PdfExport";
-import {
-  DEFAULT_REPO_CONFIG,
-  PLACEHOLDER_PEOPLE_AND_SUBJECT,
-  REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
-  type Repo,
-} from "./repositories/common";
+import type { ExportSelection, PageSize } from "./common";
+import ExportFileStore, { useFileStoreExportConfirmation } from "./ExportFileStore";
+import ExportRepo, { repositoryFormValidator } from "./ExportRepo";
+import { type ExportConfig, type ExportFormValues, useExportForm, validateWith } from "./exportForm";
+import FormatChoice from "./FormatChoice";
+import FormatSpecificOptions, { exportDetailsSchema } from "./FormatSpecificOptions";
+import { PLACEHOLDER_PEOPLE_AND_SUBJECT, REPOS_WITHOUT_PEOPLE_OR_SUBJECT } from "./repositories/common";
 import type { Tag } from "./repositories/Tags";
-import useLatestState from "./useLatestState";
-import { appendPane, getIndexOfPane, getPaneByKey, makePane, numberOfPanes } from "./WizardPanes";
-import type { WordExportDetails } from "./WordExport";
+import { appendPane, getIndexOfPane, makePane, numberOfPanes } from "./WizardPanes";
 
 /*
  * This react component implements the entire export flow for ELN documents.
@@ -58,6 +50,11 @@ import type { WordExportDetails } from "./WordExport";
  * repositories that we integrate with. It is therefore the basis for a lot of
  * the value that RSpace delivers for our users as it is one of the major
  * outflows of their data from our system.
+ *
+ * Every value the user sets is kept in one TanStack form (see ./exportForm).
+ * Each pane is wrapped in a FormGroup over its slice of the values, so that
+ * tapping Next validates only the current pane. The export request is built
+ * from the form's values when the user taps Export on the last pane.
  */
 
 type ExportDialogArgs = {
@@ -67,20 +64,55 @@ type ExportDialogArgs = {
   allowFileStores: boolean;
 };
 
-type ExportState = typeof DEFAULT_STATE;
-
-const isArchiveExport = (archiveType: ExportState["exportConfig"]["archiveType"]) => {
+const isArchiveExport = (archiveType: ExportConfig["archiveType"]) => {
   return archiveType === "html" || archiveType === "xml" || archiveType === "eln";
 };
 
-function ExportDialog({ open, onClose, exportSelection, allowFileStores }: ExportDialogArgs): React.ReactNode {
+/**
+ * The deposit described by the repository pane, as the export request expects
+ * it, or an empty object when the export is not deposited to a repository.
+ */
+const repositoryConfig = ({ exportConfig, repositoryForm }: ExportFormValues) => {
+  if (!exportConfig.repository) return {};
+  const repo = exportConfig.repoData[Number(repositoryForm.repoChoice)];
+  const license = repo.license.licenses[Number(repositoryForm.license)].licenseDefinition;
+  const config = {
+    repoChoice: repositoryForm.repoChoice,
+    appName: repo.repoName,
+    depositToRepository: true,
+    repoCfg: repo.repoCfg,
+    selectedDMPs: repositoryForm.linkDMP ? repositoryForm.selectedPlans : [],
+    meta: {
+      title: repositoryForm.title,
+      description: repositoryForm.description,
+      subject: repositoryForm.subject,
+      licenseName: license.name,
+      licenseUrl: license.url,
+      authors: repositoryForm.authors,
+      contacts: repositoryForm.contacts,
+      publish: repositoryForm.publish,
+      otherProperties: repositoryForm.otherProperties,
+      tags: repositoryForm.tags,
+    },
+    exportToRaid: repositoryForm.exportToRaid,
+  };
+  return REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(repo.repoName)
+    ? { ...config, meta: { ...config.meta, ...PLACEHOLDER_PEOPLE_AND_SUBJECT } }
+    : config;
+};
+
+function ExportWizard({ open, onClose, exportSelection, allowFileStores }: ExportDialogArgs): React.ReactNode {
   const { t } = useTranslation(["workspace", "common"]);
   const { data: token } = useOauthTokenQuery();
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { trackEvent } = React.useContext(AnalyticsContext);
-  // DEFAULT_STATE is a shared constant, so every update must build new objects rather than mutate the state
-  const [state, updateState, getState] = useLatestState<ExportState>(() => DEFAULT_STATE);
+  const form = useExportForm();
+  const confirmFileStoreExport = useFileStoreExportConfirmation();
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [defaultPageSize, setDefaultPageSize] = useState<PageSize>("A4");
+  const [resetPending, setResetPending] = useState(false);
 
   const { data: raidData } = useRaidIntegrationInfoAjaxQuery();
   const raidEnabled = raidData.success ? raidData.data.enabled : false;
@@ -92,23 +124,13 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     params: { sharedItemIds: exportIds as string[] },
     enabled: shouldFetchCommonGroups,
   });
+  const raidExportStatus = shouldFetchCommonGroups ? getRaidExportEligibility(commonGroups) : null;
+  const projectGroupId = raidExportStatus?.isEligible ? raidExportStatus.projectGroup.id : null;
 
-  useEffect(() => {
-    if (!shouldFetchCommonGroups) {
-      updateProjectGroupId(null);
-      return;
-    }
-    const raidExportStatus = getRaidExportEligibility(commonGroups);
-
-    const projectGroupId = raidExportStatus.isEligible ? raidExportStatus.projectGroup.id : null;
-
-    updateProjectGroupId(projectGroupId);
-  }, [commonGroups, shouldFetchCommonGroups]);
-
-  const [firstPane, setFirstPane] = useState(makePane("FormatChoice", t("export.dialog.panes.export")));
+  const [firstPane, setFirstPane] = useState(() => makePane("FormatChoice", t("export.dialog.panes.export")));
   const [activePane, setActivePane] = useState(firstPane);
 
-  const { archiveType, repository, fileStores } = state.exportConfig;
+  const { archiveType, repository, fileStores, repoData } = useStore(form.store, (state) => state.values.exportConfig);
 
   /*
    * The format and destination switches change which panes are reachable, so
@@ -134,63 +156,55 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   }, [archiveType, repository, fileStores]);
 
   useEffect(() => {
-    setInitialDocPDF(exportSelection);
-    updateState((s) => ({ ...s, open, exportSelection }));
+    setIsOpen(open);
+    form.setFieldValue("exportSelection", exportSelection);
   }, [open, exportSelection]);
-
-  const setInitialDocPDF = (exportSelection: ExportSelection) => {
-    // Add initial export name data to the loaded dialog (it is used in PDF and WORD exports)
-    // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-    let initialExportName;
-
-    if (exportSelection.type === "selection" && exportSelection.exportNames.length > 0) {
-      initialExportName = exportSelection.exportNames[0].trimStart();
-    } else if (exportSelection.type === "user") {
-      initialExportName = t("export.dialog.defaultExportName.userAllWork", { username: exportSelection.username });
-    } else if (exportSelection.type === "group") {
-      initialExportName = t("export.dialog.defaultExportName.groupAllWork", { groupName: exportSelection.groupName });
-    } else {
-      initialExportName = t("export.dialog.defaultExportName.exportData");
-    }
-
-    pdfConfig.exportName = initialExportName;
-    docConfig.exportName = initialExportName;
-  };
 
   useEffect(() => {
     axios
-      .get<{ data: { pageSize: string; defaultPDFConfig: string } }>("/export/ajax/defaultPDFConfig")
+      .get<{ data: { pageSize: PageSize; defaultPDFConfig: string } }>("/export/ajax/defaultPDFConfig")
       .then((response) => {
-        const format = response.data.data.pageSize;
-
-        pdfConfig.pageSize = format;
-        pdfConfig.defaultPageSize = format;
-        docConfig.pageSize = format;
-        docConfig.defaultPageSize = format;
+        setDefaultPageSize(response.data.data.pageSize);
       })
       .catch((error) => {
         console.log(error);
       });
   }, []);
 
-  const handleClose = () => {
-    updateState(() => DEFAULT_STATE);
+  /*
+   * Resetting the form re-renders the mounted panes straight away, even within
+   * a transition, and a later pane cannot render the default values. The reset
+   * therefore waits until the first pane has replaced it.
+   */
+  useEffect(() => {
+    if (!resetPending) return;
+    form.reset();
+    setResetPending(false);
+  }, [resetPending]);
+
+  const closeAndReset = () => {
+    setIsOpen(false);
+    setLoading(false);
     setActivePane(firstPane);
+    setResetPending(true);
+  };
+
+  const handleClose = () => {
+    closeAndReset();
     onClose?.();
   };
 
-  const handleNext = async () => {
-    if (!(await activePane.validator.isValid())) return;
-
-    if (!activePane.next) {
-      submitExport();
+  // Called once the current pane's values are valid.
+  const goToNextPane = () => {
+    const nextPane = activePane.next;
+    if (!nextPane) {
+      submitExport(form.state.values);
       startTransition(() => {
         handleClose();
       });
     } else {
       startTransition(() => {
-        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-        setActivePane(activePane.next!);
+        setActivePane(nextPane);
       });
     }
   };
@@ -199,36 +213,31 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     if (activePane.prev) setActivePane(activePane.prev);
   };
 
-  const prepareRepositoryConfig = () => {
-    const config = getState().repositoryConfig;
-    if (!config.depositToRepository) return {};
-    const appName = "appName" in config ? config.appName : undefined;
-    return typeof appName === "string" && REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(appName)
-      ? { ...config, meta: { ...config.meta, ...PLACEHOLDER_PEOPLE_AND_SUBJECT } }
-      : { ...config };
-  };
+  const exportRequest = (values: ExportFormValues, repositoryConfigOfRequest: object) => ({
+    exportSelection: { ...values.exportSelection },
+    exportConfig: { ...values.exportDetails },
+    repositoryConfig: repositoryConfigOfRequest,
+    nfsConfig: { ...values.nfsConfig },
+    ...(raidEnabled ? { projectGroupId } : {}),
+  });
 
-  const prepareExportData = () => {
-    const current = getState();
-    return {
-      exportSelection: { ...current.exportSelection },
-      exportConfig: { ...current.exportDetails },
-      repositoryConfig: prepareRepositoryConfig(),
-      nfsConfig: { ...current.nfsConfig },
-      ...(raidEnabled ? { projectGroupId: current.projectGroupId } : {}),
-    };
-  };
-
-  const submitExport = () => {
-    const archiveType = getState().exportConfig.archiveType;
+  const submitExport = (values: ExportFormValues) => {
     setLoading(true);
 
-    const url = isArchiveExport(archiveType) ? "/export/ajax/exportArchive" : "/export/ajax/export";
-    const data = prepareExportData();
+    const url = isArchiveExport(values.exportConfig.archiveType) ? "/export/ajax/exportArchive" : "/export/ajax/export";
+    let data: ReturnType<typeof exportRequest>;
+    try {
+      data = exportRequest(values, repositoryConfig(values));
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+      addAlert(mkAlert({ variant: "error", message: t("common:apiErrors.unknown") }));
+      return;
+    }
     axios
       .post<string>(url, data)
       .then((response) => {
-        updateState(() => DEFAULT_STATE);
+        closeAndReset();
         addAlert(
           mkAlert({
             variant: "success",
@@ -254,15 +263,12 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   const fetchTags = async (): Promise<Array<Tag>> => {
     setLoading(true);
 
-    const archiveType = getState().exportConfig.archiveType;
+    const values = form.state.values;
     const url =
-      archiveType === "html" || archiveType === "xml"
+      values.exportConfig.archiveType === "html" || values.exportConfig.archiveType === "xml"
         ? "/export/ajax/exportRecordTagsArchive"
         : "/export/ajax/exportRecordTagsPdfsAndDocs";
-    const data = {
-      ...prepareExportData(),
-      repositoryConfig: {},
-    };
+    const data = exportRequest(values, {});
 
     try {
       const response = await axios.post<unknown>(url, data);
@@ -297,232 +303,148 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
           console.error(e);
           return e;
         })
-        .orElse<Array<Tag>>([]);
+        // an unreadable response is a failure too, so that the repository pane tries again on its next visit
+        .elseThrow();
 
       return result;
-    } catch (e) {
-      console.error(e);
-      return [] as Array<Tag>;
     } finally {
+      // a failed request propagates, so that the repository pane can try again on its next visit
       setLoading(false);
     }
   };
 
-  function exportConfigUpdate(itemToUpdate: "archiveType", value: ArchiveType): void;
-  function exportConfigUpdate(itemToUpdate: "repository", value: boolean): void;
-  function exportConfigUpdate(itemToUpdate: "allVersions", value: boolean): void;
-  function exportConfigUpdate(itemToUpdate: "fileStores", value: boolean): void;
-  function exportConfigUpdate(itemToUpdate: "repoData", value: ReadonlyArray<Repo>): void;
-  function exportConfigUpdate(
-    itemToUpdate: "archiveType" | "repository" | "allVersions" | "fileStores" | "repoData",
-    value: ArchiveType | boolean | ReadonlyArray<Repo>,
-  ) {
-    updateState((s) => {
-      const newState = {
-        ...s,
-        exportConfig: { ...s.exportConfig, [itemToUpdate]: value },
-      };
-      if (itemToUpdate === "archiveType") {
-        // @ts-expect-error exportDetails holds the chosen format's options, which ExportConfig does not model
-        newState.exportDetails = { ...exportConfigSwitch(value as ArchiveType) };
-      } else if (itemToUpdate === "repository") {
-        newState.repositoryConfig = DEFAULT_REPO_CONFIG;
-      } else if (itemToUpdate === "allVersions") {
-        newState.exportDetails = { ...s.exportDetails, allVersions: value as boolean };
-      }
-      return newState;
-    });
-  }
+  const renderPane = (pane: React.ReactNode, validateAndContinue: () => Promise<void>) => (
+    <>
+      <DialogContent>
+        <Suspense fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}>{pane}</Suspense>
+      </DialogContent>
+      <LoadingFade loading={loading} />
+      <DialogActions>
+        <Button size="small" onClick={handleClose}>
+          {t("common:actions.cancel")}
+        </Button>
+        <Divider orientation="vertical" sx={{ height: "2em" }} />
+        <MobileStepper
+          sx={{
+            m: -1,
+            ml: "0 !important",
+            flexGrow: 1,
+            background: "transparent",
+            pl: 0,
+          }}
+          steps={numberOfPanes(firstPane)}
+          position="static"
+          activeStep={getIndexOfPane(firstPane, activePane)}
+          backButton={
+            <Button size="small" data-test-id="createGroupBackButton" onClick={handleBack} disabled={!activePane.prev}>
+              {t("common:actions.back")}
+            </Button>
+          }
+          nextButton={
+            <Button
+              size="small"
+              data-test-id="createGroupNextButton"
+              onClick={() => {
+                void validateAndContinue();
+              }}
+              disabled={archiveType === ""}
+            >
+              {activePane.next ? t("common:actions.next") : t("common:actions.export")}
+            </Button>
+          }
+        />
+      </DialogActions>
+    </>
+  );
 
-  const exportConfigSwitch = (type: ArchiveType) => {
-    switch (type) {
-      case "html":
-        return htmlConfig;
-      case "eln":
-        return elnConfig;
-      case "xml":
-        return xmlConfig;
-      case "pdf":
-        return pdfConfig;
-      case "doc":
-        return docConfig;
+  /*
+   * Each pane's FormGroup is returned from this one place, so that React keeps
+   * the dialog's buttons when the pane changes and only the pane is replaced.
+   */
+  const renderActivePane = () => {
+    switch (activePane.key) {
+      case "FormatChoice":
+        return (
+          <form.FormGroup name="exportConfig" onGroupSubmit={goToNextPane}>
+            {(group) =>
+              renderPane(
+                <FormatChoice form={form} allowFileStores={allowFileStores} defaultPageSize={defaultPageSize} />,
+                () => group.handleSubmit(),
+              )
+            }
+          </form.FormGroup>
+        );
+      case "FormatSpecificOptions":
+        return (
+          <form.FormGroup
+            name="exportDetails"
+            validators={{ onSubmit: validateWith(exportDetailsSchema) }}
+            onGroupSubmit={goToNextPane}
+          >
+            {(group) =>
+              renderPane(archiveType !== "" && <FormatSpecificOptions form={form} />, () => group.handleSubmit())
+            }
+          </form.FormGroup>
+        );
+      case "ExportDialogRaid":
+        return (
+          <form.FormGroup name="repositoryForm.exportToRaid" onGroupSubmit={goToNextPane}>
+            {(group) => renderPane(<ExportDialogRaid form={form} />, () => group.handleSubmit())}
+          </form.FormGroup>
+        );
+      case "ExportRepo":
+        return (
+          <form.FormGroup
+            name="repositoryForm"
+            validators={{ onSubmit: repositoryFormValidator(repoData) }}
+            onGroupSubmit={goToNextPane}
+          >
+            {(group) =>
+              renderPane(
+                <ExportRepo
+                  form={form}
+                  // the group's errors outlive it, so only those from a Next tapped on this visit are shown
+                  errors={group.state.meta.submissionAttempts > 0 ? group.state.meta.errorMap.onSubmit : undefined}
+                  fetchTags={fetchTags}
+                />,
+                () => group.handleSubmit(),
+              )
+            }
+          </form.FormGroup>
+        );
+      case "ExportFileStore":
+        return (
+          <form.FormGroup
+            name="fileStoreScan"
+            validators={{ onSubmitAsync: ({ value }) => confirmFileStoreExport(value) }}
+            onGroupSubmit={goToNextPane}
+          >
+            {(group) => renderPane(<ExportFileStore form={form} />, () => group.handleSubmit())}
+          </form.FormGroup>
+        );
+      default:
+        return null;
     }
   };
 
-  const updateFileStoreFilters = <Key extends keyof ExportState["nfsConfig"]>(
-    name: Key,
-    value: ExportState["nfsConfig"][Key],
-  ) => {
-    updateState((s) => ({ ...s, nfsConfig: { ...s.nfsConfig, [name]: value } }));
-  };
+  return (
+    <Dialog open={isOpen} fullWidth={true} maxWidth="sm" onClose={handleClose} fullScreen={isViewportSmall}>
+      <DialogTitle data-test-id="modalTitle">{activePane.title}</DialogTitle>
+      {renderActivePane()}
+    </Dialog>
+  );
+}
 
-  function updateExportDetails<Key extends keyof PdfExportDetails>(name: Key, value: PdfExportDetails[Key]): void;
-  function updateExportDetails<Key extends keyof HtmlXmlExportDetails>(
-    name: Key,
-    value: HtmlXmlExportDetails[Key],
-  ): void;
-  function updateExportDetails<Key extends keyof WordExportDetails>(name: Key, value: WordExportDetails[Key]): void;
-  function updateExportDetails<Key extends keyof ExportConfig>(name: Key, value: ExportConfig[Key]) {
-    updateState((s) => ({ ...s, exportDetails: { ...s.exportDetails, [name]: value } }));
-  }
-
-  const updateRepoConfig = (config: ExportState["repositoryConfig"]) => {
-    updateState((s) => ({ ...s, repositoryConfig: config }));
-  };
-
-  function setLoading(loading: boolean) {
-    updateState((s) => ({ ...s, loading }));
-  }
-
-  function updateProjectGroupId(groupId: number | null) {
-    // Keep the same state object when nothing changes, so that React can skip the re-render.
-    updateState((s) => (s.projectGroupId === groupId ? s : { ...s, projectGroupId: groupId }));
-  }
-
+function ExportDialog(props: ExportDialogArgs): React.ReactNode {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <Confirm>
-          <Dialog open={state.open} fullWidth={true} maxWidth="sm" onClose={handleClose} fullScreen={isViewportSmall}>
-            <DialogTitle data-test-id="modalTitle">{activePane.title}</DialogTitle>
-            <DialogContent>
-              <Suspense fallback={<FontAwesomeIcon icon={faSpinner} spin size="3x" />}>
-                {activePane.key === "FormatChoice" && (
-                  <FormatChoice
-                    exportSelection={state.exportSelection}
-                    exportConfigUpdate={exportConfigUpdate}
-                    archiveType={archiveType}
-                    allowFileStores={allowFileStores}
-                    repoSelected={repository}
-                    fileStoresSelected={fileStores}
-                    allVersions={state.exportConfig.allVersions}
-                    updateFileStores={updateFileStoreFilters}
-                    validator={getPaneByKey(firstPane, "FormatChoice").validator}
-                  />
-                )}
-                {activePane.key === "FormatSpecificOptions" && archiveType !== "" && (
-                  <FormatSpecificOptions
-                    exportType={archiveType}
-                    // @ts-expect-error Impossible to type check this
-                    exportDetails={state.exportDetails}
-                    updateExportDetails={updateExportDetails}
-                    validator={getPaneByKey(firstPane, "FormatSpecificOptions").validator}
-                  />
-                )}
-                {activePane.key === "ExportRepo" && (
-                  <ExportRepo
-                    state={state}
-                    repoList={state.exportConfig.repoData}
-                    repoDetails={state.repositoryConfig}
-                    updateRepoConfig={updateRepoConfig}
-                    validator={getPaneByKey(firstPane, "ExportRepo").validator}
-                    fetchTags={fetchTags}
-                  />
-                )}
-                {activePane.key === "ExportDialogRaid" && (
-                  <ExportDialogRaid state={state} updateRepoConfig={updateRepoConfig}></ExportDialogRaid>
-                )}
-                {activePane.key === "ExportFileStore" && (
-                  <ExportFileStore
-                    exportConfig={state.exportDetails}
-                    exportSelection={state.exportSelection}
-                    nfsConfig={state.nfsConfig}
-                    updateFilters={updateFileStoreFilters}
-                    validator={getPaneByKey(firstPane, "ExportFileStore").validator}
-                  />
-                )}
-              </Suspense>
-            </DialogContent>
-            <LoadingFade loading={state.loading} />
-            <DialogActions>
-              <Button size="small" onClick={handleClose}>
-                {t("common:actions.cancel")}
-              </Button>
-              <Divider orientation="vertical" sx={{ height: "2em" }} />
-              <MobileStepper
-                sx={{
-                  m: -1,
-                  ml: "0 !important",
-                  flexGrow: 1,
-                  background: "transparent",
-                  pl: 0,
-                }}
-                steps={numberOfPanes(firstPane)}
-                position="static"
-                activeStep={getIndexOfPane(firstPane, activePane)}
-                backButton={
-                  <Button
-                    size="small"
-                    data-test-id="createGroupBackButton"
-                    onClick={handleBack}
-                    disabled={!activePane.prev}
-                  >
-                    {t("common:actions.back")}
-                  </Button>
-                }
-                nextButton={
-                  <Button
-                    size="small"
-                    data-test-id="createGroupNextButton"
-                    onClick={() => {
-                      void handleNext();
-                    }}
-                    disabled={archiveType === ""}
-                  >
-                    {activePane.next ? t("common:actions.next") : t("common:actions.export")}
-                  </Button>
-                }
-              />
-            </DialogActions>
-          </Dialog>
+          <ExportWizard {...props} />
         </Confirm>
       </ThemeProvider>
     </StyledEngineProvider>
   );
 }
-
-const htmlConfig = {
-  maxLinkLevel: 1,
-  archiveType: "html",
-  description: "",
-  allVersions: false,
-};
-
-const elnConfig = {
-  maxLinkLevel: 1,
-  archiveType: "eln",
-  description: "",
-  allVersions: false,
-};
-
-const xmlConfig = {
-  maxLinkLevel: 1,
-  archiveType: "xml",
-  description: "",
-  allVersions: false,
-};
-
-const pdfConfig = {
-  exportFormat: "PDF",
-  exportName: "",
-  provenance: true,
-  comments: true,
-  annotations: true,
-  restartPageNumberPerDoc: true,
-  pageSize: "A4",
-  defaultPageSize: "A4",
-  dateType: "EXP",
-  includeFooterAtEndOnly: true,
-  setPageSizeAsDefault: false,
-  includeFieldLastModifiedDate: true,
-};
-
-const docConfig = {
-  exportFormat: "WORD",
-  exportName: "",
-  pageSize: "A4",
-  defaultPageSize: "A4",
-  setPageSizeAsDefault: false,
-};
 
 export default ExportDialog;

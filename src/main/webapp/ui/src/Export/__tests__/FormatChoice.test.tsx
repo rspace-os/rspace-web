@@ -3,8 +3,8 @@ import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "../../hooks/api/useDeploymentProperty";
-import { mkValidator } from "../../util/Validator";
 import FormatChoice from "../FormatChoice";
+import WithExportForm from "./WithExportForm";
 
 const mockAxios = new MockAdapter(axios);
 beforeEach(() => {
@@ -16,22 +16,18 @@ describe("FormatChoice", () => {
     test("When the repo/uiConfig endpoint returns an empty list, the switch should be disabled.", async () => {
       mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);
       render(
-        <FormatChoice
-          exportSelection={{
-            type: "selection",
-            exportTypes: [],
-            exportNames: [],
-            exportIds: [],
+        <WithExportForm
+          values={{
+            exportSelection: {
+              type: "selection",
+              exportTypes: [],
+              exportNames: [],
+              exportIds: [],
+            },
           }}
-          exportConfigUpdate={() => {}}
-          archiveType={""}
-          allowFileStores={false}
-          repoSelected={false}
-          fileStoresSelected={false}
-          allVersions={false}
-          updateFileStores={() => {}}
-          validator={mkValidator()}
-        />,
+        >
+          {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+        </WithExportForm>,
       );
       expect(
         await screen.findByRole("checkbox", {
@@ -72,22 +68,18 @@ describe("FormatChoice", () => {
         },
       ]);
       render(
-        <FormatChoice
-          exportSelection={{
-            type: "selection",
-            exportTypes: [],
-            exportNames: [],
-            exportIds: [],
+        <WithExportForm
+          values={{
+            exportSelection: {
+              type: "selection",
+              exportTypes: [],
+              exportNames: [],
+              exportIds: [],
+            },
           }}
-          exportConfigUpdate={() => {}}
-          archiveType={""}
-          allowFileStores={false}
-          repoSelected={false}
-          fileStoresSelected={false}
-          allVersions={false}
-          updateFileStores={() => {}}
-          validator={mkValidator()}
-        />,
+        >
+          {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+        </WithExportForm>,
       );
       expect(
         await screen.findByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }),
@@ -100,22 +92,18 @@ describe("FormatChoice", () => {
       await act(() =>
         render(
           <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NORMAL"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
+            <WithExportForm
+              values={{
+                exportSelection: {
+                  type: "selection",
+                  exportTypes: ["NORMAL"],
+                  exportNames: ["foo"],
+                  exportIds: ["1"],
+                },
               }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
+            >
+              {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+            </WithExportForm>
           </DeploymentPropertyContext.Provider>,
         ),
       );
@@ -127,22 +115,18 @@ describe("FormatChoice", () => {
       await act(() =>
         render(
           <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NORMAL"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
+            <WithExportForm
+              values={{
+                exportSelection: {
+                  type: "selection",
+                  exportTypes: ["NORMAL"],
+                  exportNames: ["foo"],
+                  exportIds: ["1"],
+                },
               }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
+            >
+              {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+            </WithExportForm>
           </DeploymentPropertyContext.Provider>,
         ),
       );
@@ -161,22 +145,18 @@ describe("FormatChoice", () => {
       await act(() =>
         render(
           <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NORMAL", "NORMAL"],
-                exportNames: ["foo", "bar"],
-                exportIds: ["1", "2"],
+            <WithExportForm
+              values={{
+                exportSelection: {
+                  type: "selection",
+                  exportTypes: ["NORMAL", "NORMAL"],
+                  exportNames: ["foo", "bar"],
+                  exportIds: ["1", "2"],
+                },
               }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
+            >
+              {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+            </WithExportForm>
           </DeploymentPropertyContext.Provider>,
         ),
       );
@@ -191,22 +171,18 @@ describe("FormatChoice", () => {
       await act(() =>
         render(
           <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["FOLDER"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
+            <WithExportForm
+              values={{
+                exportSelection: {
+                  type: "selection",
+                  exportTypes: ["FOLDER"],
+                  exportNames: ["foo"],
+                  exportIds: ["1"],
+                },
               }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
+            >
+              {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+            </WithExportForm>
           </DeploymentPropertyContext.Provider>,
         ),
       );
@@ -221,22 +197,18 @@ describe("FormatChoice", () => {
       await act(() =>
         render(
           <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["NOTEBOOK"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
+            <WithExportForm
+              values={{
+                exportSelection: {
+                  type: "selection",
+                  exportTypes: ["NOTEBOOK"],
+                  exportNames: ["foo"],
+                  exportIds: ["1"],
+                },
               }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
+            >
+              {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+            </WithExportForm>
           </DeploymentPropertyContext.Provider>,
         ),
       );
@@ -251,22 +223,18 @@ describe("FormatChoice", () => {
       await act(() =>
         render(
           <DeploymentPropertyContext.Provider value={new Map()}>
-            <FormatChoice
-              exportSelection={{
-                type: "selection",
-                exportTypes: ["MEDIA_FILE"],
-                exportNames: ["foo"],
-                exportIds: ["1"],
+            <WithExportForm
+              values={{
+                exportSelection: {
+                  type: "selection",
+                  exportTypes: ["MEDIA_FILE"],
+                  exportNames: ["foo"],
+                  exportIds: ["1"],
+                },
               }}
-              exportConfigUpdate={() => {}}
-              archiveType={""}
-              allowFileStores={false}
-              repoSelected={false}
-              fileStoresSelected={false}
-              allVersions={false}
-              updateFileStores={() => {}}
-              validator={mkValidator()}
-            />
+            >
+              {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+            </WithExportForm>
           </DeploymentPropertyContext.Provider>,
         ),
       );
@@ -281,22 +249,18 @@ describe("FormatChoice", () => {
     test("When the selected documents are all media files, .pdf export should be denied.", async () => {
       await act(() =>
         render(
-          <FormatChoice
-            exportSelection={{
-              type: "selection",
-              exportTypes: ["MEDIA_FILE", "MEDIA_FILE"],
-              exportNames: ["foo", "bar"],
-              exportIds: ["1", "2"],
+          <WithExportForm
+            values={{
+              exportSelection: {
+                type: "selection",
+                exportTypes: ["MEDIA_FILE", "MEDIA_FILE"],
+                exportNames: ["foo", "bar"],
+                exportIds: ["1", "2"],
+              },
             }}
-            exportConfigUpdate={() => {}}
-            archiveType={""}
-            allowFileStores={false}
-            repoSelected={false}
-            fileStoresSelected={false}
-            allVersions={false}
-            updateFileStores={() => {}}
-            validator={mkValidator()}
-          />,
+          >
+            {(form) => <FormatChoice form={form} allowFileStores={false} defaultPageSize="A4" />}
+          </WithExportForm>,
         ),
       );
       expect(

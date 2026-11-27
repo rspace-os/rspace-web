@@ -27,8 +27,10 @@ type FigshareArgs = {
   title: string;
   description: string;
   subject: string;
-  license: number;
-  publish: boolean;
+  // the index of the chosen licence, as a string once the user has picked one
+  license: number | string;
+  // "true" or "false" once the user has picked a publishing status
+  publish: boolean | string;
 };
 
 /**

@@ -70,10 +70,9 @@ export type Repo = {
 
 /**
  * These are the standard fields that each of the Repositories have to
- * collect metadata about the export that the user is making. For each,
- * ExportRepo performs some validations and then sets these booleans to true
- * if the current state of the field passes all of the validations,
- * returning false if any fail. Each of the Repo components in this
+ * collect metadata about the export that the user is making. When the user
+ * taps Next, ExportRepo validates each of them and sets these booleans to
+ * true if the field passes all of the validations, and to false if any fail. Each of the Repo components in this
  * directory should render the respective fields in an error state when the
  * value in this object is false.
  */
@@ -85,29 +84,11 @@ export type StandardValidations = {
   subject: boolean;
 };
 
-export const DEFAULT_REPO_CONFIG = {
-  repoChoice: 0,
-  meta: {
-    title: "",
-    description: "",
-    subject: "",
-    licenseName: "",
-    authors: [] as Array<Person>,
-    contacts: [] as Array<Person>,
-    publish: false as boolean,
-    otherProperties: {},
-  },
-  depositToRepository: false as boolean,
-  exportToRaid: false,
-};
-
-export type RepoDetails = typeof DEFAULT_REPO_CONFIG;
-
 /*
  * The backend's RepoDepositMeta requires authors, contacts and a subject for
  * every deposit, but Zenodo and Digital Commons Data collect none of them and
  * their deposits ignore these values. Placeholders are added only to the
- * export request for these repositories, never to the dialog's shared state,
+ * export request for these repositories, never to the export form's values,
  * so they cannot leak into another repository's form.
  */
 export const REPOS_WITHOUT_PEOPLE_OR_SUBJECT: ReadonlySet<string> = new Set(["app.zenodo", "app.digitalCommonsData"]);

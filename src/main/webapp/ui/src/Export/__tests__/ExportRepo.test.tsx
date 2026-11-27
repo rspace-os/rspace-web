@@ -2,18 +2,18 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import fc, { type Arbitrary } from "fast-check";
 import { HttpResponse, http } from "msw/http";
-import { describe, expect, test, vi } from "vitest";
-import { mkValidator } from "../../util/Validator";
-import ExportRepo from "../ExportRepo";
+import { describe, expect, onTestFinished, test, vi } from "vitest";
+import ExportRepo, { repositoryFormValidator } from "../ExportRepo";
+import { DEFAULT_EXPORT_FORM_VALUES, type ExportForm } from "../exportForm";
 import funders from "./funders.json";
-import repoConfig from "./repoConfig.json";
 import repoList from "./repoList.json";
 import zenodoRepoList from "./zenodoRepoList.json";
 import "@/__tests__/__mocks__/matchMedia";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
-import { DEFAULT_STATE } from "@/Export/constants";
-import { DEFAULT_REPO_CONFIG, type RepoDetails } from "../repositories/common";
+import type { Repo } from "../repositories/common";
 import type { Tag } from "../repositories/Tags";
+import WithExportForm from "./WithExportForm";
 
 type DMP = {
   dmpUserInternalId: number;
@@ -33,22 +33,69 @@ const props = {
     ...repo,
     repoCfg: -1,
   })),
-  state: DEFAULT_STATE,
-  repoDetails: repoConfig,
-  validator: mkValidator(),
-  updateRepoConfig: () => {},
   fetchTags: vi.fn().mockResolvedValue([] as Array<Tag>),
 };
+
+/*
+ * Renders ExportRepo as the export dialog does: inside the FormGroup that
+ * validates it, followed by a Next button that submits that group.
+ */
+function RepositoryPane({
+  repoList,
+  fetchTags,
+  showPane = true,
+  onNext,
+  onInvalid,
+  formRef,
+}: {
+  repoList: Array<Repo>;
+  fetchTags: () => Promise<Array<Tag>>;
+  // false unmounts the pane, as going back to an earlier pane does
+  showPane?: boolean;
+  onNext?: () => void;
+  onInvalid?: () => void;
+  formRef?: { current: ExportForm | null };
+}) {
+  return (
+    <WithExportForm
+      values={{ exportConfig: { ...DEFAULT_EXPORT_FORM_VALUES.exportConfig, repository: true, repoData: repoList } }}
+      formRef={formRef}
+    >
+      {(form) =>
+        showPane && (
+          <form.FormGroup
+            name="repositoryForm"
+            validators={{ onSubmit: repositoryFormValidator(repoList) }}
+            onGroupSubmit={onNext}
+            onGroupSubmitInvalid={onInvalid}
+          >
+            {(group) => (
+              <>
+                <ExportRepo
+                  form={form}
+                  errors={group.state.meta.submissionAttempts > 0 ? group.state.meta.errorMap.onSubmit : undefined}
+                  fetchTags={fetchTags}
+                />
+                <button type="button" aria-label="Next" onClick={() => void group.handleSubmit()} />
+              </>
+            )}
+          </form.FormGroup>
+        )
+      }
+    </WithExportForm>
+  );
+}
+
 describe("ExportRepo", () => {
   test("Should display selection message", async () => {
-    render(<ExportRepo {...props} />);
+    render(<RepositoryPane {...props} />);
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
     expect(screen.getByText("workspace:export.repositories.choiceLabel")).toBeInTheDocument();
   });
   test("Should display repository list with two repositories", async () => {
-    render(<ExportRepo {...props} />);
+    render(<RepositoryPane {...props} />);
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
@@ -57,7 +104,7 @@ describe("ExportRepo", () => {
   });
 
   test("Should have first repository in list selected", async () => {
-    render(<ExportRepo {...props} />);
+    render(<RepositoryPane {...props} />);
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
@@ -95,16 +142,7 @@ describe("ExportRepo", () => {
             async ([indexes, linkedDMPs]) => {
               const user = userEvent.setup();
               const generatedRepoList = [{ ...zenodoRepoList[0], linkedDMPs, repoCfg: -1 }];
-              render(
-                <ExportRepo
-                  repoDetails={props.repoDetails}
-                  repoList={generatedRepoList}
-                  state={DEFAULT_STATE}
-                  updateRepoConfig={() => {}}
-                  validator={mkValidator()}
-                  fetchTags={props.fetchTags}
-                />,
-              );
+              render(<RepositoryPane repoList={generatedRepoList} fetchTags={props.fetchTags} />);
               await waitFor(() => {
                 expect(props.fetchTags).toHaveBeenCalled();
               });
@@ -154,20 +192,21 @@ describe("ExportRepo", () => {
       { ...zenodoRepoList[0], repoCfg: -1 },
       { ...repoList[0], repoName: "app.dataverse", displayName: "Dataverse", repoCfg: -1 },
     ];
-    const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
-    const validator = mkValidator();
-    const renderRepo = (repoDetails: RepoDetails) =>
-      render(
-        <ExportRepo
-          state={DEFAULT_STATE}
-          repoList={zenodoThenDataverse}
-          repoDetails={repoDetails}
-          validator={validator}
-          updateRepoConfig={updateRepoConfig}
-          fetchTags={vi.fn().mockResolvedValue([])}
-        />,
-      );
+    const onNext = vi.fn();
+    const onInvalid = vi.fn();
+    const formRef: { current: ExportForm | null } = { current: null };
+    const pane = (showPane: boolean) => (
+      <RepositoryPane
+        repoList={zenodoThenDataverse}
+        fetchTags={vi.fn().mockResolvedValue([])}
+        showPane={showPane}
+        onNext={onNext}
+        onInvalid={onInvalid}
+        formRef={formRef}
+      />
+    );
     const switchFromZenodoToDataverse = async () => {
+      onInvalid.mockClear();
       await user.click(screen.getByRole("radio", { name: "Zenodo" }));
       // Title and description are valid, so only Dataverse's missing subject can fail validation.
       await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "Title");
@@ -179,55 +218,133 @@ describe("ExportRepo", () => {
       // The current user is the default author and contact.
       expect(await screen.findAllByText(/^Test User - /)).toHaveLength(2);
       expect(screen.queryByText(/DUMMY_VALUE/)).not.toBeInTheDocument();
-      const config = updateRepoConfig.mock.lastCall?.[0];
-      expect(JSON.stringify(config)).not.toContain("DUMMY_VALUE");
-      await expect(validator.isValid()).resolves.toBe(false);
-      return config;
+      expect(JSON.stringify(formRef.current?.state.values)).not.toContain("DUMMY_VALUE");
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1));
+      expect(onNext).not.toHaveBeenCalled();
     };
 
-    const { unmount } = renderRepo({ ...DEFAULT_REPO_CONFIG, repoChoice: 0 });
-    const config = await switchFromZenodoToDataverse();
-
-    // Back then Next re-seeds ExportRepo from the config it last reported.
-    unmount();
-    if (!config) throw new Error("ExportRepo did not report its config");
-    renderRepo(config);
+    const { rerender } = render(pane(true));
     await switchFromZenodoToDataverse();
+
+    // Back then Next unmounts the pane and mounts it again over the same form.
+    rerender(pane(false));
+    rerender(pane(true));
+    await switchFromZenodoToDataverse();
+  });
+  test("Back then Next keeps the tags the user edited instead of loading them again.", async () => {
+    const loadedTag: Tag = {
+      value: "loaded",
+      vocabulary: "vocabulary",
+      uri: "https://example.com/loaded",
+      version: "1",
+    };
+    const fetchTags = vi.fn().mockResolvedValue([loadedTag]);
+    const formRef: { current: ExportForm | null } = { current: null };
+    const pane = (showPane: boolean) => (
+      <RepositoryPane
+        repoList={[{ ...zenodoRepoList[0], repoCfg: -1 }]}
+        fetchTags={fetchTags}
+        showPane={showPane}
+        formRef={formRef}
+      />
+    );
+    const { rerender } = render(pane(true));
+    await waitFor(() => expect(formRef.current?.state.values.repositoryForm.tags).toEqual([loadedTag]));
+
+    // the user removes the loaded tag
+    act(() => formRef.current?.setFieldValue("repositoryForm.tags", []));
+    // Back then Next unmounts the pane and mounts it again over the same form.
+    rerender(pane(false));
+    rerender(pane(true));
+    await screen.findByRole("radio", { name: "Zenodo" });
+
+    expect(fetchTags).toHaveBeenCalledTimes(1);
+    expect(formRef.current?.state.values.repositoryForm.tags).toEqual([]);
+  });
+  test("A failed tag lookup is tried again on the next visit to the pane.", async () => {
+    onTestFinished(silenceConsole(["error"], ["Tags unavailable"]));
+    const loadedTag: Tag = {
+      value: "loaded",
+      vocabulary: "vocabulary",
+      uri: "https://example.com/loaded",
+      version: "1",
+    };
+    const fetchTags = vi.fn().mockRejectedValueOnce(new Error("Tags unavailable")).mockResolvedValue([loadedTag]);
+    const formRef: { current: ExportForm | null } = { current: null };
+    const pane = (showPane: boolean) => (
+      <RepositoryPane
+        repoList={[{ ...zenodoRepoList[0], repoCfg: -1 }]}
+        fetchTags={fetchTags}
+        showPane={showPane}
+        formRef={formRef}
+      />
+    );
+    const { rerender } = render(pane(true));
+    await waitFor(() => expect(fetchTags).toHaveBeenCalledTimes(1));
+    await screen.findByRole("radio", { name: "Zenodo" });
+
+    rerender(pane(false));
+    rerender(pane(true));
+
+    await waitFor(() => expect(formRef.current?.state.values.repositoryForm.tags).toEqual([loadedTag]));
+    expect(fetchTags).toHaveBeenCalledTimes(2);
+  });
+  test("Tags loaded for another format are cleared, and forgotten, when loading them for this one fails.", async () => {
+    onTestFinished(silenceConsole(["error"], ["Tags unavailable"]));
+    const htmlTag: Tag = { value: "html", vocabulary: "vocabulary", uri: "https://example.com/html", version: "1" };
+    const fetchTags = vi.fn().mockRejectedValue(new Error("Tags unavailable"));
+    const repoList = [{ ...zenodoRepoList[0], repoCfg: -1 }];
+    const formRef: { current: ExportForm | null } = { current: null };
+    render(
+      <WithExportForm
+        values={{
+          exportConfig: {
+            ...DEFAULT_EXPORT_FORM_VALUES.exportConfig,
+            archiveType: "pdf",
+            repository: true,
+            repoData: repoList,
+          },
+          repositoryForm: { ...DEFAULT_EXPORT_FORM_VALUES.repositoryForm, tags: [htmlTag], tagsLoadedFor: "html" },
+        }}
+        formRef={formRef}
+      >
+        {(form) => <ExportRepo form={form} errors={undefined} fetchTags={fetchTags} />}
+      </WithExportForm>,
+    );
+
+    await waitFor(() => expect(fetchTags).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(formRef.current?.state.values.repositoryForm.tags).toEqual([]));
+    // nothing is recorded as loaded, so going back to html loads its tags again
+    expect(formRef.current?.state.values.repositoryForm.tagsLoadedFor).toBeNull();
   });
   test("Validation reads the latest form values and marks the fields that fail it.", async () => {
     const user = userEvent.setup();
-    const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
-    const validator = mkValidator();
+    const onNext = vi.fn();
+    const formRef: { current: ExportForm | null } = { current: null };
     render(
-      <ExportRepo
-        state={DEFAULT_STATE}
+      <RepositoryPane
         repoList={[{ ...zenodoRepoList[0], repoCfg: -1 }]}
-        repoDetails={{ ...DEFAULT_REPO_CONFIG, repoChoice: 0 }}
-        validator={validator}
-        updateRepoConfig={updateRepoConfig}
         fetchTags={vi.fn().mockResolvedValue([])}
+        onNext={onNext}
+        formRef={formRef}
       />,
     );
     const title = screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" });
     expect(title).toHaveAttribute("aria-invalid", "false");
 
-    let valid: boolean | undefined;
-    await act(async () => {
-      valid = await validator.isValid();
-    });
-    expect(valid).toBe(false);
-    expect(title).toHaveAttribute("aria-invalid", "true");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => expect(title).toHaveAttribute("aria-invalid", "true"));
+    expect(onNext).not.toHaveBeenCalled();
 
     await user.type(title, "Title");
     await user.type(
       screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }),
       "Description",
     );
-    await act(async () => {
-      valid = await validator.isValid();
-    });
-    expect(valid).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => expect(onNext).toHaveBeenCalledTimes(1));
     expect(title).toHaveAttribute("aria-invalid", "false");
-    expect(updateRepoConfig.mock.lastCall?.[0].meta).toMatchObject({ title: "Title", description: "Description" });
+    expect(formRef.current?.state.values.repositoryForm).toMatchObject({ title: "Title", description: "Description" });
   });
 });

@@ -1,89 +1,71 @@
+import { useStore } from "@tanstack/react-form";
 import type React from "react";
-import { useEffect, useState } from "react";
-import type { Validator } from "../util/Validator";
-import HtmlXmlExport, { type HtmlXmlExportDetailsArgs } from "./HtmlXmlExport";
-import PdfExport, { type PdfExportDetails, type PdfExportDetailsArgs } from "./PdfExport";
-import WordExport, { type WordExportDetails, type WordExportDetailsArgs } from "./WordExport";
+import { useState } from "react";
+import * as v from "valibot";
+import type { ExportForm } from "./exportForm";
+import HtmlXmlExport from "./HtmlXmlExport";
+import PdfExport, { type PdfExportDetails } from "./PdfExport";
+import WordExport, { type WordExportDetails } from "./WordExport";
 
-type FormatSpecificArgs =
-  | ({
-      exportType: "pdf";
-    } & PdfExportDetailsArgs)
-  | ({
-      exportType: "doc";
-    } & WordExportDetailsArgs)
-  | ({
-      exportType: "html" | "xml" | "eln";
-    } & HtmlXmlExportDetailsArgs);
+const exportNameSchema = v.pipe(v.string(), v.minLength(3));
 
-type FormatSpecificOptionsArgs = FormatSpecificArgs & {
-  validator: Validator;
+/**
+ * The options of the chosen format. Only PDF and Word exports have a name,
+ * which must be at least three characters long.
+ */
+export const exportDetailsSchema = v.nullable(v.looseObject({ exportName: v.optional(exportNameSchema) }));
+
+type FormatSpecificOptionsArgs = {
+  form: ExportForm;
 };
 
-export default function FormatSpecificOptions(
-  /*
-   * `props` is not destructured inline, as it usually is, because Flow needs
-   * us to keep the disjoint union object bundled together so that type
-   * refinements on the `exportType` property of `props` can be used to infer
-   * information about the types of the other props.
-   */
-  props: FormatSpecificOptionsArgs,
-): React.ReactNode {
-  const [inputValidations, setInputValidations] = useState({
-    exportName: false,
-  });
+function FormatSpecificOptions({ form }: FormatSpecificOptionsArgs): React.ReactNode {
+  const exportDetails = useStore(form.store, (state) => state.values.exportDetails);
+  // The name is only marked as invalid once the user has changed one of the options.
   const [submitAttempt, setSubmitAttempt] = useState(false);
 
-  const exportName = props.exportType === "pdf" || props.exportType === "doc" ? props.exportDetails.exportName : null;
+  if (exportDetails === null) return null;
 
-  // exportDetails is replaced on every change, so the validation function is re-registered to see the latest name
-  useEffect(() => {
-    props.validator.setValidFunc(() => Promise.resolve(exportName === null || exportName.length > 2));
-  }, [props.validator, exportName]);
+  if ("exportFormat" in exportDetails) {
+    if (exportDetails.exportFormat === "PDF")
+      return (
+        <PdfExport
+          validations={{
+            inputValidations: { exportName: v.is(exportNameSchema, exportDetails.exportName) },
+            submitAttempt,
+          }}
+          exportDetails={exportDetails}
+          updateExportDetails={<T extends keyof PdfExportDetails>(key: T, value: PdfExportDetails[T]) => {
+            form.setFieldValue("exportDetails", { ...exportDetails, [key]: value });
+            setSubmitAttempt(true);
+          }}
+        />
+      );
+    return (
+      <WordExport
+        validations={{
+          inputValidations: { exportName: v.is(exportNameSchema, exportDetails.exportName) },
+          submitAttempt,
+        }}
+        exportDetails={exportDetails}
+        updateExportDetails={<T extends keyof WordExportDetails>(key: T, value: WordExportDetails[T]) => {
+          form.setFieldValue("exportDetails", { ...exportDetails, [key]: value });
+          setSubmitAttempt(true);
+        }}
+      />
+    );
+  }
 
   return (
-    <>
-      {props.exportType === "pdf" && (
-        <PdfExport
-          validations={{ inputValidations, submitAttempt }}
-          exportDetails={props.exportDetails}
-          updateExportDetails={<T extends keyof PdfExportDetails>(key: T, value: PdfExportDetails[T]) => {
-            props.updateExportDetails(key, value);
-            const newExportName =
-              key === "exportName" && typeof value === "string" ? value : props.exportDetails.exportName;
-            setInputValidations({
-              exportName: newExportName.length > 2,
-            });
-            setSubmitAttempt(true);
-          }}
-        />
-      )}
-      {props.exportType === "doc" && (
-        <WordExport
-          validations={{ inputValidations, submitAttempt }}
-          exportDetails={props.exportDetails}
-          updateExportDetails={<T extends keyof WordExportDetails>(key: T, value: WordExportDetails[T]) => {
-            props.updateExportDetails(key, value);
-            const newExportName =
-              key === "exportName" && typeof value === "string" ? value : props.exportDetails.exportName;
-            setInputValidations({
-              exportName: newExportName.length > 2,
-            });
-            setSubmitAttempt(true);
-          }}
-        />
-      )}
-      {props.exportType !== "pdf" && props.exportType !== "doc" && (
-        <HtmlXmlExport
-          validations={{ inputValidations, submitAttempt }}
-          exportDetails={props.exportDetails}
-          updateExportDetails={(key, value) => {
-            props.updateExportDetails(key, value);
-            setInputValidations({ exportName: true });
-            setSubmitAttempt(true);
-          }}
-        />
-      )}
-    </>
+    <HtmlXmlExport
+      validations={{ inputValidations: { exportName: true }, submitAttempt }}
+      exportDetails={exportDetails}
+      updateExportDetails={(key, value) => {
+        form.setFieldValue("exportDetails", { ...exportDetails, [key]: value });
+        setSubmitAttempt(true);
+      }}
+    />
   );
 }
+
+export default FormatSpecificOptions;

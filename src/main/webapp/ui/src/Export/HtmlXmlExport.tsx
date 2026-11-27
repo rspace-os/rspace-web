@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 
 export type HtmlXmlExportDetails = {
   maxLinkLevel: number;
-  archiveType: "html" | "xml";
+  archiveType: "html" | "xml" | "eln";
   description: string;
   allVersions: boolean;
 };

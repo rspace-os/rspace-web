@@ -4,12 +4,11 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
-import type { SwitchProps } from "@mui/material/Switch";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import { useStore } from "@tanstack/react-form";
 import { useTranslation } from "react-i18next";
-import type { DEFAULT_STATE } from "@/Export/constants";
-import type { RepoDetails } from "@/Export/repositories/common";
+import type { ExportForm } from "@/Export/exportForm";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -17,15 +16,15 @@ import { getRaidExportEligibility } from "@/modules/raid/services/export";
 import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 
 interface ExportDialogRaidProps {
-  state: typeof DEFAULT_STATE;
-  updateRepoConfig: (repoDetails: RepoDetails) => void;
+  form: ExportForm;
 }
 
-const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) => {
+function ExportDialogRaid({ form }: ExportDialogRaidProps) {
   const { t, i18n } = useTranslation("workspace");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { data: token } = useOauthTokenQuery();
-  const sharedItemIds = state.exportSelection.exportIds as string[];
+  const sharedItemIds = useStore(form.store, (state) => state.values.exportSelection.exportIds) as string[];
+  const exportToRaid = useStore(form.store, (state) => state.values.repositoryForm.exportToRaid);
   const { data, error } = useCommonGroupsShareListingQuery({
     token,
     params: { sharedItemIds },
@@ -75,14 +74,6 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
     }
   };
 
-  const handleSwitchChange: SwitchProps["onChange"] = ({ target: { checked } }) => {
-    const newRepoConfig: (typeof DEFAULT_STATE)["repositoryConfig"] = {
-      ...state.repositoryConfig,
-      exportToRaid: checked,
-    };
-    updateRepoConfig(newRepoConfig);
-  };
-
   return (
     <>
       {!raidExportStatus.isEligible ? (
@@ -116,8 +107,8 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
           <FormControlLabel
             control={
               <Switch
-                checked={state.repositoryConfig.exportToRaid}
-                onChange={handleSwitchChange}
+                checked={exportToRaid}
+                onChange={({ target: { checked } }) => form.setFieldValue("repositoryForm.exportToRaid", checked)}
                 value="repository"
                 color="primary"
                 disabled={!raidExportStatus.isEligible}
@@ -131,6 +122,6 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
       )}
     </>
   );
-};
+}
 
 export default ExportDialogRaid;

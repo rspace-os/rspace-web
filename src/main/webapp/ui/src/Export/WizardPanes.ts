@@ -1,5 +1,3 @@
-import { mkValidator, type Validator } from "../util/Validator";
-
 // A unique identifier for each pane
 type Key = string;
 
@@ -12,9 +10,6 @@ type Pane = {
   prev: Pane | null; // null means it is the first pane
   next: Pane | null; // null means it is the last pane
 
-  // for validating that the next pane can be moved to
-  validator: Validator;
-
   // title displayed at the top of the dialog
   title: string;
 };
@@ -23,7 +18,6 @@ export const makePane = (key: Key, title: string): Pane => ({
   key,
   prev: null,
   next: null,
-  validator: mkValidator(),
   title,
 });
 
@@ -70,22 +64,4 @@ export const getIndexOfPane = (start: Pane, current: Pane): number => {
     if (ptr.key === current.key) return index;
   }
   throw new Error("Did not find current pane");
-};
-
-/**
- * Gets a pane by its unique key.
- *
- * @param start The first pane in the list
- * @param key The string that uniquely identifies the pane that is being
- *            requested
- * @throws If there is no pane with the provided key in the list
- */
-export const getPaneByKey = (start: Pane, key: string): Pane => {
-  let ptr = start;
-  if (ptr.key === key) return ptr;
-  while (ptr.next) {
-    ptr = ptr.next;
-    if (ptr.key === key) return ptr;
-  }
-  throw new Error(`Did not find pane with key: "${key}"`);
 };

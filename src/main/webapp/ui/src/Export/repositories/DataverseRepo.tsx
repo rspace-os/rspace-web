@@ -34,7 +34,8 @@ type DataverseArgs = {
   title: string;
   description: string;
   subject: string;
-  license: number;
+  // the index of the chosen licence, as a string once the user has picked one
+  license: number | string;
   tags: Array<{
     value: string;
     vocabulary: string;
