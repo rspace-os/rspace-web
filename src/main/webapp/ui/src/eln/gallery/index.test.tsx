@@ -800,10 +800,7 @@ describe("Gallery", () => {
 
     test("pressing Load more while the linked item's page is loading does not request it twice", async () => {
       const user = userEvent.setup();
-      let releasePages = () => {};
-      const slowPage = new Promise<void>((resolve) => {
-        releasePages = resolve;
-      });
+      const { promise: slowPage, resolve: releasePages } = Promise.withResolvers<void>();
       mockPagedFolder(
         [
           [listingEntry(1, "newest.png")],
@@ -830,10 +827,7 @@ describe("Gallery", () => {
 
     test("a page still loading for the old listing does not hold up Load more after a search", async () => {
       const user = userEvent.setup();
-      let releasePages = () => {};
-      const slowPage = new Promise<void>((resolve) => {
-        releasePages = resolve;
-      });
+      const { promise: slowPage, resolve: releasePages } = Promise.withResolvers<void>();
       mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
         slowPage,
       });

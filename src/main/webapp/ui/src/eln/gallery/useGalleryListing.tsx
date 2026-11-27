@@ -1186,12 +1186,8 @@ export function useGalleryListing({
   const path = listingOf.tag === "section" ? { tag: "success" as const, value: listingOf.path } : directFolderPath;
 
   const [page, setPage] = React.useState<number>(0);
-  /*
-   * Counts each (re)load of the listing for a search, sort or folder, so that a
-   * page asked for by one load is never fetched or added to another's.
-   */
-  const [listingVersion, setListingVersion] = React.useState(0);
-  const [pageRequest, setPageRequest] = React.useState<{ listingVersion: number; page: number } | null>(null);
+  // Reloading clears the request so the effect drops any response for the old listing.
+  const [requestedPage, setRequestedPage] = React.useState<number | null>(null);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([new Error("Parent Id is not yet known")]));
@@ -1629,10 +1625,21 @@ export function useGalleryListing({
     return listingOf.tag === "folder" ? `${listingOf.folderId}` : "0";
   }
 
+  function listingParams(p: ReadonlyArray<GalleryFile>, s: GallerySection, pageNumber: number): URLSearchParams {
+    return new URLSearchParams({
+      mediatype: s,
+      currentFolderId: listingFolderId(p),
+      name: searchTerm,
+      pageNumber: `${pageNumber}`,
+      sortOrder,
+      orderBy,
+      foldersOnly: foldersOnly ? "true" : "false",
+    });
+  }
+
   async function getGalleryFiles(p: ReadonlyArray<GalleryFile>, s: GallerySection): Promise<void> {
     setErrorState(false);
-    setListingVersion((version) => version + 1);
-    setPageRequest(null);
+    setRequestedPage(null);
     if (s === "NetworkFiles" && p.length === 0) {
       return getFilestores();
     }
@@ -1646,15 +1653,7 @@ export function useGalleryListing({
       const token = await getToken();
 
       const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
-        params: new URLSearchParams({
-          mediatype: s,
-          currentFolderId: listingFolderId(p),
-          name: searchTerm,
-          pageNumber: "0",
-          sortOrder,
-          orderBy,
-          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-        }),
+        params: listingParams(p, s, 0),
       });
 
       setParentId(
@@ -1690,23 +1689,18 @@ export function useGalleryListing({
   }
 
   /*
-   * Load more only asks for the next page, so asking again before it arrives
-   * changes nothing and a page is never fetched twice; the effect below fetches
-   * it. A page asked for before the listing was reloaded belongs to the old
-   * listing, so it is not fetched, or is dropped if already on its way. The
-   * page only advances once its response is accepted, so a failed one can be
-   * asked for again.
+   * Load more only asks for the next page; the effect below fetches it, so
+   * asking again for a page on its way changes nothing. The request is cleared
+   * once the page is added, so a refresh that leaves fewer pages cannot fetch
+   * it again, and when it fails, so Load more can ask for it again.
    */
   function loadMore(): Promise<void> {
-    const next = { listingVersion, page: page + 1 };
-    setPageRequest((current) =>
-      current?.listingVersion === next.listingVersion && current.page === next.page ? current : next,
-    );
+    setRequestedPage(page + 1);
     return Promise.resolve();
   }
 
   React.useEffect(() => {
-    if (pageRequest?.listingVersion !== listingVersion || pageRequest.page !== page + 1) return;
+    if (requestedPage !== page + 1) return;
     let superseded = false;
     void (async () => {
       try {
@@ -1714,31 +1708,22 @@ export function useGalleryListing({
         const s = FetchingData.getSuccessValue(section).elseThrow();
         const p = FetchingData.getSuccessValue(path).elseThrow();
         const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
-          params: new URLSearchParams({
-            mediatype: s,
-            currentFolderId: listingFolderId(p),
-            name: searchTerm,
-            pageNumber: `${pageRequest.page}`,
-            sortOrder,
-            orderBy,
-            foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-          }),
+          params: listingParams(p, s, requestedPage),
         });
         if (superseded) return;
         const files = parseGalleryFiles(data, token, p);
         setGalleryListing((listing) => [...listing, ...files]);
-        setPage(pageRequest.page);
-        /* satisfied, so a later drop in page (a refresh after deletions) cannot fetch it again */
-        setPageRequest(null);
+        setPage(requestedPage);
+        setRequestedPage(null);
       } catch (e) {
         console.error(e);
-        if (!superseded) setPageRequest(null);
+        if (!superseded) setRequestedPage(null);
       }
     })();
     return () => {
       superseded = true;
     };
-  }, [pageRequest, listingVersion, page]);
+  }, [requestedPage, page]);
 
   React.useEffect(() => {
     Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
@@ -1795,15 +1780,7 @@ export function useGalleryListing({
             [...take(incrementForever(), page + 1)].map((p) =>
               axios
                 .get<unknown>(`/gallery/getUploadedFiles`, {
-                  params: new URLSearchParams({
-                    mediatype: s,
-                    currentFolderId: listingFolderId(pa),
-                    name: searchTerm,
-                    pageNumber: `${p}`,
-                    sortOrder,
-                    orderBy,
-                    foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-                  }),
+                  params: listingParams(pa, s, p),
                 })
                 .then(({ data }) => {
                   Parsers.objectPath(["exceptionMessage"], data)
