@@ -9,6 +9,7 @@ import {
   apiUpdate,
   baseRequest,
   failSampleRequestStatusUpdate,
+  peopleStore,
   renderPanel,
   resetRequestDetailPanelFixtures,
   SAMPLE_REQUEST_STATUS_URL,
@@ -21,6 +22,15 @@ beforeEach(() => {
 
 // Covers OwnerActionsPanel's Approve/Reject buttons and RejectRequestDialog.
 describe("RequestDetailPanel approve/reject", () => {
+  it("disables Approve and Reject while Inventory is read-only", async () => {
+    peopleStore.inventoryReadOnlyReason = "License expired";
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.approveButton" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:requestsManagement.detail.rejectButton" })).toBeDisabled();
+  });
+
   it("approves a pending request and notifies listeners", async () => {
     const user = userEvent.setup();
     renderPanel(baseRequest());

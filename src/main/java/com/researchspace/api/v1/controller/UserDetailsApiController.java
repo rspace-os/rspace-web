@@ -15,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.LicenseService;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
@@ -41,10 +42,13 @@ public class UserDetailsApiController extends BaseApiController implements UserD
 
   private @Autowired UserManager userMgr;
   private @Autowired ContainerApiManager containerMgr;
+  private @Autowired LicenseService licenseService;
 
   @Override
   public ApiUser getCurrentUserDetails(@RequestAttribute(name = "user") User user) {
-    return getPopulatedApiUser(user);
+    ApiUser apiUser = getPopulatedApiUser(user);
+    apiUser.setLicenseActive(licenseService.isLicenseActive());
+    return apiUser;
   }
 
   private ApiUser getPopulatedApiUser(User user) {

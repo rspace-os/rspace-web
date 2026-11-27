@@ -22,6 +22,7 @@ export default class PersonModel implements Person {
   workbenchId: WorkbenchId;
   bench: Container | null;
   _links: Array<_LINK>;
+  licenseActive?: boolean;
   isOperated: boolean = false;
   processingUserActions: boolean = false;
 
@@ -58,6 +59,7 @@ export default class PersonModel implements Person {
     this.workbenchId = attrs.workbenchId;
     this.bench = attrs.bench ?? null;
     this._links = attrs._links;
+    this.licenseActive = attrs.licenseActive;
   }
 
   get isCurrentUser(): boolean {

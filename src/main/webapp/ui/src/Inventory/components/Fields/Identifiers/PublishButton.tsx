@@ -13,7 +13,7 @@ type PublishButtonArgs = {
 export default function PublishButton({ identifier, disabled }: PublishButtonArgs): React.ReactNode {
   const [publishing, setPublishing] = React.useState(false);
   const { t } = useTranslation(["common", "inventory"]);
-  const { uiStore, trackingStore } = useStores();
+  const { uiStore, trackingStore, peopleStore } = useStores();
 
   /*
    * if the identifier has already been published, i.e. it is findable
@@ -79,7 +79,9 @@ export default function PublishButton({ identifier, disabled }: PublishButtonArg
           }
         })();
       }}
-      disabled={publishing || disabled || !identifier.isValid || awaitingReview}
+      disabled={
+        publishing || disabled || !identifier.isValid || awaitingReview || Boolean(peopleStore.inventoryReadOnlyReason)
+      }
       label={republish ? t("common:actions.republish") : t("common:actions.publish")}
     />
   );

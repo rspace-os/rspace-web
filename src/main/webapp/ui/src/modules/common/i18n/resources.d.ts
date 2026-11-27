@@ -3803,6 +3803,10 @@ export default interface Resources {
         "settings": "Settings"
       }
     },
+    "licenseExpired": {
+      "alert": "The RSpace license has expired. Inventory is read-only: you can view, search, export and print barcodes, but not create or change items. Contact your administrator to renew the license.",
+      "readOnly": "The RSpace license has expired, so Inventory is read-only."
+    },
     "limitedAccessAlert": {
       "message": "You do not have permission to see {access} of the details of this {whatLabel}.<br/>To gain full access, please contact the owner, {owner}."
     },
@@ -7577,6 +7581,7 @@ export default interface Resources {
           "templateNotFound": "No instrument template with id: {0}",
           "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
         },
+        "licenseExpired": "The RSpace license has expired. Inventory is read-only: you can view, search, export and print barcodes, but not create or change items. Contact your administrator to renew the license.",
         "listOfMaterials": {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",

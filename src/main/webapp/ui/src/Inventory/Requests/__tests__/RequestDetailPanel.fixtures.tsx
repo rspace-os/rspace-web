@@ -55,10 +55,12 @@ vi.mock("@/hooks/api/useDeploymentProperty", () => ({
 }));
 
 export const addAlert = vi.fn();
+export const peopleStore: { inventoryReadOnlyReason: string | null } = { inventoryReadOnlyReason: null };
 vi.mock("@/stores/use-stores", () => ({
   __esModule: true,
   default: () => ({
     uiStore: { addAlert: (...args: Array<unknown>) => addAlert(...args) },
+    peopleStore,
   }),
 }));
 
@@ -193,6 +195,7 @@ export async function waitForInitialFetches() {
 export function resetRequestDetailPanelFixtures() {
   vi.clearAllMocks();
   currentUser.value = OWNER;
+  peopleStore.inventoryReadOnlyReason = null;
   deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   deploymentProperties["inventory.operations.available"] = "ALLOWED";
   server.use(...defaultHandlers());

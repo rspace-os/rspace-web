@@ -4,6 +4,7 @@
  */
 package com.researchspace.api.v1;
 
+import com.researchspace.api.v1.controller.AllowedWithExpiredLicense;
 import com.researchspace.api.v1.controller.InventoryExportApiController.ApiInventoryExportSettingsPost;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.model.User;
@@ -23,6 +24,7 @@ public interface InventoryExportApi {
    * @param user current user
    * @return
    */
+  @AllowedWithExpiredLicense
   @PostMapping
   ApiJob exportToCsv(
       ApiInventoryExportSettingsPost settings, User user, HttpServletResponse response)

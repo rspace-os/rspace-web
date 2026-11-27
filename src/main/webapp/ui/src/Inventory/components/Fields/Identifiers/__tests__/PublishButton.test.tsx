@@ -2,6 +2,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import type { Identifier, PublishingState } from "../../../../../stores/definitions/Identifier";
+import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../../../../stores/stores-context";
 import materialTheme from "../../../../../theme";
 import PublishButton from "../PublishButton";
 import { mockIGSNIdentifier } from "./mocking";
@@ -64,4 +66,17 @@ describe("PublishButton is not offered where publishing can never succeed", () =
     renderButton(identifier({ doiType: "DATACITE_IGSN", state: "findable", linked: false }));
     expect(screen.getByRole("button", { name: REPUBLISH })).toBeInTheDocument();
   });
+});
+
+test("Publish is disabled while Inventory is read-only", () => {
+  render(
+    <ThemeProvider theme={materialTheme}>
+      <storesContext.Provider
+        value={makeMockRootStore({ peopleStore: { inventoryReadOnlyReason: "License expired" } })}
+      >
+        <PublishButton identifier={identifier({ doiType: "PIDINST_B2INST", state: "draft" })} />
+      </storesContext.Provider>
+    </ThemeProvider>,
+  );
+  expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
 });

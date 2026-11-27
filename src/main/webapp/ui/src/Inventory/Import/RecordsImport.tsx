@@ -37,7 +37,7 @@ const onTypeSelect = (newValue: ImportRecordType): URL => {
 
 function RecordsImport(): React.ReactNode {
   const { t, i18n } = useTranslation("inventory");
-  const { importStore } = useStores();
+  const { importStore, peopleStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const importData = importStore.importData;
@@ -200,7 +200,7 @@ function RecordsImport(): React.ReactNode {
           </Grid>
           <Grid>
             <SubmitSpinner
-              disabled={!importSubmittable || submitting}
+              disabled={!importSubmittable || submitting || Boolean(peopleStore.inventoryReadOnlyReason)}
               onClick={() => importStore.submitImport()}
               loading={submitting}
               label={importButtonLabel}

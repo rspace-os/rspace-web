@@ -41,8 +41,15 @@ vi.mock("../../../hooks/api/integrationHelpers", () => ({
 
 const IMPORT_PIDINST = "inventory:createNew.importPidinst";
 
-function renderCreateNew({ navigate = vi.fn() }: { navigate?: () => void } = {}) {
+function renderCreateNew({
+  navigate = vi.fn(),
+  inventoryReadOnlyReason = null,
+}: {
+  navigate?: () => void;
+  inventoryReadOnlyReason?: string | null;
+} = {}) {
   const stores = {
+    peopleStore: { inventoryReadOnlyReason },
     authStore: { pidinstEnabled: false },
     uiStore: {
       sidebarOpen: true,
@@ -91,5 +98,14 @@ describe("CreateNew", () => {
     await user.click(screen.getByRole("button", { name: "stub import" }));
 
     expect(navigate).toHaveBeenCalledWith("/inventory/instrument/77");
+  });
+
+  test("is disabled with the reason while Inventory is read-only", async () => {
+    const { container } = renderCreateNew({ inventoryReadOnlyReason: "License expired" });
+
+    expect(screen.getByRole("button", { name: "common:actions.create" })).toBeDisabled();
+    expect(screen.getByLabelText("License expired")).toBeInTheDocument();
+    // @ts-expect-error toBeAccessible is from @sa11y/vitest
+    await expect(container).toBeAccessible();
   });
 });

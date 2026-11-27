@@ -1,6 +1,7 @@
 /** RSpace API Access your RSpace documents programmatically. */
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.Role;
@@ -56,6 +57,11 @@ public class ApiUser extends LinkableApiObject implements IdentifiableObject {
 
   @JsonProperty("hasSysAdminRole")
   private Boolean hasSysAdminRole;
+
+  /** Whether the RSpace license is active; only set for the current user (whoami). */
+  @JsonProperty("licenseActive")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Boolean licenseActive;
 
   public ApiUser(User user) {
     this.id = user.getId();

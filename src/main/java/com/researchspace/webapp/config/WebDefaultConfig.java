@@ -41,6 +41,11 @@ public class WebDefaultConfig {
   }
 
   @Bean
+  InventoryLicenseInterceptor inventoryLicenseInterceptor() {
+    return new InventoryLicenseInterceptor();
+  }
+
+  @Bean
   PerformanceLoggingInterceptor performanceLoggingInterceptor() {
     return new PerformanceLoggingInterceptor(properties.getSlowLogThreshold());
   }

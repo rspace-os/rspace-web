@@ -1,6 +1,8 @@
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes } from "react-router";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { LandmarksProvider } from "../components/LandmarksContext";
@@ -26,7 +28,8 @@ const RedirectToBench = () => {
 };
 
 function InventoryRouter(): React.ReactNode {
-  const { uiStore } = useStores();
+  const { uiStore, peopleStore } = useStores();
+  const { t } = useTranslation("inventory");
 
   return (
     <Analytics>
@@ -34,21 +37,28 @@ function InventoryRouter(): React.ReactNode {
         <LandmarksProvider>
           <SkipToContentMenu />
           <Alerts>
-            <Box sx={{ height: "100%" }}>
-              <Routes>
-                <Route path="/" element={!uiStore.isVerySmall ? <RedirectToBench /> : <InitialScreen />} />
-                <Route path="/container/:id" element={<PermalinkRouter type="container" />} />
-                <Route path="/sample/:id" element={<PermalinkRouter type="sample" />} />
-                <Route path="/subsample/:id" element={<PermalinkRouter type="subsample" />} />
-                <Route path="/sampletemplate/:id" element={<PermalinkRouter type="sampletemplate" />} />
-                <Route path="/instrument/:id" element={<PermalinkRouter type="instrument" />} />
-                <Route path="/instrumenttemplate/:id" element={<PermalinkRouter type="instrumenttemplate" />} />
-                <Route path="/search/*" element={<SearchRouter />} />
-                <Route path="/import/*" element={<ImportRouter />} />
-                <Route path="/identifiers/*" element={<IdentifiersRouter />} />
-                <Route path="/requests" element={<Requests />} />
-                <Route path="*" element={<PageNotFoundScreen />} />
-              </Routes>
+            <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              {peopleStore.inventoryReadOnlyReason && (
+                <Alert severity="warning" sx={{ borderRadius: 0 }}>
+                  {t("licenseExpired.alert")}
+                </Alert>
+              )}
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <Routes>
+                  <Route path="/" element={!uiStore.isVerySmall ? <RedirectToBench /> : <InitialScreen />} />
+                  <Route path="/container/:id" element={<PermalinkRouter type="container" />} />
+                  <Route path="/sample/:id" element={<PermalinkRouter type="sample" />} />
+                  <Route path="/subsample/:id" element={<PermalinkRouter type="subsample" />} />
+                  <Route path="/sampletemplate/:id" element={<PermalinkRouter type="sampletemplate" />} />
+                  <Route path="/instrument/:id" element={<PermalinkRouter type="instrument" />} />
+                  <Route path="/instrumenttemplate/:id" element={<PermalinkRouter type="instrumenttemplate" />} />
+                  <Route path="/search/*" element={<SearchRouter />} />
+                  <Route path="/import/*" element={<ImportRouter />} />
+                  <Route path="/identifiers/*" element={<IdentifiersRouter />} />
+                  <Route path="/requests" element={<Requests />} />
+                  <Route path="*" element={<PageNotFoundScreen />} />
+                </Routes>
+              </Box>
             </Box>
             <MoveDialog />
           </Alerts>

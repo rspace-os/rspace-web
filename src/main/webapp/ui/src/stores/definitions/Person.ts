@@ -18,6 +18,8 @@ export type PersonAttrs = {
   workbenchId: WorkbenchId;
   _links: Array<_LINK>;
   bench?: Container;
+  /** Only set on the current user (whoami): false while the RSpace license has expired. */
+  licenseActive?: boolean;
 };
 
 export interface Person {

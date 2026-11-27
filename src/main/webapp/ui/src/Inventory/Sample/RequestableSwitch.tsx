@@ -11,12 +11,14 @@ import HelpLinkIcon from "../../components/HelpLinkIcon";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import { helpDocsArticleUrl } from "../../modules/common/i18n/TransRichText";
 import type SampleModel from "../../stores/models/SampleModel";
+import useStores from "../../stores/use-stores";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parser from "../../util/parsers";
 
 function RequestableSwitch({ activeResult }: { activeResult: SampleModel }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
+  const { peopleStore } = useStores();
   const sampleRequestsAvailable = FetchingData.getSuccessValue(
     useDeploymentProperty("inventory.sampleRequests.available"),
   )
@@ -63,7 +65,7 @@ function RequestableSwitch({ activeResult }: { activeResult: SampleModel }): Rea
             checked={activeResult.requestable}
             onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
             color="primary"
-            disabled={!activeResult.isFieldEditable("requestable")}
+            disabled={!activeResult.isFieldEditable("requestable") || Boolean(peopleStore.inventoryReadOnlyReason)}
           />
         }
         label={t("sample.requestsSection.switchLabel")}

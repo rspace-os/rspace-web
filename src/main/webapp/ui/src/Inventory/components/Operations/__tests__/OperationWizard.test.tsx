@@ -97,6 +97,7 @@ const mandatoryField = (name: string, content: string) => ({ name, mandatory: tr
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
+    peopleStore: {},
     authStore: { isSynchronizing: false },
     moveStore: { isMoving: false },
     searchStore: {

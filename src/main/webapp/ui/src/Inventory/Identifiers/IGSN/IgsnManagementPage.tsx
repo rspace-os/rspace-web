@@ -21,6 +21,7 @@ import AccentMenuItem from "../../../components/AccentMenuItem";
 import { useLandmark } from "../../../components/LandmarksContext";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import TitledBox from "../../../components/TitledBox";
+import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
 import Main from "../../Main";
 import { type Identifier, useIdentifiers, useIdentifiersRefresh } from "../../useIdentifiers";
@@ -41,6 +42,7 @@ export default function IgsnManagementPage({
   const { t } = useTranslation(["inventory", "common"]);
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
+  const readOnly = Boolean(useStores().peopleStore.inventoryReadOnlyReason);
   const mainContentRef = useLandmark(t("igsnManagement.landmark"));
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] = React.useState(false);
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
@@ -81,6 +83,7 @@ export default function IgsnManagementPage({
                 variant="contained"
                 color="primary"
                 disableElevation
+                disabled={readOnly}
                 onClick={() => setBulkRegisterDialogOpen(true)}
               >
                 {t("igsnManagement.bulkRegister.button")}
@@ -205,6 +208,7 @@ export default function IgsnManagementPage({
                       });
                       setActionsAnchorEl(null);
                     }}
+                    disabled={readOnly}
                     backgroundColor={lighten(theme.palette.error.light, 0.5)}
                     foregroundColor={darken(theme.palette.error.dark, 0.3)}
                     avatar={<DeleteOutlineOutlinedIcon />}

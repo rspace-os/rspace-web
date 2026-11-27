@@ -44,7 +44,8 @@ export default function PIDINSTDataciteCard({
   >(null);
 
   const [savingInFlight, setSavingInFlight] = useState(false);
-  const { authStore } = useStores();
+  const { authStore, peopleStore } = useStores();
+  const readOnly = Boolean(peopleStore.inventoryReadOnlyReason);
   const { t } = useTranslation(["inventory", "common"]);
   const settingsLabels: Record<keyof SystemSettings["pidinstDatacite"], string> = {
     enabled: t("settings.pidinst.datacite.labels.enabled"),
@@ -127,14 +128,14 @@ export default function PIDINSTDataciteCard({
                     placeholder={t("settings.pidinst.datacite.placeholder", { label: settingsLabels[field] })}
                     requiredError={t("settings.pidinst.datacite.fieldRequiredError")}
                     required={required}
-                    disabled={savingInFlight || field === "serverUrl"}
+                    disabled={savingInFlight || readOnly || field === "serverUrl"}
                   />
                 </Grid>
                 {field === "serverUrl" && (
                   <Grid sx={{ width: "200px" }}>
                     <RadioField
                       name={t("settings.pidinst.datacite.serverUrlLabel")}
-                      disabled={savingInFlight}
+                      disabled={savingInFlight || readOnly}
                       value={updatedSettings.serverUrl}
                       onChange={({ target }) => {
                         if (target.value !== null && typeof target.value !== "undefined") {
@@ -160,7 +161,7 @@ export default function PIDINSTDataciteCard({
             control={
               <Switch
                 checked={updatedSettings.enabled === "true"}
-                disabled={savingInFlight}
+                disabled={savingInFlight || readOnly}
                 onChange={({ target: { checked } }) => {
                   const newEnabled: IntegrationState = checked ? "true" : "false";
                   setUpdatedSettings({ ...updatedSettings, enabled: newEnabled });
@@ -227,7 +228,7 @@ export default function PIDINSTDataciteCard({
         </Button>
         <SubmitSpinnerButton
           label={t("common:actions.save")}
-          disabled={!unsavedChanges || savingInFlight || isConflict || missingRequired}
+          disabled={readOnly || !unsavedChanges || savingInFlight || isConflict || missingRequired}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}
         />

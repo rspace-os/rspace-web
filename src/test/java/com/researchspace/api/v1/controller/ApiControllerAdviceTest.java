@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -233,6 +234,19 @@ class ApiControllerAdviceTest {
 
     ApiError error = (ApiError) response.getBody();
     assertEquals("Invalid user credentials.", error.getMessage());
+  }
+
+  @Test
+  void inventoryReadOnlyMapsTo403WithTheReadOnlyMessage() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleInventoryReadOnly(new InventoryReadOnlyException("expired"), null);
+
+    assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    assertThat(((ApiError) response.getBody()).getMessage())
+        .startsWith("The RSpace license has expired. Inventory is read-only");
   }
 
   @Test

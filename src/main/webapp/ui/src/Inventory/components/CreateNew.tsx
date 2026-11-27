@@ -12,6 +12,7 @@ import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark
 import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
 import PidinstIcon from "../../assets/graphics/PIDINST.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
+import CustomTooltip from "../../components/CustomTooltip";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
 import NavigateContext from "../../stores/contexts/Navigate";
@@ -41,7 +42,7 @@ type CreateNewArgs = {
  */
 function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
-  const { searchStore, trackingStore, uiStore, importStore } = useStores();
+  const { searchStore, trackingStore, uiStore, importStore, peopleStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
@@ -76,34 +77,39 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
     }
   };
   const controls = React.useId();
+  const readOnlyReason = peopleStore.inventoryReadOnlyReason;
+  const createButton = (
+    <Button
+      variant="contained"
+      color="callToAction"
+      fullWidth
+      disabled={Boolean(readOnlyReason)}
+      aria-controls={controls}
+      aria-haspopup="true"
+      onClick={(event) => setAnchorEl(event.currentTarget)}
+      startIcon={
+        <AddIcon
+          sx={{
+            marginLeft: uiStore.sidebarOpen ? "0px" : "11px",
+          }}
+        />
+      }
+      sx={{
+        minWidth: "unset",
+        overflowX: "hidden",
+        height: "32px",
+      }}
+    >
+      {uiStore.sidebarOpen && <div>{t("common:actions.create")}</div>}
+    </Button>
+  );
   return (
     <Box
       sx={{
         p: 1.5,
       }}
     >
-      <Button
-        variant="contained"
-        color="callToAction"
-        fullWidth
-        aria-controls={controls}
-        aria-haspopup="true"
-        onClick={(event) => setAnchorEl(event.currentTarget)}
-        startIcon={
-          <AddIcon
-            sx={{
-              marginLeft: uiStore.sidebarOpen ? "0px" : "11px",
-            }}
-          />
-        }
-        sx={{
-          minWidth: "unset",
-          overflowX: "hidden",
-          height: "32px",
-        }}
-      >
-        {uiStore.sidebarOpen && <div>{t("common:actions.create")}</div>}
-      </Button>
+      {readOnlyReason ? <CustomTooltip title={readOnlyReason}>{createButton}</CustomTooltip> : createButton}
       <Menu
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}

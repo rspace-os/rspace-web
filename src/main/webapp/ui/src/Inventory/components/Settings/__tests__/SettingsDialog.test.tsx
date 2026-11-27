@@ -1,7 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
@@ -43,8 +43,11 @@ function makeAuthStore(
   };
 }
 
-async function renderDialog(authStore: ReturnType<typeof makeAuthStore>) {
-  const rootStore = makeMockRootStore({ authStore });
+async function renderDialog(
+  authStore: ReturnType<typeof makeAuthStore>,
+  inventoryReadOnlyReason: string | null = null,
+) {
+  const rootStore = makeMockRootStore({ authStore, peopleStore: { inventoryReadOnlyReason } });
   render(
     <ThemeProvider theme={materialTheme}>
       <storesContext.Provider value={rootStore}>
@@ -143,5 +146,19 @@ describe("SettingsDialog", () => {
      * the warning text appears in both. We assert at least one instance exists.
      */
     expect(screen.queryAllByText("inventory:settings.pidinst.conflictWarning")).not.toHaveLength(0);
+  });
+
+  test("explains the expired license and disables the settings while Inventory is read-only", async () => {
+    await renderDialog(makeAuthStore(), "License expired");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("License expired");
+    for (const group of screen.getAllByRole("radiogroup", {
+      name: "inventory:settings.datacite.formLabel",
+      hidden: true,
+    })) {
+      for (const radio of within(group).getAllByRole("radio", { hidden: true })) {
+        expect(radio).toBeDisabled();
+      }
+    }
   });
 });

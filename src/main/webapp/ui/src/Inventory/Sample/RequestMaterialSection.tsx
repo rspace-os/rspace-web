@@ -29,13 +29,14 @@ import { useCancelSampleRequestMutation, useSendSampleRequestMutation } from "..
 import { useExistingSampleRequestQuery } from "../Requests/queries";
 import RequestsStatusChip from "../Requests/RequestsStatusChip";
 
-function RequestSampleButton({ onClick }: { onClick: () => void }): React.ReactNode {
+function RequestSampleButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
   return (
     <Button
       variant="outlined"
       onClick={onClick}
+      disabled={disabled}
       sx={{
         color: theme.palette.record.sample.lighter,
         backgroundColor: theme.palette.primary.main,
@@ -59,7 +60,8 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   const [dialogOpen, setDialogOpen] = useState(false);
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
-  const { uiStore } = useStores();
+  const { uiStore, peopleStore } = useStores();
+  const readOnly = Boolean(peopleStore.inventoryReadOnlyReason);
   const sampleRequestsAvailable = FetchingData.getSuccessValue(
     useDeploymentProperty("inventory.sampleRequests.available"),
   )
@@ -174,7 +176,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                   <Button
                     size="small"
                     variant="outlined"
-                    disabled={isProcessingAction}
+                    disabled={isProcessingAction || readOnly}
                     onClick={cancelRequest}
                     sx={{
                       // The Inventory accented theme's MuiButton override out-specifies a plain
@@ -200,13 +202,13 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
               // other than APPROVED (PENDING is handled separately, above).
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} bordered />
-                <RequestSampleButton onClick={() => setDialogOpen(true)} />
+                <RequestSampleButton onClick={() => setDialogOpen(true)} disabled={readOnly} />
               </Box>
             ) : (
               <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} bordered />
             )
           ) : (
-            <RequestSampleButton onClick={() => setDialogOpen(true)} />
+            <RequestSampleButton onClick={() => setDialogOpen(true)} disabled={readOnly} />
           )}
         </>
       ) : (

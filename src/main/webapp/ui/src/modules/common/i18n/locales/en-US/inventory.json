@@ -1527,6 +1527,10 @@
       "settings": "Settings"
     }
   },
+  "licenseExpired": {
+    "alert": "The RSpace license has expired. Inventory is read-only: you can view, search, export and print barcodes, but not create or change items. Contact your administrator to renew the license.",
+    "readOnly": "The RSpace license has expired, so Inventory is read-only."
+  },
   "limitedAccessAlert": {
     "message": "You do not have permission to see {access} of the details of this {whatLabel}.<br/>To gain full access, please contact the owner, {owner}."
   },

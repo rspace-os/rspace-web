@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import getRootStore from "../../../stores/stores/getRootStore";
 import { menuIDs } from "../../../util/menuIDs";
 import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import { isProcessableSelection } from "../Operations/useOperationWizardLauncher";
@@ -53,6 +54,8 @@ const contextActions = ({
       .filter(Boolean);
     const disableAllActions: string =
       forceDisabled || (reasonsToDisableContextMenu.length > 0 ? reasonsToDisableContextMenu[0] || "" : "");
+    // export and barcode printing stay available while Inventory is read-only
+    const disableWrites: string = disableAllActions || getRootStore().peopleStore.inventoryReadOnlyReason || "";
 
     const hideInPickerAndWhenNotAllCurrent = menuID === menuIDs.PICKER || allSelectedDeleted || mixedSelectedStatus;
 
@@ -75,7 +78,7 @@ const contextActions = ({
             key="edit"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -87,7 +90,7 @@ const contextActions = ({
             key="create"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -99,7 +102,7 @@ const contextActions = ({
             key="process"
             selectedResults={isProcessableSelection(selectedResults) ? selectedResults : []}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -111,7 +114,7 @@ const contextActions = ({
             key="duplicate"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -123,7 +126,7 @@ const contextActions = ({
             key="move"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -135,7 +138,7 @@ const contextActions = ({
             key="transfer"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -147,7 +150,7 @@ const contextActions = ({
             key="restore"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -159,7 +162,7 @@ const contextActions = ({
             key="add to basket"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -171,7 +174,7 @@ const contextActions = ({
             key="remove from basket"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),
@@ -207,7 +210,7 @@ const contextActions = ({
             key="delete"
             selectedResults={selectedResults}
             as={as}
-            disabled={disableAllActions}
+            disabled={disableWrites}
             closeMenu={closeMenu}
           />
         ),

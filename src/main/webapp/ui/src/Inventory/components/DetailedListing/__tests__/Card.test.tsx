@@ -8,6 +8,7 @@ import Card from "../Card";
 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
+    peopleStore: {},
     searchStore: {
       search: {
         alwaysFilterOut: () => false,
