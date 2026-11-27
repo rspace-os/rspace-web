@@ -1,13 +1,19 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
+import type { UseQueryResult } from "@tanstack/react-query";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../../util/table";
-import { type Document, useLinkedDocumentsQuery } from "../queries";
-import type { GalleryFile } from "../useGalleryListing";
+import {
+  type Document,
+  type LinkedDocuments,
+  useFilestoreLinkedDocumentsQuery,
+  useLinkedDocumentsQuery,
+} from "../queries";
+import type { GalleryFile, RemoteFile } from "../useGalleryListing";
 
 /**
  * This table lists all of the ELN documents that reference the passed
@@ -21,9 +27,22 @@ import type { GalleryFile } from "../useGalleryListing";
  * @param file The GalleryFile that can be referenced by ELN documents.
  */
 export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.ReactNode {
+  const linkedDocuments = useLinkedDocumentsQuery(file);
+  return <LinkedDocumentsGrid linkedDocuments={linkedDocuments} />;
+}
+
+export function FilestoreLinkedDocumentsPanel({ file }: { file: RemoteFile }): React.ReactNode {
+  const linkedDocuments = useFilestoreLinkedDocumentsQuery(file);
+  return <LinkedDocumentsGrid linkedDocuments={linkedDocuments} />;
+}
+
+function LinkedDocumentsGrid({
+  linkedDocuments,
+}: {
+  linkedDocuments: UseQueryResult<LinkedDocuments>;
+}): React.ReactNode {
   const { t } = useTranslation("gallery");
   const apiRef = useGridApiRef();
-  const linkedDocuments = useLinkedDocumentsQuery(file);
   const documents = linkedDocuments.data?.documents ?? [];
   const privateByOwner = linkedDocuments.data?.privateByOwner ?? [];
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -93,7 +112,7 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
         }}
       />
       {privateByOwner.map((p) => (
-        // splitLinkedRecords buckets a row with no owner name under "", so fall back to a
+        // a private row with no owner name is bucketed under "", so fall back to a
         // named unknown-owner string rather than rendering a dangling "belonging to "
         <Typography key={p.ownerFullName || "unknownOwner"} variant="body2" sx={{ ml: 2, mt: 0.5 }}>
           {t("linkedDocumentsPanel.privateDocs", {

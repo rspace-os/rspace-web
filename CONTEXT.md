@@ -448,18 +448,18 @@ resolved during design. This file is a glossary only — no implementation detai
   item differently: through a Link field whose Link target is that item.
   _Avoid_: nfs link, remote file link, netfiles link
 - **Linked document** — an ELN document whose current, non-deleted content holds
-  a Filestore link to a given item. The Gallery already lists "Linked Documents"
-  for local Gallery items; for a Filestore item the metadata sidecar and the
-  filestores API report the same thing. On a file system where each user signs
-  in with their own login, only links made through the user's own filestores
-  count, since two logins can see different files at one path, and a path
-  matches a link only where the file system's client reads their leading
-  slashes (none, one, or more) as the same file: SFTP, iRODS and SMB under a
-  server URL's folder can read a path with a leading slash apart from one
-  without, SMBJ reads a first folder named like the share as the share unless
-  two slashes precede it, and iRODS reads a path starting with the account's
-  home as it is unless two slashes precede it; the same holds for the Inventory
-  items linking the item.
+  a Filestore link to a given item. The Gallery Info panel lists "Linked
+  Documents" for local Gallery items and Filestore items alike; for a Filestore
+  item the metadata sidecar and the filestores API report the same thing. On a
+  file system where each user signs in with their own login, only links made
+  through the user's own filestores count, since two logins can see different
+  files at one path, and a path matches a link only where the file system's
+  client reads their leading slashes (none, one, or more) as the same file:
+  SFTP, iRODS and SMB under a server URL's folder can read a path with a leading
+  slash apart from one without, SMBJ reads a first folder named like the share
+  as the share unless two slashes precede it, and iRODS reads a path starting
+  with the account's home as it is unless two slashes precede it; the same holds
+  for the Inventory items linking the item.
   _Avoid_: linking document, referencing document
 - **Filestore link index** — RSpace's own record of every Filestore link in
   current document content, kept in step with the documents so that the Linked

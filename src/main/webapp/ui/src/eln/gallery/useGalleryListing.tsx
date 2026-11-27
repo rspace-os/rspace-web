@@ -13,7 +13,7 @@ import Result from "../../util/result";
 import type { URL as UrlType } from "../../util/types";
 import { GALLERY_SECTION, type GallerySection, gallerySectionCollectiveNoun, parseGallerySection } from "./common";
 import { useFilestoreLogin } from "./components/FilestoreLoginDialog";
-import { LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
+import { FilestoreLinkedDocumentsPanel, LinkedDocumentsPanel } from "./components/LinkedDocumentsPanel";
 import EXT_BY_TYPE from "./fileExtensionsByType.json";
 import { useGallerySelection } from "./useGallerySelection";
 
@@ -851,7 +851,7 @@ export class RemoteFile implements GalleryFile {
   }
 
   get linkedDocuments(): React.ReactNode {
-    return null;
+    return <FilestoreLinkedDocumentsPanel file={this} />;
   }
 
   get canOpen(): Result<null> {
