@@ -1892,9 +1892,10 @@ paths:
         filesystem's client reads the item's full path and the link's (each the filestore's own
         path followed by the item's path) as the same file by their leading slashes: SFTP, iRODS
         and SMB under a server URL's folder can read a full path with a leading slash apart from
-        one without, and SMBJ reads a first folder named like the share as the share unless two
-        slashes precede it. `remotePath` is taken as sent, except that a missing leading slash is
-        added under a filestore path that does not end with one. Documents the caller cannot
+        one without, SMBJ reads a first folder named like the share as the share, and iRODS a full
+        path starting with the account's home as it is, unless two slashes precede it.
+        `remotePath` is taken as sent, except that a missing leading slash is added under a
+        filestore path that does not end with one. Documents the caller cannot
         read are returned as owner-only placeholders (no `id`, `globalId` or `name`).
         Requires read access to the filesystem. On filesystems with per-user logins the user must
         also be logged into the filesystem (see /login endpoint), and that login must be able to
