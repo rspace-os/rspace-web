@@ -38,6 +38,61 @@ test.describe("System account creation", { tag: tags.SYSTEM }, () => {
     expect(await createAccount.hasBlockedInvalidSubmit()).toBe(true);
   });
 
+  test("Closing the previous account's success toast preserves the next account's details", async ({
+    flowSysadminGroupAdmin,
+  }) => {
+    const { createAccount } = flowSysadminGroupAdmin;
+    const page = createAccount.browserPage;
+    await createAccount.open();
+    await createAccount.selectTab("User");
+    await page.route("**/system/ajax/createUserAccount", (route) =>
+      route.fulfill({ json: { data: "Success", errorMsg: { errorMessages: [] } } }),
+    );
+    await createAccount.fillBasicFields({
+      firstName: "First",
+      lastName: "Account",
+      username: "rsdev1457first",
+      email: "rsdev1457first@example.com",
+      password: DYNAMIC_USER_PASSWORD,
+    });
+    await createAccount.noneCommunityRadio.check();
+    // The legacy JSP checkbox has no associated label.
+    const repeat = page.locator("#checkCreateRepeatUserAccount");
+    await repeat.check();
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + 1_000));
+    await createAccount.createButton.click();
+    // Legacy jQuery toasts have no role or accessible close button.
+    const toast = page.locator(".toast-type-success");
+    await expect(toast).toBeAttached();
+    await page.clock.runFor(1_000);
+    await expect(toast).toBeVisible();
+    await page.clock.resume();
+    await expect(page.locator(".blockUI.blockOverlay")).toHaveCount(0);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    const usernameAfterSuccess = await createAccount.usernameField.inputValue();
+
+    await createAccount.fillBasicFields({
+      firstName: "Next",
+      lastName: "Account",
+      username: "rsdev1457next",
+      email: "rsdev1457next@example.com",
+      password: DYNAMIC_USER_PASSWORD,
+    });
+    await page.clock.resume();
+    await toast.locator(".toast-item-close").click();
+    await expect(toast).toHaveCount(0);
+    await expect(createAccount.usernameField).toHaveValue("rsdev1457next");
+    await expect(createAccount.firstNameField).toHaveValue("Next");
+    await expect(createAccount.lastNameField).toHaveValue("Account");
+    await expect(createAccount.emailField).toHaveValue("rsdev1457next@example.com");
+    await expect(createAccount.passwordField).toHaveValue(DYNAMIC_USER_PASSWORD);
+    await expect(createAccount.confirmPasswordField).toHaveValue(DYNAMIC_USER_PASSWORD);
+    await expect(createAccount.noneCommunityRadio).toBeChecked();
+    await expect(repeat).toBeChecked();
+    expect(usernameAfterSuccess).toBe("");
+  });
+
   test("Account creation rejects a username or email that's already taken", async ({ flowSysadminGroupAdmin }) => {
     const { createAccount } = flowSysadminGroupAdmin;
     const email = `${alphaNumericUnique("e2eDupe")}@example.com`;
