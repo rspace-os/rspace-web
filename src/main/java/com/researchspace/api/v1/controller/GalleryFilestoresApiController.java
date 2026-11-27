@@ -131,8 +131,9 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
-    // a path without its leading slash would run into a base not ending with one; a path under
-    // any other base is taken as sent, as a link stores it, and a doubled slash names another key
+    // a path without its leading slash would run into a non-empty base not ending with one; a
+    // path under any other base is taken as sent, as a link stores it, and a doubled slash names
+    // another key
     String base = filestore == null ? "" : NfsFileStore.validateTargetPath(filestore.getPath());
     String path =
         base.isEmpty() || base.endsWith("/")
