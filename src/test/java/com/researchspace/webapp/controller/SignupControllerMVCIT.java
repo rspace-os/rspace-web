@@ -56,6 +56,7 @@ public class SignupControllerMVCIT extends MVCTestBase {
     propertyHolder.setUserSignup("true");
     propertyHolder.setStandalone("true");
     propertyHolder.setPicreateGroupOnSignupEnabled(false);
+    signupController.setAcceptedSignupDomains("");
   }
 
   @BeforeEach
