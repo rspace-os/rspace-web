@@ -267,6 +267,7 @@ export const apiV2CollectionMetadata = {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 50,
         via: "target",
+        viaResource: "instruments",
       },
       {
         namespace: "target.extraFields",
@@ -280,6 +281,7 @@ export const apiV2CollectionMetadata = {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 50,
         via: "target",
+        viaResource: "instruments",
       },
     ],
     pagination: { defaultLimit: 20, maximumLimit: 100 },
@@ -435,6 +437,7 @@ export const apiV2CollectionMetadata = {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 50,
         via: "target",
+        viaResource: "instruments",
       },
       {
         namespace: "target.extraFields",
@@ -448,6 +451,7 @@ export const apiV2CollectionMetadata = {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 50,
         via: "target",
+        viaResource: "instruments",
       },
     ],
     pagination: { defaultLimit: 20, maximumLimit: 100 },
@@ -598,6 +602,7 @@ export const apiV2CollectionMetadata = {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 50,
         via: "",
+        viaResource: "",
       },
       {
         namespace: "extraFields",
@@ -611,6 +616,7 @@ export const apiV2CollectionMetadata = {
         catalogMaximumLimit: 200,
         catalogMaximumIds: 50,
         via: "",
+        viaResource: "",
       },
     ],
     pagination: { defaultLimit: 20, maximumLimit: 100 },

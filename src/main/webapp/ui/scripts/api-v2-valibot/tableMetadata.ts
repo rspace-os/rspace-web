@@ -140,8 +140,7 @@ function runtimeFieldNamespaces(declared: unknown, resourceName: string, runtime
       throw new Error(`Runtime field namespace ${namespace} has an unsupported relationship source`);
     }
   }
-  // `viaResource` is validated but not part of the table metadata.
-  return descriptors.map(({ viaResource: _viaResource, ...namespace }) => namespace);
+  return descriptors;
 }
 
 function collectionMetadata(
