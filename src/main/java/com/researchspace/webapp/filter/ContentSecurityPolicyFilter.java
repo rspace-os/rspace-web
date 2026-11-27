@@ -73,11 +73,12 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
     this.analyticsOrigin =
         StringUtils.isBlank(analyticsServerKey)
             ? ""
-            : originFromConfiguredUrl(analyticsServerHost, "analytics.server.host");
+            : originFromConfiguredUrl(analyticsServerHost, "analytics.server.host", false);
     this.collaboraOrigin =
-        originFromConfiguredUrl(collaboraDiscoveryUrl, "collabora.wopi.discovery.url");
+        originFromConfiguredUrl(collaboraDiscoveryUrl, "collabora.wopi.discovery.url", true);
     this.egnyteAdditionalOrigin =
-        originFromConfiguredUrl(egnyteAdditionalOrigin, "security.csp.egnyte.additional-origin");
+        originFromConfiguredUrl(
+            egnyteAdditionalOrigin, "security.csp.egnyte.additional-origin", false);
   }
 
   @Override
@@ -260,7 +261,8 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
     return candidate;
   }
 
-  private static String originFromConfiguredUrl(String configuredUrl, String propertyName) {
+  private static String originFromConfiguredUrl(
+      String configuredUrl, String propertyName, boolean allowHttp) {
     String candidate = StringUtils.trimToEmpty(configuredUrl);
     if (candidate.isEmpty()) {
       return "";
@@ -278,9 +280,14 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
     if (scheme == null
         || host == null
         || uri.getUserInfo() != null
-        || !("https".equalsIgnoreCase(scheme) || isLoopbackHttp(scheme, host))) {
+        || !("https".equalsIgnoreCase(scheme)
+            || (allowHttp && "http".equalsIgnoreCase(scheme))
+            || isLoopbackHttp(scheme, host))) {
       throw new IllegalArgumentException(
-          propertyName + " must be an HTTPS URL or an HTTP loopback URL");
+          propertyName
+              + (allowHttp
+                  ? " must be an HTTP or HTTPS URL"
+                  : " must be an HTTPS URL or an HTTP loopback URL"));
     }
 
     String normalizedScheme = scheme.toLowerCase(Locale.ROOT);

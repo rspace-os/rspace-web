@@ -165,7 +165,7 @@ class ContentSecurityPolicyFilterTest {
             "",
             "https://analytics.example.org/api/project",
             "analytics-key",
-            "https://collabora.example.org:9980/hosting/discovery",
+            "http://collabora.example.org:9980/hosting/discovery",
             "http://localhost:9242/egnyte-picker");
 
     String workspacePolicy = policyFor(filter, "/workspace", "");
@@ -185,8 +185,8 @@ class ContentSecurityPolicyFilterTest {
         .contains(" https://*.officeapps.live.com")
         .contains("form-action 'self' https://*.officeapps.live.com");
     assertThat(policyFor(filter, "/collaboraOnline/GL123/edit", ""))
-        .contains(" https://collabora.example.org:9980")
-        .contains("form-action 'self' https://collabora.example.org:9980");
+        .contains(" http://collabora.example.org:9980")
+        .contains("form-action 'self' http://collabora.example.org:9980");
     assertThat(policyFor(filter, "/scripts/externalTinymcePlugins/egnyte/dialog.html", ""))
         .contains("connect-src ")
         .contains("frame-src ")
@@ -201,7 +201,7 @@ class ContentSecurityPolicyFilterTest {
                 + " https://analytics.example.org https://*.egnyte.com");
     assertThat(workspacePolicy)
         .doesNotContain("https://*.officeapps.live.com")
-        .doesNotContain("https://collabora.example.org:9980")
+        .doesNotContain("http://collabora.example.org:9980")
         .doesNotContain("https://*.egnyte.com")
         .doesNotContain("http://localhost:9242");
   }
