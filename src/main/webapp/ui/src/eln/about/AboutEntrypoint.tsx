@@ -1,4 +1,3 @@
-import { CacheProvider } from "@emotion/react";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -6,7 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
@@ -38,16 +37,10 @@ window.addEventListener("load", () => {
   const wrapper = document.createElement("div");
   shadow.appendChild(wrapper);
 
-  const cache = createMuiCssLayerCache({
-    key: "css",
-    prepend: true,
-    container: shadow,
-  });
-
   const root = createRoot(wrapper);
   root.render(
     <React.StrictMode>
-      <CacheProvider value={cache}>
+      <MuiCssLayerProvider container={shadow}>
         <QueryClientProvider client={queryClient}>
           <Analytics>
             <ErrorBoundary>
@@ -68,7 +61,7 @@ window.addEventListener("load", () => {
             </ErrorBoundary>
           </Analytics>
         </QueryClientProvider>
-      </CacheProvider>
+      </MuiCssLayerProvider>
     </React.StrictMode>,
   );
 });

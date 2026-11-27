@@ -4,7 +4,7 @@
      msTeamsSimpleDocView.jsp, which also marks the simplified view via a [data-simple-editor-view]
      attribute in the body (read by coreEditor.js). --%>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
     #fileBrowsing,
     #showFileTreeSmall,
     .documentPanel #toolbar,

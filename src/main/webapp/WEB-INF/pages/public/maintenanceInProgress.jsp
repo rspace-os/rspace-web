@@ -22,7 +22,7 @@
 		<a href="/login"><spring:message code="maintenance.mode.checkStatusLink"/></a>
 	</div>
 
-	<script>
+	<script nonce="${requestScope.cspNonce}">
 
 	    var statusCheckInterval = 30;
 	    var refreshInterval = 1;

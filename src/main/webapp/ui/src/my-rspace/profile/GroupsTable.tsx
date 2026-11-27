@@ -5,11 +5,11 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import Alerts from "@/components/Alerts/Alerts";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 import materialTheme from "../../theme";
@@ -89,7 +89,7 @@ export default function GroupsTable(props: any) {
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <Alerts>
           <Box sx={{ width: "690px", padding: "0px 15px" }}>
@@ -148,6 +148,6 @@ export default function GroupsTable(props: any) {
           </Box>
         </Alerts>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

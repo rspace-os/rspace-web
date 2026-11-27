@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title><spring:message code="system.createCommunity.button.label" /></title>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
-    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 </head>
 <body>
   <div id="topSection" class="bootstrap-custom-flat">

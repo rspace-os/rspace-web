@@ -4,10 +4,10 @@
     <meta name="heading" content="<spring:message code='signup.heading'/>"/>
     <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
     <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
-    <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-  <script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}">
 
     $(document).ready(function () {
       const isPublishAllowed = $.get("/public/publishedView/ajax/publishedDocuments/allowed");
@@ -19,11 +19,11 @@
     });
   </script>
     <rst:hasDeploymentProperty name="cloud" value="true">
-      <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
-      <script src="<rst:assetUrl value='/scripts/pages/signup/signup.js'/>"></script>
-      <script src="https://accounts.google.com/gsi/client" async defer></script>
-      <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
-      <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/signup/signup.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="https://accounts.google.com/gsi/client" async defer></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty>
 
     <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
@@ -215,7 +215,7 @@
           </rst:hasDeploymentProperty>
 
         <rst:hasDeploymentProperty name="signupCaptchaEnabled" value="true">
-          <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+          <script nonce="${requestScope.cspNonce}" src="https://www.google.com/recaptcha/api.js" async defer></script>
           <div class="col-lg-12" style="margin-top: 20px;">
             <div class="g-recaptcha" data-sitekey="${applicationScope['RS_DEPLOY_PROPS']['signupCaptchaSiteKey']}"></div>
             <form:errors class="rs-tooltip error" path="captcha"></form:errors>
@@ -265,8 +265,8 @@
 
 </div>
 
-<script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
-<script type="text/javascript">
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" type="text/javascript">
   $(document).ready(function() {
     $.fn.bootstrapButton = $.fn.button.noConflict();
   });

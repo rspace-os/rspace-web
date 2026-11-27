@@ -4,7 +4,7 @@
 </head>
 
 <!-- Hide the top menu tabs -->
-<style type="text/css">
+<style nonce="${requestScope.cspNonce}" type="text/css">
 
     .rs-navbar .rs-navbar__item:not(#branding) {
       display: none !important;  
@@ -45,7 +45,7 @@
 }
 </style>
 
-<script>
+<script nonce="${requestScope.cspNonce}">
 
     var isEgnyteConnectionSetupPage = true;
     

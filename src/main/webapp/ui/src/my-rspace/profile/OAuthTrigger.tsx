@@ -1,10 +1,10 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Alerts from "@/components/Alerts/Alerts";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import materialTheme from "../../theme";
 import OAuthTable from "./OAuthTable";
 
@@ -17,7 +17,7 @@ export default function OAuthTrigger() {
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <Alerts>
           {!open && (
@@ -30,6 +30,6 @@ export default function OAuthTrigger() {
           {open && <OAuthTable />}
         </Alerts>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

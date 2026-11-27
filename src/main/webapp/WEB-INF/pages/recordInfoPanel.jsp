@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp" %>
 
-<script src="<rst:assetUrl value='/scripts/pages/recordInfoPanel.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/recordInfoPanel.js'/>"></script>
 <script id="linkedRecordsTemplate" type="text/x-mustache-template">
 
   <div class="linkedRecordsForAttachmentsDiv">
@@ -25,12 +25,12 @@
 
 </script>
 
-<script>
+<script nonce="${requestScope.cspNonce}">
   var msOfficePreviewAvailable = "${applicationScope['RS_DEPLOY_PROPS']['msOfficeEnabled']}" === "true";
   var collaboraPreviewAvailable = "${applicationScope['RS_DEPLOY_PROPS']['collaboraEnabled']}" === "true";
 </script>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
   .recordInfoPanel {
     display: flex
   }

@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script type="text/javascript">
+<script nonce="${requestScope.cspNonce}" type="text/javascript">
     var USER_FILESTORES_JSON_STRING = '${FILE_STORES_JSON}';
     var FILESYSTEMS_JSON_STRING = '${FILE_SYSTEMS_JSON}';
 </script>

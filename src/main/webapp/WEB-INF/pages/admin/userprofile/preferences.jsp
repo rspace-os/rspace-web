@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <link href="<rst:assetUrl value='/styles/preferences.css'/>" rel="stylesheet" />
-<script src="<rst:assetUrl value='/scripts/pages/rspace/preferences.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/rspace/preferences.js'/>"></script>
 
 <head>
     <title><spring:message code="userList.title"/></title>

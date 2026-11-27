@@ -1,9 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
@@ -43,7 +43,7 @@ class PubchemPlugin {
     ) => {
       (claim ? dialog.open : dialog.update)(
         <I18nRoot namespaces={["common"]}>
-          <StyledEngineProvider injectFirst enableCssLayer>
+          <MuiCssLayerProvider>
             <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
               <Analytics>
                 <ErrorBoundary>
@@ -53,7 +53,7 @@ class PubchemPlugin {
                 </ErrorBoundary>
               </Analytics>
             </ThemeProvider>
-          </StyledEngineProvider>
+          </MuiCssLayerProvider>
         </I18nRoot>,
       );
     };

@@ -2,7 +2,7 @@
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ attribute name="folderChooserId" required="true" type="java.lang.String" %>
 
-<script src="<rst:assetUrl value='/scripts/tags/folderChooser.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/tags/folderChooser.js'/>"></script>
 
 <div id="folderChooser${folderChooserId}" style="display: none;">
     <span id="folderChooserPrompt${folderChooserId}"><a href="#" class="nobutton" id="folderChooserLnk${folderChooserId}"><spring:message code="dialogs.folderChooser.optionalLinkText"/></a></span>

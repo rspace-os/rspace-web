@@ -19,7 +19,7 @@
           </c:if>
           
           <div class="fieldHeaderEditButton bootstrap-custom-flat">
-            <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" onclick="editTextField(${field.id})">
+            <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" data-field-edit-action="editTextField" data-field-id="${field.id}">
               <span class="glyphicon glyphicon-pencil"></span>
             </button>
             <button id="stopEdit_${field.id}" title="<spring:message code='form.field.saveAndViewTitle'/>" class="btn btn-info btn-sm stopEditButton" style="display: none">
@@ -30,7 +30,7 @@
               <div class="invMaterialsListing_new" data-field-id="${field.id}" data-document-id=${structuredDocument.id}></div>
             </c:if>
           <div class="bootstrap-custom-flat">
-            <button style="display:none;float: right; margin-right: 8px; "    class="btn btn-default" id="jupyter_notebooks_button_${field.id}" onclick="window.dispatchEvent(new CustomEvent('jupyter_viewer_click',{detail:{id: ${field.id}}}))">
+            <button style="display:none;float: right; margin-right: 8px; "    class="btn btn-default" id="jupyter_notebooks_button_${field.id}" data-jupyter-viewer-field-id="${field.id}">
               <spring:message code="form.textField.openJupyterNotebooks"/>
             </button>
           </div>

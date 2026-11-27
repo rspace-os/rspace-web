@@ -2,11 +2,11 @@
 
 <!-- jsp fragment included in header.jsp if RSpace instance has Egynte as back-end filestore  -->
 
-<script>
+<script nonce="${requestScope.cspNonce}">
 
     var egnyteFilestoreEnabled = true;
 
-    var _sessionScopeExtConnectionOk = "${sessionScope.extFilestoreConnectionOK}";
+    var _sessionScopeExtConnectionOk = "${f:escapeJavaScript(sessionScope.extFilestoreConnectionOK)}";
     var egnyteFilestoreConnectionOK = _sessionScopeExtConnectionOk === 'true';
 
     function showEgnyteNotConfiguredToast() {

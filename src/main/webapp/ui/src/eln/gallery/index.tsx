@@ -2,12 +2,12 @@ import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 import { lighten, ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import Alerts from "../../components/Alerts/Alerts";
@@ -556,7 +556,7 @@ const queryClient = new QueryClient();
 
 export function Gallery() {
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <CssBaseline />
       <meta
         name="theme-color"
@@ -620,6 +620,6 @@ export function Gallery() {
           </QueryClientProvider>
         </Alerts>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

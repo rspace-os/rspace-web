@@ -12,11 +12,11 @@ import IconButton from "@mui/material/IconButton";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import SecretField from "@/components/Inputs/SecretField";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../theme";
@@ -132,7 +132,7 @@ export default function OAuthDialog(props: any) {
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <Tooltip title={t("profile.oauth.dialog.addNewApp")} enterDelay={100}>
           <IconButton color="inherit" onClick={handleClickOpen}>
@@ -212,6 +212,6 @@ export default function OAuthDialog(props: any) {
           </DialogActions>
         </Dialog>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

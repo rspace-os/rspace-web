@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
 import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
+import { applyCspNonce } from "@/util/csp";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Menu } from "../DialogBoundary";
 
@@ -56,6 +57,7 @@ function loadScript(url: string): void {
   s.async = true;
   s.defer = true;
   s.src = url;
+  applyCspNonce(s);
   if (document.head) {
     document.head.appendChild(s);
   } else {

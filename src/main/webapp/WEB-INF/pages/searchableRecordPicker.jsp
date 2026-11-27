@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script>
-  var onlyDocuments = ${param.onlyDocuments};
+<script nonce="${requestScope.cspNonce}">
+  var onlyDocuments = "${f:escapeJavaScript(param.onlyDocuments)}" === "true";
 </script>
 
 <div class="bootstrap-custom-flat">

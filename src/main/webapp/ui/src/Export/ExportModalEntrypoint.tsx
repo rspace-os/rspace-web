@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import type { ExportSelection } from "@/Export/common";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import Alerts from "../components/Alerts/Alerts";
@@ -24,23 +25,25 @@ if (!domContainer) {
 
 const root = createRoot(domContainer);
 root.render(
-  <I18nRoot namespaces={["workspace", "common"]}>
-    <QueryClientProvider client={queryClient}>
-      <Alerts>
-        <ExportDialog
-          exportSelection={{
-            type: "selection",
-            exportTypes: [],
-            exportNames: [],
-            exportIds: [],
-          }}
-          open={false}
-          // @ts-expect-error RS is legacy
-          allowFileStores={RS.netFileStoresExportEnabled}
-        />
-      </Alerts>
-    </QueryClientProvider>
-  </I18nRoot>,
+  <MuiCssLayerProvider container={domContainer.ownerDocument}>
+    <I18nRoot namespaces={["workspace", "common"]}>
+      <QueryClientProvider client={queryClient}>
+        <Alerts>
+          <ExportDialog
+            exportSelection={{
+              type: "selection",
+              exportTypes: [],
+              exportNames: [],
+              exportIds: [],
+            }}
+            open={false}
+            // @ts-expect-error RS is legacy
+            allowFileStores={RS.netFileStoresExportEnabled}
+          />
+        </Alerts>
+      </QueryClientProvider>
+    </I18nRoot>
+  </MuiCssLayerProvider>,
 );
 
 // @ts-expect-error RS is legacy
@@ -71,21 +74,23 @@ RS.exportModal = {
       exportIds: exportSelection.exportIds || [],
     };
     root.render(
-      <I18nRoot namespaces={["workspace", "common"]}>
-        <QueryClientProvider client={queryClient}>
-          <Alerts>
-            <Analytics>
-              <ExportDialog
-                // @ts-expect-error RS is legacy
-                exportSelection={adjustedSelection}
-                open={true}
-                // @ts-expect-error RS is legacy
-                allowFileStores={RS.netFileStoresExportEnabled}
-              />
-            </Analytics>
-          </Alerts>
-        </QueryClientProvider>
-      </I18nRoot>,
+      <MuiCssLayerProvider container={domContainer.ownerDocument}>
+        <I18nRoot namespaces={["workspace", "common"]}>
+          <QueryClientProvider client={queryClient}>
+            <Alerts>
+              <Analytics>
+                <ExportDialog
+                  // @ts-expect-error RS is legacy
+                  exportSelection={adjustedSelection}
+                  open={true}
+                  // @ts-expect-error RS is legacy
+                  allowFileStores={RS.netFileStoresExportEnabled}
+                />
+              </Analytics>
+            </Alerts>
+          </QueryClientProvider>
+        </I18nRoot>
+      </MuiCssLayerProvider>,
     );
   },
 };

@@ -36,6 +36,8 @@ function showRecordList(result) {
 
   if (noOfRows > 0) {
     $('#record_list').html(result);
+    processWorkspaceAjaxMessages($('#record_list'));
+    setUpWorkspaceBreadcrumbs();
 
     // RSPAC-1212 Blocking: Setting the height to fit the height of the
     // previously displayed content and the blocking message
@@ -56,6 +58,8 @@ function showRecordList(result) {
     }
   } else {
     $('#record_list').hide().html(result);
+    processWorkspaceAjaxMessages($('#record_list'));
+    setUpWorkspaceBreadcrumbs();
 
     // RSPAC-1212 Blocking: Setting the height to fit the height of the previously displayed content and the blocking message
     if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
@@ -78,6 +82,18 @@ function showRecordList(result) {
       $("#searchModePanel").slideDown(fadeTime);
     }
   }
+}
+
+function processWorkspaceAjaxMessages(container) {
+  $(container).find('.workspaceAjaxMessage').each(function () {
+    var message = RS.escapeHtml($(this).text());
+    if ($(this).data('type') === 'error') {
+      apprise(message);
+    } else {
+      RS.confirm(message, "success", 3000);
+    }
+    $(this).remove();
+  });
 }
 
 function hideRecordList() {
@@ -185,6 +201,7 @@ function navigateToFolder(folderId) {
 }
 
 function setUpWorkspaceBreadcrumbs() {
+  RS.initBreadcrumbTag('workspaceBcrumb');
   var $breadcrumbTag = $('#breadcrumbTag_workspaceBcrumb');
   $breadcrumbTag.find(".breadcrumbLink")
   .attr('href', function () {

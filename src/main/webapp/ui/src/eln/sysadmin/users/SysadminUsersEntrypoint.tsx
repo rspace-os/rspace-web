@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import LoaderCircular from "../../../components/LoadingCircular";
@@ -16,13 +16,13 @@ if (wrapperDiv) {
   root.render(
     <I18nRoot namespaces={["system", "common"]} fallback={<LoaderCircular />}>
       <QueryClientProvider client={queryClient}>
-        <StyledEngineProvider injectFirst enableCssLayer>
+        <MuiCssLayerProvider>
           <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
             <UiPreferences>
               <UsersPage />
             </UiPreferences>
           </ThemeProvider>
-        </StyledEngineProvider>
+        </MuiCssLayerProvider>
       </QueryClientProvider>
     </I18nRoot>,
   );

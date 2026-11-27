@@ -6,7 +6,7 @@
     <div id="createRequestDlgContent"></div>
 </div>
 
-<style>
+<style nonce="${requestScope.cspNonce}">
     .extMessageRequestDlgContent {
         padding: 5px;
     }

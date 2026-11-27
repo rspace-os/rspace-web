@@ -6,12 +6,12 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import EmailValidator from "email-validator";
 import { produce } from "immer";
 import React from "react";
 import Select from "react-select";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import materialTheme from "../theme";
 
@@ -172,7 +172,7 @@ class createGroupStep3 extends React.Component<any, any> {
 
     return (
       <Box sx={{ padding: "0 25px 10px 25px" }}>
-        <StyledEngineProvider injectFirst enableCssLayer>
+        <MuiCssLayerProvider>
           <ThemeProvider theme={materialTheme}>
             <Grid container spacing={8}>
               <Grid size={6}>
@@ -223,7 +223,7 @@ class createGroupStep3 extends React.Component<any, any> {
               )}
             </Grid>
           </ThemeProvider>
-        </StyledEngineProvider>
+        </MuiCssLayerProvider>
       </Box>
     );
   }

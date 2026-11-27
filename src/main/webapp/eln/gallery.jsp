@@ -8,9 +8,10 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=2.0"
     />
     <title><spring:message code="gallery:pageTitle"/></title>
+    <meta property="csp-nonce" nonce="${requestScope.cspNonce}">
     <rst:viteClient />
     <rst:bundle bundle="gallery" />
-    <style>
+    <style nonce="${requestScope.cspNonce}">
       html, body, #app, #app > div, #app > div > div {
         height: 100%;
         overscroll-behavior: none;

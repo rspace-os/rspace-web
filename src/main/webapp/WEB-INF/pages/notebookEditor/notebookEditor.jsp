@@ -7,19 +7,19 @@
 
 <body>
 
-  <script>
+  <script nonce="${requestScope.cspNonce}">
     const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
   </script>
 
-  <script src="<rst:assetUrl value='/scripts/pages/journal.js'/>"></script>
-  <script>journal(jQuery)</script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/journal.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}">journal(jQuery)</script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/blueimp-file-upload/js/jquery.fileupload.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/gallery/galleryFileUpload.js'/>"></script>
 
-  <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
 
-  <script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
   <div class="mainDocumentView">
     <axt:fileTreeBrowser />
     <div class="documentPanel">
@@ -33,7 +33,7 @@
           <c:set var="isCloud" value="false"></c:set>
         </c:if>
       </rst:hasDeploymentProperty>
-      <script>
+      <script nonce="${requestScope.cspNonce}">
         const enforceOntologies = "${enforce_ontologies}" === "true";
         const allowBioOntologies = "${allow_bioOntologies}"  === "true";
       </script>

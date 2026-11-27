@@ -38,6 +38,11 @@
         <async-supported>true</async-supported>
     </filter>
     <filter>
+        <filter-name>cspFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter>
         <filter-name>encodingFilter</filter-name>
         <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
         <async-supported>true</async-supported>
@@ -158,6 +163,12 @@
         <url-pattern>/app/slack/callbacks/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>
         <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+    <!-- Set CSP and its request nonce before authentication, routing, and view rendering. -->
+    <filter-mapping>
+        <filter-name>cspFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
     <filter-mapping>
         <filter-name>shiroFilter</filter-name>

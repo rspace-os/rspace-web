@@ -238,6 +238,9 @@ function insertData(html) {
 		}
 		$("#sharedRecordsListContainer").find(".panel, .tabularViewBottom").remove();
 		$("#sharedRecordsListContainer").append(html);
+		if (typeof makeImageLinksPublic === "function") {
+			makeImageLinksPublic();
+		}
 
 		// RSPAC-1212 Blocking: Setting the height to fit the height of the previously displayed content and the blocking message
 		if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {

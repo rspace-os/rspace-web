@@ -1,9 +1,9 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import Alerts from "@/components/Alerts/Alerts";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "../../../modules/common/i18n";
 import materialTheme from "../../../theme";
 import GroupAutoshareManager from "./Autoshare/GroupAutoshareManager";
@@ -47,7 +47,7 @@ class MyLabGroups extends React.Component<any, any> {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <Alerts>
             <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
@@ -138,7 +138,7 @@ class MyLabGroups extends React.Component<any, any> {
             />
           </Alerts>
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     );
   }
 }

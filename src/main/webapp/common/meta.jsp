@@ -6,5 +6,8 @@
     <meta http-equiv="Expires" content="0"/> -->
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta charset="UTF-8">
+    <meta property="csp-nonce" nonce="${requestScope.cspNonce}">
+    <meta name="rspace-current-user" content="${fn:escapeXml(sessionScope.userInfo.username)}">
+    <link rel="stylesheet" href="<rst:assetUrl value='/styles/reactZoomPanPinch.css'/>" />
  
     <link rel="icon" type="image/png" href="<c:url value="/images/favicon.png"/>"/>

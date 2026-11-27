@@ -4,9 +4,9 @@ import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
@@ -106,7 +106,7 @@ function BaseSearchFallback({ placeholder, variant }: { placeholder: string; var
  */
 export default function WrappedBaseSearch(props: React.ComponentProps<typeof BaseSearch>) {
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <I18nRoot
           namespaces={["common"]}
@@ -115,6 +115,6 @@ export default function WrappedBaseSearch(props: React.ComponentProps<typeof Bas
           <BaseSearch {...props} />
         </I18nRoot>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

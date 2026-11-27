@@ -2115,6 +2115,15 @@ function deleteField(fieldId) {
   });
 }
 
+$(document).on("click", "[data-form-field-action]", function () {
+  var fieldId = Number(this.dataset.fieldId);
+  if (this.dataset.formFieldAction === "edit") {
+    editField(fieldId);
+  } else if (this.dataset.formFieldAction === "delete") {
+    deleteField(fieldId);
+  }
+});
+
 //using function expression
 var saveFormTag = function saveTmpTag() {
   var tagTxt = $('#tmp_tag').val();

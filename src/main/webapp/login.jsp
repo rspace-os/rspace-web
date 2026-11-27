@@ -4,8 +4,8 @@
     <meta name="heading" content="<spring:message code='login.heading'/>"/>
     <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
 
-    <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
-  <script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}">
 
     $(document).ready(function () {
       const isPublishAllowed = $.get("/public/publishedView/ajax/publishedDocuments/allowed");
@@ -17,12 +17,12 @@
     });
   </script>
     <rst:hasDeploymentProperty name="cloud" value="true">
-      <script src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
-      <script src="https://accounts.google.com/gsi/client" async defer></script>
-      <script src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/signup/google-signin.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="https://accounts.google.com/gsi/client" async defer></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/blockui/jquery.blockUI.js'/>"></script>
       <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
-      <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
-      <script src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
+      <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/mustache/v420/mustache.min.js'/>"></script>
     </rst:hasDeploymentProperty>
 
     <link href="<rst:assetUrl value='/styles/sign-in-up-common.css'/>" rel="stylesheet">
@@ -32,11 +32,11 @@
 
     <%-- key icon. FontAwesome doesn't work for some reason. Futher investigation is needed. --%>
     <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
-    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 
 <!-- Remove the inventory JWT token -->
-<script type="text/javascript">
+<script nonce="${requestScope.cspNonce}" type="text/javascript">
   window.sessionStorage.removeItem("id_token");
 </script>
 

@@ -9,17 +9,17 @@
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/groups/viewGroup.css'/>" />
   <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/jquery.tagit.css'/>" rel="stylesheet" />
   <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
-  <script src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
-  <script type="text/javascript">
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/js/tag-it.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" type="text/javascript">
     $(document).ready(function() {
     <c:if test="${not empty error}">
-      RS.confirm("${error}", "warning", 5000, {sticky:true});
+      RS.confirm("${f:escapeJavaScript(error)}", "warning", 5000, {sticky:true});
     </c:if>
     });
   </script>
-  <script src="<rst:assetUrl value='/scripts/pages/viewGroupEditing.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
-  <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/viewGroupEditing.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
+  <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
   <shiro:hasRole name="ROLE_PI">
     <c:set var="userRole" value="pi" />
   </shiro:hasRole>
@@ -562,9 +562,9 @@
     </ul>
 </div>
 
-<script type="text/javascript">
-  var groupId = "${group.id}";
-  var displayName = "${group.displayName}";
+<script nonce="${requestScope.cspNonce}" type="text/javascript">
+  var groupId = "${f:escapeJavaScript(group.id)}";
+  var displayName = "${f:escapeJavaScript(group.displayName)}";
 </script>
 
   <!-- MJJA React Scripts -->

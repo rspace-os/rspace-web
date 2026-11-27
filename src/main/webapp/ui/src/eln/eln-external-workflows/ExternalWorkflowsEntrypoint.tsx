@@ -1,4 +1,5 @@
 import { createRoot, type Root } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import ExternalWorkflowInvocations from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 
@@ -40,9 +41,11 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
     }
     const root = getExternalWorkflowRoot(wrapperDiv);
     root.render(
-      <I18nRoot namespaces={["apps"]}>
-        <ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId} />
-      </I18nRoot>,
+      <MuiCssLayerProvider container={wrapperDiv.ownerDocument}>
+        <I18nRoot namespaces={["apps"]}>
+          <ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId} />
+        </I18nRoot>
+      </MuiCssLayerProvider>,
     );
   });
 };

@@ -5,7 +5,7 @@
 <head>
     <title><spring:message code="${param.titleKey}"/></title>
     <meta name="heading" content="<spring:message code='${param.titleKey}'/>"/>
-    <style>
+    <style nonce="${requestScope.cspNonce}">
     	.errorBlock {
     		max-width: 449px;
     		padding: 15px;

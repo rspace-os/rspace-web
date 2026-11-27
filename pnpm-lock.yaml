@@ -196,6 +196,9 @@ overrides:
 
 packageExtensionsChecksum: sha256-Be6i+U+c2s7bcEaz4ujBIcl/oPKt5eyyl4Ibxe025zA=
 
+patchedDependencies:
+  react-zoom-pan-pinch@4.0.4: 77346756b1c2e9f029f749f7037c5085ba1e7a5e18fcf947ca4484a3c1e5de46
+
 importers:
 
   .:
@@ -421,7 +424,7 @@ importers:
         version: 2.3.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
       react-zoom-pan-pinch:
         specifier: 4.0.4
-        version: 4.0.4(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
+        version: 4.0.4(patch_hash=77346756b1c2e9f029f749f7037c5085ba1e7a5e18fcf947ca4484a3c1e5de46)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
       sockjs-client:
         specifier: 1.6.1
         version: 1.6.1(supports-color@7.2.0)
@@ -13455,7 +13458,7 @@ snapshots:
       '@types/react': 19.2.18
       '@types/react-dom': 19.2.4(@types/react@19.2.18)
 
-  react-zoom-pan-pinch@4.0.4(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8):
+  react-zoom-pan-pinch@4.0.4(patch_hash=77346756b1c2e9f029f749f7037c5085ba1e7a5e18fcf947ca4484a3c1e5de46)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8):
     dependencies:
       react: 19.2.8
       react-dom: 19.2.8(@types/react@19.2.18)(react@19.2.8)

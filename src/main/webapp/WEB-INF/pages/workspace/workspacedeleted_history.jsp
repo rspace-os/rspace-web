@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<script src="<rst:assetUrl value='/scripts/pages/rspace/workspaceDeletedHistory.js' />"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/rspace/workspaceDeletedHistory.js' />"></script>
 <title><spring:message code="deletedItems.pageTitle"/></title>
 <head>
     <meta name="heading" content="<spring:message code='pageHeadings.history'/>"/>

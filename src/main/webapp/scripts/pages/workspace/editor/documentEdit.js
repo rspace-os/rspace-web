@@ -820,6 +820,33 @@ function checkAndMarkNumber(element) {
   }
 }
 
+$(document).on("click", "[data-field-edit-action]", function () {
+  var handler = window[this.dataset.fieldEditAction];
+  if (typeof handler === "function") {
+    handler(Number(this.dataset.fieldId));
+  }
+});
+
+$(document).on("change", "[data-field-change-action]", function () {
+  var handler = window[this.dataset.fieldChangeAction];
+  if (typeof handler === "function") {
+    handler(this);
+  }
+});
+
+$(document).on("input", "[data-field-input-action]", function () {
+  var handler = window[this.dataset.fieldInputAction];
+  if (typeof handler === "function") {
+    handler(this);
+  }
+});
+
+$(document).on("click", "[data-jupyter-viewer-field-id]", function () {
+  window.dispatchEvent(new CustomEvent("jupyter_viewer_click", {
+    detail: { id: Number(this.dataset.jupyterViewerFieldId) }
+  }));
+});
+
 function cancelAutosavedEdits() {
   if (editable !== "EDIT_MODE") {
     apprise(RS.msg("legacyjs.workspace.documentEdit.cannotCancelDocument"));

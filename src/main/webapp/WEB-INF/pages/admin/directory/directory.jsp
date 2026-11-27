@@ -1,13 +1,13 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
 	<title><spring:message code="directory.title"/></title>
-	<script src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>   
+	<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/utils/columnSortToggle.js'/>"></script>
 </head>
 
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
-<script type="text/javascript" src="<rst:assetUrl value='/scripts/pages/rspace/directory.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" type="text/javascript" src="<rst:assetUrl value='/scripts/pages/rspace/directory.js'/>"></script>
 
-<script type="text/javascript">
+<script nonce="${requestScope.cspNonce}" type="text/javascript">
   var isCloud = false;
   <rst:hasDeploymentProperty name="cloud" value="true">
   var isCloud = true;

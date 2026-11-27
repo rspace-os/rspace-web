@@ -1,9 +1,9 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import materialTheme from "../../theme";
 import ConnectedAppsTable from "./ConnectedAppsTable";
 
@@ -16,7 +16,7 @@ export default function ConnectedAppsTrigger() {
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         {!open && (
           <Box sx={{ width: "690px", padding: "0px 15px" }}>
@@ -27,6 +27,6 @@ export default function ConnectedAppsTrigger() {
         )}
         {open && <ConnectedAppsTable />}
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

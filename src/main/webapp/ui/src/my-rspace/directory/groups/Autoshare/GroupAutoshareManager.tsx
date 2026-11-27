@@ -7,10 +7,10 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import materialTheme from "../../../../theme";
@@ -143,7 +143,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
   }
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         {loaded && !autoshareStatus && (
           <>
@@ -192,17 +192,17 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
           </>
         )}
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function WrappedGroupAutoshareManager(props: any) {
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <GroupAutoshareManager {...props} />
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

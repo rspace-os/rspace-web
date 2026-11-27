@@ -10,6 +10,7 @@ import Box from "@mui/material/Box";
 import DOMPurify from "dompurify";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import "@jupyter-kit/theme-default/default.css";
 import "@jupyter-kit/theme-default/syntax/one-dark.css";
 import "katex/dist/katex.min.css";
@@ -180,7 +181,11 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
           );
         }
 
-        root.render(<App />);
+        root.render(
+          <MuiCssLayerProvider container={rootDiv.ownerDocument}>
+            <App />
+          </MuiCssLayerProvider>,
+        );
       })();
     }
   });

@@ -3,6 +3,7 @@ import posthog from "posthog-js";
 import { PostHogProvider, usePostHog } from "posthog-js/react";
 import React, { useContext, useEffect, useRef } from "react";
 import axios from "@/common/axios";
+import { applyCspNonce } from "@/util/csp";
 import AnalyticsContext from "../stores/contexts/Analytics";
 
 declare global {
@@ -115,6 +116,7 @@ function loadIntercom({
           script.type = "text/javascript";
           script.async = true;
           script.src = `https://cdn.segment.com/analytics.js/v1/${key}/analytics.min.js`;
+          applyCspNonce(script);
           // Insert our script next to the first script element.
           const first = document.getElementsByTagName("script")[0];
           first.parentNode?.insertBefore(script, first);

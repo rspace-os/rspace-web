@@ -120,6 +120,7 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
     "-Ddcd.client.id=mock-client"
     "-Ddcd.client.secret=mock-secret"
     "-Degnyte.client.id=mock-client"
+    "-Dsecurity.csp.egnyte.additional-origin=${E2E_MOCK_URL}"
     "-Downcloud.url=${E2E_MOCK_URL}/owncloud"
     "-Downcloud.client.id=mock-client"
     "-Downcloud.secret=mock-secret"

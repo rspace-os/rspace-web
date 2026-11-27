@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
     <link rel="shortcut icon" href="${favIcon}" />
 
-    <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/connect/msoffice/officeView.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/global.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/connect/msoffice/officeView.js'/>"></script>
     
     <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery-ui/themes/researchspace/jquery-ui.css'/>" />
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
@@ -43,9 +43,9 @@
   </div>
 </div>
 
-<script type="text/javascript">
+<script nonce="${requestScope.cspNonce}" type="text/javascript">
     var editActionAvailable = ${editActionAvailable};
-	var editActionUrl = '${editActionUrl}';
+	var editActionUrl = '${f:escapeJavaScript(editActionUrl)}';
 	var convertActionAvailable = ${convertActionAvailable};
-	var convertActionUrl = '${convertActionUrl}';
+	var convertActionUrl = '${f:escapeJavaScript(convertActionUrl)}';
 </script>

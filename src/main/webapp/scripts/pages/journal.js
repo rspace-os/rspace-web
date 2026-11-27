@@ -62,6 +62,16 @@ function journal($, extensions = default_extensions) {
 
       // initialise global (plugin) vars
       $plugin = $(this);
+      $plugin
+        .off("click.rsJournalRibbonNavigation", "[data-journal-ribbon-navigation]")
+        .on("click.rsJournalRibbonNavigation", "[data-journal-ribbon-navigation]", function (e) {
+          e.preventDefault();
+          if (this.dataset.journalRibbonNavigation === "previous") {
+            methods.previousEntriesInRibbon();
+          } else if (this.dataset.journalRibbonNavigation === "next") {
+            methods.nextEntriesInRibbon();
+          }
+        });
       journalSettings = settings;
       journalPrivateVars = privateVars;
 
@@ -540,8 +550,6 @@ function journal($, extensions = default_extensions) {
     },
 
     _generateRibbonHtml: function(positionModifier) {
-      var pluginIdSelector = "#" + $plugin.attr("id");
-
       var atLeftEnd = ((journalPrivateVars.historyPosition + positionModifier) <= 1);
       var atRightEnd = !journalPrivateVars.moreItemsAvailable; // if we're at the end of the list, no right arrow
 
@@ -551,15 +559,13 @@ function journal($, extensions = default_extensions) {
 
       var ribbonHtml = "";
       if (!atLeftEnd) {
-        ribbonHtml += "<div id=\"journalEntriesRibbonLeftArrow\" class=\"ribbonNavButton journalEntriesRibbonLeftDiv\" onClick=\"$('"
-          + pluginIdSelector + "').journal('previousEntriesInRibbon');\"><img src=\"" + journalSettings.appPath + "images/icons/LeftArrow25.png\"/></div>";
+        ribbonHtml += "<div id=\"journalEntriesRibbonLeftArrow\" class=\"ribbonNavButton journalEntriesRibbonLeftDiv\" data-journal-ribbon-navigation=\"previous\"><img src=\"" + journalSettings.appPath + "images/icons/LeftArrow25.png\"/></div>";
       } else {
         ribbonHtml += "<div class=\"ribbonNavButton journalEntriesRibbonLeftDiv\"></div>";
       }
       ribbonHtml += "<div id=\"journalEntriesRibbonContent\"><img src=\"" + journalSettings.appPath + "images/ajax-loading.gif\"/></div>";
       if (!atRightEnd) {
-        ribbonHtml += "<div id=\"journalEntriesRibbonRightArrow\" class=\"ribbonNavButton journalEntriesRibbonRightDiv\" onClick=\"$('"
-          + pluginIdSelector + "').journal('nextEntriesInRibbon');\"><img src=\"" + journalSettings.appPath + "images/icons/RightArrow25.png\"/></div>";
+        ribbonHtml += "<div id=\"journalEntriesRibbonRightArrow\" class=\"ribbonNavButton journalEntriesRibbonRightDiv\" data-journal-ribbon-navigation=\"next\"><img src=\"" + journalSettings.appPath + "images/icons/RightArrow25.png\"/></div>";
       } else {
         ribbonHtml += "<div class=\"ribbonNavButton journalEntriesRibbonRightDiv\"></div>";
       }

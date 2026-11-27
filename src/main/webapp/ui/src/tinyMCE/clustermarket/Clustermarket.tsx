@@ -6,10 +6,10 @@ import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type { TFunction } from "i18next";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
@@ -284,7 +284,7 @@ function Clustermarket({
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
   }
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <FormControl>
           <RadioGroup row defaultValue={bookingType} name="radio-booking-type-group" onChange={handleBookingTypeChange}>
@@ -350,7 +350,7 @@ function Clustermarket({
           </Grid>
         </Grid>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }
 function createTinyMceTable(

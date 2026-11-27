@@ -11,8 +11,8 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
 import i18n from "../../modules/common/i18n";
@@ -158,11 +158,11 @@ class NotebookToolbar extends React.Component<NotebookToolbarProps, NotebookTool
 
   render() {
     return (
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <BaseToolbar content={this.content()} />
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     );
   }
 }

@@ -3,8 +3,8 @@
 <head>
     <title><spring:message code="connect.msteams.simpleDocView.title"/></title>
 
-    <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/MicrosoftTeams_sdk_v1.0.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsInitialiser.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/connect/msteams/MicrosoftTeams_sdk_v1.0.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsInitialiser.js'/>"></script>
 
     <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsThemes.css'/>" rel="stylesheet" />
     <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsDocView.css'/>" rel="stylesheet" />
@@ -23,5 +23,5 @@
 
 <jsp:include page="/WEB-INF/pages/workspace/editor/simpleStructuredDocument.jsp" />
 
-<script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsSimpleDocView.js'/>"></script>
+<script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsSimpleDocView.js'/>"></script>
 </body>

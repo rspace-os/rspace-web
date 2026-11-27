@@ -75,26 +75,23 @@ function openAuthorizationDialogForEgnyte(onSuccess, egnyteDomain) {
 }
 
 function loadEgnyteFilePicker(egnyteDomain, egnyteToken) {
+	var egnyte = Egnyte.init(egnyteDomain, {
+		token: egnyteToken
+	});
 
-	$.getScript("/scripts/externalTinymcePlugins/egnyte/egnyte.js", function () {
-		var egnyte = Egnyte.init(egnyteDomain, {
-			token: egnyteToken
-		});
-
-		egnyte.filePicker($('#egnyteWrapper').get(0), {
-			selection: function (list) {
-				$.each(list, function (i, elem) {
-					insertSimpleEgnyteLink(egnyteDomain, elem);
-				});
-				parent.tinymce.activeEditor.windowManager.close();
-			},
-			cancel: function () {
-				parent.tinymce.activeEditor.windowManager.close();
-			},
-			error: function (e) {
-				console.error('problem with egnyte filepicker', e)
-			}
-		});
+	egnyte.filePicker($('#egnyteWrapper').get(0), {
+		selection: function (list) {
+			$.each(list, function (i, elem) {
+				insertSimpleEgnyteLink(egnyteDomain, elem);
+			});
+			parent.tinymce.activeEditor.windowManager.close();
+		},
+		cancel: function () {
+			parent.tinymce.activeEditor.windowManager.close();
+		},
+		error: function (e) {
+			console.error('problem with egnyte filepicker', e)
+		}
 	});
 }
 

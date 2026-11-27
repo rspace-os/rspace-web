@@ -1,8 +1,8 @@
 import Box from "@mui/material/Box";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import materialTheme from "../theme";
 
@@ -37,7 +37,7 @@ class CreateGroupStep1 extends React.Component<any, any> {
   render() {
     return (
       <Box sx={{ padding: "0 25px 10px 25px" }}>
-        <StyledEngineProvider injectFirst enableCssLayer>
+        <MuiCssLayerProvider>
           <ThemeProvider theme={materialTheme}>
             <h3>{i18n.t("groups:createGroup.step1.heading")}</h3>
             <p>{i18n.t("groups:createGroup.step1.hint")}</p>
@@ -49,7 +49,7 @@ class CreateGroupStep1 extends React.Component<any, any> {
               onChange={this.handleChange}
             />
           </ThemeProvider>
-        </StyledEngineProvider>
+        </MuiCssLayerProvider>
       </Box>
     );
   }

@@ -1,9 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import createAccentedTheme from "./accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
 import Analytics from "./components/Analytics";
@@ -49,7 +49,7 @@ export function App(): React.ReactNode {
         (authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
           <>
             <GoogleLoginProvider />
-            <StyledEngineProvider injectFirst enableCssLayer>
+            <MuiCssLayerProvider>
               <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
                 <QueryClientProvider client={queryClient}>
                   <Analytics>
@@ -57,7 +57,7 @@ export function App(): React.ReactNode {
                   </Analytics>
                 </QueryClientProvider>
               </ThemeProvider>
-            </StyledEngineProvider>
+            </MuiCssLayerProvider>
           </>
         ) : (
           ERROR_MSG

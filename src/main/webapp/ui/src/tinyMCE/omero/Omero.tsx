@@ -7,10 +7,10 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type { TFunction } from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import type { Cell } from "../../components/EnhancedTableHead";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import materialTheme from "../../theme";
@@ -657,7 +657,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <RadioGroup
           row
@@ -735,7 +735,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           </Grid>
         </Grid>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }
 

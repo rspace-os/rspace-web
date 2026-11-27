@@ -6,6 +6,10 @@
  */
 var RS = window.RS || {};
 var fadeTime = 400;
+var currentUserMeta = document.querySelector('meta[name="rspace-current-user"]');
+if (currentUserMeta) {
+  window.currentUser = currentUserMeta.content;
+}
 RS._entityMap = {
   "&": "&amp;",
   "<": "&lt;",
@@ -17,6 +21,30 @@ RS._entityMap = {
 var previousHeightOfBlockedElement = -1;
 var temporaryHeightOfBlockedElement = 0;
 RS.minSearchTermLength = 3;
+
+RS.getCspNonce = function () {
+  var nonceMeta = document.querySelector('meta[property="csp-nonce"]');
+  return nonceMeta ? nonceMeta.nonce : "";
+};
+
+RS.loadScriptWithNonce = function (url) {
+  var deferred = $.Deferred();
+  var script = document.createElement("script");
+  var nonce = RS.getCspNonce();
+  if (nonce) {
+    script.nonce = nonce;
+  }
+  script.async = true;
+  script.onload = function () {
+    deferred.resolve(script);
+  };
+  script.onerror = function () {
+    deferred.reject(new Error("Failed to load script: " + url));
+  };
+  script.src = url;
+  document.head.appendChild(script);
+  return deferred.promise();
+};
 
 // TinyMCE iframes reuse the server-injected dictionary from their parent window.
 if (!RS.i18n || !RS.formatIcuMessage || !RS.formatList) {
@@ -1744,6 +1772,26 @@ RS.refreshBreadcrumbElems = function (bcrumbTagId) {
   html += "<span id='recordNameInBreadcrumb'>" + bcrumb[bcrumbLength - 1].displayname + "</span>";
 
   $bcrumElemsDiv.html(html);
+};
+
+RS.initBreadcrumbTag = function (bcrumbTagId) {
+  var $breadcrumbTag = $("#breadcrumbTag_" + bcrumbTagId);
+  var $breadcrumbData = $breadcrumbTag.children(".breadcrumbData");
+  if ($breadcrumbData.length === 0) {
+    return;
+  }
+
+  $breadcrumbData.children("span").each(function () {
+    var $element = $(this);
+    var displayName = $element.data("home")
+      ? RS.msg("legacyjs.core.breadcrumb.home")
+      : $element.text();
+    var safeDisplayName = $("<span>").text(displayName).html();
+    RS.addBreadcrumbElement(bcrumbTagId, $element.attr("data-id"), safeDisplayName);
+  });
+  // a hidden copy of each name would otherwise sit beside the rendered breadcrumb
+  $breadcrumbData.remove();
+  RS.refreshBreadcrumbElems(bcrumbTagId);
 };
 
 /* to add an element to breadcrumb trail. displayName has to be escaped. */

@@ -1,9 +1,9 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -23,7 +23,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <StyledEngineProvider injectFirst enableCssLayer>
+        <MuiCssLayerProvider>
           <ThemeProvider
             theme={{
               ...materialTheme,
@@ -72,7 +72,7 @@ window.addEventListener("load", () => {
               </Analytics>
             </QueryClientProvider>
           </ThemeProvider>
-        </StyledEngineProvider>
+        </MuiCssLayerProvider>
       </React.StrictMode>,
     );
   }

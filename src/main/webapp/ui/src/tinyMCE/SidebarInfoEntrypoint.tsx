@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot, type Root } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import SidebarInfo from "@/tinyMCE/SidebarInfo";
 import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
@@ -37,11 +37,11 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   sidebarRoots.set(container, root);
   root.render(
     <I18nRoot namespaces={["workspace", "common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={materialTheme}>
           <SidebarInfo iframe={iframe} />
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     </I18nRoot>,
   );
 });

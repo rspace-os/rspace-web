@@ -14,9 +14,9 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "../../../modules/common/i18n";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
@@ -138,7 +138,7 @@ class GroupEditBar extends React.Component<any, any> {
 
   render() {
     return (
-      <StyledEngineProvider injectFirst enableCssLayer>
+      <MuiCssLayerProvider>
         <ThemeProvider theme={theme}>
           <CardWrapper>
             <Card>
@@ -249,7 +249,7 @@ class GroupEditBar extends React.Component<any, any> {
             />
           </Snackbar>
         </ThemeProvider>
-      </StyledEngineProvider>
+      </MuiCssLayerProvider>
     );
   }
 }

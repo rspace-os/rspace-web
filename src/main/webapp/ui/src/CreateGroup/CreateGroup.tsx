@@ -10,9 +10,9 @@ import MobileStepper from "@mui/material/MobileStepper";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import materialTheme from "../theme";
 import Step1 from "./CreateGroupStep1";
@@ -253,7 +253,7 @@ class CreateGroup extends React.Component<CreateGroupProps, any> {
 
     return (
       <div>
-        <StyledEngineProvider injectFirst enableCssLayer>
+        <MuiCssLayerProvider>
           <ThemeProvider theme={materialTheme}>
             <Button
               variant="contained"
@@ -361,7 +361,7 @@ class CreateGroup extends React.Component<CreateGroupProps, any> {
               />
             </Snackbar>
           </ThemeProvider>
-        </StyledEngineProvider>
+        </MuiCssLayerProvider>
       </div>
     );
   }

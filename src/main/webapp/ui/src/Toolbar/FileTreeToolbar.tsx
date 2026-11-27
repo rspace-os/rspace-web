@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import BaseToolbar from "../components/BaseToolbar";
 import TreeSort from "../components/TreeSort";
 import i18n from "../modules/common/i18n";
@@ -58,10 +58,10 @@ export default function FileTreeToolbar() {
   }
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <BaseToolbar content={content()} />
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

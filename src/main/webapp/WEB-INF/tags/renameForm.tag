@@ -15,7 +15,8 @@
 <%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
-<script>
+<%@ taglib uri="http://researchspace.com/functions" prefix="f" %>
+<script nonce="${requestScope.cspNonce}">
 function getFormName () {
 	return $('#documentName').find('.recordName').text();
 }
@@ -33,9 +34,9 @@ function getFormName () {
 <c:if test="${editStatus  eq 'EDIT_MODE'}">
    <c:set value="true" var="canEdit"></c:set>
 </c:if>
-<script>
+<script nonce="${requestScope.cspNonce}">
 	var isEditable=${canEdit};
-	var itemType="${itemType}";
+	var itemType="${f:escapeJavaScript(itemType)}";
 
 	$(document).ready(function() {
 		$('#renameRecordDirect').dialog({
@@ -60,7 +61,7 @@ function getFormName () {
 							recordId:recordId,
 							newName:newName
 					};
-					$.post("${postURL}/rename",data,function (data){
+					$.post("${f:escapeJavaScript(postURL)}/rename",data,function (data){
 						if(data.errorMsg != null) {
 							apprise(getValidationErrorString(data.errorMsg));
 						} else {

@@ -33,15 +33,19 @@ public class ViteClientTag extends TagSupport {
 
     try {
       if (getRenderedAssetKeys().add(BundleTag.REACT_PREAMBLE_DEDUPE_KEY)) {
-        pageContext.getOut().write(BundleTag.reactRefreshPreambleHtml());
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        pageContext.getOut().write(BundleTag.reactRefreshPreambleHtml(request));
       }
       if (getRenderedAssetKeys().add(DEDUPE_KEY)) {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         pageContext
             .getOut()
             .write(
                 "<script type=\"module\" src=\""
                     + StringEscapeUtils.escapeHtml4(CLIENT_URL)
-                    + "\"></script>");
+                    + "\""
+                    + BundleTag.nonceAttribute(request)
+                    + "></script>");
       }
     } catch (IOException e) {
       throw new JspException("Failed to render Vite client tag", e);

@@ -8,12 +8,12 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import MobileStepper from "@mui/material/MobileStepper";
 import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { action, observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { Suspense, startTransition, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios, { isAxiosError } from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import { DEFAULT_STATE, type ExportConfig } from "@/Export/constants";
 import ExportDialogRaid from "@/Export/ExportDialogRaid";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -391,7 +391,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <Confirm>
           <Dialog open={state.open} fullWidth={true} maxWidth="sm" onClose={handleClose} fullScreen={isViewportSmall}>
@@ -488,7 +488,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
           </Dialog>
         </Confirm>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }
 

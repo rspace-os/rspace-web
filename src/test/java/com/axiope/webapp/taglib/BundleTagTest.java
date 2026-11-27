@@ -13,6 +13,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.webapp.filter.ContentSecurityPolicyFilter;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.PageContext;
@@ -100,8 +101,10 @@ public class BundleTagTest {
 
   @Test
   public void rendersManifestBackedAssets() throws JspException {
+    stubRequest();
     stubServletContext();
     stubWriter();
+    request.setAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE, "unit-test-nonce");
     manifest =
         BundleTag.ChunkManifest.fromBundles(
             Collections.singletonMap(
@@ -118,7 +121,10 @@ public class BundleTagTest {
         .contains("rel=\"stylesheet\" href=\"/ui/dist/assets/appBar.css\"");
     assertThat(output.toString())
         .contains("rel=\"modulepreload\" href=\"/ui/dist/chunks/shared.js\"");
-    assertThat(output.toString()).contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\"");
+    assertThat(output.toString())
+        .contains(
+            "<script type=\"module\" src=\"/ui/dist/appBar-abc123.js\" "
+                + "nonce=\"unit-test-nonce\"></script>");
   }
 
   @Test
@@ -126,6 +132,7 @@ public class BundleTagTest {
     stubRequest();
     stubServletContext();
     stubWriter();
+    request.setAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE, "unit-test-nonce");
     manifest =
         BundleTag.ChunkManifest.fromBundles(
             Collections.singletonMap(
@@ -149,8 +156,8 @@ public class BundleTagTest {
     assertEquals(TagSupport.SKIP_BODY, i18nTag.doStartTag());
     // The catalogue comes first only because it is written first; RS.msg reads both at call time.
     assertEquals(
-        "<script src=\"/ui/dist/legacyMessages.en-US.js\"></script>"
-            + "<script src=\"/ui/dist/legacyI18n-abc123.js\"></script>",
+        "<script src=\"/ui/dist/legacyMessages.en-US.js\" nonce=\"unit-test-nonce\"></script>"
+            + "<script src=\"/ui/dist/legacyI18n-abc123.js\" nonce=\"unit-test-nonce\"></script>",
         output.toString());
   }
 

@@ -2,27 +2,17 @@
 <%@taglib prefix="f" uri="http://researchspace.com/functions" %>
 
 <c:if test="${fn:length(errorMsg) > 0}">
-    <script>
-      apprise('${errorMsg}');
-    </script>
+    <div class="workspaceAjaxMessage" data-type="error" hidden><c:out value="${errorMsg}" /></div>
 </c:if>
 
 <c:if test="${fn:length(successMsg) > 0}">
-    <script>
-      RS.confirm("${successMsg}", "success", 3000);
-    </script>
+    <div class="workspaceAjaxMessage" data-type="success" hidden><c:out value="${successMsg}" /></div>
 </c:if>
 
 
 <%-- This page provides the search results and listings of workspace contents. --%>
 <div class="breadcrumb bootstrap-custom-flat">
     <axt:breadcrumb breadcrumb="${bcrumb}" breadcrumbTagId="workspaceBcrumb"></axt:breadcrumb>
-    <script>
-      $(document).ready(function () {
-        setUpWorkspaceBreadcrumbs();
-      });
-      var settingsKey = "${settingsKey}";
-    </script>
 </div>
 
 <div style="position: relative;" class="optionsPopup">

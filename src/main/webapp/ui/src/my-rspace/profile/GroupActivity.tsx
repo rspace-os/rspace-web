@@ -5,10 +5,10 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import materialTheme from "../../theme";
@@ -55,7 +55,7 @@ export default function GroupActivity(props: any) {
   };
 
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <Box sx={{ width: "690px", padding: "0px 15px" }}>
           {!fetched && (
@@ -98,6 +98,6 @@ export default function GroupActivity(props: any) {
           )}
         </Box>
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

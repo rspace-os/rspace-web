@@ -9,11 +9,11 @@
         <link rel="stylesheet"
             href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
 
-    <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/photoswipe.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/photoswipe.js'/>"></script>
 
-    <style>
+    <style nonce="${requestScope.cspNonce}">
         .pswp {
             z-index: 10000200 !important;
             /* so it's on top of gallery dialog */
@@ -106,7 +106,7 @@
         </div>
 
     </div>
-<script>
+<script nonce="${requestScope.cspNonce}">
     $(document).ready(function () {
         <%-- The public view is for a document made accessible to non RSpace users
         The public view will (normally) not load the correct CSS from the photoswipe library

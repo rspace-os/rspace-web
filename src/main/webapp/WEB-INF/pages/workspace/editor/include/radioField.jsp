@@ -13,7 +13,7 @@
             </div>
             <span class="fieldNotification"></span>
             <div class="fieldHeaderEditButton bootstrap-custom-flat">
-              <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" onclick="editFieldByClassRadio(${field.id})">
+              <button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" data-field-edit-action="editFieldByClassRadio" data-field-id="${field.id}">
                 <span class="glyphicon glyphicon-pencil"></span>
               </button>
               <button id="stopEdit_${field.id}" title="<spring:message code='form.field.saveAndViewTitle'/>" class="btn btn-info btn-sm stopEditButton" style="display: none">
@@ -28,7 +28,7 @@
               <c:forEach var="radioItem" items="${field.radioOptionAsList}">
                 <li class= 'radioLi ${field.id}'>
                   <input id="${field.id}" class="${field.id}" type="radio" name="fieldDefaultRadioFinal_${field.id}" 
-                    value="${radioItem}" onchange="checkAndMarkField(this)" 
+                    value="${radioItem}" data-field-change-action="checkAndMarkField"
                    <c:if test="${field.fieldData eq radioItem}"> checked </c:if> >
                   <input type="hidden" name="fieldRadioFinal" value="${radioItem}"> ${radioItem}
                 </li>

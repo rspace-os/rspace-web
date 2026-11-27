@@ -1,0 +1,39 @@
+/* Typography copied from styles/simplicity/typo.css for this dialog (RSDEV-1227). */
+body {
+  text-align: left;
+  font-family: arial, sans-serif;
+  font-size: 76%;
+  color: #444;
+}
+
+a,
+a:link,
+a:active {
+  text-decoration: none;
+}
+
+.hotTableWrapper {
+  padding: 15px 10px;
+}
+
+.hotInfoBox {
+  border: 1px solid #b6b6b6;
+  margin: 10px;
+  padding: 5px;
+  line-height: 1.4em;
+  width: fit-content;
+}
+
+.addColumnDiv {
+  padding-bottom: 5px;
+  width: 100%;
+  text-align: right;
+}
+
+#addColumnLink {
+  padding-right: 15px;
+}
+
+.addRowDiv {
+  padding: 5px 0 0 5px;
+}

@@ -9,10 +9,10 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Switch, { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
@@ -141,10 +141,10 @@ function DisableAutoshareDialog({
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function WrappedDisableAutoshareDialog(props: any) {
   return (
-    <StyledEngineProvider injectFirst enableCssLayer>
+    <MuiCssLayerProvider>
       <ThemeProvider theme={materialTheme}>
         <DisableAutoshareDialog {...props} />
       </ThemeProvider>
-    </StyledEngineProvider>
+    </MuiCssLayerProvider>
   );
 }

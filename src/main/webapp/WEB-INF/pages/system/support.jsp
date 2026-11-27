@@ -7,15 +7,15 @@
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
     <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bootstrap-namespace/bootstrap-namespace.min.css'/>" />
 
-    <script src="<rst:assetUrl value='/scripts/pages/system/support.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/support.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/system.js'/>"></script>
 
     <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
-    <script src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js'/>"></script>
 
-    <script src="<rst:assetUrl value='/scripts/pages/system/maintenance_mod.js'/>"></script>
+    <script nonce="${requestScope.cspNonce}" src="<rst:assetUrl value='/scripts/pages/system/maintenance_mod.js'/>"></script>
 
-    <style>
+    <style nonce="${requestScope.cspNonce}">
         .ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
         .ui-timepicker-div dl { text-align: left; }
         .ui-timepicker-div dl dt { height: 25px; margin-bottom: -25px; }

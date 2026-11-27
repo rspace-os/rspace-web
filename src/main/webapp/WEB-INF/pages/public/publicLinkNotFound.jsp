@@ -5,7 +5,7 @@
     <title>${publicLinkNotFoundTitle}</title>
     <meta name="heading" content="${publicLinkNotFoundTitle}"/>
     <meta name="robots" content="noindex, nofollow, noarchive">
-    <style>
+    <style nonce="${requestScope.cspNonce}">
         .errorBlock {
             width: 449px;
             padding: 15px;
