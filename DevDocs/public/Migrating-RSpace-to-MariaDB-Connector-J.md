@@ -31,15 +31,19 @@ The driver class is set internally. If your `deployment.properties` still sets
 
 ## 3. Review connection properties
 
-Check `jdbc.url` query parameters and `jdbc.connectionProperties`.
+Check `jdbc.url` query parameters and `jdbc.connectionProperties`. RSpace translates the MySQL Connector/J options
+below so the connection behaves as before, logs a warning, and you can update them at your own pace.
 
-| MySQL Connector/J setting | With MariaDB Connector/J |
+| MySQL Connector/J setting | With MariaDB Connector/J in RSpace |
 |---|---|
-| `useSSL=false` | Ignored. Connections are unencrypted by default, as before. Use `sslMode=disable` to be explicit. |
-| `useSSL=true` | Now means `sslMode=verify-full`: the server certificate **and** hostname are verified. For the old unverified behaviour use `sslMode=trust`. |
+| No TLS option at all | Same as before: the connection is encrypted when the database server offers TLS, without checking its certificate, and unencrypted otherwise. RSpace checks this once at startup and logs the result. Set `sslMode` to choose explicitly. |
+| `sslMode=PREFERRED` | Same as no TLS option. Remove it, or set `sslMode` explicitly. |
+| `useSSL=false` | Unencrypted, as before. `sslMode=disable` is the new name. |
+| `useSSL=true` or `requireSSL=true` | Encrypted without checking the certificate, as before. `sslMode=trust` is the new name. |
+| `useSSL=true` with `verifyServerCertificate=true` | Encrypted and the certificate is checked, as before. `sslMode=verify-ca` is the new name. |
 | `sslMode=DISABLED` / `REQUIRED` / `VERIFY_CA` / `VERIFY_IDENTITY` | Accepted, same meaning (`disable` / `trust` / `verify-ca` / `verify-full`). |
-| `sslMode=PREFERRED` | **Not supported, RSpace fails to start.** Use `sslMode=disable` or `sslMode=trust`. |
-| `serverTimezone=...` | Ignored. Use `connectionTimeZone=...` instead. |
+| `allowLoadLocalInfile` | Translated to `allowLocalInfile`. Loading local files stays **off** unless you set it to `true`. |
+| `serverTimezone=...` | **Ignored.** Use `connectionTimeZone=...` instead, or timestamps may be read in the wrong time zone. |
 | `characterEncoding`, `useUnicode` | Ignored, and safe to remove. The connection always uses `utf8mb4`. |
 | `connectionCollation=...` | Must be a `utf8mb4_*` collation, otherwise RSpace fails to start. |
 

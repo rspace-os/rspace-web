@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.dao.MariaDbDataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -35,7 +36,7 @@ class TestDatabaseExtensionTest extends SpringTransactionalTest {
   }
 
   private static String target(String jdbcUrl) throws SQLException {
-    Configuration conf = Configuration.parse(jdbcUrl);
+    Configuration conf = Configuration.parse(MariaDbDataSource.toMariaDbScheme(jdbcUrl));
     HostAddress host = conf.addresses().get(0);
     return host.host + ":" + host.port + "/" + conf.database();
   }
