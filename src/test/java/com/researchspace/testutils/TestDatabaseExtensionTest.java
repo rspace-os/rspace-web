@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.dao.jdbc.MariaDbDataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.mariadb.jdbc.Configuration;
+import org.mariadb.jdbc.HostAddress;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testcontainers.containers.GenericContainer;
 
@@ -27,8 +30,15 @@ class TestDatabaseExtensionTest extends SpringTransactionalTest {
     String selected = System.getProperty("jdbc.url");
     assertNotNull(selected);
     try (Connection connection = dataSource.getConnection()) {
-      assertEquals(selected, connection.getMetaData().getURL());
+      // the driver reports a normalised URL: default port dropped, credentials appended
+      assertEquals(target(selected), target(connection.getMetaData().getURL()));
     }
+  }
+
+  private static String target(String jdbcUrl) throws SQLException {
+    Configuration conf = Configuration.parse(MariaDbDataSource.toMariaDbScheme(jdbcUrl));
+    HostAddress host = conf.addresses().get(0);
+    return host.host + ":" + host.port + "/" + conf.database();
   }
 
   // CI passes -Djdbc.url, so the extension never starts a container there; start one directly.

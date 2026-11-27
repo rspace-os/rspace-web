@@ -163,7 +163,7 @@ public abstract class HibernateTest {
 
   private static Connection openConnection(String dbName) throws SQLException {
     return DriverManager.getConnection(
-        "jdbc:mysql://localhost:3306/" + dbName + "?useSSL=false&connectTimeout=2000",
+        "jdbc:mariadb://localhost:3306/" + dbName + "?connectTimeout=2000",
         "rspacedbuser",
         "rspacedbpwd");
   }

@@ -203,7 +203,7 @@ If you get a liquibase error that you need to fix, it might be faster to use the
  
  E.g. download liquibase ( the same version as is declared in pom.xml) and run e.g.
  
-    ./liquibase --changeLogFile=/path/to/rspace/src/main/resources/sqlUpdates/liquibase-master.xml --username=rspacedbuser --password=rspacedbpwd --url=jdbc:mysql://localhost:3306/rspace --contexts=dev-test update
+    ./liquibase --changeLogFile=/path/to/rspace/src/main/resources/sqlUpdates/liquibase-master.xml --username=rspacedbuser --password=rspacedbpwd --url=jdbc:mariadb://localhost:3306/rspace --contexts=dev-test update
  
 You'll need to add the jdbc connector.jar into the lib/ folder of the liquibase install folder to make this work.
 Some links in your changesets may need to be temporarily altered to absolute paths to make this work.
