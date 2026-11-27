@@ -45,19 +45,23 @@ export default function useLinkTargetSummary(
   useEffect(() => {
     let cancelled = false;
     setSummary(null);
-    const url =
+    // the path is a query parameter: `get` would append a slash to the URL
+    const request =
       filestoreId !== undefined && remotePath !== undefined
-        ? `linkTargets/filestores/${filestoreId}/summary?remotePath=${encodeURIComponent(remotePath)}`
+        ? ApiService.query<LinkTargetSummary>(
+            `linkTargets/filestores/${filestoreId}/summary`,
+            new URLSearchParams({ remotePath }),
+          )
         : globalId
-          ? `linkTargets/${encodeURIComponent(globalId)}/summary`
+          ? ApiService.get<LinkTargetSummary>(`linkTargets/${encodeURIComponent(globalId)}/summary`)
           : null;
     // No target (empty field, or callers that only want a summary while editing)
     // has nothing to resolve; skip the request rather than hitting the endpoint
     // with a blank id.
-    if (!url) {
+    if (!request) {
       return;
     }
-    ApiService.get<LinkTargetSummary>(url).then(
+    request.then(
       ({ data }) => {
         if (!cancelled) setSummary(data);
       },

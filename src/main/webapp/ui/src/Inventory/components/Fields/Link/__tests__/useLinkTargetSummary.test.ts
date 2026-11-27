@@ -1,10 +1,10 @@
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGet } = vi.hoisted(() => ({ mockGet: vi.fn() }));
+const { mockGet, mockQuery } = vi.hoisted(() => ({ mockGet: vi.fn(), mockQuery: vi.fn() }));
 
 vi.mock("@/common/InvApiService", () => ({
-  default: { get: mockGet },
+  default: { get: mockGet, query: mockQuery },
 }));
 
 import useLinkTargetSummary from "../useLinkTargetSummary";
@@ -12,6 +12,7 @@ import useLinkTargetSummary from "../useLinkTargetSummary";
 describe("useLinkTargetSummary", () => {
   beforeEach(() => {
     mockGet.mockReset();
+    mockQuery.mockReset();
   });
   afterEach(cleanup);
 
@@ -49,7 +50,7 @@ describe("useLinkTargetSummary", () => {
   });
 
   it("asks the filestore form of the endpoint for a filestore item, with the path encoded", async () => {
-    mockGet.mockResolvedValue({
+    mockQuery.mockResolvedValue({
       data: { globalId: null, name: "My S3", type: "FILESTORE_ITEM", deleted: false, readable: true },
     });
 
@@ -58,15 +59,16 @@ describe("useLinkTargetSummary", () => {
     );
 
     await waitFor(() => expect(result.current).not.toBeNull());
-    expect(mockGet).toHaveBeenCalledTimes(1);
-    expect(mockGet).toHaveBeenCalledWith(
-      "linkTargets/filestores/12/summary?remotePath=%2FXRD%2Frun%201%2B2%23final.dat",
-    );
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+    const [resource, params] = mockQuery.mock.calls[0] as [string, URLSearchParams];
+    expect(resource).toBe("linkTargets/filestores/12/summary");
+    expect(params.toString()).toBe("remotePath=%2FXRD%2Frun+1%2B2%23final.dat");
+    expect(mockGet).not.toHaveBeenCalled();
     expect(result.current?.name).toBe("My S3");
   });
 
   it("asks once when the caller rebuilds an equal filestore target on every render", async () => {
-    mockGet.mockResolvedValue({
+    mockQuery.mockResolvedValue({
       data: { globalId: null, name: "My S3", type: "FILESTORE_ITEM", deleted: false, readable: true },
     });
 
@@ -75,7 +77,7 @@ describe("useLinkTargetSummary", () => {
     rerender();
 
     expect(result.current?.name).toBe("My S3");
-    expect(mockGet).toHaveBeenCalledTimes(1);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
   });
 
   it("asks nothing when the link has neither kind of target", () => {
@@ -83,5 +85,6 @@ describe("useLinkTargetSummary", () => {
 
     expect(result.current).toBeNull();
     expect(mockGet).not.toHaveBeenCalled();
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 });
