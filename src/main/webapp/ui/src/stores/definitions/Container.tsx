@@ -21,7 +21,6 @@ export interface Location extends Point {
   parentContainer: Container;
 
   toggleSelected(value: boolean | null): void;
-  selectOnlyThis(): void;
   setPosition(x: number, y: number): void;
   setDimensions(width: number, height: number): void;
 

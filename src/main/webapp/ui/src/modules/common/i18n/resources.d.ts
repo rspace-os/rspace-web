@@ -2357,8 +2357,6 @@ export default interface Resources {
         "deleted": "{name} has been deleted.",
         "detailsUpdated": "Basket details updated.",
         "fetchFailed": "Error retrieving Baskets.",
-        "fetchOneFailed": "Error retrieving Basket.",
-        "getContentsFailed": "Error getting Basket contents.",
         "itemsAdded": "{count, plural, one {Item} other {Items}} successfully added to {name}.",
         "itemsAlreadyAdded": "The selected items are in {name} already. No items were added.",
         "itemsRemoved": "{count, plural, one {Item} other {Items}} successfully removed from {name}.",

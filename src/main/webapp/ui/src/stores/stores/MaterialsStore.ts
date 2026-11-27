@@ -42,16 +42,11 @@ export default class MaterialsStore {
       fieldLists: observable,
       documentLists: observable,
       canEdit: observable,
-      setup: action,
-      getDocumentMaterialsListings: action,
-      getFieldMaterialsListings: action,
-      getMaterialsListing: action,
       newListOfMaterials: action,
       replaceListInField: action,
       setCurrentList: action,
       setLoading: action,
       isListValid: computed,
-      isListEditing: computed,
       isListNew: computed,
       isListExisting: computed,
       hasListChanged: computed,
@@ -202,10 +197,6 @@ export default class MaterialsStore {
 
   get isListValid(): boolean {
     return Boolean(this.currentList?.isValid);
-  }
-
-  get isListEditing(): boolean {
-    return Boolean(this.currentList?.editingMode);
   }
 
   get isListNew(): boolean {

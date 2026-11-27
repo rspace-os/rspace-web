@@ -6,14 +6,13 @@ import { getErrorMessage } from "../../util/error";
 import { Optional } from "../../util/optional";
 import type { Panel } from "../../util/types";
 import { mkAlert } from "../contexts/Alert";
-import { type GlobalId, getSavedGlobalId } from "../definitions/BaseRecord";
+import type { GlobalId } from "../definitions/BaseRecord";
 import type { Container, Location } from "../definitions/Container";
 import type { HasLocation } from "../definitions/HasLocation";
 import { type InventoryRecord, recordTypeToApiRecordType } from "../definitions/InventoryRecord";
 import ContainerModel from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import InstrumentModel from "../models/InstrumentModel";
-import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
 import SubSampleModel from "../models/SubSampleModel";
@@ -32,7 +31,6 @@ type SerialisedRecord =
 
 export default class MoveStore {
   rootStore: RootStore;
-  loading: boolean = false;
   isMoving: boolean = false;
   submitting: "NO" | "MAKE-TOP" | "TO-OTHER" = "NO";
   selectedResults: Array<InventoryRecord & HasLocation> = [];
@@ -40,32 +38,21 @@ export default class MoveStore {
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
-      loading: observable,
       isMoving: observable,
       submitting: observable,
       selectedResults: observable,
       search: observable,
       setIsMoving: action,
-      setTargetContainer: action,
       setSelectedResults: action,
       moveSelected: action,
-      moveRecords: action,
-      resetGrid: action,
-      setActivePane: action,
-      results: computed,
       activeResult: computed,
       targetLocations: computed,
       selectedResultsIncludesContainers: computed,
       selectedResultsIncludesSubSamples: computed,
       selectedResultsIncludesInstruments: computed,
-      globalIdsOfSelectedResults: computed,
       sourceIsAlsoDestination: computed,
     });
     this.rootStore = rootStore;
-  }
-
-  get results(): Array<InventoryRecord> | undefined {
-    return this.search?.filteredResults;
   }
 
   get activeResult(): Container | null | undefined {
@@ -186,8 +173,6 @@ export default class MoveStore {
   }
 
   async moveSelected(removeParentContainers: boolean = false): Promise<void> {
-    this.submitting = removeParentContainers ? "MAKE-TOP" : "TO-OTHER";
-
     let serialisedRecords: Array<SerialisedRecord>;
     if (removeParentContainers) {
       serialisedRecords = this.selectedResults.map((r) => ({
@@ -227,6 +212,9 @@ export default class MoveStore {
       }
     }
 
+    // Set only once validation has passed: moveRecords is what clears it, so a
+    // throw above would otherwise leave the Move buttons spinning.
+    this.submitting = removeParentContainers ? "MAKE-TOP" : "TO-OTHER";
     await this.moveRecords(serialisedRecords);
     await this.refreshAfterMove();
   }
@@ -285,20 +273,6 @@ export default class MoveStore {
         this.submitting = "NO";
       });
     }
-  }
-
-  resetGrid() {
-    this.selectedResults = [];
-    void this.setTargetContainer(null);
-  }
-
-  get globalIdsOfSelectedResults(): Set<GlobalId> {
-    return new Set(this.selectedResults.map(getSavedGlobalId));
-  }
-
-  isRecordMoving(record: InventoryBaseRecord): boolean {
-    if (!record.globalId) return false;
-    return this.globalIdsOfSelectedResults.has(record.globalId);
   }
 
   async refreshAfterMove() {

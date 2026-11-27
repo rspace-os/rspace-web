@@ -23,12 +23,10 @@ export default class PersonModel implements Person {
   bench: Container | null;
   _links: Array<_LINK>;
   isOperated: boolean = false;
-  processingUserActions: boolean = false;
 
   constructor(attrs: PersonAttrs) {
     makeObservable(this, {
       id: observable,
-      processingUserActions: observable,
       username: observable,
       firstName: observable,
       lastName: observable,
@@ -38,10 +36,7 @@ export default class PersonModel implements Person {
       workbenchId: observable,
       bench: observable,
       isOperated: observable,
-      setProcessingUserActions: action,
       getBench: action,
-      exportRecords: action,
-      exportData: action,
       isCurrentUser: computed,
       label: computed,
       firstInitial: computed,
@@ -83,10 +78,6 @@ export default class PersonModel implements Person {
     return this.firstInitial;
   }
 
-  setProcessingUserActions(value: boolean): void {
-    this.processingUserActions = value;
-  }
-
   async getBench(): Promise<Container> {
     if (!this.workbenchId) throw new Error("This user doesn't have a Workbench ID");
     const bench = await getRootStore().searchStore.getBench(this.workbenchId);
@@ -97,7 +88,6 @@ export default class PersonModel implements Person {
   }
 
   async exportRecords(exportOptions: ExportOptions, username: Username): Promise<void> {
-    this.setProcessingUserActions(true);
     const { uiStore, trackingStore } = getRootStore();
     try {
       const { exportMode, includeContainerContent, resultFileType } = exportOptions;
@@ -140,8 +130,6 @@ export default class PersonModel implements Person {
       );
       console.error(`Could not export user's data.`, error);
       throw error;
-    } finally {
-      this.setProcessingUserActions(false);
     }
   }
 

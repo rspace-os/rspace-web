@@ -16,6 +16,12 @@ vi.mock("../../../../common/InvApiService", () => ({
   },
 }));
 describe("action: moveSelected", () => {
+  test("A move that fails validation leaves nothing marked as submitting.", async () => {
+    const { moveStore } = getRootStore();
+    await expect(moveStore.moveSelected()).rejects.toThrow();
+    expect(moveStore.submitting).toBe("NO");
+  });
+
   describe("Moving the contents of a location into its current location should", () => {
     test("result in new records being allocated in memory.", async () => {
       const { searchStore, moveStore } = getRootStore();

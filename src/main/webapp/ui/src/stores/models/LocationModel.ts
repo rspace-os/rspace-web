@@ -47,12 +47,10 @@ export default class LocationModel implements Location {
       y: observable,
       setAttributes: action,
       toggleSelected: action,
-      selectOnlyThis: action,
       setPosition: action,
       setDimensions: action,
       siblings: computed,
       isSiblingSelected: computed,
-      allSiblingsSelected: computed,
       name: computed,
       paramsForBackend: computed,
       hasContent: computed,
@@ -137,10 +135,6 @@ export default class LocationModel implements Location {
     return this.content && this.content.recordType === "subSample" && this.siblings.some((loc) => loc.selected);
   }
 
-  get allSiblingsSelected(): boolean {
-    return this.siblings.every((loc) => loc.selected);
-  }
-
   isSelectable(search: Search): boolean {
     if (search.uiConfig.onlyAllowSelectingEmptyLocations) return !this.hasContent;
     return !this.isGreyedOut(search);
@@ -216,15 +210,6 @@ export default class LocationModel implements Location {
         if (content) content.toggleSelected(value);
       }
     }
-  }
-
-  /*
-   * Set the selected location,
-   * unselecting other locations first (for creation)
-   */
-  selectOnlyThis() {
-    this.parentContainer.toggleAllLocations(false);
-    this.toggleSelected(true);
   }
 
   setPosition(x: number, y: number) {

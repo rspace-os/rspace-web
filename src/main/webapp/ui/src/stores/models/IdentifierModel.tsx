@@ -221,7 +221,6 @@ export default class IdentifierModel implements Identifier {
       requiredFields: computed,
       isValid: computed,
       recommendedFields: computed,
-      anyRecommendedGiven: computed,
       requiredCompleted: computed,
       optionalCompleted: computed,
       doiTypeLabel: computed,
@@ -393,12 +392,6 @@ export default class IdentifierModel implements Identifier {
         },
       },
     ];
-  }
-
-  get anyRecommendedGiven(): boolean {
-    return [this.subjects, this.descriptions, this.alternateIdentifiers, this.dates, this.geoLocations].some(
-      (recommendedGroup) => Array.isArray(recommendedGroup) && recommendedGroup.length > 0,
-    );
   }
 
   get doiTypeLabel(): string {

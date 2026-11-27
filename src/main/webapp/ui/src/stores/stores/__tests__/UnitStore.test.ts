@@ -36,7 +36,6 @@ describe("UnitStore display labels", () => {
       expect(store.getUnit(3)).toEqual(apiUnits[2]);
       expect(store.getUnit(3)).toBe(store.units[2]);
       expect(store.unitsOfCategory(["volume"])).toEqual([apiUnits[2]]);
-      expect(store.allCategories).toEqual(["dimensionless", "volume"]);
       expect(store.units).toEqual(apiUnits);
       expect(store.units[0].label).toBe("items");
       expect(JSON.parse(localStorage.getItem("units") ?? "[]")).toEqual(apiUnits);

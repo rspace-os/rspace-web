@@ -15,7 +15,7 @@ const Title = observer(() => {
   const { moveStore, peopleStore } = useStores();
   const { t } = useTranslation("inventory");
   const activeResult = moveStore.activeResult;
-  if (moveStore.loading || !activeResult) {
+  if (!activeResult) {
     return t("moveToTarget.loadingEllipsis");
   }
   if (activeResult.isWorkbench && activeResult.ownerLabel && peopleStore.currentUser?.bench?.globalId) {

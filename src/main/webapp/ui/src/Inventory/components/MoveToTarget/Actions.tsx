@@ -52,7 +52,7 @@ function Actions({ handleClose, handleMove, handleBack, handleNext, activeStep }
     const infiniteSpace = ar.cType === "LIST" || ar.cType === "WORKBENCH";
     const allLocsSelected = ar && moveStore.selectedResults.length === selectedLocations.length;
 
-    return !moveStore.loading && Boolean(ar) && ar.canStoreRecords && ar.canEdit && (infiniteSpace || allLocsSelected);
+    return Boolean(ar) && ar.canStoreRecords && ar.canEdit && (infiniteSpace || allLocsSelected);
   };
 
   return !isSingleColumnLayout ? (
@@ -73,7 +73,7 @@ function Actions({ handleClose, handleMove, handleBack, handleNext, activeStep }
         onMove={handleMove}
         disabled={!isSelectionValid()}
         stepsCount={2}
-        loading={moveStore.loading}
+        loading={moveStore.submitting === "TO-OTHER"}
       />
     </Stack>
   );

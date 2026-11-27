@@ -279,7 +279,6 @@ export default class InventoryBaseRecord
       image: observable,
       thumbnail: observable,
       tags: observable,
-      scopedToasts: observable,
       lastModified: observable,
       created: observable,
       modifiedByFullName: observable,
@@ -287,7 +286,6 @@ export default class InventoryBaseRecord
       deleted: observable,
       _links: observable,
       uploadProgress: observable,
-      lastEditInput: observable,
       lockExpiry: observable,
       lockExpired: observable,
       permittedActions: observable,
@@ -331,7 +329,6 @@ export default class InventoryBaseRecord
       permalinkURL: computed,
       ownerLabel: computed,
       currentUserIsOwner: computed,
-      isNewItem: computed,
       isWorkbench: computed,
       isTemplate: computed,
       fieldNamesInUse: computed,
@@ -1551,10 +1548,6 @@ export default class InventoryBaseRecord
     const currentUser = getRootStore().peopleStore.currentUser;
     if (!currentUser || !this.owner) return null;
     return this.owner.username === currentUser.username;
-  }
-
-  get isNewItem(): boolean {
-    return Boolean(!this.globalId);
   }
 
   get isWorkbench(): boolean {
