@@ -56,6 +56,7 @@ export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
 export const BookingSettingsDocumentSchema = native.BookingSettingsDocument;
 export const BookingSettingsPatchSchema = native.BookingSettingsPatch;
 export const BookingStateSchema = native.BookingState;
+export const BookingTimeFormatSchema = native.BookingTimeFormat;
 export const BookingTimezoneModeSchema = native.BookingTimezoneMode;
 export const BookingsCreateSchema = native.BookingsCreate;
 export const BookingsReadSchema = native.BookingsRead;
@@ -428,6 +429,10 @@ export type SchemaModelTypeChecks = {
   BookingState: [
     Assert<Extends<v.InferOutput<typeof BookingStateSchema>, Models.BookingState>>,
     Assert<Extends<Models.BookingState, v.InferOutput<typeof BookingStateSchema>>>,
+  ];
+  BookingTimeFormat: [
+    Assert<Extends<v.InferOutput<typeof BookingTimeFormatSchema>, Models.BookingTimeFormat>>,
+    Assert<Extends<Models.BookingTimeFormat, v.InferOutput<typeof BookingTimeFormatSchema>>>,
   ];
   BookingTimezoneMode: [
     Assert<Extends<v.InferOutput<typeof BookingTimezoneModeSchema>, Models.BookingTimezoneMode>>,

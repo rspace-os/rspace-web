@@ -26,7 +26,7 @@ import { UserCalendarSubscription } from "./UserCalendarSubscription";
 function inputFrom(
   document: Pick<
     BookingDisplayPreferencesDocument,
-    "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone"
+    "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone" | "timeFormat"
   >,
 ): BookingDisplayPreferencesReplacement {
   return {
@@ -34,6 +34,7 @@ function inputFrom(
     availabilityWindowEnd: document.availabilityWindowEnd,
     timezoneMode: document.timezoneMode,
     customTimezone: document.customTimezone,
+    timeFormat: document.timeFormat,
   };
 }
 

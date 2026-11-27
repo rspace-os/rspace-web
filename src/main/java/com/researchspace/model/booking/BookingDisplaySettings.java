@@ -5,16 +5,21 @@ import java.time.ZoneId;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/** One complete set of account-facing Booking display settings. */
+/**
+ * One complete set of account-facing Booking display settings. A null {@code timeFormat} means
+ * {@link BookingTimeFormat#AUTOMATIC}.
+ */
 public record BookingDisplaySettings(
     String availabilityWindowStart,
     String availabilityWindowEnd,
     BookingTimezoneMode timezoneMode,
-    String customTimezone) {
+    String customTimezone,
+    BookingTimeFormat timeFormat) {
 
   public static final String DEFAULT_AVAILABILITY_WINDOW_START = "08:00";
   public static final String DEFAULT_AVAILABILITY_WINDOW_END = "18:00";
   public static final BookingTimezoneMode DEFAULT_TIMEZONE_MODE = BookingTimezoneMode.BROWSER;
+  public static final BookingTimeFormat DEFAULT_TIME_FORMAT = BookingTimeFormat.AUTOMATIC;
 
   public static final String AVAILABILITY_WINDOW_START_PATTERN =
       BookingOpeningHoursCodec.WALL_TIME_PATTERN;
@@ -28,6 +33,18 @@ public record BookingDisplaySettings(
     if (timezoneMode != BookingTimezoneMode.CUSTOM) {
       customTimezone = null;
     }
+    if (timeFormat == null) {
+      timeFormat = DEFAULT_TIME_FORMAT;
+    }
+  }
+
+  /** Settings with the {@link BookingTimeFormat#AUTOMATIC} clock. */
+  public BookingDisplaySettings(
+      String availabilityWindowStart,
+      String availabilityWindowEnd,
+      BookingTimezoneMode timezoneMode,
+      String customTimezone) {
+    this(availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, null);
   }
 
   /** Nullable patch used by the global Booking settings endpoint. */
@@ -35,10 +52,20 @@ public record BookingDisplaySettings(
       String availabilityWindowStart,
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
-      String customTimezone) {
+      String customTimezone,
+      BookingTimeFormat timeFormat) {
+
+    /** A patch that leaves the time format unchanged. */
+    public Patch(
+        String availabilityWindowStart,
+        String availabilityWindowEnd,
+        BookingTimezoneMode timezoneMode,
+        String customTimezone) {
+      this(availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, null);
+    }
 
     public static Patch empty() {
-      return new Patch(null, null, null, null);
+      return new Patch(null, null, null, null, null);
     }
 
     /** Returns one complete value using {@code current} for omitted fields. */
@@ -52,7 +79,8 @@ public record BookingDisplaySettings(
               : availabilityWindowStart,
           availabilityWindowEnd == null ? current.availabilityWindowEnd() : availabilityWindowEnd,
           mergedMode,
-          mergedCustomTimezone);
+          mergedCustomTimezone,
+          timeFormat == null ? current.timeFormat() : timeFormat);
     }
   }
 
@@ -61,7 +89,8 @@ public record BookingDisplaySettings(
         DEFAULT_AVAILABILITY_WINDOW_START,
         DEFAULT_AVAILABILITY_WINDOW_END,
         DEFAULT_TIMEZONE_MODE,
-        null);
+        null,
+        DEFAULT_TIME_FORMAT);
   }
 
   public static BookingDisplaySettings from(BookingConfigurationDefaults defaults) {
@@ -69,7 +98,8 @@ public record BookingDisplaySettings(
         defaults.getAvailabilityWindowStart(),
         defaults.getAvailabilityWindowEnd(),
         defaults.getTimezoneMode(),
-        defaults.getCustomTimezone());
+        defaults.getCustomTimezone(),
+        defaults.getTimeFormat());
   }
 
   public void applyTo(BookingConfigurationDefaults defaults) {
@@ -77,6 +107,7 @@ public record BookingDisplaySettings(
     defaults.setAvailabilityWindowEnd(availabilityWindowEnd);
     defaults.setTimezoneMode(timezoneMode);
     defaults.setCustomTimezone(customTimezone);
+    defaults.setTimeFormat(timeFormat);
   }
 
   public boolean hasValidAvailabilityWindow() {

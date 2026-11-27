@@ -1,7 +1,13 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingHourCycle,
+  bookingLocale,
+  formatInstantRange,
+  resolveWallClock,
+} from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 import type { BookingListDocument } from "./booking";
-import { resolveWallClock } from "./bookingTime";
 
 export type BookingAgendaDay = {
   date: string;
@@ -53,17 +59,18 @@ export function formatBookingAgendaTimeRange(
   end: Temporal.Instant,
   timeZone: string,
   locale: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const startZoned = start.toZonedDateTimeISO(timeZone);
   const endZoned = end.toZonedDateTimeISO(timeZone);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
-    hour: "numeric",
+    hour: timeFormat === "H24" ? "2-digit" : "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
-  const range = `${formatter.format(start.epochMilliseconds)}–${formatter.format(end.epochMilliseconds)}`;
+  const range = formatInstantRange(formatter, startZoned.epochMilliseconds, endZoned.epochMilliseconds);
   const startLocalDate = startZoned.toPlainDate();
   const endLocalDate = endZoned.toPlainDate();
   if (startLocalDate.equals(endLocalDate)) return range;
@@ -73,7 +80,7 @@ export function formatBookingAgendaTimeRange(
     day: "numeric",
     ...(startLocalDate.year === endLocalDate.year ? {} : { year: "numeric" }),
   });
-  return `${range} · ${endDateLabel}`;
+  return i18n.t("booking:time.rangeAndEndDate", { period: range, date: endDateLabel, lng: bookingLocale() });
 }
 
 export function formatBookingAgendaDateTime(
@@ -82,6 +89,7 @@ export function formatBookingAgendaDateTime(
   end: Temporal.Instant,
   timeZone: string,
   locale: string,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
   const epochMilliseconds = value.epochMilliseconds;
   const startZoned = start.toZonedDateTimeISO(timeZone);
@@ -90,7 +98,7 @@ export function formatBookingAgendaDateTime(
     return new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",
       timeStyle: "short",
-      hourCycle: bookingHourCycle(),
+      hourCycle: bookingHourCycle(timeFormat),
       timeZone,
     }).format(epochMilliseconds);
   }
@@ -99,9 +107,9 @@ export function formatBookingAgendaDateTime(
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "numeric",
+    hour: timeFormat === "H24" ? "2-digit" : "numeric",
     minute: "2-digit",
-    hourCycle: bookingHourCycle(),
+    hourCycle: bookingHourCycle(timeFormat),
     timeZoneName: "shortOffset",
   }).format(epochMilliseconds);
 }
