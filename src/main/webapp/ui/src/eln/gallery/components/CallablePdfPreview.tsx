@@ -1,9 +1,3 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { Document, Page, pdfjs } from "react-pdf";
-import { incrementForever, take } from "../../../util/iterators";
-import "react-pdf/dist/Page/TextLayer.css";
-import "react-pdf/dist/Page/AnnotationLayer.css";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import Box from "@mui/material/Box";
@@ -14,7 +8,11 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { pdfjs } from "react-pdf";
 import ResetZoomIcon from "./ResetZoomIcon";
+import WindowedPdfDocument from "./WindowedPdfDocument";
 
 /**
  * Much like how `window.open` allows any JS code on the page to trigger the
@@ -56,23 +54,12 @@ export function usePdfPreview(): {
  */
 export function CallablePdfPreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(null);
-  const [numPages, setNumPages] = React.useState<number>(0);
   const [scale, setScale] = React.useState(1);
   const { t } = useTranslation(["gallery", "common"]);
 
   React.useEffect(() => {
-    if (!pdfPreviewOpen) {
-      setNumPages(0);
-      setScale(1);
-      return;
-    }
-    setNumPages(0);
     setScale(1);
   }, [pdfPreviewOpen]);
-
-  function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
-    setNumPages(nextNumPages);
-  }
 
   return (
     <>
@@ -93,13 +80,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
           aria-label={t("callablePdfPreview.title")}
         >
           <DialogContent tabIndex={0} sx={{ overflowY: "auto" }}>
-            <Document file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>
-              {[...take(incrementForever(), numPages)].map((index) => (
-                <Box key={`page_${index + 1}`}>
-                  <Page pageNumber={index + 1} width={550} scale={scale} />
-                </Box>
-              ))}
-            </Document>
+            <WindowedPdfDocument file={pdfPreviewOpen} width={550} scale={scale} />
           </DialogContent>
           <DialogActions>
             <ButtonGroup

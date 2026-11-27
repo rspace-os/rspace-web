@@ -2194,7 +2194,10 @@ export default interface Resources {
       "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
     },
     "unknownError": "",
-    "unknownOwner": "Unknown owner"
+    "unknownOwner": "Unknown owner",
+    "windowedPdfDocument": {
+      "pageLabel": "Page {pageNumber} of {pageCount}"
+    }
   },
   "groups": {
     "createGroup": {
