@@ -5,8 +5,7 @@ import Box from "@mui/material/Box";
 import Fade from "@mui/material/Fade";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
-import { runInAction } from "mobx";
-import { observer, useLocalObservable } from "mobx-react-lite";
+import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
@@ -105,9 +104,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
     React.useEffect(() => {
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
-        runInAction(() => {
-          for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
-        });
+        for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
       });
     }, [galleryListing]);
     return FetchingData.match(galleryListing, {
@@ -453,8 +450,10 @@ const TreeView = ({
   /*
    * Maps the item id used by the tree nodes to the actual file object. This is
    * used to determine the file object that the user has selected in the tree.
+   * It is only read in event handlers, so it is a plain mutable Map that does
+   * not trigger re-renders.
    */
-  const treeViewItemIdMap = useLocalObservable(() => {
+  const [treeViewItemIdMap] = React.useState(() => {
     const map = new Map<string, GalleryFile>();
     if (listing.tag === "empty") return map;
     for (const file of listing.list) map.set(file.treeViewItemId, file);
@@ -462,9 +461,7 @@ const TreeView = ({
   });
   React.useEffect(() => {
     if (listing.tag === "empty") return;
-    runInAction(() => {
-      for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
-    });
+    for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
   }, [listing]);
 
   /*

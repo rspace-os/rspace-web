@@ -310,7 +310,12 @@ describe("ExportDialog", () => {
           name: (name) => name.startsWith("workspace:export.format.chooser.formats.pdfHeading"),
         }),
       );
-      await user.click(screen.getByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }));
+      const repositorySwitch = screen.getByRole("checkbox", {
+        name: "workspace:export.format.chooser.exportToRepository",
+      });
+      // the switch stays disabled until the list of repositories has loaded
+      await waitFor(() => expect(repositorySwitch).toBeEnabled());
+      await user.click(repositorySwitch);
 
       await user.click(screen.getByRole("button", { name: "common:actions.next" }));
       await screen.findByRole("textbox", { name: "workspace:export.format.pdf.name" });
@@ -419,6 +424,38 @@ describe("ExportDialog", () => {
       expect(JSON.parse(mockAxios.history.post[0].data).exportConfig.setPageSizeAsDefault).toBe(true);
       expect(JSON.parse(mockAxios.history.post[0].data).exportConfig.pageSize).toBe("LETTER");
     });
+    test("The PDF export name is validated as it is edited.", async () => {
+      mockAxios.onPost("/export/ajax/export").reply(200, "PDF export submitted");
+      mockAxios.resetHistory();
+      const user = userEvent.setup();
+      const { setProps } = renderExportDialog();
+      act(() => {
+        setProps({
+          open: true,
+          selection: { type: "selection", exportTypes: ["NORMAL"], exportNames: ["foo"], exportIds: ["1"] },
+        });
+      });
+      await user.click(
+        screen.getByRole("radio", {
+          name: (name) => name.startsWith("workspace:export.format.chooser.formats.pdfHeading"),
+        }),
+      );
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+      const name = await screen.findByRole("textbox", { name: "workspace:export.format.pdf.name" });
+      await user.clear(name);
+      await user.type(name, "ab");
+
+      await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+      expect(name).toBeInTheDocument();
+      expect(mockAxios.history.post).toHaveLength(0);
+
+      await user.type(name, "c");
+      await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+      await waitFor(() => {
+        expect(mockAxios.history.post).toHaveLength(1);
+      });
+      expect(JSON.parse(mockAxios.history.post[0].data as string).exportConfig.exportName).toBe("abc");
+    });
     test.each([
       ["app.zenodo", "Zenodo"],
       ["app.digitalCommonsData", "Digital Commons Data"],
@@ -463,7 +500,12 @@ describe("ExportDialog", () => {
             name: (name) => name.startsWith("workspace:export.format.chooser.formats.xmlHeading"),
           }),
         );
-        await user.click(screen.getByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }));
+        const repositorySwitch = screen.getByRole("checkbox", {
+          name: "workspace:export.format.chooser.exportToRepository",
+        });
+        // the switch stays disabled until the list of repositories has loaded
+        await waitFor(() => expect(repositorySwitch).toBeEnabled());
+        await user.click(repositorySwitch);
         await user.click(screen.getByRole("button", { name: "common:actions.next" }));
         await user.click(await screen.findByRole("button", { name: "common:actions.next" }));
         await screen.findByRole("radio", { name: displayName });

@@ -23,7 +23,6 @@ import Divider from "@mui/material/Divider";
 import { darken, lighten, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { Suspense } from "react";
 import { useTranslation } from "react-i18next";
@@ -130,7 +129,7 @@ const UploadNewVersionMenuItem = ({
     input?.addEventListener("cancel", onError);
     return () => input?.removeEventListener("cancel", onError);
   }, [newVersionInputRef, onError]);
-  const uploadNewVersionAllowed = computed((): Result<null> => {
+  const uploadNewVersionAllowed = (): Result<null> => {
     return selection
       .asSet()
       .only.toResult(
@@ -142,13 +141,12 @@ const UploadNewVersionMenuItem = ({
           ),
       )
       .flatMap((file) => file.canUploadNewVersion);
-  });
+  };
   return (
     <>
       <AccentMenuItem
         title={t("actionsMenu.uploadNewVersion")}
-        subheader={uploadNewVersionAllowed
-          .get()
+        subheader={uploadNewVersionAllowed()
           .map(() => "")
           .orElseGet(([e]) => e.message)}
         avatar={<FileUploadIcon />}
@@ -159,7 +157,7 @@ const UploadNewVersionMenuItem = ({
           newVersionInputRef.current?.click();
         }}
         compact
-        disabled={uploadNewVersionAllowed.get().isError}
+        disabled={uploadNewVersionAllowed().isError}
       />
       {selection
         .asSet()
@@ -353,13 +351,13 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const [sidecarFileOpen, setSidecarFileOpen] = React.useState(false);
   const [versionHistoryOpen, setVersionHistoryOpen] = React.useState(false);
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(null);
-  const openAllowed = computed(() => {
+  const openAllowed = () => {
     return selection
       .asSet()
       .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
       .flatMapDiscarding((f) => f.canOpen);
-  });
-  const editingAllowed = computed(() =>
+  };
+  const editingAllowed = () =>
     selection
       .asSet()
       .only.toResult(
@@ -414,16 +412,14 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             })),
           )
           .mapError(() => new Error(t("actionsMenu.validation.cannotEdit")));
-      }),
-  );
-  const viewHidden = computed(() =>
+      });
+  const viewHidden = () =>
     selection
       .asSet()
       .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
       .map((file) => file.canOpen.isOk)
-      .orElse(false),
-  );
-  const viewAllowed = computed(() =>
+      .orElse(false);
+  const viewAllowed = () =>
     selection
       .asSet()
       .only.toResult(
@@ -470,50 +466,49 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               file,
             })),
           ),
-      ),
-  );
+      );
   // The menu can open with no selection (inside a writable S3 filestore) for Generate Data
   // Record; every selection-based action must stay disabled in that case.
   const nothingSelected = Result.Error<null>([new Error(t("actionsMenu.validation.nothingSelected"))]);
-  const duplicateAllowed = computed((): Result<null> => {
+  const duplicateAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     if (selection.size > 50) {
       return Result.Error([new Error(t("actionsMenu.validation.duplicateLimit"))]);
     }
     return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(() => null);
-  });
-  const deleteAllowed = computed((): Result<null> => {
+  };
+  const deleteAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     if (selection.size > 50) {
       return Result.Error([new Error(t("actionsMenu.validation.deleteLimit"))]);
     }
     return Result.all(...selection.asSet().map((f) => f.canDelete)).map(() => null);
-  });
-  const renameAllowed = computed((): Result<null> => {
+  };
+  const renameAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     return selection
       .asSet()
       .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneRename")))
       .flatMap((file) => file.canRename);
-  });
-  const versionHistoryAllowed = computed((): Result<null> => {
+  };
+  const versionHistoryAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     return selection
       .asSet()
       .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneVersionHistory")))
       .flatMap((file) => file.canViewVersionHistory);
-  });
-  const moveToIrodsAllowed = computed((): Result<null> => {
+  };
+  const moveToIrodsAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(() => null);
-  });
+  };
 
-  const moveToS3Allowed = computed((): Result<null> => {
+  const moveToS3Allowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     return Result.all(...selection.asSet().map((f) => f.canMoveToS3)).map(() => null);
-  });
+  };
 
-  const s3TransferSources = computed((): ReadonlyArray<S3TransferSource> | null => {
+  const s3TransferSources = (): ReadonlyArray<S3TransferSource> | null => {
     const files = selection.asSet().toArray();
     if (files.length === 0) return null;
     const sources = files.flatMap((file) => {
@@ -535,10 +530,10 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
       return [];
     });
     return sources.length === files.length ? sources : null;
-  });
+  };
 
   // A selection wholly within one writable S3 filestore moves via the filestore dialog, not the local one.
-  const s3MoveTarget = computed((): { filestore: Filestore; sources: RsSet<RemoteFile> } | null => {
+  const s3MoveTarget = (): { filestore: Filestore; sources: RsSet<RemoteFile> } | null => {
     const files = selection.asSet();
     if (files.isEmpty) return null;
     if (files.some((f) => !(f instanceof RemoteFile))) return null;
@@ -548,15 +543,15 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
     if (!filestore) return null;
     if (parents.some((p) => p !== filestore)) return null;
     return { filestore, sources };
-  });
+  };
 
-  const exportAllowed = computed((): Result<null> => {
+  const exportAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     if (selection.size > 100) {
       return Result.Error([new Error(t("actionsMenu.validation.exportLimit"))]);
     }
     return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
-  });
+  };
   const getShareDialogSelection = (): Result<{
     globalIds: ReadonlyArray<string>;
     names: ReadonlyArray<string>;
@@ -607,10 +602,10 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
       names: selectedFiles.map(({ name }) => name),
     });
   };
-  const shareAllowed = computed((): Result<null> => {
+  const shareAllowed = (): Result<null> => {
     return getShareDialogSelection().map(() => null);
-  });
-  const downloadAllowed = computed((): Result<null> => {
+  };
+  const downloadAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     if (selection.asSet().some((f) => f.isFolder)) {
       return Result.Error([new Error(t("actionsMenu.validation.cannotDownloadFolders"))]);
@@ -619,15 +614,15 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
       return Result.Error([new Error(t("actionsMenu.validation.cannotDownloadSnippets"))]);
     }
     return Result.Ok(null);
-  });
-  const moveAllowed = computed((): Result<null> => {
+  };
+  const moveAllowed = (): Result<null> => {
     if (selection.isEmpty) return nothingSelected;
     if (selection.size > 50) {
       return Result.Error([new Error(t("actionsMenu.validation.moveLimit"))]);
     }
     return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(() => null);
-  });
-  const logOutAllowed = computed((): Result<Filestore> => {
+  };
+  const logOutAllowed = (): Result<Filestore> => {
     return selection
       .asSet()
       .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneLogout")))
@@ -635,7 +630,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
       .flatMap((f: GalleryFile) =>
         f instanceof Filestore ? Result.Ok(f) : Result.Error([new Error(t("actionsMenu.validation.cannotLogOut"))]),
       );
-  });
+  };
   const { logout } = useFilestoresEndpoint();
   return (
     <>
@@ -681,8 +676,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             },
           }}
         >
-          {openAllowed
-            .get()
+          {openAllowed()
             .map((file) => (
               <AccentMenuItem
                 title={t("common:actions.open")}
@@ -696,11 +690,10 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               />
             ))
             .orElse(null)}
-          {!viewHidden.get() && (
+          {!viewHidden() && (
             <AccentMenuItem
               title={t("actionsMenu.view")}
-              subheader={viewAllowed
-                .get()
+              subheader={viewAllowed()
                 .map(() => "")
                 .orElseGet((errors) => {
                   if (errors.length === 1) return errors[0].message;
@@ -717,7 +710,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
                 })}
               avatar={<VisibilityIcon />}
               onClick={() => {
-                viewAllowed.get().do((viewAction) => {
+                viewAllowed().do((viewAction) => {
                   if (viewAction.key === "image")
                     void viewAction.downloadHref().then((downloadHref) => {
                       openImagePreview(downloadHref, {
@@ -735,18 +728,17 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
                 setActionsMenuAnchorEl(null);
               }}
               compact
-              disabled={viewAllowed.get().isError}
+              disabled={viewAllowed().isError}
             />
           )}
           <AccentMenuItem
             title={t("common:actions.edit")}
-            subheader={editingAllowed
-              .get()
+            subheader={editingAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<EditIcon />}
             onClick={() => {
-              editingAllowed.get().do((action) => {
+              editingAllowed().do((action) => {
                 void (async () => {
                   if (action.key === "officeonline") {
                     window.open(action.url);
@@ -780,12 +772,11 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               setActionsMenuAnchorEl(null);
             }}
             compact
-            disabled={editingAllowed.get().isError}
+            disabled={editingAllowed().isError}
           />
           <AccentMenuItem
             title={t("common:actions.duplicate")}
-            subheader={duplicateAllowed
-              .get()
+            subheader={duplicateAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<AddToPhotosIcon />}
@@ -797,12 +788,11 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               });
             }}
             compact
-            disabled={duplicateAllowed.get().isError}
+            disabled={duplicateAllowed().isError}
           />
           <AccentMenuItem
             title={t("common:actions.move")}
-            subheader={moveAllowed
-              .get()
+            subheader={moveAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<OpenWithIcon />}
@@ -810,11 +800,11 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               setMoveOpen(true);
             }}
             compact
-            disabled={moveAllowed.get().isError}
+            disabled={moveAllowed().isError}
             aria-haspopup="dialog"
           />
           {(() => {
-            const s3Move = s3MoveTarget.get();
+            const s3Move = s3MoveTarget();
             if (s3Move) {
               return (
                 <MoveWithinFilestoreDialog
@@ -847,8 +837,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
           })()}
           <AccentMenuItem
             title={t("actionsMenu.rename")}
-            subheader={renameAllowed
-              .get()
+            subheader={renameAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<DriveFileRenameOutlineIcon />}
@@ -856,7 +845,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               setRenameOpen(true);
             }}
             compact
-            disabled={renameAllowed.get().isError}
+            disabled={renameAllowed().isError}
             aria-haspopup="dialog"
           />
           {selection
@@ -886,8 +875,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
           />
           <AccentMenuItem
             title={t("actionsMenu.versionHistory.menuItem")}
-            subheader={versionHistoryAllowed
-              .get()
+            subheader={versionHistoryAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<HistoryIcon />}
@@ -895,7 +883,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               setVersionHistoryOpen(true);
             }}
             compact
-            disabled={versionHistoryAllowed.get().isError}
+            disabled={versionHistoryAllowed().isError}
             aria-haspopup="dialog"
           />
           {selection
@@ -914,8 +902,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             .orElse(null)}
           <AccentMenuItem
             title={t("common:actions.download")}
-            subheader={downloadAllowed
-              .get()
+            subheader={downloadAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<FileDownloadIcon />}
@@ -926,12 +913,11 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               });
             }}
             compact
-            disabled={downloadAllowed.get().isError}
+            disabled={downloadAllowed().isError}
           />
           <AccentMenuItem
             title={t("common:actions.share")}
-            subheader={shareAllowed
-              .get()
+            subheader={shareAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<ShareIcon />}
@@ -942,7 +928,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               });
             }}
             compact
-            disabled={shareAllowed.get().isError}
+            disabled={shareAllowed().isError}
             aria-haspopup="dialog"
           />
           <EventBoundary>
@@ -964,8 +950,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
           </EventBoundary>
           <AccentMenuItem
             title={t("common:actions.export")}
-            subheader={exportAllowed
-              .get()
+            subheader={exportAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             avatar={<FileDownloadIcon />}
@@ -976,7 +961,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               });
             }}
             compact
-            disabled={exportAllowed.get().isError}
+            disabled={exportAllowed().isError}
           />
           <EventBoundary>
             <Suspense fallback={null}>
@@ -1030,8 +1015,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             <>
               <AccentMenuItem
                 title={t("actionsMenu.moveToIrods")}
-                subheader={moveToIrodsAllowed
-                  .get()
+                subheader={moveToIrodsAllowed()
                   .map(() => "")
                   .orElseGet(([e]) => e.message)}
                 backgroundColor={IRODS_COLOR.background}
@@ -1041,7 +1025,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
                   setIrodsOpen(true);
                 }}
                 compact
-                disabled={moveToIrodsAllowed.get().isError}
+                disabled={moveToIrodsAllowed().isError}
                 aria-haspopup="dialog"
               />
               {Result.all(
@@ -1067,8 +1051,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
                 .orElse(null)}
               <AccentMenuItem
                 title={t("actionsMenu.moveToS3")}
-                subheader={moveToS3Allowed
-                  .get()
+                subheader={moveToS3Allowed()
                   .map(() => "")
                   .orElseGet(([e]) => e.message)}
                 backgroundColor={IRODS_COLOR.background}
@@ -1079,11 +1062,11 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
                   setS3Open(true);
                 }}
                 compact
-                disabled={moveToS3Allowed.get().isError}
+                disabled={moveToS3Allowed().isError}
                 aria-haspopup="dialog"
               />
               {(() => {
-                const sources = s3TransferSources.get();
+                const sources = s3TransferSources();
                 const onClose = (newState: boolean) => {
                   setS3Open(newState);
                   if (!newState) {
@@ -1125,14 +1108,12 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
            * is only available for filestores so doesn't apply in the vast,
            * vast majority of cases.
            */}
-          {logOutAllowed
-            .get()
+          {logOutAllowed()
             .map((filestore) => (
               <AccentMenuItem
                 key={`logout-${filestore.id}`}
                 title={t("common:actions.logOut")}
-                subheader={logOutAllowed
-                  .get()
+                subheader={logOutAllowed()
                   .map(() => "")
                   .orElseGet(([e]) => e.message)}
                 backgroundColor={lighten(theme.palette.warning.light, 0.5)}
@@ -1150,8 +1131,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             .orElse(null)}
           <AccentMenuItem
             title={t("common:actions.delete")}
-            subheader={deleteAllowed
-              .get()
+            subheader={deleteAllowed()
               .map(() => "")
               .orElseGet(([e]) => e.message)}
             backgroundColor={lighten(theme.palette.error.light, 0.5)}
@@ -1171,7 +1151,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               });
             }}
             compact
-            disabled={deleteAllowed.get().isError}
+            disabled={deleteAllowed().isError}
           />
         </Menu>
       )}
