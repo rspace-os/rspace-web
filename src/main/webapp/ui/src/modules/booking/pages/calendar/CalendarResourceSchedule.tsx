@@ -1,21 +1,24 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { PlusIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { PencilIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { Button } from "@/modules/common/ui/button";
+import { epochMillisecondsOf } from "@/modules/common/time/instant";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { BookingEditorsContext } from "./BookingEventsCalendar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { cn } from "@/modules/common/utils/cn";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
   type BookingCalendarResource,
-  blockoutActionsFor,
   type CalendarView,
   formatDate,
   nextFreeRange,
@@ -26,8 +29,25 @@ import {
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
+import { BookingEditorsContext } from "./InlineBookingEditor";
 
-export function ResourceDateGrid({
+function ResourceHeader({ resource }: { resource: BookingCalendarResource }) {
+  const { t } = useTranslation("booking");
+  return (
+    <InventoryItem
+      locationPlacement="below"
+      name={<BookableItemName name={resource.value.name} globalId={resource.globalId} />}
+      globalId={resource.globalId}
+      href={`/globalId/${resource.globalId}`}
+      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+      size="xs"
+    >
+      <InventoryLocationLink name={resourceLocation(resource)?.name} globalId={resourceLocation(resource)?.globalId} />
+    </InventoryItem>
+  );
+}
+
+function ResourceDateGrid({
   dates,
   view,
   children,
@@ -72,6 +92,7 @@ export function CalendarResourceSchedule({
   availabilityEndMinute,
   resourceConfigurations,
   creationDisabled,
+  includeEventResources = false,
   onResourceRangeSelect,
   isLoading = false,
 }: {
@@ -85,6 +106,7 @@ export function CalendarResourceSchedule({
   availabilityEndMinute: number;
   resourceConfigurations?: readonly BookableItemOption[];
   creationDisabled: boolean;
+  includeEventResources?: boolean;
   isLoading?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,
@@ -92,7 +114,9 @@ export function CalendarResourceSchedule({
     trigger: HTMLElement,
   ) => void;
 }) {
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const collator = React.useMemo(() => new Intl.Collator(language), [language]);
   const [timelineViewState, setTimelineViewState] = React.useState<DayTimelineViewState>({
     zoom: 1,
     centerMinute: 13 * 60,
@@ -104,7 +128,7 @@ export function CalendarResourceSchedule({
     const index = new Map<string, BookingListDocument[]>();
     const boundsByDate = dates.map((day) => {
       const bounds = zonedDayBounds(day, timezone);
-      return { day, start: Date.parse(bounds.start), end: Date.parse(bounds.end) };
+      return { day, start: epochMillisecondsOf(bounds.start), end: epochMillisecondsOf(bounds.end) };
     });
     for (const event of events) {
       const occurrence = editorPositions?.get(event.id) ?? event;
@@ -126,15 +150,47 @@ export function CalendarResourceSchedule({
     () =>
       [
         ...new Map(
-          (resources ?? events.map((event) => event.target)).map((resource) => [resource.globalId, resource]),
+          (includeEventResources
+            ? [...(resources ?? []), ...events.map((event) => event.target)]
+            : (resources ?? events.map((event) => event.target))
+          ).map((resource) => [resource.globalId, resource]),
         ).values(),
-      ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
-    [events, resources],
+      ].toSorted((left, right) => collator.compare(left.value.name, right.value.name)),
+    [collator, events, includeEventResources, resources],
   );
   const configurationByTarget = React.useMemo(
     () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
     [resourceConfigurations],
   );
+  const editConfigurationLink = (
+    resource: BookingCalendarResource,
+    configuration?: BookableItemOption,
+    size: "icon-xs" | "icon-sm" = "icon-xs",
+  ) => {
+    if (configuration?.capabilities?.canEditConfiguration !== true) return null;
+    const label = t("bookableItemDetails.edit");
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Link
+              aria-label={label}
+              className={cn(buttonVariants({ variant: "outline", size }))}
+              data-slot="button"
+              to="/booking/bookable-items/$globalId/{-$tab}"
+              params={{ globalId: resource.globalId, tab: "details" }}
+              search={{ edit: true }}
+            />
+          }
+        >
+          <PencilIcon aria-hidden="true" />
+        </TooltipTrigger>
+        <TooltipContent role="tooltip" side="left">
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
   return (
     <section aria-label={t("calendar.layout.resources")} className="p-3" aria-busy={isLoading}>
       <section
@@ -150,6 +206,7 @@ export function CalendarResourceSchedule({
             {resourceRows.map((resource, index) => {
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
               const configuration = configurationByTarget.get(resource.globalId);
+              const canCreateBooking = configuration?.capabilities?.canCreateBooking === true;
               const proposedRange = configuration
                 ? nextFreeRange(
                     resourceEvents,
@@ -163,19 +220,7 @@ export function CalendarResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
-                    <InventoryItem
-                      locationPlacement="below"
-                      name={resource.value.name}
-                      globalId={resource.globalId}
-                      href={`/globalId/${resource.globalId}`}
-                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                      size="xs"
-                    >
-                      <InventoryLocationLink
-                        name={resourceLocation(resource)?.name}
-                        globalId={resourceLocation(resource)?.globalId}
-                      />
-                    </InventoryItem>
+                    <ResourceHeader resource={resource} />
                   </header>
                   <div className="relative grid min-h-32 min-w-0">
                     <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>
@@ -193,12 +238,12 @@ export function CalendarResourceSchedule({
                         onViewStateChange={setTimelineViewState}
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
-                        renderEventActions={actionsFor(resourceEvents, timezone)}
-                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone)}
+                        renderEventActions={actionsFor(resourceEvents, timezone, date)}
+                        renderBlockoutActions={actionsFor(resourceEvents, timezone, date)}
                         snapIncrementMinutes={configuration?.slotGranularityMinutes}
-                        creationDisabled={isLoading || creationDisabled || !configuration}
+                        creationDisabled={isLoading || creationDisabled || !canCreateBooking}
                         onRangeSelect={
-                          configuration && onResourceRangeSelect
+                          canCreateBooking && configuration && onResourceRangeSelect
                             ? (range, trigger) => onResourceRangeSelect(configuration, range, trigger)
                             : undefined
                         }
@@ -206,22 +251,23 @@ export function CalendarResourceSchedule({
                     </div>
                     {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
                   </div>
-                  <div className="flex items-center border-l p-2">
+                  <div className="flex flex-col items-center justify-center gap-1 border-l p-2">
                     <Button
                       type="button"
                       size="icon-sm"
                       variant="outline"
                       disabled={
-                        isLoading || creationDisabled || !configuration || !proposedRange || !onResourceRangeSelect
+                        isLoading || creationDisabled || !canCreateBooking || !proposedRange || !onResourceRangeSelect
                       }
                       aria-label={t("calendar.actions.addForItem", { item: resource.value.name })}
                       onClick={(event) => {
-                        if (!configuration || !proposedRange || !onResourceRangeSelect) return;
+                        if (!canCreateBooking || !configuration || !proposedRange || !onResourceRangeSelect) return;
                         onResourceRangeSelect(configuration, proposedRange, event.currentTarget);
                       }}
                     >
                       <PlusIcon aria-hidden="true" />
                     </Button>
+                    {editConfigurationLink(resource, configuration, "icon-sm")}
                   </div>
                 </section>
               );
@@ -232,22 +278,13 @@ export function CalendarResourceSchedule({
             {resourceRows.map((resource) => (
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
-                  <InventoryItem
-                    locationPlacement="below"
-                    name={resource.value.name}
-                    globalId={resource.globalId}
-                    href={`/globalId/${resource.globalId}`}
-                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                    size="xs"
-                  >
-                    <InventoryLocationLink
-                      name={resourceLocation(resource)?.name}
-                      globalId={resourceLocation(resource)?.globalId}
-                    />
-                  </InventoryItem>
+                  <div className="space-y-1">
+                    <ResourceHeader resource={resource} />
+                    {editConfigurationLink(resource, configurationByTarget.get(resource.globalId))}
+                  </div>
                 </div>
                 {dates.map((day) => (
-                  <div key={day} className="min-h-20 space-y-1 border-r border-b p-1">
+                  <div key={day} className="min-h-24 space-y-1 border-r border-b p-1">
                     {isLoading ? (
                       <Skeleton aria-hidden="true" className="h-16 w-full" />
                     ) : (
@@ -282,11 +319,12 @@ export function ResourceScheduleSkeleton({ period }: { period?: { date: string; 
           <ResourceDateGrid dates={dates} view={period.view}>
             {[0, 1, 2, 3].map((row) => (
               <React.Fragment key={row}>
-                <div className="border-r border-b p-1">
-                  <Skeleton className="h-16 w-full" />
+                <div className="space-y-1 border-r border-b p-1">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-6 w-full" />
                 </div>
                 {dates.map((day) => (
-                  <div key={day} className="min-h-20 border-r border-b p-1">
+                  <div key={day} className="min-h-24 border-r border-b p-1">
                     <Skeleton className="h-16 w-full" />
                   </div>
                 ))}

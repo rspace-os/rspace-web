@@ -30,6 +30,12 @@ export interface ApiV2FilterFields {
     enabled: { operators: "!=" | "==" | "=exists="; value: boolean };
     id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
     incrementUnit: { operators: "!=" | "==" | "=exists="; value: "MINUTES" | "HOURS" | "DAYS" };
+    location: { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: string };
+    "location.containerType": { operators: "=="; value: "LIST" | "GRID" | "IMAGE" | "WORKBENCH" };
+    "location.deleted": { operators: "=="; value: boolean };
+    "location.id": { operators: "==" | "=in="; value: number };
+    "location.name": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "location.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
     maxBookingDurationMinutes: {
       operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out=";
       value: number;
@@ -70,6 +76,12 @@ export interface ApiV2FilterFields {
     };
     id: { operators: "!=" | "==" | "=ge=" | "=gt=" | "=in=" | "=le=" | "=lt=" | "=out="; value: number };
     kind: { operators: "!=" | "==" | "=exists="; value: "BOOKING" | "MAINTENANCE" };
+    location: { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: string };
+    "location.containerType": { operators: "=="; value: "LIST" | "GRID" | "IMAGE" | "WORKBENCH" };
+    "location.deleted": { operators: "=="; value: boolean };
+    "location.id": { operators: "==" | "=in="; value: number };
+    "location.name": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };
+    "location.value": { operators: "!=" | "==" | "=exists=" | "=in=" | "=out="; value: number };
     purpose: { operators: "!=" | "==" | "=contains=" | "=exists=" | "=in=" | "=like=" | "=out="; value: string };
     "requester.createdAt": { operators: "==" | "=in="; value: string | Temporal.Instant };
     "requester.email": { operators: "==" | "=contains=" | "=in=" | "=like="; value: string };

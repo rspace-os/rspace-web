@@ -1,6 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
+import { type AnyRouter, createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
 import { Suspense } from "react";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -21,10 +21,9 @@ export const noParentBooking: BookingListDocument = {
   end: Temporal.Instant.from("2026-08-20T09:00:00Z"),
 };
 
-export async function renderCalendar(initialEntry = "/booking/calendar?date=2026-08-17") {
+export async function renderBookingTestPage<TRouter extends AnyRouter>(router: TRouter) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
-  const router = createCalendarRouter(createMemoryHistory({ initialEntries: [initialEntry] }));
   const wrapper = await createRealI18nWrapper({
     resources: { booking: bookingEnglish, common: commonEnglish },
     defaultNS: "common",
@@ -38,4 +37,9 @@ export async function renderCalendar(initialEntry = "/booking/calendar?date=2026
     { wrapper },
   );
   return { ...result, queryClient, router };
+}
+
+export async function renderCalendar(initialEntry = "/booking/calendar?date=2026-08-17") {
+  const router = createCalendarRouter(createMemoryHistory({ initialEntries: [initialEntry] }));
+  return renderBookingTestPage(router);
 }

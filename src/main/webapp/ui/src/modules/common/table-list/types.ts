@@ -152,6 +152,8 @@ export type TableListFilterButtons = {
     label: ReactNode;
     icon?: ReactNode;
     pressed: boolean;
+    /** This preset is already represented in this table's counted expression. */
+    inExpression?: boolean;
     disabled?: boolean;
     count?: number;
     onClick: () => void;
@@ -217,6 +219,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   rows: readonly TDocument[];
   getRowId: (row: TDocument) => string;
   features: TableListFeatures<TDocument>;
+  /** Replace the default reset with one atomic update of all controlled table and page-owned state. */
+  onReset?: () => void;
   /** Apply filtering, sorting, and pagination to `rows` in the browser. */
   clientSide?: boolean;
   status?: TableListStatus;

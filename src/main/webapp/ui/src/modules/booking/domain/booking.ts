@@ -39,7 +39,8 @@ function mapParentContainer(input: InstrumentsRead["parentContainer"]) {
     },
   };
 }
-type MappedInstrument = Omit<InstrumentsRead, "name" | "deleted" | "parentContainer"> & {
+type MappedInstrument = Omit<Partial<InstrumentsRead>, "id" | "name" | "deleted" | "parentContainer"> & {
+  id: number;
   name: string;
   deleted: boolean;
   parentContainer?: ReturnType<typeof mapParentContainer>;
