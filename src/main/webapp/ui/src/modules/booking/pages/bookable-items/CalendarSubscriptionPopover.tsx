@@ -23,7 +23,7 @@ import {
   PopoverTrigger,
 } from "@/modules/common/ui/popover";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { calendarApplicationUrls, calendarSubscriptionQuery } from "./bookableItemCalendarSubscription";
+import { bookableItemCalendarSubscriptionQuery, calendarApplicationUrls } from "./bookableItemCalendarSubscription";
 
 function requireCalendarSubscriptionEtag<T extends { headers: Headers }>(response: T): T {
   if (!response.headers.get("ETag")) throw new Error("Calendar subscription response is missing ETag");
@@ -57,7 +57,7 @@ export function CalendarSubscriptionPopover({
 
   const queryKey = getGetBookingCalendarSubscriptionQueryKey(configurationId);
   // Plain useQuery: read only while open; focus follows its inline Retry and refetch results.
-  const status = useQuery({ ...calendarSubscriptionQuery(configurationId), enabled: open, retry: false });
+  const status = useQuery({ ...bookableItemCalendarSubscriptionQuery(configurationId), enabled: open });
 
   const resetCopy = () => {
     setCopied(false);

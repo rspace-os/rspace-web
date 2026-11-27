@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
+import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import {
   invalidateGetBookingCalendarSubscription,
   invalidateListBookingConfigurations,
@@ -67,7 +68,10 @@ export function useLoadedBookableItemPageActions({
       updateOperation.mutateAsync({ id: configuration.id, data: input, headers: { "If-Match": `"${version}"` } }),
     onMutate: () => setSaveAnnouncement(null),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+      ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
       setEdit(false);
@@ -91,6 +95,7 @@ export function useLoadedBookableItemPageActions({
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
         invalidateGetBookingCalendarSubscription(queryClient, configuration.id, { cancelRefetch: false }),
       ]);
       setArchiveOpen(false);
@@ -115,6 +120,7 @@ export function useLoadedBookableItemPageActions({
       await Promise.all([
         invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
         invalidateListBookings(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
         invalidateGetBookingCalendarSubscription(queryClient, configuration.id, { cancelRefetch: false }),
       ]);
       setSaveAnnouncement("restored");
@@ -150,7 +156,10 @@ export function useLoadedBookableItemPageActions({
   const leaveMutation = useMutation({
     mutationFn: () => leaveOperation.mutateAsync({ id: configuration.id }),
     onSuccess: async () => {
-      await invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false });
+      await Promise.all([
+        invalidateListBookingConfigurations(queryClient, undefined, { cancelRefetch: false }),
+        queryClient.invalidateQueries({ queryKey: getSearchBookingCatalogueQueryKey() }, { cancelRefetch: false }),
+      ]);
       void navigate({ to: "/booking", ignoreBlocker: true });
     },
   });

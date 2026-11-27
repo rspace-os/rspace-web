@@ -26,6 +26,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
@@ -40,7 +41,6 @@ const initialColumns = '{ "fields": ["target", "start", "end"] }';
 const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal&my-bookings.where=target.name%3Dcontains%3Dscope&my-bookings.columns=${encodeURIComponent(initialColumns)}&my-bookings.sort=-start`;
 
 let history: RouterHistory;
-const currentSearch = () => new URLSearchParams(history.location.search);
 
 function renderPage(
   path = initialPath,
@@ -49,7 +49,10 @@ function renderPage(
   onCountRequest: (url: URL) => void = () => undefined,
   docs?: readonly unknown[],
 ) {
-  server.use(...bookingHandlers(onListRequest, onCountRequest, docs));
+  server.use(
+    http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+    ...bookingHandlers(onListRequest, onCountRequest, docs),
+  );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
   const root = createRootRoute({
@@ -72,7 +75,10 @@ function renderPage(
     component: Outlet,
   });
   history = createMemoryHistory({ initialEntries: [path] });
-  const router = createRouter({ routeTree: root.addChildren([pageRoute, detailsRoute]), history });
+  const router = createRouter({
+    routeTree: root.addChildren([pageRoute, detailsRoute]),
+    history,
+  });
   render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
@@ -80,6 +86,7 @@ function renderPage(
       </Suspense>
     </QueryClientProvider>,
   );
+  return { searchParams: () => new URLSearchParams(history.location.search) };
 }
 
 beforeEach(() => {
@@ -111,7 +118,7 @@ describe("My Bookings page", () => {
 
   it("keeps TableList URL state while replacing only the period scope", async () => {
     const requests: URL[] = [];
-    renderPage(initialPath, 84, (url) => requests.push(url));
+    const { searchParams } = renderPage(initialPath, 84, (url) => requests.push(url));
     const user = userEvent.setup();
 
     expect(await screen.findByRole("heading", { name: "Test user bookings" })).toHaveClass("text-2xl", "font-semibold");
@@ -132,12 +139,12 @@ describe("My Bookings page", () => {
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("confocal"),
     );
-    await waitFor(() => expect(currentSearch().get("my-bookings.q")).toBe("confocal"));
-    const columnsBeforePeriodChange = currentSearch().get("my-bookings.columns");
+    await waitFor(() => expect(searchParams().get("my-bookings.q")).toBe("confocal"));
+    const columnsBeforePeriodChange = searchParams().get("my-bookings.columns");
 
     await user.click(screen.getByRole("button", { name: "booking:myBookings.period.past" }));
-    await waitFor(() => expect(currentSearch().get("period")).toBe("past"));
-    const parameters = currentSearch();
+    await waitFor(() => expect(searchParams().get("period")).toBe("past"));
+    const parameters = searchParams();
     expect(parameters.get("my-bookings.q")).toBe("confocal");
     expect(parameters.get("my-bookings.where")).toBe("target.name=contains=scope");
     expect(parameters.get("my-bookings.columns")).toBe(columnsBeforePeriodChange);
@@ -149,8 +156,8 @@ describe("My Bookings page", () => {
     expect(pastWhere).toContain("state==CANCELLED");
 
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" }));
-    await waitFor(() => expect(currentSearch().get("period")).toBe("past"));
-    const current = currentSearch();
+    await waitFor(() => expect(searchParams().get("period")).toBe("past"));
+    const current = searchParams();
     expect(current.get("my-bookings.q")).toBeNull();
     expect(current.get("my-bookings.where")).toBeNull();
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toContain("end=le="));

@@ -3,7 +3,15 @@ import { HttpResponse, http } from "msw";
 import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { cancelBooking, createBooking, fetchBooking, updateBooking } from "@/modules/booking/domain/booking";
+import {
+  BookingUnavailableError,
+  cancelBooking,
+  createBooking,
+  fetchBooking,
+  retryBookingRead,
+  updateBooking,
+} from "@/modules/booking/domain/booking";
+import { ApiV2ProblemError, ApiV2UnexpectedResponseError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
 import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 
@@ -140,6 +148,27 @@ describe("booking API", () => {
     await expect(fetchBooking(41)).rejects.toThrow();
   });
 
+  it("accepts a redacted own booking with no target or timezone", async () => {
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          target: null,
+          timezone: null,
+          canViewConfiguration: false,
+          canEdit: false,
+          canCancel: false,
+        }),
+      ),
+    );
+
+    await expect(fetchBooking(41)).resolves.toMatchObject({
+      target: null,
+      timezone: null,
+      canViewConfiguration: false,
+    });
+  });
+
   it.each([
     ["an invalid start timestamp", { start: "tomorrow" }],
     ["an invalid end timestamp", { end: "later" }],
@@ -197,5 +226,44 @@ describe("booking API", () => {
     await expect(cancelBooking(41, 0)).rejects.toEqual(
       expect.objectContaining({ status: 409, code: "errors.api.v2.booking.state.transition" }),
     );
+  });
+
+  describe("details read failures", () => {
+    it.each([
+      ["a body missing a guaranteed field", () => HttpResponse.json({ ...document, start: undefined })],
+      ["malformed JSON", () => new HttpResponse("{", { status: 200, headers: { "Content-Type": "application/json" } })],
+    ])("treats %s as unavailable details, which are not retried", async (_, response) => {
+      server.use(http.get("/api/v2/bookings/41", response));
+      const error = await fetchBooking(41).catch((caught: unknown) => caught);
+      expect(error).toBeInstanceOf(BookingUnavailableError);
+      expect(retryBookingRead(0, error)).toBe(false);
+    });
+
+    it("keeps an undeclared response eligible for retry", async () => {
+      server.use(
+        http.get(
+          "/api/v2/bookings/41",
+          () => new HttpResponse("<html></html>", { headers: { "Content-Type": "text/html" } }),
+        ),
+      );
+      const error = await fetchBooking(41).catch((caught: unknown) => caught);
+      expect(error).toBeInstanceOf(ApiV2UnexpectedResponseError);
+      expect(error).toMatchObject({ reason: "undeclared" });
+      expect(retryBookingRead(0, error)).toBe(true);
+    });
+
+    it("does not retry a 403 problem", async () => {
+      server.use(
+        http.get("/api/v2/bookings/41", () =>
+          HttpResponse.json<ApiV2Problem>(
+            { title: "Forbidden", status: 403, code: "errors.api.v2.forbidden" },
+            { status: 403, headers: { "Content-Type": "application/problem+json" } },
+          ),
+        ),
+      );
+      const error = await fetchBooking(41).catch((caught: unknown) => caught);
+      expect(error).toBeInstanceOf(ApiV2ProblemError);
+      expect(retryBookingRead(0, error)).toBe(false);
+    });
   });
 });
