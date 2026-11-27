@@ -2,6 +2,8 @@ import { Wrench, X } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
@@ -35,6 +37,7 @@ export function ExpandedEventCard({
   exactPeriod: string;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const isBlockout = event.kind === "blockout";
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
@@ -86,10 +89,7 @@ export function ExpandedEventCard({
           <div className="flex flex-wrap items-baseline gap-x-1.5">
             <PopoverTitle className="font-semibold text-lg tabular-nums leading-tight">{exactPeriod}</PopoverTitle>
             <PopoverDescription className={cn("text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-              {t("dayTimeline.expanded.duration", {
-                hours: Math.floor(duration / 60),
-                minutes: duration % 60,
-              })}
+              {formatDurationMinutes(duration, undefined, { largestUnit: "hour" })}
             </PopoverDescription>
           </div>
           {spansMultipleDates ? (
@@ -102,8 +102,8 @@ export function ExpandedEventCard({
                       {instrumentTime(
                         key === "start" ? event.startInstant : event.endInstant,
                         t("dayTimeline.expanded.dateTime", {
-                          date: formatDayDate(endpointDate),
-                          time: formatMinuteWithDayOffset(date, timezone, minute),
+                          date: formatDayDate(endpointDate, timeFormat),
+                          time: formatMinuteWithDayOffset(date, timezone, minute, timeFormat),
                         }),
                       )}
                     </time>
@@ -113,7 +113,7 @@ export function ExpandedEventCard({
             </dl>
           ) : (
             <time dateTime={startDate} className="mt-1.5 block text-xs leading-4">
-              {instrumentTime(event.startInstant, formatDayDate(startDate), event.endInstant)}
+              {instrumentTime(event.startInstant, formatDayDate(startDate, timeFormat), event.endInstant)}
             </time>
           )}
         </div>

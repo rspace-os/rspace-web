@@ -863,6 +863,7 @@ export default interface Resources {
         "notAvailable": "Not available",
         "notAvailableFrom": "Not available · Available from {time}"
       },
+      "description": "Availability period: {period}. {states}{hasNow, select, yes { {now}} other {}}",
       "emptyWindow": "This display window contains no time on this date because the clocks change.",
       "fullAvailable": "Available for the full period.",
       "label": "{itemName} availability",
@@ -890,8 +891,7 @@ export default interface Resources {
           "overlap": "Booked and unavailable"
         },
         "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
-      },
-      "summary": "Availability period: {period}. {states}"
+      }
     },
     "availabilityLayout": {
       "quickFilters": {
@@ -1245,6 +1245,7 @@ export default interface Resources {
         "maintenanceCancelled": "Maintenance event cancelled.",
         "maintenanceTitle": "Maintenance details",
         "noneProvided": "None provided",
+        "periodWithDuration": "<period><periodText><startTime>{start}</startTime> – <endTime>{end}</endTime></periodText></period><duration> · {duration}</duration>",
         "returnToItemCalendar": "Return to item calendar",
         "returnToMyBookings": "Return to My Bookings",
         "timesShownIn": "Times shown in",
@@ -1558,7 +1559,6 @@ export default interface Resources {
         "bookedBy": "Booked by",
         "createdBy": "Created by",
         "dateTime": "{date} · {time}",
-        "duration": "{hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
         "item": "Item",
         "notes": "Notes",
         "openItem": "Open inventory record {globalId}",
@@ -1862,7 +1862,7 @@ export default interface Resources {
         "incrementWholeMinutes": "The increment must be a whole number of minutes.",
         "maximumDuration": "Use 0, or a multiple of the time increment ({increment}). The system limit is {limit}.",
         "maximumDurationDays": "The maximum must be 0 or at least {minutes, number} elapsed minutes for this {days, plural, one {#-day} other {#-day}} increment.",
-        "openingHours": "Use an opening start before the end, or enter 00:00 as the end to close at midnight.",
+        "openingHours": "Use an opening start before the end, or enter {midnight} as the end to close at midnight.",
         "save": "RSpace could not save the booking settings. Try again.",
         "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
@@ -1899,7 +1899,8 @@ export default interface Resources {
         },
         "midnightEnd": "An end of {midnight} closes at midnight at the end of this day.",
         "openAllDay": "Open all day",
-        "openAllDaySelected": "Open all day selected."
+        "openAllDaySelected": "Open all day selected.",
+        "rangeSeparator": "–"
       },
       "title": "Booking Settings",
       "unavailable": {
@@ -1919,7 +1920,14 @@ export default interface Resources {
       "settings": "Settings"
     },
     "time": {
-      "labelWithPeriod": "<event/> · <period/>"
+      "dateAndRange": "{date}; {period}",
+      "dateTimeRange": "{start} – {end}",
+      "labelWithPeriod": "<event/> · <period/>",
+      "openingRange": "{start} - {end}",
+      "range": "{start}–{end}",
+      "rangeAndEndDate": "{period} · {date}",
+      "rangeWithOffset": "{period} {offset}",
+      "withDayOffset": "{time} ({days})"
     },
     "timelineEdit": {
       "continuationHint": "Double-click or press Enter to apply.",

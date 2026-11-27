@@ -1,6 +1,7 @@
 import { type FormStore, useField } from "@formisch/react";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   ALL_ISO_WEEKDAYS,
   customOpeningHours,
@@ -10,6 +11,7 @@ import {
   type OpeningInterval,
   validOpeningHours,
 } from "@/modules/booking/domain/bookingOpeningHours";
+import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { FieldDescription, FieldError } from "@/modules/common/ui/field";
@@ -48,7 +50,6 @@ function TimeRange({
   onTypedAllDay,
   disabled,
   invalid,
-  error,
 }: {
   labelledBy: string;
   hours: OpeningInterval;
@@ -59,9 +60,9 @@ function TimeRange({
   onTypedAllDay: (selected: boolean) => void;
   disabled: boolean;
   invalid: boolean;
-  error: ReactNode;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const id = useId();
   const allDay = isOpenAllDay(hours);
   const [showTimes, setShowTimes] = useState(() => !allDay);
@@ -74,6 +75,7 @@ function TimeRange({
     onTypedAllDay(typedAllDay);
     onChange(next);
   };
+  const midnight = formatWallClockTime("00:00", bookingDateTimeLocale(timeFormat));
   const showMidnightHelp = showTimes && (hours.end === "24:00" || hours.end === "00:00");
   const midnightHelpId = `${id}-midnight`;
   const errorId = `${id}-error`;
@@ -105,7 +107,7 @@ function TimeRange({
           <div className="flex min-w-0 max-w-full items-center gap-2">
             {input("start")}
             <span aria-hidden="true" className="shrink-0 text-muted-foreground">
-              {"–"}
+              {t("settings.openingHours.rangeSeparator")}
             </span>
             {input("end")}
           </div>
@@ -121,13 +123,9 @@ function TimeRange({
         </label>
       </div>
       {showMidnightHelp && (
-        <FieldDescription id={midnightHelpId}>
-          {t("settings.openingHours.midnightEnd", {
-            midnight: "00:00",
-          })}
-        </FieldDescription>
+        <FieldDescription id={midnightHelpId}>{t("settings.openingHours.midnightEnd", { midnight })}</FieldDescription>
       )}
-      {invalid ? <FieldError id={errorId}>{error}</FieldError> : null}
+      {invalid ? <FieldError id={errorId}>{t("settings.errors.openingHours", { midnight })}</FieldError> : null}
     </fieldset>
   );
 }
@@ -195,7 +193,6 @@ export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore
                     remembered={history[day]}
                     disabled={disabled}
                     invalid={!validOpeningHours(entry.start, entry.end)}
-                    error={t("settings.errors.openingHours")}
                     onRemember={(hours) => setHistory((current) => ({ ...current, [day]: hours }))}
                     onTypedAllDay={(selected) =>
                       setAnnouncement(selected ? t("settings.openingHours.openAllDaySelected") : "")

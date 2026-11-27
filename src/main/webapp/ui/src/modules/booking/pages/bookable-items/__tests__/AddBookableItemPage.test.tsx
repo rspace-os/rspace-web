@@ -42,6 +42,7 @@ const settings = {
   availabilityWindowEnd: "18:00",
   timezoneMode: "BROWSER",
   customTimezone: null,
+  timeFormat: "AUTOMATIC",
   institutionTimezone: "Etc/UTC",
 };
 

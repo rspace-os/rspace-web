@@ -32,6 +32,18 @@ function booking(id: number, start: Temporal.Instant, end: Temporal.Instant) {
 }
 
 describe("booking agenda date helpers", () => {
+  it("pads morning hours for the 24-hour preference", () => {
+    expect(
+      formatBookingAgendaTimeRange(
+        Temporal.Instant.from("2026-11-05T09:00:00Z"),
+        Temporal.Instant.from("2026-11-05T11:00:00Z"),
+        "UTC",
+        "en-GB",
+        "H24",
+      ),
+    ).toBe("09:00–11:00");
+  });
+
   it("sorts a copy by instant and ID, then groups each booking by its start date", () => {
     const rows = [
       booking(12, Temporal.Instant.from("2026-09-25T09:00:00.000Z"), Temporal.Instant.from("2026-09-25T10:00:00.000Z")),

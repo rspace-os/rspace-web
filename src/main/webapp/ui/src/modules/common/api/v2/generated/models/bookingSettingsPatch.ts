@@ -8,6 +8,7 @@
  */
 import type { BookingIncrementUnit } from "./bookingIncrementUnit.ts";
 import type { BookingOpeningHoursEntry } from "./bookingOpeningHoursEntry.ts";
+import type { BookingTimeFormat } from "./bookingTimeFormat.ts";
 import type { BookingTimezoneMode } from "./bookingTimezoneMode.ts";
 
 export interface BookingSettingsPatch {
@@ -63,5 +64,6 @@ export interface BookingSettingsPatch {
    * @nullable
    */
   slotGranularityMinutes?: number | null;
+  timeFormat?: BookingTimeFormat | null;
   timezoneMode?: BookingTimezoneMode | null;
 }
