@@ -368,8 +368,12 @@ var sketchDialog = {
   pointerDown: false,
   afterPointerUp: [],
 
+  /*
+   * Only presses on the drawing count: dragging a picker tile fires no
+   * pointercancel or pointerup in Safari, which would leave this set.
+   */
   trackPointer: function () {
-    document.addEventListener("pointerdown", function () {
+    document.getElementById("image-editorSketch").addEventListener("pointerdown", function () {
       sketchDialog.pointerDown = true;
     }, true);
     var up = function () {

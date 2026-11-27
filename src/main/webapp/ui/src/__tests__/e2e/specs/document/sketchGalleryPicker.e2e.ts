@@ -264,4 +264,26 @@ test.describe("Sketch tool Gallery picker", () => {
     await sketch.undo();
     expect(await sketch.imageNodes(viewerUrl)).toMatchObject([centred]);
   });
+
+  test("As a user, a Gallery image I drag onto the sketch is centred where I drop it", async ({
+    page,
+    pageWorkspace,
+  }) => {
+    const { sketch, tile, viewerUrl } = await openGalleryPicker(pageWorkspace);
+    const release = await holdRequests(page, viewerUrl);
+    await tile.dragTo(sketch.frame.locator("#image-editorSketch canvas[tabindex='0']"));
+    const [dropped] = await sketch.imageNodes(viewerUrl);
+    expect(dropped).toBeDefined();
+
+    // Starting the tile drag must not count as a press on the drawing, which would hold back centring and Insert.
+    const saved = page.waitForResponse((response) => isSave(response.url()), { timeout: 5000 });
+    await sketch.insertButton.click();
+    release();
+    const annotations = new URLSearchParams((await saved).request().postData() ?? "").get("annotations") ?? "";
+    await page.unroute(`**${viewerUrl}`);
+    const { width, height } = await imageSize(page, viewerUrl);
+    expect(imageNodesIn(annotations, viewerUrl)).toMatchObject([
+      { x: dropped.x - width / 2, y: dropped.y - height / 2 },
+    ]);
+  });
 });
