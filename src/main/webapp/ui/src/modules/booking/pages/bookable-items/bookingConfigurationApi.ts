@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { skipToken } from "@tanstack/react-query";
 import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { apiV2Fields, assertApiV2Selected } from "@/modules/common/api/v2/apiV2Selected";
 import {
@@ -156,10 +157,13 @@ export async function invalidateBookingCatalogueQueries(queryClient: QueryClient
 }
 
 export function bookingRouteTargetQuery(globalId: string | undefined) {
-  return getSearchBookingConfigurationTargetsQueryOptions(
-    { q: globalId ?? "", limit: 20 },
-    { query: { enabled: globalId !== undefined, select: mapBookingTargetDirectory } },
-  );
+  return getSearchBookingConfigurationTargetsQueryOptions(globalId ? { q: globalId, limit: 20 } : { limit: 20 }, {
+    query: {
+      ...(globalId === undefined ? { queryFn: skipToken } : {}),
+      enabled: globalId !== undefined,
+      select: mapBookingTargetDirectory,
+    },
+  });
 }
 
 /** The route-target search for a known target, read with `useSuspenseQuery`; it shares `bookingRouteTargetQuery`'s key. */
