@@ -292,16 +292,14 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
     // RecordSharingACL matches group entries by prefix, so sharing with "<group>x" also lets the
     // members of <group> read the document
     Group prefixGroup = groupOf(other);
-    User sharee = createAndSaveUser(prefixGroup.getUniqueName() + "x");
+    // as the owner's PI, the sharee can already read the image
+    User sharee = createAndSaveUser(prefixGroup.getUniqueName() + "x", Constants.PI_ROLE);
     initUsers(sharee);
-    groupOf(owner, sharee);
+    logoutAndLoginAs(sharee);
+    createGroupForUsers(sharee, sharee.getUsername(), "", sharee, owner);
     EcatImage image = newImage(owner);
     Field field = fieldWithAnnotatedImage(image);
     shareRecordWithUser(owner, field.getStructuredDocument(), sharee);
-    // the sharee itself can already read the image
-    Field alreadyShared = newField();
-    addLink(alreadyShared, image, false);
-    shareRecordWithUser(owner, alreadyShared.getStructuredDocument(), sharee);
     logoutAndLoginAsSysAdmin();
 
     AnnotatedImageRelink result =
