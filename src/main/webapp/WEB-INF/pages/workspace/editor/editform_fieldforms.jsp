@@ -80,11 +80,14 @@
 	</c:when>
 	<c:when test='${fieldTemplate.type.type eq "Text"}'>
 		<tr>
-			<td>
+			<td colspan="2">
 				<label for="field_defaultvaluestring"><spring:message code="form.fieldEditor.defaultValue"/></label>
 			</td>
-			<td>
-				<textarea id="field_defaultvaluestring" name="fieldDefaultValue" class="tempform" rows="4" cols="50">${fieldTemplate.defaultValue}</textarea>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<%-- EscapeXmlELResolver already escapes this value for the textarea. --%>
+				<textarea id="field_defaultvaluestring" name="fieldDefaultValue" rows="4" cols="50">${fieldTemplate.defaultValue}</textarea>
 			</td>
 		</tr>
 	</c:when>

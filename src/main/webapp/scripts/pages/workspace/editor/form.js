@@ -135,6 +135,7 @@ $(document).ready(function () {
       changeOrder();
     });
 
+    allowTinyMCEInteractionInDialogs();
     $("#field-editor").dialog({
       resizable: false,
       autoOpen: false,
@@ -165,6 +166,7 @@ $(document).ready(function () {
       },
       close: function () {
         fieldId = -1;
+        removeDefaultValueEditor();
         $('.form_field').remove();
         $("#fieldEditorSelect").val('');
         $('#fieldEditorSelect').attr('disabled', false);
@@ -179,7 +181,6 @@ $(document).ready(function () {
     });
 
     initNonEditableTinyMCE();
-    initSoftTinyMCE();
     loadDateFields();
     loadTimeFields();
     setUpPublishButtons();
@@ -306,9 +307,7 @@ function initReadOnlyTinyMCE(textareas) {
         "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
         "searchreplace visualblocks code insertdatetime codesample hr table paste noneditable fullscreen"
       ],
-      toolbar: [
-        "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-      ],
+      toolbar: false,
       elementpath: false,
       menubar: false,
       branding: false,
@@ -349,53 +348,44 @@ function appendCreatedFieldRow(data) {
   });
 }
 
+var DEFAULT_VALUE_EDITOR_ID = "field_defaultvaluestring";
+
 function initSoftTinyMCE() {
-  $('textarea.tempform').tinymce({
+  $("#" + DEFAULT_VALUE_EDITOR_ID).tinymce({
     selector: "",
     theme: "silver",
-    width: "800px",
+    width: "100%",
+    height: 250,
     plugins: [
       "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
       "searchreplace visualblocks code insertdatetime codesample hr table paste noneditable fullscreen"
     ],
-    toolbar: [
-      "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-    ],
+    toolbar: "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | table link",
+    toolbar_mode: "wrap",
+    init_instance_callback: function (editor) {
+      editor.iframeElement.title = $('label[for="' + DEFAULT_VALUE_EDITOR_ID + '"]').text();
+    },
     elementpath: false,
-    menubar: true,
+    menubar: false,
     branding: false,
     relative_urls: false,
-    setup: function (ed) {
-      ed.on('keypress', function () {
-        ed.isNotDirty = false;
-      });
-    }
   });
 }
 
-function initSpecificTinyMCE(id) {
-  $(function () {
-    var objt = '#textfield_' + id;
+function removeDefaultValueEditor() {
+  var editor = tinymce.get(DEFAULT_VALUE_EDITOR_ID);
+  if (editor) {
+    editor.remove();
+  }
+}
 
-    $(objt).tinymce({
-      theme: "silver",
-      width: "800px",
-      plugins: [
-        "advlist autolink anchor lists link charmap print preview anchor visualchars nonbreaking",
-        "searchreplace visualblocks code insertdatetime codesample hr table paste noneditable fullscreen"
-      ],
-      toolbar: [
-        "bold italic underline strikethrough | alignleft aligncenter alignright alignjustify ",
-      ],
-      elementpath: false,
-      menubar: true,
-      branding: false,
-      setup: function (ed) {
-        ed.on('keypress', function () {
-          ed.isNotDirty = false;
-        });
-      }
-    });
+// The Field Editor is a modal jQuery UI dialog, which would otherwise take focus back from
+// TinyMCE's menus and dialogs because they are rendered outside it.
+function allowTinyMCEInteractionInDialogs() {
+  $.widget("ui.dialog", $.ui.dialog, {
+    _allowInteraction: function (event) {
+      return $(event.target).closest(".tox-tinymce, .tox-tinymce-aux").length > 0 || this._super(event);
+    }
   });
 }
 
@@ -414,6 +404,7 @@ function loadFieldForm() {
   $("#errorSummary").empty();
   // get selected option
   var name = $('#fieldEditorSelect').val();
+  removeDefaultValueEditor();
   $('.form_field').remove();
   if (name !== "") {
     // disablw hile loading
@@ -466,7 +457,7 @@ function editField(id) {
 function fieldFormValidation(field) {
 
   if (field == "Text") {
-    initSpecificTinyMCE();
+    initSoftTinyMCE();
   }
 
   if (field == "Date") {
@@ -1165,7 +1156,6 @@ function editTextCode(data) {
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
   var textArea$ = $(fieldCode).find("textarea[name='fieldRtfData']");
   textArea$.html(data.defaultValue);
-  tinyMCE.activeEditor.isNotDirty = false;
 }
 
 function addRadioField() {

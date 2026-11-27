@@ -8,6 +8,10 @@
 <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/structuredDocument.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/tinymce_rs.css'/>" />
+<style>
+	/* TinyMCE menus and dialogs must open above the modal Field Editor dialog. */
+	.tox-tinymce-aux { z-index: 2100; }
+</style>
 
 <title><spring:message code="menu.templates.formEditor"/></title>
 <head>

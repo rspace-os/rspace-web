@@ -2,6 +2,53 @@ import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { uniqueName } from "@/__tests__/e2e/testData";
 
+test.describe("My RSpace form editor", () => {
+  test("As a user, I can save a table in a Text field default and edit it", async ({ pageMyRSpace }) => {
+    const formName = uniqueName("e2e-text-table");
+    const cellText = "Cells & <tags> </textarea>";
+    const editedCellText = `${cellText} edited`;
+    await pageMyRSpace.open();
+    let form = await pageMyRSpace.openCreateForm();
+    await form.rename(formName);
+
+    const editor = await form.openFieldEditor("Text");
+    await editor.selectType("Number");
+    await expect.poll(() => editor.hasTextDefaultEditorInstance()).toBe(false);
+    await editor.selectType("Text");
+    await editor.setName("table default");
+    await editor.insertTextDefaultTable(cellText);
+    await editor.save();
+    await expect(form.textFieldPreview("table default").getByRole("cell", { name: cellText })).toBeVisible();
+
+    const edit = await form.openFieldForEditing("table default");
+    await edit.appendToTextDefaultCell(cellText, " edited");
+    await edit.save();
+    await expect(form.textFieldPreview("table default").getByRole("cell", { name: editedCellText })).toBeVisible();
+
+    const cancelled = await form.openFieldForEditing("table default");
+    await expect(cancelled.textDefaultCell(editedCellText)).toBeVisible();
+    await cancelled.cancel();
+    await expect.poll(() => cancelled.hasTextDefaultEditorInstance()).toBe(false);
+
+    const forms = await form.saveAndClose();
+    form = await forms.edit(formName);
+    await expect(form.textFieldPreview("table default").getByRole("cell", { name: editedCellText })).toBeVisible();
+  });
+
+  test("As a user, Save and Close works on a newly created form", async ({ page, pageMyRSpace }) => {
+    const formName = uniqueName("e2e-save-close");
+    await pageMyRSpace.open();
+    const form = await pageMyRSpace.openCreateForm();
+    await expect(page.locator("#blockUIContentTemplate")).toHaveCount(1);
+    await form.rename(formName);
+    await form.addField("String", "plain value");
+
+    const forms = await form.saveAndClose();
+    await expect(page.locator("#blockUIContentTemplate")).toHaveCount(1);
+    await expect(forms.formRow(formName)).toBeVisible();
+  });
+});
+
 // Known bug:  PRT-1148. Unskip once fixed.
 test.describe
   .skip("My RSpace forms", () => {
