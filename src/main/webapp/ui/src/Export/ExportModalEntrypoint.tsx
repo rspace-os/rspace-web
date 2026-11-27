@@ -27,17 +27,19 @@ root.render(
   <I18nRoot namespaces={["workspace", "common"]}>
     <QueryClientProvider client={queryClient}>
       <Alerts>
-        <ExportDialog
-          exportSelection={{
-            type: "selection",
-            exportTypes: [],
-            exportNames: [],
-            exportIds: [],
-          }}
-          open={false}
-          // @ts-expect-error RS is legacy
-          allowFileStores={RS.netFileStoresExportEnabled}
-        />
+        <Analytics>
+          <ExportDialog
+            exportSelection={{
+              type: "selection",
+              exportTypes: [],
+              exportNames: [],
+              exportIds: [],
+            }}
+            open={false}
+            // @ts-expect-error RS is legacy
+            allowFileStores={RS.netFileStoresExportEnabled}
+          />
+        </Analytics>
       </Alerts>
     </QueryClientProvider>
   </I18nRoot>,

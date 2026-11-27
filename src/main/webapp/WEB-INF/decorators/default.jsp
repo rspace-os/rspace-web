@@ -38,7 +38,6 @@
 
     <sitemesh:write property='head'/>
 
-    <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
 
     <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
     <script>
