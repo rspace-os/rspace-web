@@ -81,6 +81,7 @@ const sourced = (
             bookedBy: `User ${id.replace("booking:", "")}`,
             canViewConfiguration: true,
             createdBy: null,
+            instrumentTimeZone: "Europe/Berlin",
           },
         }
       : {}),

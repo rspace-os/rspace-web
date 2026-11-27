@@ -29,6 +29,7 @@ import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Date;
@@ -54,6 +55,7 @@ class TimeSlotBookingManagerLifecycleTest {
   private User actor;
   private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
+  private BookingNotificationService bookingNotificationService;
 
   @BeforeEach
   void setUp() {
@@ -65,6 +67,7 @@ class TimeSlotBookingManagerLifecycleTest {
     actor = fixture.actor;
     accessManager = fixture.accessManager;
     manager = fixture.manager;
+    bookingNotificationService = fixture.bookingNotificationService;
   }
 
   @Test
@@ -250,6 +253,8 @@ class TimeSlotBookingManagerLifecycleTest {
     assertSame(cancelled, retried);
     verify(bookingDao, times(1)).saveAndFlush(any(TimeSlotBooking.class));
     verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService, times(1))
+        .notify(cancelled, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertThrows(
         BookingStateTransitionException.class,
         () ->
@@ -313,6 +318,7 @@ class TimeSlotBookingManagerLifecycleTest {
                 actor)
             .orElseThrow();
     assertEquals(BookingState.CANCELLED, cancelled.getState());
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
   }
 
   @Test
@@ -380,6 +386,38 @@ class TimeSlotBookingManagerLifecycleTest {
               .isEmpty());
     }
     assertEquals("Private purpose", existing.getPurpose());
+  }
+
+  @Test
+  void timeChangesNotifyButPurposeOnlyAndUnchangedTimesDoNot() {
+    User requester = mock(User.class);
+    TimeSlotBooking existing = booking(41L, 12L, requester);
+    stubReadableBookingAndConfigurationLock(existing);
+    manager
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(null, null, true, "New purpose", null),
+            actor,
+            actor)
+        .orElseThrow();
+    manager
+        .updateBooking(
+            41L, new TimeSlotBookingManager.Patch(start(), end(), false, null, null), actor, actor)
+        .orElseThrow();
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
+    manager
+        .updateBooking(
+            41L,
+            new TimeSlotBookingManager.Patch(
+                null, instant("2026-10-25T10:00:00Z"), false, null, null),
+            actor,
+            actor)
+        .orElseThrow();
+    verify(bookingNotificationService)
+        .notify(
+            eq(existing),
+            eq(actor),
+            argThat(type -> type.name().equals("NOTIFICATION_BOOKING_CHANGED")));
   }
 
   private void stubReadableBookingAndConfigurationLock(TimeSlotBooking booking) {

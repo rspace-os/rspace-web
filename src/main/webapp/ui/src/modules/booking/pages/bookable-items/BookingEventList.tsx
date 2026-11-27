@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { Booking } from "@/modules/booking/domain/booking";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
@@ -65,9 +66,16 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
               minWidth: 220,
               dependencies: ["end"],
               renderCell: ({ row }) => (
-                <time dateTime={row.start.toString()}>
-                  {formatter.formatRange(row.start.epochMilliseconds, row.end.epochMilliseconds)}
-                </time>
+                <BookingInstrumentTimeTooltip
+                  start={row.start}
+                  end={row.end}
+                  displayTimeZone={timezone}
+                  instrumentTimeZone={row.timezone}
+                >
+                  <time dateTime={row.start.toString()}>
+                    {formatter.formatRange(row.start.epochMilliseconds, row.end.epochMilliseconds)}
+                  </time>
+                </BookingInstrumentTimeTooltip>
               ),
             },
           },
@@ -81,6 +89,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             name: "kind",
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind" satisfies CollectionTranslationKey,
+            label: t("bookableItemDetails.events.kind"),
             list: {
               width: 180,
               renderCell: ({ row }) =>
