@@ -208,13 +208,19 @@ public class CommunicationManagerImpl implements CommunicationManager {
     }
     commDao.save(mor);
     if (!quiet) {
+      // A global message is a one-way broadcast to every user: never tell them it was cancelled
+      boolean notifyRecipients = !MessageType.GLOBAL_MESSAGE.equals(mor.getMessageType());
       Set<User> usersToNotify = new HashSet<User>();
       for (CommunicationTarget ct : mor.getRecipients()) {
         notificnTracker.updateMessageCount(ct.getRecipient().getId(), -1, mor.getMessageType());
-        if (ct.getRecipient()
-            .wantsNotificationFor(NotificationType.NOTIFICATION_REQUEST_STATUS_CHANGE)) {
+        if (notifyRecipients
+            && ct.getRecipient()
+                .wantsNotificationFor(NotificationType.NOTIFICATION_REQUEST_STATUS_CHANGE)) {
           usersToNotify.add(ct.getRecipient());
         }
+      }
+      if (!notifyRecipients) {
+        return;
       }
       String sysmsg =
           messages.getMessage("messaging.request.cancelledBy", new Object[] {userNameCancelling});

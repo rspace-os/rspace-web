@@ -133,7 +133,8 @@ public interface CommunicationManager {
    * @param userNameCancelling the username of the person cancelling the req
    * @param requestID
    * @param quiet whether to notify recipients that request was cancelled (<code>false</code>) or
-   *     cancel silently without telling them (<code>true</code>).
+   *     cancel silently without telling them (<code>true</code>). A global message is always
+   *     cancelled without a status-change notification.
    * @throws AuthorizationException if <code>userNameCancelling</code> is not the originator of the
    *     request.
    */
