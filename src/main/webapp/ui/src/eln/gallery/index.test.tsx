@@ -10,6 +10,7 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { HttpResponse, http } from "msw/http";
 import { MemoryRouter } from "react-router";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
@@ -382,16 +383,21 @@ describe("Gallery", () => {
         name: "shared snippet",
         parentFolderId: null,
       });
-      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      const restoreConsole = silenceConsole(["error"], ["Error fetching file details"]);
+      try {
+        const consoleError = console.error;
 
-      render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
+        render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
 
-      expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
-      expect(consoleError).toHaveBeenCalledWith(
-        "Error fetching file details",
-        expect.objectContaining({ message: "gallery:landingPage.notInGallery" }),
-      );
-      consoleError.mockRestore();
+        expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
+        // the page shows only the key in tests, so the message is checked where it is logged
+        expect(consoleError).toHaveBeenCalledWith(
+          "Error fetching file details",
+          expect.objectContaining({ message: "gallery:landingPage.notInGallery" }),
+        );
+      } finally {
+        restoreConsole();
+      }
     });
   });
 

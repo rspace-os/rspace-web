@@ -4980,7 +4980,8 @@ components:
           description: |
             The folder through which the requesting user reaches this snippet in their Gallery:
             the owner's folder for the owner, otherwise a folder the snippet is shared into,
-            falling back to the owner's folder. Null when the user cannot read that folder.
+            falling back to the owner's folder. Only folders the user can read are
+            chosen, the lowest id first; null when the user can read none of them.
         _links:
           $ref: "#/components/schemas/LinkItemList"
       example:
