@@ -348,6 +348,18 @@ caller's rows when the effective subject changes.
 See [Browser query and storage defaults](#browser-query-and-storage-defaults) for saved Boolean
 groups and their removal rules.
 
+Quick filters can act as page-owned query presets using `hasPreset`, `togglePreset`
+and `withoutPresets` from `table-list/presets`. Bind each control to its expression;
+only flattened top-level AND conjuncts participate. An OR subtree is never edited by
+preset toggles, including exclusive swaps. Recovery when loading stale or invalid
+current-user rules may remove comparisons within OR groups and must show a notice.
+
+Set a quick-filter button's `inExpression` flag only when its newly introduced rule
+belongs to this TableList's counted expression. The rule count subtracts each pressed
+flagged button, preserving the existing Filters badge in both menu and button
+presentations. Rules in another expression, and presets already counted as rules,
+remain unflagged. This flag affects counts only and does not change the expression.
+
 ## Add sorting rules
 
 The Sort priority panel offers Add sort for every unused sortable field, including fields

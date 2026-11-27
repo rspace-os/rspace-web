@@ -131,6 +131,7 @@ export function CalendarResourceSchedule({
       return { day, start: epochMillisecondsOf(bounds.start), end: epochMillisecondsOf(bounds.end) };
     });
     for (const event of events) {
+      if (!event.target) continue;
       const occurrence = editorPositions?.get(event.id) ?? event;
       const eventStart = occurrence.start.epochMilliseconds;
       const eventEnd = occurrence.end.epochMilliseconds;
@@ -151,8 +152,8 @@ export function CalendarResourceSchedule({
       [
         ...new Map(
           (includeEventResources
-            ? [...(resources ?? []), ...events.map((event) => event.target)]
-            : (resources ?? events.map((event) => event.target))
+            ? [...(resources ?? []), ...events.flatMap((event) => (event.target ? [event.target] : []))]
+            : (resources ?? events.flatMap((event) => (event.target ? [event.target] : [])))
           ).map((resource) => [resource.globalId, resource]),
         ).values(),
       ].toSorted((left, right) => collator.compare(left.value.name, right.value.name)),

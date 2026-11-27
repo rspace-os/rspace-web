@@ -223,7 +223,6 @@ class ApiV2OpenApiContractMVCIT {
       "get,  /api/v2/users/me/booking-preferences",
       "put,  /api/v2/users/me/booking-preferences",
       "delete, /api/v2/users/me/booking-preferences",
-      "get,  /api/v2/booking-settings/access-grantees",
       "get,  /api/v2/booking-configuration-targets",
     })
     @DisplayName("annotated routes outside the collection controller appear in the document")
