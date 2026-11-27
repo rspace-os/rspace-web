@@ -87,6 +87,7 @@ export function DmpImportMenuSection({ onSelect }: { onSelect: (target: DmpImpor
     queryKey: ["integration", "allIntegrations"],
     queryFn: () => allIntegrations(),
     staleTime: 60_000,
+    refetchOnMount: "always",
   });
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { t } = useTranslation(["gallery", "apps"]);
