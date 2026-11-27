@@ -14,12 +14,14 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import axios from "@/common/axios";
 import i18n from "../../../modules/common/i18n";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
+import { getErrorMessage } from "../../../util/error";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class GroupEditBar extends React.Component<any, any> {
@@ -29,6 +31,7 @@ class GroupEditBar extends React.Component<any, any> {
     this.state = {
       toast: false,
       editing: false,
+      saving: false,
       group_id: props.domContainer.getAttribute("data-group-id"),
       can_edit: props.domContainer.getAttribute("data-can-edit") === "true",
       profile_text: props.domContainer.getAttribute("data-profile-text"),
@@ -41,8 +44,17 @@ class GroupEditBar extends React.Component<any, any> {
       errorMessage: "",
     };
 
+    this.savedProfileText = this.state.profile_text;
+    this.savedPiCanEditValue = this.state.pi_can_edit_value;
+    this.savedProfileIsHidden = this.state.profile_is_hidden;
     this.handleChange = this.handleChange.bind(this);
   }
+
+  /** The profile text as last saved; the data-profile-text attribute is not updated after a save. */
+  savedProfileText: string | null;
+  /** Last saved "PI can edit all" and "Hide the group" values; their data attributes are not updated either. */
+  savedPiCanEditValue: boolean;
+  savedProfileIsHidden: boolean;
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   handleChange(event: any) {
@@ -55,73 +67,84 @@ class GroupEditBar extends React.Component<any, any> {
   };
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  submitForm = (event: any) => {
+  submitForm = async (event: any) => {
     event.preventDefault();
-    let data = new FormData(),
-      promises = [];
+    if (this.state.saving) return;
+    // Save, Cancel and the fields stay disabled until every request settles, so Cancel can't restore values
+    // that a pending request then saves, and a second click can't post again.
+    this.setState({ saving: true });
+    const requests: Array<Promise<boolean>> = [];
+    const onRequestError = (error: unknown) => {
+      this.handleError(getErrorMessage(error, i18n.t("apiErrors.unknown")));
+      return false;
+    };
 
-    if (this.state.can_edit) {
-      data.set("newProfile", this.state.profile_text);
-      promises.push(
+    if (this.state.can_edit && this.state.profile_text !== this.savedProfileText) {
+      const newProfile = this.state.profile_text;
+      const data = new FormData();
+      data.set("newProfile", newProfile);
+      requests.push(
         axios
-          .post<{ data: boolean | null; exceptionMessage?: string }>(`/groups/editProfile/${this.state.group_id}`, data)
+          .post<{ data: boolean | null; errorMsg?: { errorMessages?: Array<string> } | null }>(
+            `/groups/editProfile/${this.state.group_id}`,
+            data,
+          )
           .then((response) => {
             if (response.data.data === true) {
-              this.setState({ editing: false });
-            } else {
-              this.handleError(response.data.exceptionMessage);
+              this.savedProfileText = newProfile;
+              return true;
             }
+            this.showToast(response.data.errorMsg?.errorMessages?.join(" ") || i18n.t("apiErrors.unknown"));
+            return false;
           })
-          .catch((error) => {
-            this.handleError(error);
-          }),
+          .catch(onRequestError),
       );
     }
 
-    if (
-      this.state.pi_can_edit_permission &&
-      this.state.pi_can_edit_value !== (this.props.domContainer.getAttribute("data-pieditallchoicevalue") === "true")
-    ) {
-      data = new FormData();
-      data.set("canPIEditAll", this.state.pi_can_edit_value);
-      promises.push(
+    if (this.state.pi_can_edit_permission && this.state.pi_can_edit_value !== this.savedPiCanEditValue) {
+      const piCanEditValue = this.state.pi_can_edit_value;
+      const data = new FormData();
+      data.set("canPIEditAll", piCanEditValue);
+      requests.push(
         axios
           .post(`/groups/ajax/admin/changePiCanEditAll/${this.state.group_id}`, data)
-          .then((_response) => {})
-          .catch((error) => {
-            this.handleError(error);
-          }),
+          .then(() => {
+            this.savedPiCanEditValue = piCanEditValue;
+            return true;
+          })
+          .catch(onRequestError),
       );
     }
 
     if (
       this.state.can_hide_profile &&
       this.state.profile_hiding_enabled &&
-      this.state.profile_is_hidden !== (this.props.domContainer.getAttribute("data-group-private-profile") === "true")
+      this.state.profile_is_hidden !== this.savedProfileIsHidden
     ) {
-      data = new FormData();
-      data.set("hideProfile", this.state.profile_is_hidden);
-      promises.push(
+      const profileIsHidden = this.state.profile_is_hidden;
+      const data = new FormData();
+      data.set("hideProfile", profileIsHidden);
+      requests.push(
         axios
           .post(`/groups/ajax/admin/changeHideProfileSetting/${this.state.group_id}`, data)
-          .then((_response) => {})
-          .catch((error) => {
-            this.handleError(error);
-          }),
+          .then(() => {
+            this.savedProfileIsHidden = profileIsHidden;
+            return true;
+          })
+          .catch(onRequestError),
       );
     }
 
-    axios.all(promises).then(() => {
-      this.setState({ editing: false });
-    });
+    const results = await Promise.all(requests);
+    this.setState({ saving: false, ...(results.every(Boolean) ? { editing: false } : {}) });
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  handleError = (error: any) => {
-    this.setState({
-      toast: true,
-      errorMessage: i18n.t("profile.groups.editBar.errorMessage", { error }),
-    });
+  handleError = (error: string) => {
+    this.showToast(i18n.t("profile.groups.editBar.errorMessage", { error }));
+  };
+
+  showToast = (message: string) => {
+    this.setState({ toast: true, errorMessage: message });
   };
 
   handleClickEdit = () => {
@@ -129,7 +152,12 @@ class GroupEditBar extends React.Component<any, any> {
   };
 
   handleClickClose = () => {
-    this.setState({ editing: false });
+    this.setState({
+      editing: false,
+      profile_text: this.savedProfileText,
+      pi_can_edit_value: this.savedPiCanEditValue,
+      profile_is_hidden: this.savedProfileIsHidden,
+    });
   };
 
   closeToast = () => {
@@ -160,22 +188,37 @@ class GroupEditBar extends React.Component<any, any> {
                 }
               />
               <CardContent>
-                <TextField
-                  variant="standard"
-                  disabled={!this.state.editing}
-                  value={this.state.profile_text}
-                  onChange={this.handleChange}
-                  placeholder={i18n.t("profile.groups.editBar.placeholder")}
-                  multiline={true}
-                  maxRows={4}
-                  fullWidth
-                  label={i18n.t("profile.groups.editBar.profileDescription")}
-                  margin="dense"
-                  data-test-id="profile-description"
-                  slotProps={{
-                    htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
-                  }}
-                />
+                {this.state.editing ? (
+                  <TextField
+                    variant="standard"
+                    value={this.state.profile_text}
+                    onChange={this.handleChange}
+                    placeholder={i18n.t("profile.groups.editBar.placeholder")}
+                    multiline={true}
+                    maxRows={4}
+                    fullWidth
+                    label={i18n.t("profile.groups.editBar.profileDescription")}
+                    margin="dense"
+                    data-test-id="profile-description"
+                    disabled={this.state.saving}
+                    slotProps={{
+                      htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
+                    }}
+                  />
+                ) : (
+                  <Box data-test-id="profile-description" sx={{ marginTop: "8px", marginBottom: "4px" }}>
+                    <Typography variant="caption" component="div">
+                      {i18n.t("profile.groups.editBar.profileDescription")}
+                    </Typography>
+                    {this.state.profile_text ? (
+                      <Typography sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                        {this.state.profile_text}
+                      </Typography>
+                    ) : (
+                      <Typography color="text.secondary">{this.state.default_text}</Typography>
+                    )}
+                  </Box>
+                )}
                 {(this.state.pi_can_edit_permission || this.state.pi_can_edit_value) && (
                   <Box sx={{ marginTop: "10px" }}>
                     <FormControlLabel
@@ -183,7 +226,7 @@ class GroupEditBar extends React.Component<any, any> {
                       control={
                         <Checkbox
                           {...({
-                            disabled: !this.state.editing || !this.state.pi_can_edit_permission,
+                            disabled: !this.state.editing || this.state.saving || !this.state.pi_can_edit_permission,
                             onChange: this.handleSwitch("pi_can_edit_value"),
                             color: "primary",
                             checked: this.state.pi_can_edit_value,
@@ -204,7 +247,7 @@ class GroupEditBar extends React.Component<any, any> {
                       control={
                         <Checkbox
                           {...({
-                            disabled: !this.state.can_hide_profile || !this.state.editing,
+                            disabled: !this.state.can_hide_profile || !this.state.editing || this.state.saving,
                             onChange: this.handleSwitch("profile_is_hidden"),
                             color: "primary",
                             checked: this.state.profile_is_hidden,
@@ -221,10 +264,20 @@ class GroupEditBar extends React.Component<any, any> {
               </CardContent>
               {this.state.editing && (
                 <CardActions sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Button onClick={this.handleClickClose} data-test-id="button-cancel-edit">
+                  <Button
+                    onClick={this.handleClickClose}
+                    disabled={this.state.saving}
+                    data-test-id="button-cancel-edit"
+                  >
                     {i18n.t("actions.cancel")}
                   </Button>
-                  <Button onClick={this.submitForm} variant="contained" color="primary" data-test-id="button-save-edit">
+                  <Button
+                    onClick={this.submitForm}
+                    disabled={this.state.saving}
+                    variant="contained"
+                    color="primary"
+                    data-test-id="button-save-edit"
+                  >
                     {i18n.t("actions.save")}
                   </Button>
                 </CardActions>

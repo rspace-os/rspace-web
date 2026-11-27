@@ -224,8 +224,8 @@ export class GroupDetailsPage extends BasePage {
     await this.editProfileButton.click();
     await this.piCanEditAllWorkCheckbox.setChecked(enabled);
     const saveButton = this.page.getByRole("button", { name: "Save", exact: true });
+    // Only the changed setting is saved; an unchanged profile description is not re-sent.
     await Promise.all([
-      this.page.waitForResponse((res) => res.url().includes("/groups/editProfile/") && res.status() === 200),
       this.page.waitForResponse(
         (res) => res.url().includes("/groups/ajax/admin/changePiCanEditAll/") && res.status() === 200,
       ),
