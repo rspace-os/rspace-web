@@ -119,8 +119,10 @@ original ISO interval are also formatted at display time.
 
 The saved message used by email is human-readable in the recipient's configured timezone.
 Browser mode falls back to the institution timezone because email has no browser session.
-Booking message text is decoded once as text in the legacy notification UI, preserving
-literal instrument names without interpreting them as HTML.
+Subjects identify the lifecycle event and instrument. Header and body use each recipient's saved zone snapshot. Dashboard and notification dialog messages link to the booking and
+bookable item. Email links are absolute and use `server.urls.prefix`. The legacy UI preserves
+booking-message markup across repeated renders; the JSP undoes only the EL resolver's escaping,
+so escaped user values remain literal in both HTML and plain text.
 
 ## Verification
 
@@ -133,10 +135,8 @@ Focused coverage lives in `BookingNotificationServiceTest`, the booking manager 
 `CommunicationManagerImplTest`, `BookingOwnerNotificationIT`, and
 `UserProfileControllerMVCIT`. The latter two need the configured MariaDB.
 
-Booking email subjects name the event and instrument. Each recipient gets a separate saved
-time-zone snapshot used by both body and header. Browser mode falls back to the institution
-time zone. RESTORED is reserved before CHANGED for persisted ordinal compatibility and
-is wired only when restoration is introduced.
+RESTORED is reserved before CHANGED for persisted ordinal compatibility and is wired only
+when restoration is introduced.
 
 The Booking preferences switch “Also notify me about bookings I create or cancel myself”
 uses the notification section’s Save and Cancel controls and Saved status. It applies only
