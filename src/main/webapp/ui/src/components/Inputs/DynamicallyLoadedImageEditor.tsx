@@ -1,5 +1,4 @@
 import Alert from "@mui/material/Alert";
-import { observer } from "mobx-react-lite";
 import React, { lazy, Suspense } from "react";
 import i18n from "@/modules/common/i18n";
 
@@ -53,4 +52,4 @@ function DynamicallyLoadedImageEditor({
   );
 }
 
-export default observer(DynamicallyLoadedImageEditor);
+export default DynamicallyLoadedImageEditor;

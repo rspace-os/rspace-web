@@ -16,7 +16,6 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -265,4 +264,4 @@ function LinkedItems({ globalId, factory }: LinkedItemsArgs): React.ReactNode {
   );
 }
 
-export default observer(LinkedItems);
+export default LinkedItems;

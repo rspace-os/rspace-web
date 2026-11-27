@@ -175,26 +175,17 @@ const PolygonEditor = observer(
   },
 );
 
-type PolygonCardArgs = {
-  editable: boolean;
-  geoLocation: GeoLocation;
-  doUpdateIdentifiers: () => void;
-  recordTypeName?: "sample" | "instrument";
-};
-
-function PolygonCard({
-  editable,
-  geoLocation,
-  doUpdateIdentifiers,
-  recordTypeName = "sample",
-}: PolygonCardArgs): ReactNode {
-  const { t } = useTranslation("inventory");
-  const polygonCardMessages: PolygonMessages = {
-    empty: t("fields.identifiers.polygonCard.state.empty"),
-    incomplete: t("fields.identifiers.polygonCard.state.incomplete"),
-    complete: t("fields.identifiers.polygonCard.state.complete"),
-  };
-  const InPolygonPointEditor = observer((): ReactNode => {
+const InPolygonPointEditor = observer(
+  ({
+    geoLocation,
+    editable,
+    doUpdateIdentifiers,
+  }: {
+    geoLocation: GeoLocation;
+    editable: boolean;
+    doUpdateIdentifiers: () => void;
+  }): ReactNode => {
+    const { t } = useTranslation("inventory");
     const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation = geoLocation;
     return (
       <Grid
@@ -294,8 +285,28 @@ function PolygonCard({
         </Grid>
       </Grid>
     );
-  });
+  },
+);
 
+type PolygonCardArgs = {
+  editable: boolean;
+  geoLocation: GeoLocation;
+  doUpdateIdentifiers: () => void;
+  recordTypeName?: "sample" | "instrument";
+};
+
+function PolygonCard({
+  editable,
+  geoLocation,
+  doUpdateIdentifiers,
+  recordTypeName = "sample",
+}: PolygonCardArgs): ReactNode {
+  const { t } = useTranslation("inventory");
+  const polygonCardMessages: PolygonMessages = {
+    empty: t("fields.identifiers.polygonCard.state.empty"),
+    incomplete: t("fields.identifiers.polygonCard.state.incomplete"),
+    complete: t("fields.identifiers.polygonCard.state.complete"),
+  };
   const { polygonEmpty }: GeoLocation = geoLocation;
   return (
     <Card elevation={0} variant="outlined">
@@ -326,7 +337,11 @@ function PolygonCard({
           <FormHelperText component="div" sx={{ mx: 0, mt: 1, mb: 0.5 }}>
             {t("fields.identifiers.polygonCard.inPolygonPointDescription")}
           </FormHelperText>
-          <InPolygonPointEditor />
+          <InPolygonPointEditor
+            geoLocation={geoLocation}
+            editable={editable}
+            doUpdateIdentifiers={doUpdateIdentifiers}
+          />
         </FormControl>
       </CardContent>
     </Card>

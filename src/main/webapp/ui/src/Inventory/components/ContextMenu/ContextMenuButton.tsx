@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button, { buttonClasses } from "@mui/material/Button";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Tooltip from "@mui/material/Tooltip";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
 
@@ -93,4 +92,4 @@ function ContextMenuButton({
   );
 }
 
-export default observer(ContextMenuButton);
+export default ContextMenuButton;

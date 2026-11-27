@@ -1,5 +1,4 @@
 import Menu from "@mui/material/Menu";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import { type FieldType, SUPPORTED_TYPES } from "../../../stores/models/FieldTypes";
 import FieldTypeMenuItem from "./FieldTypeMenuItem";
@@ -37,4 +36,4 @@ function FieldTypeMenu({ fieldType, onChange }: FieldTypeMenuArgs): React.ReactN
   );
 }
 
-export default observer(FieldTypeMenu);
+export default FieldTypeMenu;

@@ -2,7 +2,6 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -177,4 +176,4 @@ function ExtendedContextMenu({
   );
 }
 
-export default observer(ExtendedContextMenu);
+export default ExtendedContextMenu;

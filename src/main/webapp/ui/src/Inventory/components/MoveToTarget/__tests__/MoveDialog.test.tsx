@@ -87,30 +87,28 @@ describe("MoveDialog", () => {
           // this check prevents the non-unique react key warning
           const globalIds = selectedResults.map((r) => r.globalId);
           fc.pre(new Set(globalIds).size === globalIds.length);
-          const rootStore: StoreContainer = makeMockRootStore(
-            observable({
-              moveStore: {
-                isMoving: true,
-                selectedResults,
-                setIsMoving: action((x: boolean) => {
-                  rootStore.moveStore.isMoving = x;
-                }),
-                search: new Search({
-                  factory: mockFactory(),
-                }),
-                submitting: "NO",
+          const rootStore: StoreContainer = makeMockRootStore({
+            moveStore: {
+              isMoving: true,
+              selectedResults,
+              setIsMoving: (x: boolean) => {
+                rootStore.moveStore.isMoving = x;
               },
-              uiStore: {
-                setDialogVisiblePanel: () => {},
-                isSingleColumnLayout: false,
-              },
-              searchStore: {
-                savedSearches: [],
-                savedBaskets: [],
-                getBaskets: () => {},
-              },
-            }),
-          );
+              search: new Search({
+                factory: mockFactory(),
+              }),
+              submitting: "NO",
+            },
+            uiStore: {
+              setDialogVisiblePanel: () => {},
+              isSingleColumnLayout: false,
+            },
+            searchStore: {
+              savedSearches: [],
+              savedBaskets: [],
+              getBaskets: () => {},
+            },
+          });
           render(
             <ThemeProvider theme={materialTheme}>
               <storesContext.Provider value={rootStore}>

@@ -1,7 +1,6 @@
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { isoToLocale } from "../../../util/Util";
 
@@ -20,4 +19,4 @@ function Date({ date, label }: DateArgs): React.ReactNode {
   );
 }
 
-export default observer(Date);
+export default Date;

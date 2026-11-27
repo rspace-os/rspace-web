@@ -1,5 +1,4 @@
 import { clamp } from "es-toolkit";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import type { Point } from "@/util/types";
 
@@ -153,4 +152,4 @@ function Draggable({
   );
 }
 
-export default observer(Draggable);
+export default Draggable;

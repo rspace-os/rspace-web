@@ -1,5 +1,4 @@
 import RestoreFromTrashIcon from "@mui/icons-material/RestoreFromTrash";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,21 +30,17 @@ const RestoreAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Res
       [() => true, ""],
     ])();
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={() => {
-              void search.restoreRecords(selectedResults);
-              closeMenu();
-            }}
-            icon={<RestoreFromTrashIcon />}
-            label={t("common:actions.restore")}
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          />
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={() => {
+          void search.restoreRecords(selectedResults);
+          closeMenu();
+        }}
+        icon={<RestoreFromTrashIcon />}
+        label={t("common:actions.restore")}
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      />
     );
   },
 );

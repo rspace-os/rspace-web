@@ -5,7 +5,6 @@ import DialogContent from "@mui/material/DialogContent";
 import { paperClasses } from "@mui/material/Paper";
 import { encode as encodeBmp } from "fast-bmp";
 import { applyPalette, GIFEncoder, quantize } from "gifenc";
-import { observer } from "mobx-react-lite";
 import React from "react";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -301,4 +300,4 @@ function ImageEditingDialog({
     </Dialog>
   );
 }
-export default observer(ImageEditingDialog);
+export default ImageEditingDialog;

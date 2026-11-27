@@ -4,7 +4,6 @@ import ImageIcon from "@mui/icons-material/Image";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
@@ -179,4 +178,4 @@ function ImageField({
     </>
   );
 }
-export default observer(ImageField);
+export default ImageField;

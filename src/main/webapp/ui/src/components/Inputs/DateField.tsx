@@ -3,7 +3,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { isValid, parse, parseISO } from "date-fns";
 import { enGB } from "date-fns/locale";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
@@ -119,4 +118,4 @@ function parseDateFieldValue(value: string | Date | null): Date | null {
   return null;
 }
 
-export default observer(DateField);
+export default DateField;

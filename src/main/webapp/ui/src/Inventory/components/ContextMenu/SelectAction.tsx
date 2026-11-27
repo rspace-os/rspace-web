@@ -1,6 +1,5 @@
 import SelectAllIcon from "@mui/icons-material/SelectAll";
 import Badge from "@mui/material/Badge";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -38,21 +37,17 @@ const SelectAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Sele
     ])();
 
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            options={options}
-            icon={
-              <Badge badgeContent={selectedResults.length} color="primary" max={100}>
-                <SelectAllIcon fontSize="small" />
-              </Badge>
-            }
-            disabledHelp={disabledHelp}
-            as={as}
-            ref={ref}
-          />
-        )}
-      </Observer>
+      <ContextMenuAction
+        options={options}
+        icon={
+          <Badge badgeContent={selectedResults.length} color="primary" max={100}>
+            <SelectAllIcon fontSize="small" />
+          </Badge>
+        }
+        disabledHelp={disabledHelp}
+        as={as}
+        ref={ref}
+      />
     );
   },
 );

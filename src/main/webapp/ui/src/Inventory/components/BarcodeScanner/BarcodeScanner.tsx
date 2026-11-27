@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { Dialog } from "@/components/DialogBoundary";
 import AllBarcodeScanner from "./AllBarcodeScanner";
 import type { BarcodeInput } from "./BarcodeScannerSkeleton";
@@ -29,4 +28,4 @@ function BarcodeScanner({ open, onClose, onScan, cameraErrorMessage }: BarcodeSc
   );
 }
 
-export default observer(BarcodeScanner);
+export default BarcodeScanner;

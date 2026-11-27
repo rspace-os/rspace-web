@@ -1,7 +1,6 @@
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -96,4 +95,4 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
   );
 }
 
-export default observer(LinkTargetBrowser);
+export default LinkTargetBrowser;

@@ -1,7 +1,6 @@
 import Autocomplete, { autocompleteClasses } from "@mui/material/Autocomplete";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
 import type { Group } from "../../../stores/definitions/Group";
@@ -74,4 +73,4 @@ function GroupsField({ onSelection, label, getOptionDisabled }: GroupsFieldArgs)
   );
 }
 
-export default observer(GroupsField);
+export default GroupsField;

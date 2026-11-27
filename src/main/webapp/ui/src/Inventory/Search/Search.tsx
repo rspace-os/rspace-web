@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
@@ -58,4 +57,4 @@ function MainSearch({
   );
 }
 
-export default observer(MainSearch);
+export default MainSearch;

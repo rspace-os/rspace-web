@@ -1,7 +1,6 @@
 import Badge from "@mui/material/Badge";
 import SvgIcon from "@mui/material/SvgIcon";
 import { useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 
 type NumberedLocationArgs = {
@@ -72,4 +71,4 @@ function NumberedLocation({
   );
 }
 
-export default observer(NumberedLocation);
+export default NumberedLocation;

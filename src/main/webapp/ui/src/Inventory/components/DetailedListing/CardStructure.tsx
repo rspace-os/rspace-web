@@ -4,7 +4,6 @@ import CardHeader from "@mui/material/CardHeader";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 
 function Header({
@@ -120,4 +119,4 @@ function CardStructure({
   );
 }
 
-export default observer(CardStructure);
+export default CardStructure;

@@ -1611,9 +1611,7 @@ describe("OperationWizard placement after Perform", () => {
       createTwoAndRecordBulk();
       const shelf = makeShelf();
       const { fetch, refresh } = watch(shelf);
-      runInAction(() => {
-        shelf.editing = true;
-      });
+      shelf.editing = true;
       onScreen.activeResult = shelf;
       const onClose = vi.fn();
       await performIntoShelf(userEvent.setup(), onClose, vi.fn(), shelf);

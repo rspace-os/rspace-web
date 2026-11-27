@@ -4,7 +4,6 @@ import Box from "@mui/material/Box";
 import IconButton, { iconButtonClasses } from "@mui/material/IconButton";
 import InputBase, { inputBaseClasses } from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,7 +15,7 @@ type FormArgs = {
   searchToolTip: string;
 };
 
-const Form = observer(({ handleSearch, placeholder, searchToolTip }: FormArgs) => {
+function Form({ handleSearch, placeholder, searchToolTip }: FormArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const [query, setQuery] = useState("");
 
@@ -74,7 +73,7 @@ const Form = observer(({ handleSearch, placeholder, searchToolTip }: FormArgs) =
       )}
     </>
   );
-});
+}
 
 type GenericsearchbarArgs = {
   handleSearch: (newQuery: string) => void;
@@ -135,4 +134,4 @@ function Genericsearchbar({ handleSearch, placeholder, searchToolTip }: Generics
   );
 }
 
-export default observer(Genericsearchbar);
+export default Genericsearchbar;

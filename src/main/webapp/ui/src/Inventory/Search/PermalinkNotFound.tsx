@@ -1,7 +1,6 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import type Resources from "@/modules/common/i18n/resources";
@@ -50,4 +49,4 @@ function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNod
   );
 }
 
-export default observer(PermalinkNotFound);
+export default PermalinkNotFound;

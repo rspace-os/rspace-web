@@ -7,7 +7,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import Typography from "@mui/material/Typography";
-import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -83,51 +82,47 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
       [() => true, ""],
     ])();
     return (
-      <Observer>
-        {() => (
-          <ContextMenuAction
-            onClick={handleOpen}
-            icon={icon}
-            label={t("common:actions.transfer")}
-            as={as}
-            ref={ref}
-            disabledHelp={disabledHelp}
-          >
-            <ContextDialog open={Boolean(btnPos)} onClose={handleClose}>
-              <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
-              <DialogContent>
-                <DialogContentText component="span">
-                  <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-                    <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
-                  </Typography>
-                  <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-                    {t("contextMenu.transfer.dialog.recipientSearchHint")}
-                  </Typography>
-                </DialogContentText>
-                <FormControl component="fieldset" fullWidth>
-                  <PeopleField
-                    onSelection={(person) => setRecipient(person as PersonModel)}
-                    label={t("contextMenu.transfer.dialog.recipientLabel")}
-                    recipient={recipient}
-                    excludedUsernames={excludedFromSelection}
-                  />
-                </FormControl>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleClose} disabled={false}>
-                  {t("common:actions.cancel")}
-                </Button>
-                <SubmitSpinner
-                  onClick={onSubmitHandler}
-                  disabled={recipient === null}
-                  loading={false}
-                  label={t("common:actions.transfer")}
-                />
-              </DialogActions>
-            </ContextDialog>
-          </ContextMenuAction>
-        )}
-      </Observer>
+      <ContextMenuAction
+        onClick={handleOpen}
+        icon={icon}
+        label={t("common:actions.transfer")}
+        as={as}
+        ref={ref}
+        disabledHelp={disabledHelp}
+      >
+        <ContextDialog open={Boolean(btnPos)} onClose={handleClose}>
+          <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
+          <DialogContent>
+            <DialogContentText component="span">
+              <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+                <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
+              </Typography>
+              <Typography component="p" variant="body1" sx={{ mb: 2 }}>
+                {t("contextMenu.transfer.dialog.recipientSearchHint")}
+              </Typography>
+            </DialogContentText>
+            <FormControl component="fieldset" fullWidth>
+              <PeopleField
+                onSelection={(person) => setRecipient(person as PersonModel)}
+                label={t("contextMenu.transfer.dialog.recipientLabel")}
+                recipient={recipient}
+                excludedUsernames={excludedFromSelection}
+              />
+            </FormControl>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} disabled={false}>
+              {t("common:actions.cancel")}
+            </Button>
+            <SubmitSpinner
+              onClick={onSubmitHandler}
+              disabled={recipient === null}
+              loading={false}
+              label={t("common:actions.transfer")}
+            />
+          </DialogActions>
+        </ContextDialog>
+      </ContextMenuAction>
     );
   },
 );
