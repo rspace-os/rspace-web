@@ -95,9 +95,7 @@ describe("BookingInlineEditForm", () => {
       const patches: unknown[] = [];
       const booking = {
         ...document,
-        ...(rule === "increment"
-          ? { start: document.start.replace(":00:00Z", ":02:00Z"), end: document.end.replace(":00:00Z", ":02:00Z") }
-          : {}),
+        ...(rule === "increment" ? { start: document.start.replace(":00:00Z", ":02:00Z") } : {}),
       };
       const configuration = {
         ...bookableItemFixtures[0],
@@ -121,17 +119,22 @@ describe("BookingInlineEditForm", () => {
       expect(screen.getByText("booking:bookings.form.policyMismatchPurpose")).toHaveAttribute("role", "status");
       await user.clear(purpose);
       await user.type(purpose, "Updated purpose");
-      const end = within(screen.getByRole("group", { name: "booking:bookings.form.end" })).getByLabelText(
-        "booking:bookings.form.time",
-      );
+      const end = within(
+        screen.getByRole("group", {
+          name: rule === "increment" ? "booking:bookings.form.start" : "booking:bookings.form.end",
+        }),
+      ).getByLabelText("booking:bookings.form.time");
       const originalTime = end.getAttribute("value");
       await user.clear(end);
       await user.type(end, "12:45");
-      await user.tab();
+      if (rule !== "increment") await user.tab();
       await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
       expect(patches).toEqual([]);
       expect(screen.queryByText("booking:bookings.form.policyMismatchPurpose")).not.toBeInTheDocument();
-      expect(end).toHaveAttribute("aria-invalid", "true");
+      const invalidEnd = within(screen.getByRole("group", { name: "booking:bookings.form.end" })).getByLabelText(
+        "booking:bookings.form.time",
+      );
+      expect(invalidEnd).toHaveAttribute("aria-invalid", "true");
       await user.clear(end);
       await user.type(end, originalTime ?? "");
       await user.tab();
