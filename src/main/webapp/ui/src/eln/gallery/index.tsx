@@ -154,6 +154,31 @@ const WholePage = ({
     }
   }, [autoSelect, galleryListing]);
 
+  /*
+   * A linked item need not be on the first page of its folder, so pages are
+   * loaded until it turns up or the folder runs out. This happens once per
+   * link, so later sorting or searching pages only on request. The effect runs
+   * every render, as the listing's wrapper is rebuilt each time, so the
+   * array a page was requested for guards against requesting it twice.
+   */
+  const autoSelectSettledFor = React.useRef<ReadonlyArray<number> | null>(null);
+  const pageRequestedFor = React.useRef<ReadonlyArray<GalleryFile> | null>(null);
+  React.useEffect(() => {
+    if (!autoSelect?.length || autoSelectSettledFor.current === autoSelect) return;
+    if (liveListing.tag !== "success" || liveListing.value.tag === "empty" || !liveList) return;
+    if (pageRequestedFor.current === liveList) return;
+    const wanted = new Set(autoSelect.map((id) => `${id}`));
+    const found = liveList.some(({ id }) => wanted.has(idToString(id).orElse("")));
+    if (found || liveListing.value.loadMore.isEmpty()) {
+      autoSelectSettledFor.current = autoSelect;
+      return;
+    }
+    liveListing.value.loadMore.do((loadMore) => {
+      pageRequestedFor.current = liveList;
+      void loadMore();
+    });
+  }, [autoSelect, liveListing, liveList]);
+
   const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
     PREFERENCES.GALLERY_SIDEBAR_OPEN,
     {

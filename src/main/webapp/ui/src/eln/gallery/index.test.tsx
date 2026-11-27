@@ -706,6 +706,91 @@ describe("Gallery", () => {
     });
   });
 
+  describe("Linked item beyond the first page of its folder", () => {
+    const LINKED_ITEM_ID = 77;
+
+    function listingEntry(id: number, name: string) {
+      return {
+        id,
+        oid: { idString: `GL${id}` },
+        name,
+        ownerId: 1,
+        ownerFullName: "Test User",
+        ownerUsername: "testuser",
+        description: "",
+        creationDate: 1672531200,
+        modificationDate: 1672531200,
+        type: "Image",
+        systemFolder: false,
+        sharedFolder: false,
+        extension: "png",
+        thumbnailId: null,
+        size: 100,
+        version: 1,
+        originalImageOid: null,
+      };
+    }
+
+    /** A folder listed one entry per page, with each page's entries given in order. */
+    function mockPagedFolder(pages: ReadonlyArray<ReadonlyArray<ReturnType<typeof listingEntry>>>) {
+      mockAxios.onGet(`/api/v1/files/${LINKED_ITEM_ID}`).reply(200, {
+        id: LINKED_ITEM_ID,
+        globalId: `GL${LINKED_ITEM_ID}`,
+        name: "linked.png",
+        contentType: "image/png",
+        created: "2025-07-07T11:09:18.312Z",
+        size: 100,
+        version: 1,
+        parentFolderId: 123,
+      });
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
+        const pageNumber = Number((params as URLSearchParams).get("pageNumber"));
+        return [
+          200,
+          {
+            data: {
+              parentId: 123,
+              items: { totalHits: pages.flat().length, totalPages: pages.length, results: pages[pageNumber] ?? [] },
+            },
+            error: null,
+            success: true,
+            errorMsg: null,
+          },
+        ];
+      });
+    }
+
+    function requestedPages(): Array<string | null> {
+      return mockAxios.history.get
+        .filter(({ url }) => /getUploadedFiles/.test(url ?? ""))
+        .map(({ params }) => (params as URLSearchParams).get("pageNumber"));
+    }
+
+    test("loads pages until the linked item is found, then selects it", async () => {
+      mockPagedFolder([
+        [listingEntry(1, "newest.png")],
+        [listingEntry(LINKED_ITEM_ID, "linked.png")],
+        [listingEntry(2, "oldest.png")],
+      ]);
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("gridcell", { name: /linked\.png/ })).toHaveAttribute("aria-selected", "true");
+      });
+      expect(requestedPages()).toEqual(["0", "1"]);
+    });
+
+    test("stops at the last page when the linked item is not in the folder", async () => {
+      mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(2, "oldest.png")]]);
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      expect(await screen.findByRole("gridcell", { name: /oldest\.png/ })).toBeInTheDocument();
+      expect(requestedPages()).toEqual(["0", "1"]);
+    });
+  });
+
   describe("Sharing integration", () => {
     test("Saving a snippet share from Gallery should surface the success alert", async () => {
       const user = userEvent.setup();

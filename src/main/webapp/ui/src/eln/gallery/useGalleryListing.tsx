@@ -1614,6 +1614,15 @@ export function useGalleryListing({
     }
   }
 
+  /*
+   * A listing of a specific folder at the root of a section has an empty path,
+   * so the folder's own id is needed; "0" would list the user's own section root.
+   */
+  function listingFolderId(p: ReadonlyArray<GalleryFile>): string {
+    if (p.length > 0) return idToString(p[p.length - 1].id).elseThrow();
+    return listingOf.tag === "folder" ? `${listingOf.folderId}` : "0";
+  }
+
   async function getGalleryFiles(p: ReadonlyArray<GalleryFile>, s: GallerySection): Promise<void> {
     setErrorState(false);
     if (s === "NetworkFiles" && p.length === 0) {
@@ -1628,17 +1637,10 @@ export function useGalleryListing({
     try {
       const token = await getToken();
 
-      let currentFolderId = "0";
-      if (p.length > 0) {
-        currentFolderId = idToString(p[p.length - 1].id).elseThrow();
-      } else if (listingOf.tag === "folder") {
-        currentFolderId = `${listingOf.folderId}`;
-      }
-
       const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: s,
-          currentFolderId,
+          currentFolderId: listingFolderId(p),
           name: searchTerm,
           pageNumber: "0",
           sortOrder,
@@ -1688,7 +1690,7 @@ export function useGalleryListing({
       const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
         params: new URLSearchParams({
           mediatype: s,
-          currentFolderId: p.length > 0 ? idToString(p[p.length - 1].id).elseThrow() : "0",
+          currentFolderId: listingFolderId(p),
           name: searchTerm,
           pageNumber: `${page + 1}`,
           sortOrder,
@@ -1760,7 +1762,7 @@ export function useGalleryListing({
                 .get<unknown>(`/gallery/getUploadedFiles`, {
                   params: new URLSearchParams({
                     mediatype: s,
-                    currentFolderId: pa.length > 0 ? idToString(pa[pa.length - 1].id).elseThrow() : "0",
+                    currentFolderId: listingFolderId(pa),
                     name: searchTerm,
                     pageNumber: `${p}`,
                     sortOrder,
