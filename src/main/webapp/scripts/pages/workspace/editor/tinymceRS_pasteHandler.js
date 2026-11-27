@@ -267,6 +267,123 @@ RS.tinymcePasteHandler = function() {
         
     }
 
+    /*
+     * ======================================================================
+     *  attachment panels copied from view mode (RSDEV-1424)
+     * ======================================================================
+     */
+    function _findCopiedAttachmentPanels($html) {
+        // audio/video panels still contain their editor markup, so only generic file panels need converting
+        return _searchForSelectorIn$html('.attachmentPanel', $html).filter(function () {
+            var $panel = $(this);
+            return $panel.find('a.downloadActionLink').length > 0
+                && $panel.find('.attachmentLinked, .mediaDiv').length === 0;
+        });
+    }
+
+    // Only an absolute /Streamfile/<id> URL on this origin shows the panel was copied from this RSpace.
+    function _getCopiedAttachmentSource(href) {
+        var url;
+        try {
+            url = new URL(href);
+        } catch (e) {
+            return null;
+        }
+        var path = url.pathname.match(/^\/Streamfile\/(\d+)$/);
+        var query = url.search.match(/^(?:\?revision=(\d+))?$/);
+        if (url.origin !== window.location.origin || !path || !query || url.hash) {
+            return null;
+        }
+        return { id: path[1], revision: query[1] || null };
+    }
+
+    // resolves with the editor markup of the copied attachment, or null if it can't be resolved
+    function _renderCopiedAttachment(source) {
+        if (!source) {
+            return Promise.resolve(null);
+        }
+        var url = '/workspace/getRecordInformation?recordId=' + source.id;
+        if (source.revision) {
+            url += '&revision=' + source.revision;
+        }
+        return Promise.resolve($.get(url)).then(function (result) {
+            var data = result && result.data;
+            var template = data && String(data.id) === source.id ? getGenericDocTemplate(data) : null;
+            return template ? RS.renderFieldTemplate(template.templateId, template.model) : null;
+        }).then(function (html) {
+            if (!html) {
+                return null;
+            }
+            var $attachment = RS.safelyParseHtmlInto$Html(html);
+            if (source.revision) {
+                $attachment.find('a.attachmentLinked').attr('data-rsrevision', source.revision);
+                $attachment.find('[href^="/Streamfile/"]').attr('href', function (i, href) {
+                    return href + '?revision=' + source.revision;
+                });
+            }
+            return $attachment;
+        }).catch(function (e) {
+            console.warn('Could not resolve pasted attachment ' + source.id, e);
+            return null;
+        });
+    }
+
+    function _isStillActiveEditor(editor) {
+        return tinymce.activeEditor === editor && !editor.removed;
+    }
+
+    function _reportPasteNotInserted() {
+        $().toastmessage('showToast', {
+            text: RS.msg("legacyjs.ajax.failed", RS.msg("legacyjs.workspace.tinymcePaste.copyingContent"),
+                RS.msg("legacyjs.workspace.coreEditor.requestFailed"), ""),
+            type: 'error',
+            stayTime: 8000
+        });
+    }
+
+    /*
+     * Replaces each copied panel in place with editor attachment markup, or with its label as plain text
+     * if it can't be resolved, then inserts the whole pasted content once into the editor that received it.
+     */
+    function _pasteWithCopiedAttachments($html, $panels) {
+        var editor = tinymce.activeEditor;
+        var fieldId = getFieldIdFromTextFieldId(editor.id);
+        var $fragment = $('<div></div>', $html[0].ownerDocument).append($html);
+
+        RS.blockPage(RS.msg("legacyjs.workspace.tinymcePaste.copyingElements"));
+        var conversions = $panels.toArray().map(function (panel) {
+            var $panel = $(panel);
+            var $target = $panel.closest('.attachmentDiv');
+            if ($target.length === 0) {
+                $target = $panel;
+            }
+            var label = $panel.find('.attachmentName').text();
+            var source = _getCopiedAttachmentSource($panel.find('a.downloadActionLink').attr('href'));
+            return _renderCopiedAttachment(source).then(function ($attachment) {
+                $target.replaceWith($attachment || document.createTextNode(label));
+            });
+        });
+
+        Promise.all(conversions).then(function () {
+            if (!_isStillActiveEditor(editor) || !_containsRSpaceFieldElements($fragment)) {
+                return $fragment.html();
+            }
+            return $.post("/workspace/editor/structuredDocument/copyContentIntoField", {
+                content: $fragment.html(),
+                fieldId: fieldId
+            });
+        }).then(function (html) {
+            RS.unblockPage();
+            if (_isStillActiveEditor(editor)) {
+                editor.execCommand('mceInsertContent', false, html);
+            } else {
+                _reportPasteNotInserted();
+            }
+        }, function (jqxhr) {
+            RS.ajaxFailed(RS.msg("legacyjs.workspace.tinymcePaste.copyingContent"), true, jqxhr);
+        });
+    }
+
     /* 
      * ==============================
      *  public API  
@@ -306,6 +423,14 @@ RS.tinymcePasteHandler = function() {
             contentProcessed = true;
         }
         
+        // convert attachment panels copied from view mode back to editor markup (RSDEV-1424)
+        var $attachmentPanels = _findCopiedAttachmentPanels($pastedHtml);
+        if ($attachmentPanels.length > 0) {
+            // will paste asynchronously
+            _pasteWithCopiedAttachments($pastedHtml, $attachmentPanels);
+            return true;
+        }
+
         // copy rspace field elements in content (RSPAC-1957) 
         if (_containsRSpaceFieldElements($pastedHtml)) {
             // will paste asynchronously

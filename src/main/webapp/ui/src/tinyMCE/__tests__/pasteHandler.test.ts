@@ -1,5 +1,7 @@
 import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { getGenericDocTemplate } from "@/tinyMCE/gallery/utils";
 import {
   bootstrapLegacyEditorHarness,
   createJQueryRequestChain,
@@ -261,6 +263,155 @@ describe("tinymceRS_pasteHandler", () => {
 
     expect(harness.unblockPage).toHaveBeenCalled();
     expect(harness.execCommand).toHaveBeenCalledWith("mceInsertContent", false, "mocked_copy_response");
+  });
+
+  describe("attachment panels copied from view mode", () => {
+    const records: Record<string, { id: number; name: string; type: string; extension: string }> = {
+      "192": { id: 192, name: "sample.pdf", type: "Document", extension: "pdf" },
+      "193": { id: 193, name: "notes.txt", type: "Miscellaneous", extension: "txt" },
+    };
+    let lookups: Record<string, JQuery.Deferred<unknown>>;
+
+    // view-mode panel as Chromium copies it, with an absolute Download URL
+    const copiedPanel = (name: string, downloadHref: string) =>
+      '<div class="attachmentDiv mceNonEditable"><div class="attachmentPanel previewableAttachmentPanel">' +
+      `<div class="attachmentThumbnailPanel"><img class="attachmentIcon"><label class="attachmentName">${name}</label></div>` +
+      '<div class="inlineActionsPanel"><a href="#" class="inlineActionLink viewActionLink">View</a>' +
+      `<a href="${downloadHref}" class="inlineActionLink downloadActionLink">Download</a>` +
+      '<a href="#" class="inlineActionLink infoActionLink">Info</a></div></div></div>';
+    const download = (path: string) => `${window.location.origin}${path}`;
+
+    const lookupUrl = (id: string, revision?: string) =>
+      `/workspace/getRecordInformation?recordId=${id}${revision ? `&revision=${revision}` : ""}`;
+    const respond = (id: string, revision?: string) => lookups[lookupUrl(id, revision)].resolve({ data: records[id] });
+
+    async function insertedContent() {
+      await waitFor(() => expect(harness.execCommand).toHaveBeenCalledTimes(1));
+      expect(harness.execCommand).toHaveBeenCalledWith("mceInsertContent", false, expect.any(String));
+      const container = document.createElement("div");
+      container.innerHTML = harness.execCommand.mock.calls[0][2] as string;
+      document.body.append(container);
+      return container;
+    }
+
+    beforeEach(() => {
+      lookups = {};
+      harness.$.get.mockImplementation((url: string) => {
+        lookups[url] = harness.$.Deferred();
+        return lookups[url].promise();
+      });
+      harness.RS.renderFieldTemplate = vi.fn((_templateId: string, model: { id: number; name: string }) =>
+        harness.$.Deferred()
+          .resolve(
+            `<div class="attachmentDiv mceNonEditable"><a href="/Streamfile/${model.id}"><img class="attachmentIcon"></a>` +
+              `<p class="attachmentP"><a class="attachmentLinked" id="attachOnText_${model.id}" href="/Streamfile/${model.id}">${model.name}</a></p>` +
+              `<div class="attachmentInfoDiv" id="attachmentInfoDiv_${model.id}"></div></div>`,
+          )
+          .promise(),
+      );
+      window.getGenericDocTemplate = getGenericDocTemplate;
+      Object.defineProperty(globalThis, "generateIconSrc", {
+        configurable: true,
+        writable: true,
+        value: vi.fn(() => "/images/icons/pdf.png"),
+      });
+    });
+
+    it("claims the paste and inserts the attachment as editor markup in its original position", async () => {
+      const html = `before ${copiedPanel("sample.pdf", download("/Streamfile/192"))} after`;
+
+      expect(pasteHandler.processPastedContent("before sample.pdf View Download Info after", html)).toBe(true);
+      expect(harness.$.get).toHaveBeenCalledWith(lookupUrl("192"));
+      expect(harness.blockPage).toHaveBeenCalledWith("Copying elements in pasted content...");
+
+      respond("192");
+      const inserted = await insertedContent();
+
+      expect(inserted.querySelector(".attachmentPanel")).toBeNull();
+      expect(inserted.querySelectorAll(".attachmentDiv")).toHaveLength(1);
+      const link = inserted.querySelector("a.attachmentLinked");
+      expect(link).toHaveAttribute("id", "attachOnText_192");
+      expect(link).toHaveAttribute("href", "/Streamfile/192");
+      expect(link).toHaveTextContent("sample.pdf");
+      expect(inserted.querySelector("#attachmentInfoDiv_192")).toBeInTheDocument();
+      expect(inserted.firstChild?.textContent).toBe("before ");
+      expect(inserted.lastChild?.textContent).toBe(" after");
+      expect(harness.unblockPage).toHaveBeenCalled();
+    });
+
+    it("keeps panels in their pasted order when lookups finish in reverse order", async () => {
+      const html =
+        copiedPanel("sample.pdf", download("/Streamfile/192")) + copiedPanel("notes.txt", download("/Streamfile/193"));
+
+      expect(pasteHandler.processPastedContent("", html)).toBe(true);
+      respond("193");
+      respond("192");
+      const inserted = await insertedContent();
+
+      expect(Array.from(inserted.querySelectorAll("a.attachmentLinked"), (a) => a.id)).toEqual([
+        "attachOnText_192",
+        "attachOnText_193",
+      ]);
+    });
+
+    it("keeps a pinned revision on the restored attachment", async () => {
+      const html = copiedPanel("sample.pdf", download("/Streamfile/192?revision=7"));
+
+      expect(pasteHandler.processPastedContent("", html)).toBe(true);
+      expect(harness.$.get).toHaveBeenCalledWith(lookupUrl("192", "7"));
+      respond("192", "7");
+      const inserted = await insertedContent();
+
+      expect(inserted.querySelector("a.attachmentLinked")).toHaveAttribute("data-rsrevision", "7");
+      expect(Array.from(inserted.querySelectorAll("[href]"), (a) => a.getAttribute("href"))).toEqual([
+        "/Streamfile/192?revision=7",
+        "/Streamfile/192?revision=7",
+      ]);
+    });
+
+    it("keeps the label as plain text when the lookup fails", async () => {
+      const html = `before ${copiedPanel("sample.pdf", download("/Streamfile/192"))} after`;
+
+      const restoreConsole = silenceConsole(["warn"], ["Could not resolve pasted attachment"]);
+
+      expect(pasteHandler.processPastedContent("", html)).toBe(true);
+      lookups[lookupUrl("192")].reject({ status: 403 });
+      const inserted = await insertedContent();
+
+      expect(inserted.innerHTML).toBe("before sample.pdf after");
+      restoreConsole();
+    });
+
+    it("keeps panels from another origin or without an origin as plain text, without a lookup", async () => {
+      const html =
+        copiedPanel("foreign.pdf", "http://other.rspace:8080/Streamfile/192") +
+        copiedPanel("unknown.pdf", "/Streamfile/192");
+
+      expect(pasteHandler.processPastedContent("", html)).toBe(true);
+      const inserted = await insertedContent();
+
+      expect(harness.$.get).not.toHaveBeenCalled();
+      expect(inserted.innerHTML).toBe("foreign.pdfunknown.pdf");
+    });
+
+    it("inserts nothing if the receiving editor is no longer active", async () => {
+      const toastmessage = vi.fn();
+      Object.defineProperty(harness.$.fn, "toastmessage", { configurable: true, writable: true, value: toastmessage });
+      const html = copiedPanel("sample.pdf", download("/Streamfile/192"));
+
+      expect(pasteHandler.processPastedContent("", html)).toBe(true);
+      (window as unknown as { tinymce: { activeEditor: unknown } }).tinymce.activeEditor = {
+        ...harness.activeEditor,
+        id: "rtf_12",
+      };
+      respond("192");
+
+      await waitFor(() =>
+        expect(toastmessage).toHaveBeenCalledWith("showToast", expect.objectContaining({ type: "error" })),
+      );
+      expect(harness.execCommand).not.toHaveBeenCalled();
+      expect(harness.unblockPage).toHaveBeenCalled();
+    });
   });
 
   it("processes pasted image data by forwarding a generated file to the upload widget", async () => {
