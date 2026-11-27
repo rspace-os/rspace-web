@@ -6,9 +6,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -112,9 +114,9 @@ public class ZipUtils {
    * inside the extraction directory (covering {@code ..} traversal and backslash variants).
    * Extraction also stops once the archive exceeds {@link ZipExtractionLimits#DEFAULTS} (bytes
    * written, entry count, compression ratio, free disk space), so a zip bomb cannot fill the
-   * partition. A rejection or I/O failure aborts and removes everything the extraction created; it
-   * does not restore pre-existing files that a failed run has already overwritten, so extract into
-   * a fresh directory when the destination may hold content worth keeping.
+   * partition. A rejection or I/O failure aborts and removes everything the extraction created. An
+   * entry that would overwrite an existing file is rejected, so extraction never changes content
+   * that was already in the destination.
    *
    * @param archivePath path to zip file, e.g., a/b/c/d.archive.zip
    * @param destinationPath The folder into which the zip archive will be extracted.
@@ -128,7 +130,9 @@ public class ZipUtils {
    *
    * @param archiveFile
    * @param destinationFolder the folder into which zip contents should be put.
-   * @return The name of top-level folder or <code>null</code> if no top-level folder in zip
+   * @return The name of top-level folder: the first directory entry below the extraction root, or
+   *     the folder of the first nested file if that comes first; <code>null</code> if the zip holds
+   *     only root-level files
    */
   public static String extractZip(File archiveFile, File destinationFolder) throws IOException {
     return extractZip(archiveFile, destinationFolder, ZipExtractionLimits.DEFAULTS);
@@ -156,7 +160,9 @@ public class ZipUtils {
    * <p>The archive file MUST have a unique "root" folder. This root folder is skipped when
    * unarchiving.
    *
-   * @return The name of top-level folder or <code>null</code> if no top-level folder
+   * @return The name of top-level folder: the first directory entry below the extraction root, or
+   *     the folder of the first nested file if that comes first; <code>null</code> if the zip holds
+   *     only root-level files
    */
   private static String unzipFolder(
       File archiveFile, File zipDestinationFolder, ZipExtractionLimits limits) throws IOException {
@@ -196,38 +202,40 @@ public class ZipUtils {
         }
         if (name.endsWith("/")) {
           if (!destinationFile.isDirectory()) {
-            Path dir = Path.of(canonical);
-            Path topmostMissing = topmostMissingDirectory(Path.of(rootPath), dir);
-            // one entry can create many directories; each counts as an entry
-            if (topmostMissing != null) {
-              budget.countEntries(dir.getNameCount() - topmostMissing.getNameCount(), zipEntry);
-              created.add(topmostMissing.toFile());
-            }
-            // unlike File.mkdirs, this does not re-resolve the canonical path at every level
-            try {
-              Files.createDirectories(dir);
-            } catch (FileAlreadyExistsException e) {
-              // typically a file entry earlier in the archive already claimed this path
-              throw new InvalidArchiveException(
-                  "could not create directory for entry: " + zipEntry.getName());
-            }
+            createDirectories(
+                Path.of(rootPath), Path.of(canonical), true, zipEntry, budget, created);
           }
-          if (topLevelDir == null) {
+          if (topLevelDir == null && !canonical.equals(rootPath)) {
             topLevelDir = destinationFile;
           }
           continue;
         }
 
-        // track for rollback only what this extraction creates, never pre-existing content
-        if (!destinationFile.exists()) {
-          created.add(destinationFile);
+        // zip -D, macOS Archive Utility and others omit directory entries or write them later
+        Path parent = Path.of(canonical).getParent();
+        if (!Files.isDirectory(parent)) {
+          createDirectories(Path.of(rootPath), parent, false, zipEntry, budget, created);
         }
-        try (InputStream entryStream = zipFile.getInputStream(zipEntry);
-            FileOutputStream fos = new FileOutputStream(destinationFile)) {
+        Path relative = Path.of(rootPath).relativize(Path.of(canonical));
+        if (topLevelDir == null && relative.getNameCount() > 1) {
+          topLevelDir = new File(zipDestinationFolder, relative.getName(0).toString());
+        }
+
+        // never replace a file that is already there, so a rejection has nothing to restore
+        OutputStream out;
+        try {
+          out = Files.newOutputStream(destinationFile.toPath(), StandardOpenOption.CREATE_NEW);
+        } catch (FileAlreadyExistsException e) {
+          throw new InvalidArchiveException(
+              "entry would overwrite an existing file: " + zipEntry.getName());
+        }
+        created.add(destinationFile);
+        try (out;
+            InputStream entryStream = zipFile.getInputStream(zipEntry)) {
           int n;
           while ((n = entryStream.read(buf)) != -1) {
             if (n > 0) {
-              fos.write(buf, 0, n);
+              out.write(buf, 0, n);
               budget.countWritten(n);
             }
           }
@@ -313,6 +321,36 @@ public class ZipUtils {
             limits.minFreeDiskBytes(),
             "under " + limits.minFreeDiskBytes() + " bytes free on the destination partition");
       }
+    }
+  }
+
+  /**
+   * Creates {@code dir} (canonical, already checked to be inside {@code root}) with any missing
+   * ancestors. Each new directory counts as an entry, except {@code dir} itself when it is the
+   * entry being extracted, which was counted already. The topmost new directory is tracked for
+   * rollback.
+   */
+  private static void createDirectories(
+      Path root,
+      Path dir,
+      boolean dirIsEntry,
+      ZipArchiveEntry zipEntry,
+      ExtractionBudget budget,
+      Set<File> created)
+      throws IOException {
+    Path topmostMissing = topmostMissingDirectory(root, dir);
+    if (topmostMissing != null) {
+      int newDirectories = dir.getNameCount() - topmostMissing.getNameCount() + 1;
+      budget.countEntries(dirIsEntry ? newDirectories - 1 : newDirectories, zipEntry);
+      created.add(topmostMissing.toFile());
+    }
+    // unlike File.mkdirs, this does not re-resolve the canonical path at every level
+    try {
+      Files.createDirectories(dir);
+    } catch (FileAlreadyExistsException e) {
+      // typically a file entry earlier in the archive already claimed this path
+      throw new InvalidArchiveException(
+          "could not create directory for entry: " + zipEntry.getName());
     }
   }
 

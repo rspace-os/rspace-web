@@ -275,7 +275,12 @@ public class ArchiveParserImpl implements IArchiveParser {
             importMaxEntries,
             diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB() * FileUtils.ONE_MB,
             importMaxCompressionRatio);
-    return new File(ZipUtils.extractZip(zipFile, outFolder, limits));
+    String topLevelFolder = ZipUtils.extractZip(zipFile, outFolder, limits);
+    if (topLevelFolder == null) {
+      log.warn("Archive {} has no top-level folder", zipFile.getName());
+      return null;
+    }
+    return new File(topLevelFolder);
   }
 
   private String extractionLimitMessage(ZipExtractionLimitException e) {

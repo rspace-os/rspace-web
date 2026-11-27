@@ -148,7 +148,9 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     File zipFile = new File(tempExportFolder, zipFileName);
     // make sure we only create 2 folders, 1 for each record. I.e., naming is consistent
     // for new files and for linked files
-    String expandedFolderPath = ZipUtils.extractZip(zipFile, tempExportFolder);
+    // parseArchiveFile already extracted into tempExportFolder; extraction never overwrites
+    String expandedFolderPath =
+        ZipUtils.extractZip(zipFile, new File(tempExportFolder, "reextracted"));
     assertEquals(3, FileTestUtils.getFolderCount(new File(expandedFolderPath)));
   }
 
