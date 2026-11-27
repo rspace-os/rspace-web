@@ -20,8 +20,6 @@ import {
 } from "./availabilityQuickFilters";
 import { createAvailabilityTableConfig } from "./availabilityTableConfig";
 
-const clock = () => new Date();
-
 export function useCalendarAvailabilityLayout({
   expression,
   q,
@@ -45,7 +43,7 @@ export function useCalendarAvailabilityLayout({
     [t, commonT],
   );
   const preferences = useBookingDisplayPreferences();
-  const minute = useAlignedMinute(clock);
+  const minute = useAlignedMinute();
   const userToday = todayInTimeZone(preferences.timeZone, new Date(minute));
   const today = todayAvailabilityWindow(
     new Date(minute),
