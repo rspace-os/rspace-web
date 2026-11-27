@@ -1186,8 +1186,12 @@ export function useGalleryListing({
   const path = listingOf.tag === "section" ? { tag: "success" as const, value: listingOf.path } : directFolderPath;
 
   const [page, setPage] = React.useState<number>(0);
-  const listingGeneration = React.useRef(0);
-  const loadingMoreFor = React.useRef<number | null>(null);
+  /*
+   * Counts each (re)load of the listing for a search, sort or folder, so that a
+   * page asked for by one load is never fetched or added to another's.
+   */
+  const [listingVersion, setListingVersion] = React.useState(0);
+  const [pageRequest, setPageRequest] = React.useState<{ listingVersion: number; page: number } | null>(null);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([new Error("Parent Id is not yet known")]));
@@ -1633,7 +1637,8 @@ export function useGalleryListing({
     if (s === "NetworkFiles") {
       return getRemoteFiles(p);
     }
-    listingGeneration.current += 1;
+    setListingVersion((version) => version + 1);
+    setPageRequest(null);
     selection.clear();
     clearAndSetGalleryListing([]);
     setLoading(true);
@@ -1685,42 +1690,53 @@ export function useGalleryListing({
   }
 
   /*
-   * A page requested before the listing was reloaded (a new search, sort or
-   * folder) belongs to the old listing, so its response is dropped. The page
-   * only advances once its response is accepted, so a failed one can be
-   * requested again. Only one page per listing is requested at a time: a
-   * second request for the same page could land after the next one and drop
-   * it. A request for an old listing does not hold up the new one's.
+   * Load more only asks for the next page, so asking again before it arrives
+   * changes nothing and a page is never fetched twice; the effect below fetches
+   * it. A page asked for before the listing was reloaded belongs to the old
+   * listing, so it is not fetched, or is dropped if already on its way. The
+   * page only advances once its response is accepted, so a failed one can be
+   * asked for again.
    */
-  async function loadMore(): Promise<void> {
-    const generation = listingGeneration.current;
-    if (loadingMoreFor.current === generation) return;
-    loadingMoreFor.current = generation;
-    try {
-      const token = await getToken();
-      const s = FetchingData.getSuccessValue(section).elseThrow();
-      const p = FetchingData.getSuccessValue(path).elseThrow();
-      const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
-        params: new URLSearchParams({
-          mediatype: s,
-          currentFolderId: listingFolderId(p),
-          name: searchTerm,
-          pageNumber: `${page + 1}`,
-          sortOrder,
-          orderBy,
-          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-        }),
-      });
-
-      if (generation !== listingGeneration.current) return;
-      setGalleryListing([...galleryListing, ...parseGalleryFiles(data, token, p)]);
-      setPage(page + 1);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      if (loadingMoreFor.current === generation) loadingMoreFor.current = null;
-    }
+  function loadMore(): Promise<void> {
+    const next = { listingVersion, page: page + 1 };
+    setPageRequest((current) =>
+      current?.listingVersion === next.listingVersion && current.page === next.page ? current : next,
+    );
+    return Promise.resolve();
   }
+
+  React.useEffect(() => {
+    if (pageRequest?.listingVersion !== listingVersion || pageRequest.page !== page + 1) return;
+    let superseded = false;
+    void (async () => {
+      try {
+        const token = await getToken();
+        const s = FetchingData.getSuccessValue(section).elseThrow();
+        const p = FetchingData.getSuccessValue(path).elseThrow();
+        const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
+          params: new URLSearchParams({
+            mediatype: s,
+            currentFolderId: listingFolderId(p),
+            name: searchTerm,
+            pageNumber: `${pageRequest.page}`,
+            sortOrder,
+            orderBy,
+            foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
+          }),
+        });
+        if (superseded) return;
+        const files = parseGalleryFiles(data, token, p);
+        setGalleryListing((listing) => [...listing, ...files]);
+        setPage(pageRequest.page);
+      } catch (e) {
+        console.error(e);
+        if (!superseded) setPageRequest(null);
+      }
+    })();
+    return () => {
+      superseded = true;
+    };
+  }, [pageRequest, listingVersion, page]);
 
   React.useEffect(() => {
     Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {

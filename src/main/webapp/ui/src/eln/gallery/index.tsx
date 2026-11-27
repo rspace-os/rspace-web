@@ -158,35 +158,34 @@ const WholePage = ({
    * A linked item need not be on the first page of its folder, so pages are
    * loaded until it turns up or the folder runs out. This happens once per
    * link, and stops once the user sorts or searches, so their own listing
-   * pages only on request. The effect runs every render, as the listing's
-   * wrapper is rebuilt each time, so the array a page was requested for guards
-   * against requesting it twice; a failed page leaves that array in place, so
-   * it is not retried.
+   * pages only on request. A page is asked for once per listing it would
+   * extend, so a failed page, which leaves the listing as it was, is not asked
+   * for again.
    */
-  const autoSelectSettledFor = React.useRef<ReadonlyArray<number> | null>(null);
-  const pageRequestedFor = React.useRef<ReadonlyArray<GalleryFile> | null>(null);
+  const [autoPagingStoppedFor, setAutoPagingStoppedFor] = React.useState<ReadonlyArray<number> | null>(null);
+  const [pageRequestedFor, setPageRequestedFor] = React.useState<ReadonlyArray<GalleryFile> | null>(null);
   const stopAutoPaging = () => {
-    autoSelectSettledFor.current = autoSelect ?? null;
+    setAutoPagingStoppedFor(autoSelect ?? null);
   };
   React.useEffect(() => {
-    if (!autoSelect?.length || autoSelectSettledFor.current === autoSelect) return;
+    if (!autoSelect?.length || autoPagingStoppedFor === autoSelect) return;
     if (liveListing.tag !== "success") return;
     if (liveListing.value.tag === "empty" || !liveList) {
-      autoSelectSettledFor.current = autoSelect;
+      setAutoPagingStoppedFor(autoSelect);
       return;
     }
-    if (pageRequestedFor.current === liveList) return;
+    if (pageRequestedFor === liveList) return;
     const wanted = new Set(autoSelect.map((id) => `${id}`));
     const found = liveList.some(({ id }) => wanted.has(idToString(id).orElse("")));
     if (found || liveListing.value.loadMore.isEmpty()) {
-      autoSelectSettledFor.current = autoSelect;
+      setAutoPagingStoppedFor(autoSelect);
       return;
     }
     liveListing.value.loadMore.do((loadMore) => {
-      pageRequestedFor.current = liveList;
+      setPageRequestedFor(liveList);
       void loadMore();
     });
-  }, [autoSelect, liveListing, liveList]);
+  }, [autoSelect, autoPagingStoppedFor, pageRequestedFor, liveListing, liveList]);
 
   const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
     PREFERENCES.GALLERY_SIDEBAR_OPEN,
