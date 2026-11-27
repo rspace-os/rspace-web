@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 /**
  * The subset of an Argos plan that RSpace saves as an imported DMP file. Deposits read the DOI back
  * from saved files, so the JSON layout ({@code id}, {@code label}, {@code grant}, {@code dois},
- * {@code doi}) must stay the same. Copied from {@code argos-java-client} 1.0.1.
+ * {@code doi}) must stay the same.
  */
 @Data
 @NoArgsConstructor

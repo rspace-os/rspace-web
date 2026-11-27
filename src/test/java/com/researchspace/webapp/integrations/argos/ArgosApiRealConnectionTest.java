@@ -17,25 +17,25 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ArgosApiRealConnectionTest {
 
-  private ArgosDMPProvider argosClient;
+  private ArgosDMPProvider provider;
 
   @BeforeEach
   public void setUp() throws Exception {
-    this.argosClient = new ArgosDMPProvider(new URL("https://argos.openaire.eu/api"));
+    this.provider = new ArgosDMPProvider(new URL("https://argos.openaire.eu/api"));
   }
 
   @Test
   public void listPlansTest() {
-    DataTableData<ArgosDMPListing> list = argosClient.listPlans(10, 0, null);
+    DataTableData<ArgosDMPListing> list = provider.listPlans(10, 0, null);
     assertThat(list.getData()).isNotEmpty();
     assertThat(list.getTotalCount()).isGreaterThanOrEqualTo(list.getData().size());
   }
 
   @Test
   public void getPlanByIdTest() {
-    DataTableData<ArgosDMPListing> list = argosClient.listPlans(1, 0, null);
+    DataTableData<ArgosDMPListing> list = provider.listPlans(1, 0, null);
     String id = list.getData().get(0).id;
-    ArgosDMP plan = argosClient.getPlanById(UUID.fromString(id));
+    ArgosDMP plan = provider.getPlanById(UUID.fromString(id));
     assertEquals(id, plan.id);
   }
 }
