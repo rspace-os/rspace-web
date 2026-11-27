@@ -3,8 +3,15 @@ package com.researchspace.dao.customliquibaseupdates;
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.model.field.Field;
 import com.researchspace.service.NfsFieldLinkManager;
+import java.sql.SQLNonTransientConnectionException;
+import java.sql.SQLRecoverableException;
+import java.sql.SQLTransientConnectionException;
 import java.util.List;
+import java.util.stream.Stream;
 import liquibase.database.Database;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.hibernate.exception.JDBCConnectionException;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -54,6 +61,10 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
             });
         indexed++;
       } catch (RuntimeException e) {
+        if (databaseUnreachable(e)) {
+          // failing the changeset makes it run again at the next start; reindexing is idempotent
+          throw e;
+        }
         logger.warn("Filestore links of field {} not indexed", fieldId, e);
       }
       if (++processed % PROGRESS_INTERVAL == 0) {
@@ -61,6 +72,16 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
       }
     }
     logger.info(getConfirmationMessage());
+  }
+
+  private static boolean databaseUnreachable(Throwable e) {
+    return Stream.of(
+            CannotCreateTransactionException.class,
+            JDBCConnectionException.class,
+            SQLTransientConnectionException.class,
+            SQLNonTransientConnectionException.class,
+            SQLRecoverableException.class)
+        .anyMatch(type -> ExceptionUtils.indexOfType(e, type) >= 0);
   }
 
   /** Any filestore, removed ones included: without one no link can be indexed. */
