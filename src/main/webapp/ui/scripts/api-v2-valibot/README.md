@@ -60,10 +60,19 @@ Because native output selects one body and one response schema, distinct JSON
 request media schemas or distinct JSON success schemas fail with a request for
 synthetic operations. They must never silently map to a single native schema.
 
-Objects retain Orval's native parsing behavior. The transport validates and
-returns the original JSON, preserving extension members and runtime metadata even
-when a schema's parsed output strips them. Projection code keeps its existing
-schema exports and can still pick and require object members.
+Objects retain Orval's native parsing behavior. `orval.config.ts` maps `format: date-time` to `Temporal.Instant`
+through `formatType`, so each date-time schema ends in a `Temporal.Instant.from` transform. The transport validates
+the original JSON and returns it with only those date-times replaced by the decoded instants (`withDecoded.ts`),
+preserving extension members and runtime metadata even when a schema's parsed output strips them. Projection code
+keeps its existing schema exports and can still pick and require object members.
+
+Decode once: transport output is never parsed again with a schema that decodes, because the schema's leading
+`v.string()` rejects the instant it produced. The table-list adapter turns instants back into text first
+(`encodeInstants`), and other code that re-parses transport output wraps its schema in `withoutDecoding`, which fails
+`tsc` once that schema gains a date-time. An `allOf` whose members share a date-time field would fail Valibot's
+intersect merge, because two decoded instants are distinct objects; no such schema exists today. Query keys hash
+instants by value through `toJSON`, but React Query's partial key matching walks own keys, which an instant lacks, so
+it treats any two instants as equal: invalidate by operation (path) keys, not by keys that contain instant parameters.
 
 Fragment tests generate native schemas through the pinned Orval installation and
 exercise their behavior through the adapter. Type tests compare the schemas with HTTP models that

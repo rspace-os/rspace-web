@@ -18,6 +18,7 @@ import {
   findApiV2TokenProvider,
   getApiV2TokenProvider,
 } from "./tokenProvider";
+import { withDecoded } from "./withDecoded";
 
 /**
  * What a generated call rejects with: an `ApiV2Error` (an HTTP failure, an unusable response, a network failure or an
@@ -45,6 +46,30 @@ function invalidRequestError(issues: readonly v.BaseIssue<unknown>[]): ApiV2Prob
       reason: issue.message,
     })),
   });
+}
+
+/**
+ * `v.safeParse`, or `undefined` when a decoder throws. `v.isoTimestamp()` accepts text such as `2025-02-30T12:00:00Z`
+ * that `Temporal.Instant.from` then rejects with a `RangeError` instead of a Valibot issue.
+ */
+function safeParseDecoding<TSchema extends v.GenericSchema>(schema: TSchema, input: unknown) {
+  try {
+    return v.safeParse(schema, input);
+  } catch (error) {
+    if (error instanceof RangeError) return undefined;
+    throw error;
+  }
+}
+
+function undecodableIssue(input: unknown): v.BaseIssue<unknown> {
+  return {
+    kind: "transformation",
+    type: "transform",
+    input,
+    expected: null,
+    received: "an invalid date-time",
+    message: i18n.t("common:apiErrors.apiV2.invalidDateTime"),
+  };
 }
 
 async function httpError(response: Response, signal?: AbortSignal | null): Promise<ApiV2ProblemError> {
@@ -110,7 +135,8 @@ async function apiV2Response(
         },
       ]);
     }
-    const result = v.safeParse(operation.request, body);
+    const result = safeParseDecoding(operation.request, body);
+    if (!result) throw invalidRequestError([undecodableIssue(body)]);
     if (!result.success) throw invalidRequestError(result.issues);
   }
   const headers = new Headers(init.headers);
@@ -171,13 +197,15 @@ async function apiV2Json(url: string, init?: RequestInit): Promise<{ body: unkno
   const schema = operation.responses[String(response.status)]?.[media];
   if (!schema) throw new ApiV2UnexpectedResponseError("undeclared", { status: response.status, media });
   const body = await readJsonBody(response, init?.signal);
+  let parsed: unknown;
   try {
-    v.parse(schema, body);
+    parsed = v.parse(schema, body);
   } catch (error) {
-    if (!v.isValiError(error)) throw error;
+    if (!v.isValiError(error) && !(error instanceof RangeError)) throw error;
     throw new ApiV2UnexpectedResponseError("invalidBody", { status: response.status, media, cause: error });
   }
-  return { body, headers: response.headers };
+  // Callers receive the server's JSON with its date-times decoded; extension members survive.
+  return { body: withDecoded(body, parsed), headers: response.headers };
 }
 
 export function apiV2Fetch<T>(url: string, init: RequestInit & { operationId: string }): Promise<T>;

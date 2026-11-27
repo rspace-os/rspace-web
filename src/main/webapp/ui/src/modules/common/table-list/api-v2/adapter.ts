@@ -6,6 +6,7 @@ import type { CollectionConfig, FieldName, ResolvedCollectionConfig } from "@/mo
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { encodeInstants } from "@/modules/common/time/instant";
 import type { CollectionPage, CollectionQueryState } from "../types";
 import { createApiV2FilterFields, isRelationshipWireSelector } from "./filterFields";
 import type { ApiV2CollectionMetadata } from "./metadata";
@@ -187,7 +188,9 @@ export function buildApiV2CollectionAdapter<TDocument, R extends ApiV2FilterReso
       const [first, ...rest] = selected;
       if (first === undefined) throw new Error("A collection projection must select its identifier");
       const projection = v.required(v.pick(responseSchema, [String(first), ...rest.map(String)]));
-      const envelope = parseOrThrow(objectInput, input);
+      // The transport has already decoded date-times into instants, which the wire schemas below reject; hand them
+      // back as text so the projection parses exactly as the server's JSON would.
+      const envelope = parseOrThrow(objectInput, encodeInstants(input));
       const result = parseOrThrow(v.object({ docs: v.array(projection) }), envelope);
       // Column visibility is runtime state: only selected fields can be present. Validation above
       // proves their wire types. This single assertion lets the mapper consume the schema output: the

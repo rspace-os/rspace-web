@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
@@ -433,5 +434,66 @@ it("validates sparse wire fields before mapping them to domain rows", () => {
     { id: "1", title: "One" },
   ]);
   expect(() => adapter.parseResponse({ docs: [{ id: "2", title: 42 }] }, ["id", "title"])).toThrow();
+  // Only decoded instants are turned back into text before parsing; a Date stays a wrong type.
+  expect(() => adapter.parseResponse({ docs: [{ id: "3", title: new Date(0) }] }, ["id", "title"])).toThrow();
   expect(mapped).toBe(1);
+});
+
+it("re-parses a decoded date-time and an expanded relationship with the generated date-time pipe", () => {
+  const schema = v.object({
+    id: v.string(),
+    start: v.pipe(
+      v.string(),
+      v.isoTimestamp(),
+      v.transform((value) => Temporal.Instant.from(value)),
+    ),
+    owner: v.object({ id: v.number(), name: v.string() }),
+  });
+  type Row = v.InferOutput<typeof schema>;
+  const mapped: Row[] = [];
+  const adapter = createApiV2CollectionAdapter<Row, typeof schema>({
+    config: {
+      slug: "mapped",
+      idField: "id",
+      useAsTitle: "id",
+      defaultColumns: ["start"],
+      labels: { singularKey: "tableListExamples:record", pluralKey: "tableListExamples:records" },
+      fields: [
+        { name: "id", type: "text", labelKey: "tableListExamples:fields.id" },
+        { name: "start", type: "dateTime", labelKey: "tableListExamples:fields.title" },
+      ],
+    },
+    documentSchema: schema,
+    mapDocument: (document): Row => {
+      mapped.push(document);
+      return document;
+    },
+    metadata: {
+      resourceName: "mapped",
+      fields: ["id", "start", "owner"],
+      sorting: { fields: [], default: [], maximumFields: 5 },
+      filtering: {
+        selectors: {},
+        limits: {
+          maximumComparisons: 50,
+          maximumLikeComparisons: 10,
+          maximumNesting: 10,
+          maximumArguments: 100,
+          maximumWhereLength: 4096,
+        },
+      },
+      pagination: { defaultLimit: 20, maximumLimit: 100 },
+    },
+  });
+  const start = Temporal.Instant.from("2026-01-01T00:00:00.123456789Z");
+  const expected = { id: "1", start, owner: { id: 7, name: "Ada" } };
+
+  const { rows } = adapter.parseResponse(
+    { docs: [{ id: "1", start, owner: { id: 7, name: "Ada", extension: "undeclared" } }] },
+    ["id", "start", "owner"],
+  );
+
+  expect(mapped).toEqual([expected]);
+  expect(rows).toEqual([expected]);
+  expect(rows[0].owner).not.toHaveProperty("extension");
 });

@@ -867,6 +867,7 @@ export default interface Resources {
       "apiV2": {
         "httpStatus": "The request failed with status {status}.",
         "identityChanged": "Your session changed. Reload the page to continue.",
+        "invalidDateTime": "The request contains a date and time that does not exist.",
         "invalidJson": "The request body is not valid JSON.",
         "invalidRequest": "The request contains an invalid value.",
         "network": "The server could not be reached. Check your connection and try again.",

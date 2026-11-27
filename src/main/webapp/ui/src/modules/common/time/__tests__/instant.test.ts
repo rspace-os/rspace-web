@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { epochMillisecondsOf, instantToWire, parseInstant, truncateToMilliseconds } from "../instant";
+import { encodeInstants, epochMillisecondsOf, instantToWire, parseInstant, truncateToMilliseconds } from "../instant";
 
 describe("parseInstant", () => {
   it("keeps every fractional digit", () => {
@@ -34,4 +35,24 @@ it("compares Temporal values by value in toEqual", () => {
     at: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
   });
   expect(Temporal.PlainDate.from("2026-01-01")).not.toEqual(Temporal.Instant.from("2026-01-01T00:00:00Z"));
+});
+
+describe("encodeInstants", () => {
+  it("turns nested instants back into lossless text and leaves other values alone", () => {
+    const untouched = { name: "x", when: new Date(0) };
+    const input = {
+      docs: [{ start: Temporal.Instant.from("2026-01-01T00:00:00.123456Z"), untouched }],
+      count: 1,
+    };
+    const encoded = encodeInstants(input);
+    expect(encoded).toEqual({ docs: [{ start: "2026-01-01T00:00:00.123456Z", untouched }], count: 1 });
+    const [document] = v.parse(v.object({ docs: v.tuple([v.object({ untouched: v.unknown() })]) }), encoded).docs;
+    expect(document.untouched).toBe(untouched);
+    expect(input.docs[0].start).toBeInstanceOf(Temporal.Instant);
+  });
+
+  it("returns a container without instants as it is", () => {
+    const input = { docs: [{ id: 1 }] };
+    expect(encodeInstants(input)).toBe(input);
+  });
 });
