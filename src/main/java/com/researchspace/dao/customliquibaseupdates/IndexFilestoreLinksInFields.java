@@ -32,6 +32,10 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
 
   @Override
   protected void doExecute(Database database) {
+    if (!anyFilestoreSaved()) {
+      logger.info("No filestores, so no filestore links to index");
+      return;
+    }
     List<Long> fieldIds = candidateFieldIds();
     candidates = fieldIds.size();
     logger.info("{} fields with filestore links to index", candidates);
@@ -54,6 +58,16 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
       }
     }
     logger.info(getConfirmationMessage());
+  }
+
+  /** Any filestore, removed ones included: without one no link can be indexed. */
+  boolean anyFilestoreSaved() {
+    return !sessionFactory
+        .getCurrentSession()
+        .createQuery("select s.id from NfsFileStore s", Long.class)
+        .setMaxResults(1)
+        .list()
+        .isEmpty();
   }
 
   /** Ids only, so the run holds no field entities; autosave copies have no document. */

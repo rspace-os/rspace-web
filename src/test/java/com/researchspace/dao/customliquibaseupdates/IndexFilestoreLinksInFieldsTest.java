@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.field.Field;
@@ -39,6 +40,11 @@ class IndexFilestoreLinksInFieldsTest {
     IndexFilestoreLinksInFields task =
         new IndexFilestoreLinksInFields() {
           @Override
+          boolean anyFilestoreSaved() {
+            return true;
+          }
+
+          @Override
           List<Long> candidateFieldIds() {
             return List.of(1L, 2L);
           }
@@ -51,5 +57,27 @@ class IndexFilestoreLinksInFieldsTest {
 
     verify(nfsFieldLinkManager).reindex(same(fine), eq("fine"));
     assertEquals("Filestore links indexed for 1/2 fields", task.getConfirmationMessage());
+  }
+
+  @Test
+  void withoutAnyFilestoreNoFieldIsScanned() {
+    IndexFilestoreLinksInFields task =
+        new IndexFilestoreLinksInFields() {
+          @Override
+          boolean anyFilestoreSaved() {
+            return false;
+          }
+
+          @Override
+          List<Long> candidateFieldIds() {
+            throw new AssertionError("scanned the field table");
+          }
+        };
+    task.fMger = fieldManager;
+    task.nfsFieldLinkManager = nfsFieldLinkManager;
+
+    task.doExecute(null);
+
+    verifyNoInteractions(fieldManager, nfsFieldLinkManager);
   }
 }
