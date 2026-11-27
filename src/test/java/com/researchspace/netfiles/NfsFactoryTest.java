@@ -9,18 +9,27 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.model.User;
 import com.researchspace.model.UserKeyPair;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.model.netfiles.NfsFileSystemOption;
 import com.researchspace.netfiles.s3.S3NfsClient;
 import com.researchspace.netfiles.samba.JcifsClient;
 import com.researchspace.netfiles.samba.SmbjClient;
 import com.researchspace.netfiles.sftp.SftpClient;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class NfsFactoryTest {
 
@@ -164,5 +173,76 @@ public class NfsFactoryTest {
     assertNotNull(s3NfsClient);
     assertEquals(testUsername, s3NfsClient.getUsername());
     Mockito.verify(s3UtilitiesFactoryMock).createS3UtilitiesForNfsConnector(testFileSystem);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "smb://host, report.txt, NONE ONE MORE",
+    "smb://host/share, /report.txt, NONE ONE MORE",
+    "smb://host/share/, //report.txt, NONE ONE MORE",
+    "smb://host/share/project/, report.txt, NONE ONE MORE",
+    // the folder after the share is glued to a path without a separator
+    "smb://host/share/project, report.txt, NONE",
+    "smb://host/share/project, /report.txt, ONE MORE",
+    "smb://host/share/project, //report.txt, ONE MORE",
+    // a first folder named like the share is read as the share, unless two slashes precede it
+    "smb://host, /share/project/report.txt, NONE ONE",
+    "smb://host/share, share/project/report.txt, NONE ONE",
+    "smb://host/share/, //share/project/report.txt, MORE",
+    "smb://host, //share/project/report.txt, MORE"
+  })
+  public void smbjMatchesTheSpellingsItOpensAsOneFile(
+      String url, String path, String expectedSpellings) {
+    testFileSystem.setClientType(NfsClientType.SMBJ);
+    testFileSystem.setClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME, "share");
+    testFileSystem.setUrl(url);
+
+    assertEquals(
+        spellings(expectedSpellings), factory.spellingsOfTheSameFile(testFileSystem, path));
+  }
+
+  private static Set<LeadingSlashes> spellings(String names) {
+    return Arrays.stream(names.split(" "))
+        .map(LeadingSlashes::valueOf)
+        .collect(Collectors.toCollection(() -> EnumSet.noneOf(LeadingSlashes.class)));
+  }
+
+  @Test
+  public void jcifsOpensEverySpellingAsOneFileUnlessItHandsDownloadsToSmbj() {
+    testFileSystem.setClientType(NfsClientType.SAMBA);
+    testFileSystem.setUrl("smb://host/share/project");
+    assertEquals(
+        spellings("NONE ONE MORE"),
+        factory.spellingsOfTheSameFile(testFileSystem, "share/report.txt"));
+
+    ReflectionTestUtils.setField(factory, "smbjDownload", true);
+    ReflectionTestUtils.setField(factory, "smbjShareName", "share");
+    assertEquals(spellings("NONE"), factory.spellingsOfTheSameFile(testFileSystem, "report.txt"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "report.txt, NONE",
+    "/report.txt, ONE MORE",
+    // a path starting with the home is read as it is, unless two slashes precede it
+    "/tempZone/home/alice/report.txt, ONE",
+    "//tempZone/home/alice/report.txt, MORE"
+  })
+  public void iRodsMatchesTheSpellingsItOpensAsOneObject(String path, String expectedSpellings) {
+    testFileSystem.setClientType(NfsClientType.IRODS);
+    testFileSystem.setUrl("irods.example.com");
+    testFileSystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+
+    assertEquals(
+        spellings(expectedSpellings), factory.spellingsOfTheSameFile(testFileSystem, path));
+  }
+
+  @Test
+  public void elsewhereAPathWithALeadingSlashIsReadApartFromOneWithout() {
+    testFileSystem.setClientType(NfsClientType.SFTP);
+    testFileSystem.setUrl("sftp://host");
+    assertEquals(spellings("NONE"), factory.spellingsOfTheSameFile(testFileSystem, "report.txt"));
+    assertEquals(
+        spellings("ONE MORE"), factory.spellingsOfTheSameFile(testFileSystem, "//report.txt"));
   }
 }

@@ -16,10 +16,12 @@ import com.researchspace.api.v1.model.ApiInventoryLinkFilestoreTarget;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
@@ -219,6 +221,87 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     assertFalse(hidden.get(0).isReadable());
     assertNull(hidden.get(0).name());
     assertEquals(owner.getFullName(), hidden.get(0).ownerFullName());
+  }
+
+  private NfsFileSystem savedPerUserLoginFileSystem() {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem();
+    nfsMgr.saveNfsFileSystem(fs);
+    return fs;
+  }
+
+  @Test
+  public void onAPerUserLoginFilesystemOnlyLinksThroughTheCallersFilestoresCount() {
+    NfsFileSystem fs = savedPerUserLoginFileSystem();
+    User alice = createInitAndLoginAnyUser();
+    NfsFileStore upload = nfsMgr.createAndSaveNewFileStore(fs.getId(), "upload", "/upload", alice);
+    NfsFileStore root = nfsMgr.createAndSaveNewFileStore(fs.getId(), "root", "/", alice);
+    ApiSampleWithFullSubSamples viaUpload =
+        sampleLinking(alice, upload, "/hello.txt", "IsSourceOf");
+    ApiSampleWithFullSubSamples viaRoot =
+        sampleLinking(alice, root, "/upload/hello.txt", "References");
+    User bob = createInitAndLoginAnyUser();
+    NfsFileStore bobsUpload =
+        nfsMgr.createAndSaveNewFileStore(fs.getId(), "upload", "/upload", bob);
+    ApiSampleWithFullSubSamples bobs = sampleLinking(bob, bobsUpload, "/hello.txt", "IsSourceOf");
+    // a filestore removed from the Gallery still reaches the same login
+    nfsMgr.markFileStoreAsDeleted(root);
+    flushDatabaseState();
+
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("/upload/hello.txt"), alice))
+        .extracting(FilestoreLinkingItem::globalId)
+        .containsExactlyInAnyOrder(viaUpload.getGlobalId(), viaRoot.getGlobalId());
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("/upload/hello.txt"), bob))
+        .extracting(FilestoreLinkingItem::globalId)
+        .containsExactly(bobs.getGlobalId());
+  }
+
+  @Test
+  public void onSftpABaseUnderTheLoginsHomeIsAnotherFileThanOneAtTheRoot() {
+    NfsFileSystem fs = GalleryFilestoreTestUtils.createIrodsFileSystem();
+    fs.setClientType(NfsClientType.SFTP);
+    nfsMgr.saveNfsFileSystem(fs);
+    User alice = createInitAndLoginAnyUser();
+    NfsFileStore rooted = nfsMgr.createAndSaveNewFileStore(fs.getId(), "rooted", "/upload", alice);
+    NfsFileStore noBase = nfsMgr.createAndSaveNewFileStore(fs.getId(), "no base", "", alice);
+    NfsFileStore underHome = nfsMgr.createAndSaveNewFileStore(fs.getId(), "home", "upload", alice);
+    ApiSampleWithFullSubSamples viaRooted =
+        sampleLinking(alice, rooted, "/hello.txt", "IsSourceOf");
+    ApiSampleWithFullSubSamples viaNoBase =
+        sampleLinking(alice, noBase, "/upload/hello.txt", "IsSourceOf");
+    ApiSampleWithFullSubSamples viaHome =
+        sampleLinking(alice, underHome, "/hello.txt", "IsSourceOf");
+    flushDatabaseState();
+
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("/upload/hello.txt"), alice))
+        .extracting(FilestoreLinkingItem::globalId)
+        .containsExactlyInAnyOrder(viaRooted.getGlobalId(), viaNoBase.getGlobalId());
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("upload/hello.txt"), alice))
+        .extracting(FilestoreLinkingItem::globalId)
+        .containsExactly(viaHome.getGlobalId());
+  }
+
+  @Test
+  public void aTransferredItemCountsForTheOwnerOfTheFilestoreItLinksThrough() {
+    NfsFileSystem fs = savedPerUserLoginFileSystem();
+    User alice = createInitAndLoginAnyUser();
+    NfsFileStore upload = nfsMgr.createAndSaveNewFileStore(fs.getId(), "upload", "/upload", alice);
+    ApiSampleWithFullSubSamples sample = sampleLinking(alice, upload, "/hello.txt", "IsSourceOf");
+    User bob = createInitAndLoginAnyUser();
+    logoutAndLoginAs(alice);
+    ApiSample toBob = new ApiSample();
+    toBob.setId(sample.getId());
+    toBob.setOwner(new ApiUser(bob));
+    sampleApiMgr.changeApiSampleOwner(toBob, alice);
+    flushDatabaseState();
+
+    // Alice no longer reads it, so she gets the placeholder: kind and Bob's name
+    List<FilestoreLinkingItem> forAlice =
+        linkManager.findItemsLinkingFilestorePaths(fs, List.of("/upload/hello.txt"), alice);
+    assertEquals(1, forAlice.size());
+    assertFalse(forAlice.get(0).isReadable());
+    assertEquals(bob.getFullName(), forAlice.get(0).ownerFullName());
+    assertThat(linkManager.findItemsLinkingFilestorePaths(fs, List.of("/upload/hello.txt"), bob))
+        .isEmpty();
   }
 
   @Test

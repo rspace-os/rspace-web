@@ -2,10 +2,12 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.InventoryLinkDao;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -29,9 +31,17 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
 
   @Override
   public List<ExtraLinkField> findLinkFieldsTargetingFilestorePaths(
-      Long fileSystemId, Collection<String> absolutePaths) {
+      Long fileSystemId,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings) {
     return liveFieldsTargetingFilestorePaths(
-        ExtraLinkField.class, ExtraLinkField::getLink, fileSystemId, absolutePaths);
+        ExtraLinkField.class,
+        ExtraLinkField::getLink,
+        fileSystemId,
+        absolutePaths,
+        filestoreOwner,
+        spellings);
   }
 
   private List<ExtraLinkField> extraLinkFieldsHolding(List<InventoryLink> links) {
@@ -55,9 +65,17 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
 
   @Override
   public List<InventoryLinkField> findStructuredLinkFieldsTargetingFilestorePaths(
-      Long fileSystemId, Collection<String> absolutePaths) {
+      Long fileSystemId,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings) {
     return liveFieldsTargetingFilestorePaths(
-        InventoryLinkField.class, InventoryLinkField::getLink, fileSystemId, absolutePaths);
+        InventoryLinkField.class,
+        InventoryLinkField::getLink,
+        fileSystemId,
+        absolutePaths,
+        filestoreOwner,
+        spellings);
   }
 
   private List<InventoryLinkField> structuredLinkFieldsHolding(List<InventoryLink> links) {
@@ -89,24 +107,36 @@ public class InventoryLinkDaoHibernate extends GenericDaoHibernate<InventoryLink
       Class<T> fieldType,
       Function<T, InventoryLink> linkOf,
       Long fileSystemId,
-      Collection<String> absolutePaths) {
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings) {
     if (absolutePaths.isEmpty()) {
       return Collections.emptyList();
     }
     // the column's collation pads trailing spaces, which S3 keys keep: compare exactly here
     Set<String> exactPaths = Set.copyOf(absolutePaths);
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery(
-            "select f from "
-                + fieldType.getSimpleName()
-                + " f join fetch f.link l where l.targetFileSystemId=:fsId"
-                + " and l.targetAbsolutePath in (:paths) and l.deleted=false and f.deleted=false",
-            fieldType)
-        .setParameter("fsId", fileSystemId)
-        .setParameterList("paths", absolutePaths)
-        .list()
-        .stream()
+    String hql =
+        "select f from "
+            + fieldType.getSimpleName()
+            + " f join fetch f.link l where l.targetFileSystemId=:fsId"
+            + " and l.targetAbsolutePath in (:paths) and l.deleted=false and f.deleted=false";
+    if (filestoreOwner != null) {
+      hql +=
+          " and l.filestoreId in (select s.id from NfsFileStore s where s.user = :owner"
+              + LeadingSlashes.hqlCondition(
+                  "concat(coalesce(s.path, ''), l.targetRemotePath)", spellings)
+              + ")";
+    }
+    var query =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(hql, fieldType)
+            .setParameter("fsId", fileSystemId)
+            .setParameterList("paths", absolutePaths);
+    if (filestoreOwner != null) {
+      query.setParameter("owner", filestoreOwner);
+    }
+    return query.list().stream()
         .filter(field -> exactPaths.contains(linkOf.apply(field).getTargetAbsolutePath()))
         .toList();
   }

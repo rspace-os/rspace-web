@@ -115,10 +115,11 @@ public class JargonFacade {
   }
 
   private String getAbsoluteIrodsPath(String path, IRODSAccount irodsAccount) {
-    if (path.startsWith(irodsAccount.getHomeDirectory())) {
-      return path;
-    } else {
-      return irodsAccount.getHomeDirectory() + path;
-    }
+    return absoluteIrodsPath(path, irodsAccount.getHomeDirectory());
+  }
+
+  /** The path as iRODS reads it: as it is when it starts with the home, else after the home. */
+  public static String absoluteIrodsPath(String path, String homeDirectory) {
+    return path.startsWith(homeDirectory) ? path : homeDirectory + path;
   }
 }

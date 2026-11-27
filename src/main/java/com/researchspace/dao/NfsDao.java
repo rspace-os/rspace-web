@@ -1,11 +1,14 @@
 package com.researchspace.dao;
 
+import com.researchspace.model.User;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.StructuredDocument;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /** Data Access Object for net filestores and filesystems */
 public interface NfsDao {
@@ -66,7 +69,16 @@ public interface NfsDao {
    * Current, non-deleted documents with a text field linking any of the normalised absolute paths
    * on the filesystem, by ascending id. An empty collection of paths returns an empty list without
    * querying.
+   *
+   * @param filestoreOwner null for links through any user's filestore; otherwise only links through
+   *     this user's filestores
+   * @param spellings with an owner, only links whose filestore base and link path together start
+   *     with one of these leading-slash spellings, which a client can read as different files; null
+   *     for any. Ignored without an owner
    */
   List<StructuredDocument> getDocumentsLinkingTo(
-      Long fileSystemId, Collection<String> absolutePaths);
+      Long fileSystemId,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings);
 }

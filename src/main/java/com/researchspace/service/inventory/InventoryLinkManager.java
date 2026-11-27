@@ -76,12 +76,19 @@ public interface InventoryLinkManager {
       Long filestoreId, String remotePath, User actor);
 
   /**
-   * The Inventory items whose Link field targets any of the absolute paths on the filesystem,
-   * through any user's filestore, once the actor's read access to the filesystem is asserted. Paths
-   * are normalised first. One row per item and relation type, ordered by Global ID (prefix, then
-   * number), then relation. Items in the trash and templates are left out. An item the actor cannot
-   * read in full is a single placeholder row: its kind and its owner's name, no Global ID, no name,
-   * no relation, as the linked-documents lookup does for documents.
+   * The Inventory items whose Link field targets any of the absolute paths on the filesystem, once
+   * the actor's read access to the filesystem is asserted. On a filesystem with one shared login
+   * (authentication none), links through any user's filestore count. On a filesystem with per-user
+   * logins (any authentication but none), where two logins can see different files at one path,
+   * only links through the actor's own filestores count, and a path matches a link only where the
+   * file system's client reads their leading slashes (none, one, or more) as the same file, as
+   * {@link com.researchspace.service.NfsFieldLinkManager#getLinkedDocuments(
+   * com.researchspace.model.netfiles.NfsFileSystem, java.util.Collection, User)} does. So pass
+   * paths as {@link com.researchspace.model.netfiles.NfsFileStore#getAbsolutePath} builds them;
+   * they are normalised here. One row per item and relation type, ordered by Global ID (prefix,
+   * then number), then relation. Items in the trash and templates are left out. An item the actor
+   * cannot read in full is a single placeholder row: its kind and its owner's name, no Global ID,
+   * no name, no relation, as the linked-documents lookup does for documents.
    */
   List<FilestoreLinkingItem> findItemsLinkingFilestorePaths(
       NfsFileSystem fileSystem, Collection<String> absolutePaths, User actor);

@@ -18,15 +18,19 @@ that resolves, and Inventory items now refer to one through the same Link field.
    the kind. ADR 0006 kept those columns NOT NULL to rule out half-built links; each kind here is
    still whole, guaranteed by the constraint instead of by column nullability.
 2. The row also stores the filesystem and the normalised absolute path, by the rule of ADR 0015, so
-   "which Inventory items link this file" is the same indexed equality lookup as for documents,
-   across every user's filestore. A path with a `.` or `..` segment is refused, like a blank or
-   root path, rather than resolved: that rule keeps segments as written, as S3 keys are, and
-   resolving them here would store Inventory paths differently from document ones.
-   *Amended 2026-11-23:* the linked-documents endpoint adds a missing leading slash to the request
-   and derives one path from it for the login check, the documents and the items alike, so a
-   request without the leading slash still finds the link, and a doubled leading slash names
-   another S3 key, which no Inventory link stores. The lookup compares paths exactly and asserts
-   read access to the filesystem, as ADR 0015 point 2 decides for documents.
+   "which Inventory items link this file" is the same indexed lookup as for documents, and items are
+   matched as documents are (ADR 0015 point 2): exactly, after a read check on the filesystem, and on
+   a filesystem with per-user logins only through the caller's own filestores, whoever holds the
+   item now, and in the leading-slash spellings the client opens as the same file. A path with a `.`
+   or `..` segment is refused, like a blank or root path, rather than resolved: that rule keeps
+   segments as written, as S3 keys are, and resolving them here would store Inventory paths
+   differently from document ones.
+   The linked-documents endpoint derives one path from the request for the login check, the
+   documents and the items alike, and hands the item lookup that path before normalisation, so its
+   leading slashes survive. It adds a missing leading slash only under a filestore path that does not
+   end with one, where the path would otherwise run into the last folder name; under an empty or "/"
+   filestore path it takes the request as sent, as a link saved there without the slash can name
+   another file than one with it.
 3. Only the owner of a filestore can link through it, and only the owner is told its name by the
    link target summary; anyone else, and an unknown filestore, get the identical redacted answer
    (ADR 0002). Read access to the filesystem was rejected as the rule: filestores are personal

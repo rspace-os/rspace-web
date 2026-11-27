@@ -130,9 +130,15 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
-    // a request without its leading slash still matches; a doubled one names another S3 key
-    String path = StringUtils.prependIfMissing(remotePath, "/");
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    // a path without its leading slash would run into a non-empty base not ending with one; a
+    // path under any other base is taken as sent, as a link stores it, and a doubled slash names
+    // another key
+    String base = filestore == null ? "" : NfsFileStore.validateTargetPath(filestore.getPath());
+    String path =
+        base.isEmpty() || base.endsWith("/")
+            ? remotePath
+            : StringUtils.prependIfMissing(remotePath, "/");
     assertItemReadableWithOwnLogin(user, filestore, path);
     // first, as it refuses an unknown filestore and asserts read access
     var documents = nfsFieldLinkManager.getLinkedDocuments(filestoreId, path, user);
@@ -160,11 +166,10 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   }
 
   /**
-   * The link index spans every user's filestores, so on filesystems with per-user logins the
-   * caller's own login must read the item: a folder must browse, a file must open. Listing the
-   * parent tells which it is, since some backends (SFTP) list a file the caller cannot open.
-   * Filesystems without per-user logins are gated by their allowlists alone, and an unknown
-   * filestore is left to the lookup's 404.
+   * On filesystems with per-user logins the caller's own login must read the item: a folder must
+   * browse, a file must open. Listing the parent tells which it is, since some backends (SFTP) list
+   * a file the caller cannot open. Filesystems without per-user logins are gated by their
+   * allowlists alone, and an unknown filestore is left to the lookup's 404.
    */
   private void assertItemReadableWithOwnLogin(
       User user, NfsFileStore filestore, String remotePath) {
@@ -205,18 +210,21 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     throw new NotFoundException(getMessage("netFileStores.export.resourceNotAccessible"));
   }
 
-  /** Whether {@code path} is listed as a folder in its parent; throws if it is not listed. */
+  /**
+   * Whether {@code path} is listed as a folder in its parent; throws if the parent cannot be
+   * listed.
+   */
   private static boolean isFolderIn(NfsClient client, String path) throws IOException {
     int slash = path.lastIndexOf('/');
     String parentPath = slash < 0 ? "" : slash == 0 ? "/" : path.substring(0, slash);
     NfsFolderDetails parent = client.queryForNfsFolder(new NfsTarget(parentPath, null));
     String name = path.substring(slash + 1);
+    // an item its parent does not list is opened as a file: SMBJ glues the folder a server URL
+    // names after the share to a path without a slash, so that file is not in the listed folder
     return parent.getContent().stream()
-            // iRODS names a listed collection by its absolute path
-            .filter(item -> name.equals(StringUtils.substringAfterLast("/" + item.getName(), "/")))
-            .findFirst()
-            .orElseThrow(() -> new IOException("not listed in its parent folder"))
-        instanceof NfsFolderDetails;
+        // iRODS names a listed collection by its absolute path
+        .filter(item -> name.equals(StringUtils.substringAfterLast("/" + item.getName(), "/")))
+        .anyMatch(NfsFolderDetails.class::isInstance);
   }
 
   /**

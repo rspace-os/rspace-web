@@ -6,6 +6,8 @@ import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.netfiles.LeadingSlashes;
+import com.researchspace.model.netfiles.NfsAuthenticationType;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -14,6 +16,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFieldLinkManager;
@@ -24,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -43,6 +47,7 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
   private final IPermissionUtils permUtils;
   private final FilestoreAclChecker aclChecker;
   private final MessageSourceUtils messages;
+  private final NfsFactory nfsFactory;
 
   @Override
   public void reindex(Field field, String content) {
@@ -99,10 +104,25 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
   public List<RecordInformation> getLinkedDocuments(
       NfsFileSystem fileSystem, Collection<String> absolutePaths, User user) {
     aclChecker.assertCanRead(user, fileSystem);
-    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
-    // a whole S3 folder listing in one IN list can exceed the database's packet size
-    return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
-        .flatMap(batch -> nfsDao.getDocumentsLinkingTo(fileSystem.getId(), batch).stream())
+    Stream<StructuredDocument> linking;
+    if (NfsAuthenticationType.NONE.equals(fileSystem.getAuthType())) {
+      linking = documentsLinking(fileSystem, absolutePaths, null, null);
+    } else {
+      // two logins can see different files at one path (ADR 0015 point 2), and the client can
+      // read paths with the same normalised form as different files, by their leading slashes
+      linking =
+          absolutePaths.stream()
+              .collect(
+                  Collectors.groupingBy(
+                      path -> nfsFactory.spellingsOfTheSameFile(fileSystem, path)))
+              .entrySet()
+              .stream()
+              .flatMap(
+                  bySpellings ->
+                      documentsLinking(
+                          fileSystem, bySpellings.getValue(), user, bySpellings.getKey()));
+    }
+    return linking
         .collect(
             Collectors.toMap(
                 StructuredDocument::getId, doc -> doc, (first, duplicate) -> first, TreeMap::new))
@@ -110,6 +130,21 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
         .stream()
         .map(doc -> toRecordInfoOrPlaceholder(doc, user))
         .toList();
+  }
+
+  private Stream<StructuredDocument> documentsLinking(
+      NfsFileSystem fileSystem,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings) {
+    List<String> paths = absolutePaths.stream().map(NfsFieldLink::normalisePath).toList();
+    // a whole S3 folder listing in one IN list can exceed the database's packet size
+    return ListUtils.partition(paths, PATH_BATCH_SIZE).stream()
+        .flatMap(
+            batch ->
+                nfsDao
+                    .getDocumentsLinkingTo(fileSystem.getId(), batch, filestoreOwner, spellings)
+                    .stream());
   }
 
   private RecordInformation toRecordInfoOrPlaceholder(StructuredDocument doc, User user) {

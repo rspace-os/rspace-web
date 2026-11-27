@@ -60,8 +60,15 @@ public interface GalleryFilestoresApi {
 
   /**
    * Returns the ELN documents linking the filestore item, oldest first, then the Inventory items
-   * whose Link field targets it, by Global ID, each once, all through any user's filestore of the
-   * same filesystem. Every row carries its {@code type}: {@code DOCUMENT} or the kind of item.
+   * whose Link field targets it, by Global ID, each once, through any user's filestore of the same
+   * filesystem; where each user signs in with their own login, only through the caller's own
+   * filestores, and only where the client reads the item's path and the link's path, each following
+   * its filestore's path, as the same file by their leading slashes (none, one, or more): SFTP,
+   * iRODS and SMB under a server URL's folder can read a path with a leading slash apart from one
+   * without, SMBJ reads a first folder named like the share as the share, and iRODS a path starting
+   * with the account's home as it is, unless two slashes precede it. The item path is taken as
+   * sent, except that a missing leading slash is added under a non-empty filestore path that does
+   * not end with one. Every row carries its {@code type}: {@code DOCUMENT} or the kind of item.
    * Documents and items the user cannot read in full are placeholders with only the type and the
    * owner's name. Requires read access; works for every filestore type.
    */

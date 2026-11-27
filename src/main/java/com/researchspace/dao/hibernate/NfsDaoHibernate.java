@@ -1,6 +1,8 @@
 package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.NfsDao;
+import com.researchspace.model.User;
+import com.researchspace.model.netfiles.LeadingSlashes;
 import com.researchspace.model.netfiles.NfsFieldLink;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
@@ -152,24 +154,37 @@ public class NfsDaoHibernate implements NfsDao {
 
   @Override
   public List<StructuredDocument> getDocumentsLinkingTo(
-      Long fileSystemId, Collection<String> absolutePaths) {
+      Long fileSystemId,
+      Collection<String> absolutePaths,
+      User filestoreOwner,
+      Set<LeadingSlashes> spellings) {
     if (absolutePaths.isEmpty()) {
       return List.of();
     }
     // the column's collation pads trailing spaces, which S3 keys keep: compare exactly here
     Set<String> exactPaths = Set.copyOf(absolutePaths);
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery(
-            "select l.absolutePath, doc from NfsFieldLink l join l.field f"
-                + " join f.structuredDocument doc"
-                + " where l.fileSystem.id = :fsId and l.absolutePath in (:paths)"
-                + " and doc.deleted = false order by doc.id",
-            Object[].class)
-        .setParameter("fsId", fileSystemId)
-        .setParameterList("paths", absolutePaths)
-        .list()
-        .stream()
+    String where = " where l.fileSystem.id = :fsId and l.absolutePath in (:paths)";
+    if (filestoreOwner != null) {
+      where +=
+          " and l.fileStore.user = :owner"
+              + LeadingSlashes.hqlCondition(
+                  "concat(coalesce(l.fileStore.path, ''), l.relPath)", spellings);
+    }
+    var query =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "select l.absolutePath, doc from NfsFieldLink l join l.field f"
+                    + " join f.structuredDocument doc"
+                    + where
+                    + " and doc.deleted = false order by doc.id",
+                Object[].class)
+            .setParameter("fsId", fileSystemId)
+            .setParameterList("paths", absolutePaths);
+    if (filestoreOwner != null) {
+      query.setParameter("owner", filestoreOwner);
+    }
+    return query.list().stream()
         .filter(row -> exactPaths.contains((String) row[0]))
         .map(row -> (StructuredDocument) row[1])
         .distinct()
