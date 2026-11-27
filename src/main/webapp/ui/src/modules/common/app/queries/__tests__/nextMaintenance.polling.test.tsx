@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
@@ -42,7 +43,7 @@ it("retains the maintenance notice during foreground polls and advances the cuto
   });
   onTestFinished(unmount);
   await act(async () => {
-    await vi.waitFor(() => expect(result.current.data).toEqual({ startDate: new Date(firstStart) }));
+    await vi.waitFor(() => expect(result.current.data).toEqual({ startDate: Temporal.Instant.from(firstStart) }));
   });
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
@@ -51,10 +52,10 @@ it("retains the maintenance notice during foreground polls and advances the cuto
     await vi.waitFor(() => expect(filters).toHaveLength(2));
   });
   expect(result.current.isFetching).toBe(true);
-  expect(result.current.data).toEqual({ startDate: new Date(firstStart) });
+  expect(result.current.data).toEqual({ startDate: Temporal.Instant.from(firstStart) });
   await act(async () => {
     finishPoll();
-    await vi.waitFor(() => expect(result.current.data).toEqual({ startDate: new Date(nextStart) }));
+    await vi.waitFor(() => expect(result.current.data).toEqual({ startDate: Temporal.Instant.from(nextStart) }));
   });
   focusManager.setFocused(false);
   await act(async () => {

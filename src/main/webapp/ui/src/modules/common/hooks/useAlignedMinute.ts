@@ -1,9 +1,11 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useEffect, useState } from "react";
 
-const now = () => new Date();
-const alignedMinute = (date: Date) => Math.floor(date.getTime() / 60_000) * 60_000;
+const now = () => Temporal.Now.instant();
+const alignedMinute = (instant: Temporal.Instant) => Math.floor(instant.epochMilliseconds / 60_000) * 60_000;
 
-export function useAlignedMinute(clock: () => Date = now): number {
+/** Epoch milliseconds of the current minute's start, updated on each minute boundary. */
+export function useAlignedMinute(clock: () => Temporal.Instant = now): number {
   const [minute, setMinute] = useState(() => alignedMinute(clock()));
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
@@ -14,7 +16,7 @@ export function useAlignedMinute(clock: () => Date = now): number {
           setMinute(alignedMinute(clock()));
           schedule();
         },
-        60_000 - (current.getTime() % 60_000),
+        60_000 - (current.epochMilliseconds % 60_000),
       );
     };
     schedule();
