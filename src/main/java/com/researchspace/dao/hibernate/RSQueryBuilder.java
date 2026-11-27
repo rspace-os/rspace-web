@@ -174,21 +174,21 @@ class RSQueryBuilder {
     return predicate;
   }
 
-  /**
-   * Adds 'must' queries to filter results to only those that the user has permission to view. Also
-   * see `restrictByUser`.
-   *
-   * @param cfg search config
-   * @param qb query builder
-   * @param luq query being built
-   * @return the query with user filter added
-   */
+  /** Restricts candidates by owner, sharing group, or communal folder ID before the READ check. */
   private SearchPredicate addUserFilterInPredicate(
       LuceneSrchCfg cfg, SearchPredicateFactory f, SearchPredicate predicate) {
     if (cfg.isRestrictByUser()) {
       BooleanPredicateClausesStep<?> userFilter = f.bool();
       for (String username : cfg.getUsernameFilterList()) {
         userFilter = userFilter.should(ownerUsernameMatch(f, username));
+      }
+      if (!cfg.getCommunalFolderIds().isEmpty()) {
+        // Comment items have their own ID sequence and index owner_username instead.
+        userFilter =
+            userFilter.should(
+                f.bool()
+                    .filter(f.id().matchingAny(cfg.getCommunalFolderIds()))
+                    .filter(f.exists().field("owner.username")));
       }
       for (String sharedWith : cfg.getSharedWithFilterList()) {
         // sharedWith is a @KeywordField storing a comma-joined string of group unique names.

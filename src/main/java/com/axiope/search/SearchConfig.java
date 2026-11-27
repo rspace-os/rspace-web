@@ -29,6 +29,7 @@ public abstract class SearchConfig implements IFullTextSearchConfig {
   private SearchOperator operator = SearchOperator.AND;
   private List<String> usernameFilter = new ArrayList<>();
   private List<String> sharedWithFilter = new ArrayList<>();
+  private List<Long> communalFolderIds = List.of();
   private boolean restrictByUser = true;
 
   // default can be set for testing
