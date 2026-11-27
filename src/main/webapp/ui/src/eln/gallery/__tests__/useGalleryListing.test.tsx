@@ -4,6 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import React from "react";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import * as FetchingData from "../../../util/fetchingData";
 import {
@@ -225,6 +226,43 @@ describe("useGalleryListing", () => {
     await waitFor(() => {
       expect(requestedPages("new")).toEqual(["0", "1"]);
     });
+  });
+
+  test.each([
+    { newListing: "fails to load", firstPage: (): [number, unknown] => [500, {}] },
+    {
+      newListing: "has only one page",
+      firstPage: (): [number, unknown] => [
+        200,
+        { ...page1, data: { ...page1.data, items: { ...page1.data.items, totalPages: 1 } } },
+      ],
+    },
+  ])("a next page asked for during a reload is not fetched when the new listing $newListing", async ({ firstPage }) => {
+    const user = userEvent.setup();
+    const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
+    try {
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
+        const search = params as URLSearchParams;
+        if (search.get("name") === "new" && search.get("pageNumber") === "0") return firstPage();
+        return [200, search.get("pageNumber") === "0" ? page1 : page2];
+      });
+      const requestedPages = (name: string) =>
+        mockAxios.history.get
+          .map(({ params }) => params as URLSearchParams)
+          .filter((params) => params.get("name") === name)
+          .map((params) => params.get("pageNumber"));
+
+      render(<LoadMoreDuringReloadWrapper />);
+      await user.click(await screen.findByRole("button", { name: "Search" }));
+
+      await waitFor(() => {
+        expect(requestedPages("new")).toEqual(["0"]);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(requestedPages("new")).toEqual(["0"]);
+    } finally {
+      restoreConsole();
+    }
   });
 
   test("null and missing owner fields should fall back safely", async () => {

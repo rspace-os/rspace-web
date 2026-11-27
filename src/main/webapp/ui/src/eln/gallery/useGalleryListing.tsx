@@ -1189,7 +1189,8 @@ export function useGalleryListing({
   /*
    * The next page asked for. Nothing beyond the first page is fetched while
    * the listing (re)loads: starting a reload drops any page still on its way,
-   * and a request made around the reload waits for the new first page.
+   * and a request made around the reload waits for the new first page, then
+   * goes ahead only if the new listing has that page.
    */
   const [requestedPage, setRequestedPage] = React.useState<number | null>(null);
   const [totalPages, setTotalPages] = React.useState<number>(0);
@@ -1704,7 +1705,7 @@ export function useGalleryListing({
   }
 
   React.useEffect(() => {
-    if (loading || requestedPage !== page + 1) return;
+    if (loading || requestedPage !== page + 1 || requestedPage >= totalPages) return;
     let superseded = false;
     void (async () => {
       try {
@@ -1727,7 +1728,7 @@ export function useGalleryListing({
     return () => {
       superseded = true;
     };
-  }, [requestedPage, page, loading]);
+  }, [requestedPage, page, loading, totalPages]);
 
   React.useEffect(() => {
     Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
