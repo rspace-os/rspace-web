@@ -5,10 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.Constants;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.EcatImageDao;
 import com.researchspace.dao.FieldDao;
@@ -21,6 +24,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AnnotatedImageRelink;
 import com.researchspace.service.AnnotatedImageRelink.LinkState;
 import com.researchspace.service.AnnotatedImageRelink.Outcome;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DevOpsManager;
 import java.time.Duration;
 import java.util.Arrays;
@@ -37,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -49,6 +54,7 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
   private @Autowired EcatImageDao ecatImageDao;
   private @Autowired EcatImageAnnotationDao imageAnnotationDao;
   private @Autowired PlatformTransactionManager transactionManager;
+  private @Autowired BaseRecordManager baseRecordMgr;
 
   private User owner;
   private User other;
@@ -236,6 +242,70 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void skipsLinkThatWouldLetADocumentReaderDownloadTheImage() throws Exception {
+    groupWithOwnerAndOther();
+    EcatImage image = newImage(owner);
+    Field field = fieldWithAnnotatedImage(image);
+    StructuredDocument doc = field.getStructuredDocument();
+    shareRecordWithUser(owner, doc, other);
+    logoutAndLoginAsSysAdmin();
+
+    AnnotatedImageRelink result =
+        single(devOpsManager.relinkAnnotatedImagesInField(field.getId()), field);
+
+    assertEquals(Outcome.SKIPPED, result.outcome());
+    assertEquals(
+        "the link would let a document reader who cannot read the Gallery image download it: "
+            + other.getUsername(),
+        result.skipReason());
+    assertThat(links(field, image)).isEmpty();
+    logoutAndLoginAs(other);
+    assertThrows(
+        AuthorizationException.class, () -> baseRecordMgr.retrieveMediaFile(other, image.getId()));
+
+    // the access the repair withheld: with the link, the sharee can download the original
+    addLink(field, image, false);
+    assertEquals(image.getId(), baseRecordMgr.retrieveMediaFile(other, image.getId()).getId());
+  }
+
+  @Test
+  public void repairsSharedDocumentWhenEveryReaderCanAlreadyReadTheImage() throws Exception {
+    groupWithOwnerAndOther();
+    EcatImage image = newImage(owner);
+    Field field = fieldWithAnnotatedImage(image);
+    shareRecordWithUser(owner, field.getStructuredDocument(), other);
+    Field alreadyShared = newField();
+    addLink(alreadyShared, image, false);
+    shareRecordWithUser(owner, alreadyShared.getStructuredDocument(), other);
+    logoutAndLoginAsSysAdmin();
+
+    assertEquals(
+        Outcome.REPAIRED,
+        single(devOpsManager.relinkAnnotatedImagesInField(field.getId()), field).outcome());
+    assertThat(links(field, image)).singleElement().matches(link -> !link.isDeleted());
+  }
+
+  @Test
+  public void skipsAnotherUsersImageNotLinkedFromAnotherRecordOfTheOwner() throws Exception {
+    groupWithOwnerAndOther();
+    EcatImage othersImage = newImage(other);
+    Field field = fieldWithAnnotatedImage(othersImage);
+    // the owner reads the image only through a document of the other user
+    logoutAndLoginAs(other);
+    StructuredDocument othersDoc = createBasicDocumentInRootFolderWithText(other, "");
+    addLink(othersDoc.getFields().get(0), othersImage, false);
+    shareRecordWithUser(other, othersDoc, owner);
+    logoutAndLoginAsSysAdmin();
+
+    AnnotatedImageRelink result =
+        single(devOpsManager.relinkAnnotatedImagesInField(field.getId()), field);
+
+    assertEquals(Outcome.SKIPPED, result.outcome());
+    assertThat(result.skipReason()).startsWith("Gallery image belongs to another user");
+    assertThat(links(field, othersImage)).isEmpty();
+  }
+
+  @Test
   public void skipsDeletedImagesAndTemplates() throws Exception {
     EcatImage deletedImage = newImage(owner);
     Field withDeletedImage = fieldWithAnnotatedImage(deletedImage);
@@ -288,7 +358,7 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void endpointReportsAndRepairsForSysadminAndRefusesOthers() throws Exception {
+  public void endpointReportsOnGetAndRepairsOnlyOnPost() throws Exception {
     EcatImage image = newImage(owner);
     Field field = fieldWithAnnotatedImage(image);
     User sysadmin = logoutAndLoginAsSysAdmin();
@@ -302,18 +372,25 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
             + image.getGlobalIdentifier()
             + "\tmissing row";
 
-    String report = callEndpoint(sysadmin, false);
-    assertThat(report).contains(line + "\n").contains("?update=true");
+    String report = callEndpoint(get(ENDPOINT).principal(sysadmin::getUsername));
+    assertThat(report).contains(line + "\n").contains("method: 'POST'");
+    assertThat(links(field, image)).isEmpty();
+    // GET is not CSRF-checked, so it never repairs, whatever the parameters
+    assertThat(callEndpoint(get(ENDPOINT).param("update", "true").principal(sysadmin::getUsername)))
+        .startsWith("Reporting")
+        .contains(line + "\n");
     assertThat(links(field, image)).isEmpty();
 
-    String repair = callEndpoint(sysadmin, true);
+    String repair = callEndpoint(post(ENDPOINT).principal(sysadmin::getUsername));
     assertThat(repair).contains(line + ", repaired\n").contains("errors: 0");
     assertThat(links(field, image)).singleElement().matches(link -> !link.isDeleted());
-    assertThat(callEndpoint(sysadmin, false)).doesNotContain(line);
+    assertThat(callEndpoint(get(ENDPOINT).principal(sysadmin::getUsername))).doesNotContain(line);
 
     logoutAndLoginAs(owner);
-    MvcResult refused = mockMvc.perform(get(ENDPOINT).principal(owner::getUsername)).andReturn();
-    assertInstanceOf(AuthorizationException.class, refused.getResolvedException());
+    for (MockHttpServletRequestBuilder request : List.of(get(ENDPOINT), post(ENDPOINT))) {
+      MvcResult refused = mockMvc.perform(request.principal(owner::getUsername)).andReturn();
+      assertInstanceOf(AuthorizationException.class, refused.getResolvedException());
+    }
   }
 
   private static void await(CountDownLatch latch) {
@@ -334,16 +411,21 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
     }
   }
 
-  private String callEndpoint(User sysadmin, boolean update) throws Exception {
+  private String callEndpoint(MockHttpServletRequestBuilder request) throws Exception {
     return mockMvc
-        .perform(
-            get(ENDPOINT)
-                .param("update", Boolean.toString(update))
-                .principal(sysadmin::getUsername))
+        .perform(request)
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()
         .getContentAsString();
+  }
+
+  /* Sharing needs a group in common. */
+  private void groupWithOwnerAndOther() throws Exception {
+    User pi = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    initUsers(pi);
+    logoutAndLoginAs(pi);
+    createGroupForUsers(pi, pi.getUsername(), "", pi, owner, other);
   }
 
   private EcatImage newImage(User imageOwner) throws Exception {

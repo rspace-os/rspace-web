@@ -5,17 +5,21 @@ import static com.researchspace.core.util.FieldParserConstants.DATA_TYPE_ANNOTAT
 import com.researchspace.auth.ShiroRealm;
 import com.researchspace.dao.EcatImageDao;
 import com.researchspace.dao.FieldDao;
+import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.RecordGroupSharingDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordAttachment;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -29,7 +33,10 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DevOpsManager;
 import com.researchspace.service.FolderManager;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +63,14 @@ public class DevOpsManagerImpl implements DevOpsManager {
   static final String SKIP_TEMPLATE = "template document";
   static final String SKIP_IMAGE_DELETED = "Gallery image is deleted";
   static final String SKIP_OWNER_CANNOT_READ = "document owner cannot read the Gallery image";
+  static final String SKIP_DOCUMENT_PUBLISHED =
+      "document is published, so the link would let anyone download the Gallery image";
+  static final String SKIP_OWNERS_GROUPS_WOULD_GAIN_ACCESS =
+      "Gallery image belongs to another user, so the link could let the document owner's PI,"
+          + " lab admins or community admins download it";
+  static final String SKIP_READER_WOULD_GAIN_ACCESS =
+      "the link would let a document reader who cannot read the Gallery image download it: ";
+  static final String SKIP_UNKNOWN_READER = "document is shared with an unknown user or group: ";
 
   @Autowired private FolderManager folderMgr;
 
@@ -70,6 +85,10 @@ public class DevOpsManagerImpl implements DevOpsManager {
   @Autowired private FieldParser fieldParser;
 
   @Autowired private IPermissionUtils permUtils;
+
+  @Autowired private UserDao userDao;
+
+  @Autowired private GroupDao groupDao;
 
   @Override
   public List<Long> findFieldIdsWithAnnotatedImages() {
@@ -99,7 +118,7 @@ public class DevOpsManagerImpl implements DevOpsManager {
     Field field = locked.orElseGet(() -> fieldDao.get(fieldId));
     StructuredDocument doc = field.getStructuredDocument();
     User owner = doc.getOwner();
-    Subject ownerSubject = null;
+    Map<String, Subject> subjects = new HashMap<>();
     List<AnnotatedImageRelink> results = new ArrayList<>();
     for (Long imageId : fieldParser.findAnnotatedImageIds(field.getFieldData())) {
       List<FieldAttachment> links =
@@ -122,11 +141,10 @@ public class DevOpsManagerImpl implements DevOpsManager {
       } else if (image.isDeleted()) {
         skipReason = SKIP_IMAGE_DELETED;
       } else {
-        if (ownerSubject == null) {
-          ownerSubject = subjectFor(owner);
-        }
-        if (!ownerCanReadImage(ownerSubject, owner, image, fieldId)) {
+        if (!canReadImage(subjects, owner, image, fieldId)) {
           skipReason = SKIP_OWNER_CANNOT_READ;
+        } else {
+          skipReason = accessWideningReason(subjects, doc, image, fieldId);
         }
       }
       Outcome outcome;
@@ -167,19 +185,94 @@ public class DevOpsManagerImpl implements DevOpsManager {
   }
 
   /*
-   * The editor's rule (FieldManager#subjectCanReadMediaFile), evaluated as the owner rather than
-   * the sysadmin running the repair. Links of the field being repaired don't count, nor do
-   * deleted links anywhere: a lost link must not vouch for itself.
+   * A link lets anyone who can read the document download the Gallery image itself
+   * (PermissionUtils#isPermittedViaMediaLinksToRecords), not just see the annotated copy. Returns
+   * why restoring this link could give someone that access, or null if every reader already has
+   * it.
    */
-  private boolean ownerCanReadImage(
-      Subject ownerSubject, User owner, EcatImage image, Long fieldId) {
-    return ownerSubject.execute(
-        () ->
-            permUtils.isPermitted(image, PermissionType.READ, owner)
-                || readableViaOtherLinks(owner, image, fieldId));
+  private String accessWideningReason(
+      Map<String, Subject> subjects, StructuredDocument doc, EcatImage image, Long fieldId) {
+    if (isPublished(doc)
+        || doc.getOwnerParent().map(DevOpsManagerImpl::isPublished).orElse(false)) {
+      return SKIP_DOCUMENT_PUBLISHED;
+    }
+    // Role-based access (PIs, lab admins, community admins, sysadmins) depends only on the record
+    // owner, so it is the same for the document and for any record of the same owner.
+    User owner = doc.getOwner();
+    if (!ownedBy(image, owner) && !linkedToAnotherRecordOf(owner, image, fieldId)) {
+      return SKIP_OWNERS_GROUPS_WOULD_GAIN_ACCESS;
+    }
+    // The document's ACL holds everyone it is shared with, including through a shared notebook.
+    for (ACLElement element : doc.getSharingACL().getAclElements()) {
+      String name = element.getUserOrGrpUniqueName();
+      if (owner.getUsername().equals(name)) {
+        continue;
+      }
+      Optional<Set<User>> readers = resolveReaders(name);
+      if (readers.isEmpty()) {
+        return SKIP_UNKNOWN_READER + name;
+      }
+      for (User reader : readers.get()) {
+        if (!owner.getUsername().equals(reader.getUsername())
+            && !canReadImage(subjects, reader, image, fieldId)) {
+          return SKIP_READER_WOULD_GAIN_ACCESS + reader.getUsername();
+        }
+      }
+    }
+    return null;
   }
 
-  private boolean readableViaOtherLinks(User owner, EcatImage image, Long fieldId) {
+  private static boolean isPublished(BaseRecord record) {
+    return record.getSharingACL().getAclElements().stream()
+        .anyMatch(
+            element -> RecordGroupSharing.ANONYMOUS_USER.equals(element.getUserOrGrpUniqueName()));
+  }
+
+  private static boolean ownedBy(BaseRecord record, User user) {
+    return record != null && user.getUsername().equals(record.getOwner().getUsername());
+  }
+
+  private static boolean linkedToAnotherRecordOf(User owner, EcatImage image, Long fieldId) {
+    Stream<BaseRecord> viaFields =
+        image.getLinkedFields().stream()
+            .filter(link -> !link.isDeleted() && !fieldId.equals(link.getField().getId()))
+            .map(link -> link.getField().getStructuredDocument());
+    Stream<BaseRecord> viaRecords =
+        image.getLinkedRecords().stream().map(RecordAttachment::getRecord);
+    return Stream.concat(viaFields, viaRecords)
+        .anyMatch(linked -> ownedBy(linked, owner) && !linked.isDeleted());
+  }
+
+  /*
+   * An ACL entry names a user, or a group optionally restricted to roles ("group[PI]"). Every
+   * member of a group counts as a reader, whatever the role restriction.
+   */
+  private Optional<Set<User>> resolveReaders(String userOrGroupName) {
+    Optional<User> user = userDao.getOptionalUserByUsername(userOrGroupName);
+    if (user.isPresent()) {
+      return Optional.of(Set.of(user.get()));
+    }
+    int roles = userOrGroupName.indexOf('[');
+    Group group =
+        groupDao.getByUniqueName(roles < 0 ? userOrGroupName : userOrGroupName.substring(0, roles));
+    return Optional.ofNullable(group).map(found -> new LinkedHashSet<>(found.getMembers()));
+  }
+
+  /*
+   * The editor's rule (FieldManager#subjectCanReadMediaFile), evaluated as the given user rather
+   * than the sysadmin running the repair. Links of the field being repaired don't count, nor do
+   * deleted links anywhere: a lost link must not vouch for itself.
+   */
+  private boolean canReadImage(
+      Map<String, Subject> subjects, User user, EcatImage image, Long fieldId) {
+    Subject subject = subjects.computeIfAbsent(user.getUsername(), name -> subjectFor(user));
+    return subject.execute(
+        () ->
+            permUtils.isPermitted(image, PermissionType.READ, user)
+                || readableViaOtherLinks(user, image, fieldId));
+  }
+
+  private boolean readableViaOtherLinks(User user, EcatImage image, Long fieldId) {
     Stream<BaseRecord> viaFields =
         image.getLinkedFields().stream()
             .filter(link -> !link.isDeleted() && !fieldId.equals(link.getField().getId()))
@@ -188,7 +281,7 @@ public class DevOpsManagerImpl implements DevOpsManager {
         image.getLinkedRecords().stream().map(RecordAttachment::getRecord);
     return Stream.concat(viaFields, viaRecords)
         .filter(Objects::nonNull)
-        .anyMatch(linked -> permUtils.isPermitted(linked, PermissionType.READ, owner));
+        .anyMatch(linked -> permUtils.isPermitted(linked, PermissionType.READ, user));
   }
 
   /*

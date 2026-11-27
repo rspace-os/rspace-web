@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -105,27 +106,40 @@ public class SysAdminDevOpsController extends BaseController {
    *
    * <p>Scans current text fields of non-deleted documents for annotated images without an active
    * link, and lists each with its document, owner, field, Gallery image and status. A link is
-   * restored only if the document owner may read the Gallery image; otherwise it is reported as
-   * skipped, as are links in templates and to deleted Gallery images. A repeat run after a repair
-   * reports nothing left to repair; skipped links are listed on every run. A "document owner cannot
-   * read the Gallery image" skip typically means a collaborator inserted their own image and the
-   * lost link was the owner's only access to it; such links are left for manual review.
+   * restored only if it gives nobody new access to the Gallery image: the document owner must be
+   * able to read it, and, because a link lets every reader of the document download the original
+   * image, so must everyone the document is shared with and the owner's PIs and admins (who can
+   * read the image when it belongs to the owner, or is linked from another of the owner's records).
+   * Links in published documents, templates and to deleted Gallery images are skipped too. Each
+   * skip is reported with its reason and left for manual review. A repeat run after a repair
+   * reports nothing left to repair; skipped links are listed on every run.
    *
    * <p>Candidates are found by a LIKE scan for <code>data-type="annotation"</code> over the content
    * of all text fields, so expect a full scan of the text field table. Only that markup, written
    * for every annotation since RSpace 1.29, is checked: older annotated-image markup without it is
-   * not scanned. The report runs read-only; with <code>update=true</code> only fields with a link
-   * to restore are written. An error in one field is reported and the scan continues.
+   * not scanned. The report runs read-only; the repair writes only fields with a link to restore.
+   * An error in one field is reported and the scan continues.
    *
    * <p>To run, log in as sysadmin and navigate to /system/devops/ajax/relinkAnnotatedImages to see
-   * the report, then to /system/devops/ajax/relinkAnnotatedImages?update=true to repair. Run the
-   * repair at a quiet time: it locks each field it repairs, so a user saving the same document at
-   * that moment may see the save fail and need to retry.
+   * the report. GET only reports; to repair, send a POST to the same URL from that page (see the
+   * report), so the request passes the Origin/Referer CSRF check. Run the repair at a quiet time:
+   * it locks each field it repairs, so a user saving the same document at that moment may see the
+   * save fail and need to retry.
    */
   @GetMapping(value = "/ajax/relinkAnnotatedImages", produces = "text/plain;charset=UTF-8")
   @ResponseBody
-  public String relinkAnnotatedImages(
-      @RequestParam(value = "update", required = false) boolean update) {
+  public String reportAnnotatedImageLinks() {
+    return relinkAnnotatedImages(false);
+  }
+
+  /** Repairs the links {@link #reportAnnotatedImageLinks()} reports as to repair. */
+  @PostMapping(value = "/ajax/relinkAnnotatedImages", produces = "text/plain;charset=UTF-8")
+  @ResponseBody
+  public String repairAnnotatedImageLinks() {
+    return relinkAnnotatedImages(true);
+  }
+
+  private String relinkAnnotatedImages(boolean update) {
     assertSubjectIsSysadmin();
 
     List<AnnotatedImageRelink> results = new ArrayList<>();
@@ -190,7 +204,11 @@ public class SysAdminDevOpsController extends BaseController {
         countOutcome(results, Outcome.SKIPPED),
         errors.size());
     if (!update && countOutcome(results, Outcome.TO_REPAIR) > 0) {
-      report.append("To repair, call the current URL with '?update=true' suffix.\n");
+      report.append(
+          "To repair, send a POST to this URL, for example by running this in the browser"
+              + " console on this page:\n"
+              + "fetch(location.pathname, {method: 'POST'}).then(r => r.text())"
+              + ".then(console.log)\n");
     }
     return report.toString();
   }
