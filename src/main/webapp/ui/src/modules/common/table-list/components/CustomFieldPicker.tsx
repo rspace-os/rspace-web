@@ -9,11 +9,11 @@ import {
   type RuntimeFieldCatalogForNamespace,
   type RuntimeFieldDefinition,
   type RuntimeFieldOption,
-  registeredRuntimeFieldSearches,
   runtimeFieldSearchQueryOptions,
   runtimeFieldSelector,
   soleRuntimeFieldSearch,
 } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
+import { useRuntimeFieldSearches } from "@/modules/common/table-list/api-v2/runtimeFieldResources";
 import {
   Combobox,
   ComboboxContent,
@@ -102,7 +102,7 @@ export function CustomFieldPicker({
   const [open, setOpen] = useState(false);
   const narrowed = term.trim().length >= MINIMUM_TERM;
 
-  const runtimeSearch = soleRuntimeFieldSearch(registeredRuntimeFieldSearches(sources));
+  const runtimeSearch = soleRuntimeFieldSearch(useRuntimeFieldSearches()(sources));
   const params = { q: term.trim(), limit: SEARCH_LIMIT };
   // Plain useQuery: a new term keeps the input interactive while results load.
   const query = useQuery(runtimeFieldSearchQueryOptions(runtimeSearch, params, open && narrowed));
