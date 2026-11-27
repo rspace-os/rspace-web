@@ -18,41 +18,32 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    predictable lookups won.
 2. Each row stores the filesystem and the normalised absolute path (filestore base path plus the
    link's relative path, with no leading or trailing slashes) next to the filestore and the relative
-   path. Inner slashes are kept and paths compare case-sensitively, because S3 keys are flat and
-   `data/a//b` or `Data/a` name different objects. Filestores are per user and point at arbitrary base paths of one filesystem, and a
-   filestore's path cannot change after creation, so the absolute path is safe to denormalise and
-   makes "who links this S3 key" one indexed equality query across every user's filestore.
-   *Amended 2026-11-23:* paths compare exactly, trailing spaces included: S3 keys keep them and the
-   columns' binary collation ignores them, so every lookup by path compares the matched path again
-   after its indexed query. A lookup by filesystem and paths also asserts the caller's read access
-   to the filesystem itself, whichever entry point calls it.
-   *Amended 2026-11-25:* on a filesystem with per-user logins (any authentication but none) the
-   same path can name a different file for each login, through a chroot or a filestore path
-   relative to the login's home, and RSpace cannot tell when two logins see the same file. There a
-   lookup counts only links made through the caller's own filestores, removed ones included.
-   Except where SMB reads both spellings as one file, it also keeps a path (base plus link path)
-   that starts with a slash apart from one that does not: SFTP reads a path without the slash under
-   the login's home, iRODS prefixes the account's home to any path that does not already start
-   with it, and SMBJ glues a folder that the server URL names after the share, without a trailing
-   slash, to a path without the slash. The stored path drops that slash, so the query reads it
-   from the filestore's base and the link's own path. jcifs and every other SMBJ URL read both
-   spellings alike, and an SMB server that returns no name for the share root makes the Gallery
-   write links without the slash, so there both spellings match. The client's path resolution is
-   left as it is, as changing it would change which file existing links open. Where the
-   slash changes nothing elsewhere (a login chrooted to its home) this fails closed: a user's own links through a relative and an
-   absolute base no longer meet, nor do document links that older Gallery versions wrote without
-   the slash through a filestore with no base. A filesystem reached with one shared login (S3)
-   still matches across every user's filestore.
-   *Amended 2026-11-26:* a link and a looked-up path share their stored form yet can name different
-   files by their leading slashes alone: SMBJ reads a first folder named like the share as the share
-   after none or one slash but not after two. So the lookup asks the file system's client which
-   spellings of the stored form (no leading slash, one, or more) it opens as the same file as the
-   looked-up path, and matches links only in those, still reading the spelling from the filestore's
-   base and the link's own path. SMBJ and iRODS are asked by running their own path resolution on
-   each spelling (iRODS reads a path starting with the account's home as it is, so a second slash in
-   front of the home makes another object); jcifs opens all three alike; elsewhere a path with a
-   leading slash stays apart from one without.
-   Recomputing the stored form instead would have needed a data migration.
+   path. Inner slashes are kept and paths compare exactly, case and trailing spaces included,
+   because S3 keys are flat and `data/a//b`, `Data/a` and `data/a ` name different objects; the columns'
+   binary collation ignores trailing spaces, so every lookup by path compares the matched path again
+   after its indexed query. A filestore's path cannot change after creation, so the absolute path is
+   safe to denormalise and makes "who links this file" one indexed query. A lookup by filesystem and
+   paths asserts the caller's read access to the filesystem itself, whichever entry point calls it.
+   On a filesystem reached with one shared login (S3) a lookup matches across every user's
+   filestore. On one with per-user logins (any authentication but none) the same path can name a
+   different file for each login, through a chroot or a filestore path relative to the login's home,
+   and RSpace cannot tell when two logins see the same file, so a lookup counts only links made
+   through the caller's own filestores, removed ones included. There a link and a looked-up path can
+   also share their stored form yet name different files by their leading slashes alone: SFTP reads a
+   path without the slash under the login's home, iRODS prefixes the account's home to any path that
+   does not start with it, and SMBJ glues a folder that the server URL names after the share to a
+   path without the slash, and reads a first folder named like the share as the share after none or
+   one slash but not after two. So the lookup asks the client which spellings of the stored form (no
+   leading slash, one, or more) it opens as the same file as the looked-up path, and matches links
+   only in those, reading a link's spelling from its filestore's base and its own path. SMBJ and iRODS
+   answer by running their own path resolution on each spelling; jcifs opens all three alike unless
+   it hands downloads to SMBJ; any other client keeps a path with a leading slash apart from one
+   without. Matching at lookup time leaves the stored form and the clients' path resolution as they
+   are: recomputing the stored form would need a data migration, and changing the resolution would
+   change which file existing links open. Where the slash names the same file (a login chrooted to
+   its home) the lookup fails closed: a user's own links through a relative and an absolute base no
+   longer meet, nor do document links that older Gallery versions wrote without the slash through a
+   filestore with no base.
 3. Rows follow autosaved content, as `FieldAttachment` does: a link counts as soon as it is in the
    editor, and cancelling an edit re-reads the saved content.
 4. A link whose filestore id does not exist in this instance is skipped, not failed: archive imports
