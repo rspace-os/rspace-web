@@ -26,4 +26,29 @@ describe("hasContent", () => {
       expect(field.hasContent).toBe(boolValue);
     });
   });
+
+  describe('type = "link"', () => {
+    test("a filestore item target counts as content", () => {
+      const field = new FieldModel(
+        {
+          type: "link",
+          content: null,
+          selectedOptions: null,
+          columnIndex: null,
+          attachment: null,
+          mandatory: true,
+          link: {
+            relationType: "IsSourceOf",
+            targetGlobalId: null,
+            versionPin: null,
+            filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+          },
+        },
+        makeMockSample(),
+      );
+
+      expect(field.hasContent).toBe(true);
+      expect(field.link?.targetGlobalId).toBe("");
+    });
+  });
 });

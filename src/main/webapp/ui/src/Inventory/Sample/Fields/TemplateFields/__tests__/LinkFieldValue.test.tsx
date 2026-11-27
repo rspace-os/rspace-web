@@ -69,6 +69,29 @@ vi.mock("@/Inventory/components/Fields/Link/LinkField", () => ({
   ),
 }));
 
+const { mockDeploymentProperty, pickedFile } = vi.hoisted(() => {
+  const filestoreNode = { id: 12, name: "My S3", path: [] };
+  return {
+    mockDeploymentProperty: vi.fn(),
+    pickedFile: { id: null, name: "run.dat", path: [filestoreNode], remotePath: "/XRD/run.dat" },
+  };
+});
+vi.mock("@/hooks/api/useDeploymentProperty", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/api/useDeploymentProperty")>()),
+  useDeploymentProperty: (name: string) => mockDeploymentProperty(name) as unknown,
+}));
+vi.mock("@/eln/gallery/picker", async () => {
+  const { default: RsSet } = await import("@/util/set");
+  return {
+    default: ({ open, onSubmit }: { open: boolean; onSubmit: (files: unknown) => void }) =>
+      open ? (
+        <button type="button" onClick={() => onSubmit(new RsSet([pickedFile]))}>
+          {"pick run.dat"}
+        </button>
+      ) : null,
+  };
+});
+
 function linkField(overrides: Partial<Field> = {}): Field {
   return {
     name: "Related items",
@@ -96,6 +119,7 @@ async function renderFieldWithRealI18n(props: {
   sourceGlobalId: string;
   disabled: boolean;
   onChange: () => void;
+  allowFilestoreTarget?: boolean;
 }) {
   const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
   render(
@@ -110,6 +134,7 @@ async function renderFieldWithRealI18n(props: {
 
 beforeEach(() => {
   mockUseLinkTargetSummary.mockReturnValue(null);
+  mockDeploymentProperty.mockReturnValue({ tag: "success", value: true });
 });
 
 describe("LinkFieldValue", () => {
@@ -619,6 +644,211 @@ describe("LinkFieldValue", () => {
     expect(screen.getByText("inventory:fields.link.targetValidation.selfLink")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" })).toBeDisabled();
     expect(setAttributesDirty).not.toHaveBeenCalled();
+  });
+
+  function renderItemField(field: Field) {
+    return render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkFieldValue field={field} sourceGlobalId="SA1" disabled={false} allowFilestoreTarget />
+      </ThemeProvider>,
+    );
+  }
+
+  it("commits a picked filestore item on Apply, without the Global ID existence check", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    mockCheckLinkTargetExists.mockClear();
+    renderItemField(linkField({ setAttributesDirty }));
+
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
+
+    expect(setAttributesDirty).toHaveBeenCalledWith({
+      link: {
+        relationType: "IsDerivedFrom",
+        targetGlobalId: "",
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      },
+    });
+    expect(mockCheckLinkTargetExists).not.toHaveBeenCalled();
+  });
+
+  it("drops a typed Global ID when a filestore item is picked", async () => {
+    const user = userEvent.setup();
+    renderItemField(linkField());
+    const targetBox = screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" });
+
+    await user.type(targetBox, "SA20");
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+
+    expect(targetBox).toHaveValue("");
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
+  });
+
+  it("shows the link card for a committed filestore link", () => {
+    renderItemField(
+      linkField({
+        link: {
+          relationType: "IsDerivedFrom",
+          targetGlobalId: "",
+          versionPin: null,
+          filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+        },
+      }),
+    );
+
+    expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
+  });
+
+  it("switches a committed Global ID link to a filestore item without the existence check", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    mockCheckLinkTargetExists.mockClear();
+    renderItemField(
+      linkField({
+        setAttributesDirty,
+        link: { relationType: "IsDerivedFrom", targetGlobalId: "SA20", versionPin: null },
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
+
+    expect(mockCheckLinkTargetExists).not.toHaveBeenCalled();
+    expect(setAttributesDirty).toHaveBeenCalled();
+  });
+
+  it("lets a committed filestore link be repointed to another item", async () => {
+    const user = userEvent.setup();
+    renderItemField(
+      linkField({
+        link: {
+          relationType: "IsDerivedFrom",
+          targetGlobalId: "",
+          versionPin: null,
+          filestoreTarget: { filestoreId: 12, remotePath: "/XRD/old.dat" },
+        },
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+
+    expect(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" })).toBeEnabled();
+  });
+
+  it("asks for a relation type once a filestore item is picked without one", async () => {
+    const user = userEvent.setup();
+    renderItemField(linkField());
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+
+    expect(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" })).toBeDisabled();
+    expect(screen.getByText("inventory:sample.fields.linkFieldValue.selectBothBeforeApplying")).toBeInTheDocument();
+  });
+
+  it("drops a picked filestore item on Discard and keeps the committed Global ID link", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    const { container } = renderItemField(
+      linkField({
+        setAttributesDirty,
+        link: { relationType: "IsDerivedFrom", targetGlobalId: "SA20", versionPin: null },
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.discardLabel" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+
+    expect(container.querySelector('[data-test-id="LinkTarget-filestore"]')).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" })).toHaveValue("SA20");
+    expect(setAttributesDirty).not.toHaveBeenCalled();
+  });
+
+  it("names the filestore and the path of a picked item, on the chip and in its accessible name", async () => {
+    const user = userEvent.setup();
+    await renderFieldWithRealI18n({
+      field: linkField(),
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+      allowFilestoreTarget: true,
+    });
+
+    await user.click(screen.getByRole("button", { name: "Browse filestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+
+    expect(screen.getByRole("button", { name: "Filestore item My S3: /XRD/run.dat" })).toHaveTextContent(
+      "My S3: /XRD/run.dat",
+    );
+  });
+
+  it("keeps a typed Global ID, not the earlier pick, when a Global ID follows a filestore item", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    renderItemField(linkField({ setAttributesDirty }));
+
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA20");
+
+    expect(screen.queryByText("inventory:fields.link.field.filestoreItemLabel")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
+    expect(setAttributesDirty).toHaveBeenCalledWith({
+      link: { relationType: "IsDerivedFrom", targetGlobalId: "SA20", versionPin: null },
+    });
+  });
+
+  it("keeps a staged edit when the model rebuilds the same committed filestore link", async () => {
+    const user = userEvent.setup();
+    const committed = {
+      relationType: "IsDerivedFrom",
+      targetGlobalId: "",
+      versionPin: null,
+      filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+    };
+    const field = linkField({ link: committed });
+    const { rerender } = renderItemField(field);
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("option", { name: "References" }));
+
+    // a refetch rebuilds the field models: the same link in new objects
+    const rebuilt = { ...field, link: { ...committed, filestoreTarget: { ...committed.filestoreTarget } } } as Field;
+    rerender(
+      <ThemeProvider theme={materialTheme}>
+        <LinkFieldValue field={rebuilt} sourceGlobalId="SA1" disabled={false} allowFilestoreTarget />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByRole("combobox", { name: "inventory:fields.extraFields.fields.relationType" })).toHaveValue(
+      "References",
+    );
+  });
+
+  it("offers no Browse filestores unless the caller allows a filestore target", () => {
+    // the template editor renders this component without the prop
+    mockDeploymentProperty.mockClear();
+    renderField({ field: linkField(), sourceGlobalId: "SA1", disabled: false, onChange: () => {} });
+
+    expect(
+      screen.queryByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }),
+    ).not.toBeInTheDocument();
+    expect(mockDeploymentProperty).not.toHaveBeenCalled();
   });
 });
 

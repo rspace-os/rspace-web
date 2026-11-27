@@ -1,5 +1,6 @@
-import { describe, expect, test } from "vitest";
-import { isSelfLink, validateTarget } from "../linkTarget";
+import { describe, expect, it, test } from "vitest";
+import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
+import { filestoreTargetOf, isSelfLink, validateTarget } from "../linkTarget";
 
 describe("validateTarget", () => {
   test("accepts all inventory prefixes, including sample templates", () => {
@@ -55,5 +56,73 @@ describe("isSelfLink", () => {
     expect(isSelfLink("SA1", "SA1")).toBe(true);
     expect(isSelfLink("SA1", "SS1")).toBe(false);
     expect(isSelfLink("SA1", "SA2")).toBe(false);
+  });
+});
+
+const filestoreNode = { id: 12, name: "My S3", path: [] } as unknown as GalleryFile;
+
+describe("filestoreTargetOf", () => {
+  it("names the filestore and the path of a file inside a filestore", () => {
+    const file = {
+      id: null,
+      name: "run.dat",
+      path: [filestoreNode],
+      remotePath: "/XRD/run.dat",
+    } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(file)).toEqual({
+      target: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      filestoreName: "My S3",
+    });
+  });
+
+  it("gives the path in the server's form: one leading slash, no trailing one, inner slashes kept", () => {
+    // a picked folder can end with a slash (SMB lists folders that way); the server stores the
+    // link without it, so a re-picked folder must compare equal to the stored link
+    const folder = {
+      id: null,
+      name: "runs",
+      path: [filestoreNode],
+      remotePath: "//XRD//runs/",
+    } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(folder)?.target.remotePath).toBe("/XRD//runs");
+  });
+
+  it("refuses the filestore itself", () => {
+    expect(filestoreTargetOf(filestoreNode)).toBeNull();
+  });
+
+  it.each(["", "/", "//"])("refuses the filestore's root, given as %j, which the server refuses too", (remotePath) => {
+    const root = { id: null, name: "My S3", path: [filestoreNode], remotePath } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(root)).toBeNull();
+  });
+
+  it.each([" ", "/data/./run.dat", "/data/..", "./run.dat"])(
+    "refuses %j, which names no item the server can save",
+    (remotePath) => {
+      const file = { id: null, name: "x", path: [filestoreNode], remotePath } as unknown as GalleryFile;
+
+      expect(filestoreTargetOf(file)).toBeNull();
+    },
+  );
+
+  it("keeps a name that only starts with a dot", () => {
+    const hidden = {
+      id: null,
+      name: ".hidden",
+      path: [filestoreNode],
+      remotePath: "/data/.hidden",
+    } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(hidden)?.target.remotePath).toBe("/data/.hidden");
+  });
+
+  it("refuses a file of another Gallery section", () => {
+    const gallerySubfolder = { id: 7, name: "Gels", path: [] };
+    const local = { id: 5, name: "gel.png", globalId: "GL5", path: [gallerySubfolder] } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(local)).toBeNull();
   });
 });

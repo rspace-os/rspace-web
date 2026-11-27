@@ -33,6 +33,7 @@ import OpenFolderProvider from "../components/OpenFolderProvider";
 import Sidebar from "../components/Sidebar";
 import { type GalleryFile, useGalleryListing } from "../useGalleryListing";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
+import usePickerSection from "./usePickerSection";
 
 const Picker = observer(
   ({
@@ -40,11 +41,13 @@ const Picker = observer(
     onClose,
     onSubmit,
     validateSelection,
+    initialSection,
   }: {
     open: boolean;
     onClose: () => void;
     onSubmit: (selection: RsSet<GalleryFile>) => void;
     validateSelection: (file: GalleryFile) => Result<null>;
+    initialSection?: GallerySection;
   }) => {
     const sidebarId = React.useId();
     const viewport = useViewportDimensions();
@@ -67,12 +70,7 @@ const Picker = observer(
     const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(PREFERENCES.GALLERY_SORT_ORDER, {
       defaultValue: "DESC",
     });
-    const [selectedSection, setSelectedSection] = useUiPreference<GallerySection>(
-      PREFERENCES.GALLERY_PICKER_INITIAL_SECTION,
-      {
-        defaultValue: "Chemistry",
-      },
-    );
+    const [selectedSection, setSelectedSection] = usePickerSection(initialSection, open);
     const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
       PREFERENCES.GALLERY_SIDEBAR_OPEN,
       {
@@ -257,19 +255,28 @@ export default function Wrapper({
   onSubmit,
   onlyAllowSingleSelection,
   validateSelection = () => Result.Ok(null),
+  initialSection,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (selection: RsSet<GalleryFile>) => void;
   onlyAllowSingleSelection?: boolean;
   validateSelection?: (file: GalleryFile) => Result<null>;
+  /** Opens on this section instead of the one the user last chose, without changing that choice. */
+  initialSection?: GallerySection;
 }): React.ReactNode {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <FilestoreLoginProvider>
         <GallerySelection onlyAllowSingleSelection={onlyAllowSingleSelection}>
           <DisableDragAndDropByDefault>
-            <Picker open={open} onClose={onClose} onSubmit={onSubmit} validateSelection={validateSelection} />
+            <Picker
+              open={open}
+              onClose={onClose}
+              onSubmit={onSubmit}
+              validateSelection={validateSelection}
+              initialSection={initialSection}
+            />
           </DisableDragAndDropByDefault>
         </GallerySelection>
       </FilestoreLoginProvider>

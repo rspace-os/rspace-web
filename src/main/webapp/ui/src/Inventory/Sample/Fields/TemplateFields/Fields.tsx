@@ -303,6 +303,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
               field={field}
               sourceGlobalId={sample.globalId ?? ""}
               disabled={!sample.isFieldEditable("fields")}
+              allowFilestoreTarget
               onChange={() =>
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error)
               }

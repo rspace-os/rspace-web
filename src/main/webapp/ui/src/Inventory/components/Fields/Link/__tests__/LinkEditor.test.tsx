@@ -3,7 +3,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { textFieldClasses } from "@mui/material/TextField";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import materialTheme from "../../../../../theme";
 import LinkEditor, { type LinkEditorProps } from "../LinkEditor";
@@ -13,6 +13,52 @@ import LinkEditor, { type LinkEditorProps } from "../LinkEditor";
 vi.mock("../LinkTargetBrowser", () => ({ default: () => null }));
 vi.mock("../ElnRecordPicker", () => ({ default: () => null }));
 vi.mock("../VersionLockDialog", () => ({ default: () => null }));
+
+const { mockDeploymentProperty, filestoreNode, remoteFile } = vi.hoisted(() => {
+  const filestoreNode = { id: 12, name: "My S3", path: [] };
+  return {
+    mockDeploymentProperty: vi.fn(),
+    filestoreNode,
+    remoteFile: { id: null, name: "run.dat", path: [filestoreNode], remotePath: "/XRD/run.dat" },
+  };
+});
+vi.mock("@/hooks/api/useDeploymentProperty", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/api/useDeploymentProperty")>()),
+  useDeploymentProperty: (name: string) => mockDeploymentProperty(name) as unknown,
+}));
+// the Gallery picker is lazy-loaded and fetches listings; stub it to show what the editor asked
+// for and to answer with a pick
+vi.mock("@/eln/gallery/picker", async () => {
+  const { default: RsSet } = await import("@/util/set");
+  return {
+    default: ({
+      open,
+      initialSection,
+      onlyAllowSingleSelection,
+      onSubmit,
+      validateSelection,
+    }: {
+      open: boolean;
+      initialSection?: string;
+      onlyAllowSingleSelection?: boolean;
+      onSubmit: (files: unknown) => void;
+      validateSelection: (file: unknown) => { isOk: boolean };
+    }) =>
+      open ? (
+        <div
+          data-testid="gallery-picker"
+          data-section={initialSection}
+          data-single={String(Boolean(onlyAllowSingleSelection))}
+          data-filestore-node={validateSelection(filestoreNode).isOk ? "accepted" : "refused"}
+          data-remote-file={validateSelection(remoteFile).isOk ? "accepted" : "refused"}
+        >
+          <button type="button" onClick={() => onSubmit(new RsSet([remoteFile]))}>
+            {"pick run.dat"}
+          </button>
+        </div>
+      ) : null,
+  };
+});
 
 function renderEditor(overrides: Partial<LinkEditorProps> = {}) {
   const props: LinkEditorProps = {
@@ -194,5 +240,76 @@ describe("LinkEditor heading level", () => {
     renderAtLevel({ nestHeadings: true, targetHeading: "Default link target" }, 4);
 
     expect(screen.getByRole("heading", { name: "Default link target" }).tagName).toBe("H5");
+  });
+});
+
+describe("LinkEditor filestore target", () => {
+  beforeEach(() => {
+    mockDeploymentProperty.mockReset();
+    mockDeploymentProperty.mockReturnValue({ tag: "success", value: true });
+  });
+
+  it("offers Browse filestores when the caller takes a filestore target", () => {
+    renderEditor({ onFilestoreTargetChange: vi.fn() });
+
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" })).toBeInTheDocument();
+    expect(mockDeploymentProperty).toHaveBeenCalledWith("netfilestores.enabled");
+  });
+
+  it("offers none, and asks the server nothing, when the caller takes no filestore target", () => {
+    renderEditor();
+
+    expect(
+      screen.queryByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }),
+    ).not.toBeInTheDocument();
+    expect(mockDeploymentProperty).not.toHaveBeenCalled();
+  });
+
+  it("offers none while filestores are switched off on the server", () => {
+    mockDeploymentProperty.mockReturnValue({ tag: "success", value: false });
+
+    renderEditor({ onFilestoreTargetChange: vi.fn() });
+
+    expect(
+      screen.queryByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the Gallery picker on Filestores for one item and reports the pick", async () => {
+    const user = userEvent.setup();
+    const onFilestoreTargetChange = vi.fn();
+    renderEditor({ onFilestoreTargetChange });
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    const picker = await screen.findByTestId("gallery-picker");
+    expect(picker).toHaveAttribute("data-section", "NetworkFiles");
+    expect(picker).toHaveAttribute("data-single", "true");
+    // only an item inside a filestore can be confirmed
+    expect(picker).toHaveAttribute("data-filestore-node", "refused");
+    expect(picker).toHaveAttribute("data-remote-file", "accepted");
+
+    await user.click(screen.getByRole("button", { name: "pick run.dat" }));
+
+    expect(onFilestoreTargetChange).toHaveBeenCalledWith({ filestoreId: 12, remotePath: "/XRD/run.dat" }, "My S3");
+    expect(screen.queryByTestId("gallery-picker")).not.toBeInTheDocument();
+  });
+
+  it("shows a filestore target as name and path, without the version group, and removes it", async () => {
+    const user = userEvent.setup();
+    const onFilestoreTargetChange = vi.fn();
+    const { container } = renderEditor({
+      filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      filestoreName: "My S3",
+      onFilestoreTargetChange,
+    });
+
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "inventory:fields.link.editor.version" })).not.toBeInTheDocument();
+    expect(container.querySelector('[data-test-id="LinkTarget-globalId"]')).not.toBeInTheDocument();
+
+    const chip = container.querySelector<HTMLElement>('[data-test-id="LinkTarget-filestore"]');
+    await user.click(chip?.querySelector<HTMLElement>(`.${chipClasses.deleteIcon}`) as HTMLElement);
+
+    expect(onFilestoreTargetChange).toHaveBeenCalledWith(null, "");
   });
 });

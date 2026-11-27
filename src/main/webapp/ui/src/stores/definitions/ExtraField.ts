@@ -4,11 +4,18 @@ import type { InventoryRecord } from "./InventoryRecord";
 
 export type ExtraFieldType = "Text" | "Number" | "Link";
 
+export type FilestoreLinkTarget = { filestoreId: number; remotePath: string };
+
 export type ExtraInventoryLink = {
   relationType: string;
+  /** "" when the link targets a filestore item. */
   targetGlobalId: string;
   versionPin: number | null;
+  filestoreTarget?: FilestoreLinkTarget | null;
 };
+
+/** A link as the API sends it: `targetGlobalId` is null when the target is a filestore item. */
+export type ApiLink = Omit<ExtraInventoryLink, "targetGlobalId"> & { targetGlobalId: string | null };
 
 export type ExtraFieldAttrs = {
   id: Id;
@@ -22,7 +29,7 @@ export type ExtraFieldAttrs = {
   editing?: boolean;
   initial?: boolean;
   newFieldRequest?: boolean;
-  link?: ExtraInventoryLink | null;
+  link?: ApiLink | null;
   /** Read-only: the server sets it, and `paramsForBackend` omits it. */
   operationFieldKey?: string | null;
 };

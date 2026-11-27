@@ -1103,6 +1103,8 @@ export default class Search implements SearchInterface {
               params.content = "";
               params.selectedOptions = null;
             }
+            // a template's default link cannot target a filestore item
+            if (f.link?.filestoreTarget) params.link = null;
             return params;
           }),
           ...instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({

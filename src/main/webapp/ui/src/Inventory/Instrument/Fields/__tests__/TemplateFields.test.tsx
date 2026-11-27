@@ -17,6 +17,10 @@ vi.mock("@/Inventory/components/Fields/Link/ElnRecordPicker", () => ({
 }));
 // RecordTypeIcon needs app context to resolve its icon; irrelevant here.
 vi.mock("@/components/RecordTypeIcon", () => ({ default: () => null }));
+vi.mock("@/hooks/api/useDeploymentProperty", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/api/useDeploymentProperty")>()),
+  useDeploymentProperty: () => ({ tag: "loading" }),
+}));
 // Target existence checks hit the server; default to "exists".
 vi.mock("@/Inventory/components/Fields/Link/linkTargetExists", () => ({
   checkLinkTargetExists: vi.fn(() => Promise.resolve(true)),

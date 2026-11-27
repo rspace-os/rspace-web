@@ -22,7 +22,7 @@ import type { BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcod
 import { type GlobalId, globalIdDefinitions, type Id } from "../definitions/BaseRecord";
 import type { Location } from "../definitions/Container";
 import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
-import type { ExtraField, ExtraFieldAttrs } from "../definitions/ExtraField";
+import type { ExtraField, ExtraFieldAttrs, ExtraInventoryLink } from "../definitions/ExtraField";
 import type { Factory } from "../definitions/Factory";
 import type { SharedWithGroup } from "../definitions/Group";
 import type { Identifier, IdentifierAttrs } from "../definitions/Identifier";
@@ -532,11 +532,7 @@ export default class InventoryBaseRecord
         type: "text" | "number" | "link";
         newFieldRequest: boolean;
         deleteFieldRequest: boolean;
-        link?: {
-          relationType: string;
-          targetGlobalId: string;
-          versionPin: number | null;
-        };
+        link?: ExtraInventoryLink;
       } = {
         name: ef.name,
         content: ef.content,
@@ -551,6 +547,7 @@ export default class InventoryBaseRecord
           targetGlobalId: ef.link.targetGlobalId,
           versionPin: ef.link.versionPin ?? null,
         };
+        if (ef.link.filestoreTarget) base.link.filestoreTarget = ef.link.filestoreTarget;
       }
       return base;
     });
@@ -1326,11 +1323,7 @@ export default class InventoryBaseRecord
     updatedField: {
       name: string;
       type: string;
-      link?: {
-        relationType: string;
-        targetGlobalId: string;
-        versionPin: number | null;
-      };
+      link?: ExtraInventoryLink;
     },
   ) {
     const field = this.extraFields.find((ef) => ef.name === oldFieldName);
@@ -1363,7 +1356,9 @@ export default class InventoryBaseRecord
         (existingLink !== null &&
           existingLink.relationType === incomingLink.relationType &&
           existingLink.targetGlobalId === incomingLink.targetGlobalId &&
-          (existingLink.versionPin ?? null) === (incomingLink.versionPin ?? null));
+          (existingLink.versionPin ?? null) === (incomingLink.versionPin ?? null) &&
+          (existingLink.filestoreTarget?.filestoreId ?? null) === (incomingLink.filestoreTarget?.filestoreId ?? null) &&
+          (existingLink.filestoreTarget?.remotePath ?? null) === (incomingLink.filestoreTarget?.remotePath ?? null));
       const areEqual = isEqual(pick(field, ["name", "type"]), pick(updatedField, ["name", "type"])) && linkUnchanged;
       if (areEqual) {
         field.setAttributes(attrs);

@@ -8,14 +8,23 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type React from "react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
+import FilestoreIcon from "@/eln/gallery/FilestoreIcon";
+import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
+import type { FilestoreLinkTarget } from "@/stores/definitions/ExtraField";
+import * as FetchingData from "@/util/fetchingData";
+import * as Parsers from "@/util/parsers";
+import Result from "@/util/result";
 import { Heading, HeadingContext } from "../../../../components/DynamicHeadingLevel";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import ElnRecordPicker from "./ElnRecordPicker";
 import { iconForGlobalId } from "./iconForGlobalId";
 import LinkTargetBrowser from "./LinkTargetBrowser";
+import { filestoreTargetOf } from "./linkTarget";
 import VersionLockDialog from "./VersionLockDialog";
+
+const GalleryPicker = lazy(() => import("@/eln/gallery/picker"));
 
 export interface LinkEditorProps {
   /** Current relation type (controlled). */
@@ -57,6 +66,64 @@ export interface LinkEditorProps {
   onVersionPinChange: (versionPin: number | null) => void;
   /** Whether the version-pin affordance is enabled (caller owns target validity). */
   canPinVersion: boolean;
+
+  /** The staged Filestore item target, shown in place of a Global ID target. */
+  filestoreTarget?: FilestoreLinkTarget | null;
+  /** The filestore's name, known right after a pick; without it the chip shows the path alone. */
+  filestoreName?: string;
+  /**
+   * Called with a picked Filestore item, or with null when its chip is removed. Omit it to hide
+   * "Browse filestores": a template's default link cannot target a filestore item.
+   */
+  onFilestoreTargetChange?: (target: FilestoreLinkTarget | null, filestoreName: string) => void;
+}
+
+/**
+ * Its own component so that an editor without a filestore target (the template's) does not ask the
+ * server whether filestores are switched on.
+ */
+function BrowseFilestores({
+  onPick,
+}: {
+  onPick: (target: FilestoreLinkTarget, filestoreName: string) => void;
+}): React.ReactNode {
+  const { t } = useTranslation("inventory");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const filestoresEnabled = FetchingData.getSuccessValue(useDeploymentProperty("netfilestores.enabled"))
+    .flatMap(Parsers.isBoolean)
+    .flatMap(Parsers.isTrue)
+    .orElse(false);
+  if (!filestoresEnabled) return null;
+  return (
+    <>
+      <Button size="small" variant="outlined" onClick={() => setPickerOpen(true)}>
+        {t("fields.link.editor.browseFilestores")}
+      </Button>
+      {pickerOpen && (
+        <Suspense fallback={null}>
+          <GalleryPicker
+            open
+            onlyAllowSingleSelection
+            initialSection="NetworkFiles"
+            onClose={() => setPickerOpen(false)}
+            validateSelection={(file) =>
+              filestoreTargetOf(file)
+                ? Result.Ok(null)
+                : Result.Error([new Error(t("fields.link.editor.onlyFilestoreItems"))])
+            }
+            onSubmit={(files) => {
+              const picked = files
+                .toArray()
+                .map(filestoreTargetOf)
+                .find((p) => p !== null);
+              if (picked) onPick(picked.target, picked.filestoreName);
+              setPickerOpen(false);
+            }}
+          />
+        </Suspense>
+      )}
+    </>
+  );
 }
 
 /**
@@ -86,6 +153,9 @@ export default function LinkEditor({
   versionPin,
   onVersionPinChange,
   canPinVersion,
+  filestoreTarget,
+  filestoreName,
+  onFilestoreTargetChange,
 }: LinkEditorProps): React.ReactElement {
   const { t } = useTranslation("inventory");
   const [browserOpen, setBrowserOpen] = useState(false);
@@ -93,6 +163,14 @@ export default function LinkEditor({
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const targetIcon = targetGlobalId ? iconForGlobalId(targetGlobalId) : null;
   const groupHeadingSx = { fontWeight: 700, fontSize: "1rem" } as const;
+  const filestoreLabel = filestoreTarget
+    ? filestoreName
+      ? t("fields.link.field.filestoreItemLabel", {
+          filestore: filestoreName,
+          path: filestoreTarget.remotePath,
+        })
+      : filestoreTarget.remotePath
+    : "";
 
   // headings take their level from the ambient context: this component mounts at two depths
   const body = (
@@ -141,10 +219,23 @@ export default function LinkEditor({
         >
           {t("fields.link.editor.browseEln")}
         </Button>
+        {onFilestoreTargetChange && <BrowseFilestores onPick={onFilestoreTargetChange} />}
       </Stack>
       {/* Below the row, not in it: in the row the chip shrank, and a shrunk chip clips its own
           delete icon. */}
-      {targetGlobalId ? (
+      {filestoreTarget ? (
+        <Box sx={{ mt: 1 }}>
+          <Chip
+            size="small"
+            sx={{ [`&.${chipClasses.deletable}`]: { pl: 0.5 } }}
+            icon={<FilestoreIcon />}
+            label={filestoreLabel}
+            aria-label={t("fields.link.field.filestoreTarget", { target: filestoreLabel })}
+            onDelete={() => onFilestoreTargetChange?.(null, "")}
+            data-test-id="LinkTarget-filestore"
+          />
+        </Box>
+      ) : targetGlobalId ? (
         <Box sx={{ mt: 1 }}>
           <Chip
             // the accented theme zeroes padding on deletable chips; restore the non-edit
@@ -187,33 +278,42 @@ export default function LinkEditor({
           }}
         />
       </Box>
-      <Heading variant="h6" sx={{ mt: 2, ...groupHeadingSx }}>
-        {t("fields.link.editor.version")}
-      </Heading>
-      <Stack direction="row" spacing={1} sx={{ mt: 0.5, alignItems: "center" }} data-test-id="LinkEditor-versionRow">
-        <Chip
-          size="small"
-          variant="outlined"
-          label={
-            versionPin != null
-              ? t("fields.link.editor.pinnedVersion", { version: versionPin })
-              : t("fields.link.editor.latest")
-          }
-          data-test-id="LinkEditor-version"
-        />
-        <IconButton
-          size="small"
-          aria-label={
-            targetGlobalId
-              ? t("fields.link.editor.pinVersionFor", { globalId: targetGlobalId })
-              : t("fields.link.editor.pinVersion")
-          }
-          disabled={!canPinVersion}
-          onClick={() => setVersionDialogOpen(true)}
-        >
-          <HistoryIcon fontSize="small" />
-        </IconButton>
-      </Stack>
+      {!filestoreTarget && (
+        <>
+          <Heading variant="h6" sx={{ mt: 2, ...groupHeadingSx }}>
+            {t("fields.link.editor.version")}
+          </Heading>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ mt: 0.5, alignItems: "center" }}
+            data-test-id="LinkEditor-versionRow"
+          >
+            <Chip
+              size="small"
+              variant="outlined"
+              label={
+                versionPin != null
+                  ? t("fields.link.editor.pinnedVersion", { version: versionPin })
+                  : t("fields.link.editor.latest")
+              }
+              data-test-id="LinkEditor-version"
+            />
+            <IconButton
+              size="small"
+              aria-label={
+                targetGlobalId
+                  ? t("fields.link.editor.pinVersionFor", { globalId: targetGlobalId })
+                  : t("fields.link.editor.pinVersion")
+              }
+              disabled={!canPinVersion}
+              onClick={() => setVersionDialogOpen(true)}
+            >
+              <HistoryIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+        </>
+      )}
 
       <LinkTargetBrowser
         open={browserOpen}
