@@ -303,7 +303,7 @@ describe("LinkEditor filestore target", () => {
       onFilestoreTargetChange,
     });
 
-    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "inventory:fields.link.editor.version" })).not.toBeInTheDocument();
     expect(container.querySelector('[data-test-id="LinkTarget-globalId"]')).not.toBeInTheDocument();
 

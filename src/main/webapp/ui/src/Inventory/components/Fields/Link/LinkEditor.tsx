@@ -165,7 +165,10 @@ export default function LinkEditor({
   const groupHeadingSx = { fontWeight: 700, fontSize: "1rem" } as const;
   const filestoreLabel = filestoreTarget
     ? filestoreName
-      ? `${filestoreName}: ${filestoreTarget.remotePath}`
+      ? t("fields.link.field.filestoreItemLabel", {
+          filestore: filestoreName,
+          path: filestoreTarget.remotePath,
+        })
       : filestoreTarget.remotePath
     : "";
 

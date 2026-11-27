@@ -71,15 +71,17 @@ export function validateTarget(targetGlobalId: string, sourceGlobalId: string): 
 
 /**
  * The link target for a file or folder picked inside a filestore, or null for anything else (the
- * filestore itself, an item of another Gallery section). The path is given in the form the server
- * stores, so a re-picked item compares equal to the saved link.
+ * filestore itself or its root, an item of another Gallery section). The path is given in the form
+ * the server stores, so a re-picked item compares equal to the saved link.
  */
 export function filestoreTargetOf(file: GalleryFile): { target: FilestoreLinkTarget; filestoreName: string } | null {
   // tested by property, not by class, to keep the Gallery listing module out of the Inventory bundle
   const filestore = file.path[0];
   if (!("remotePath" in file) || typeof file.remotePath !== "string" || typeof filestore?.id !== "number") return null;
+  const relativePath = file.remotePath.replace(/^\/+|\/+$/g, "");
+  if (relativePath === "") return null;
   return {
-    target: { filestoreId: filestore.id, remotePath: `/${file.remotePath.replace(/^\/+|\/+$/g, "")}` },
+    target: { filestoreId: filestore.id, remotePath: `/${relativePath}` },
     filestoreName: filestore.name,
   };
 }

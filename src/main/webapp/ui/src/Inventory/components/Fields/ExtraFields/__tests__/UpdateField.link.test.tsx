@@ -633,7 +633,7 @@ describe("UpdateField — filestore target", () => {
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "IsSourceOf");
     await pickFilestoreItem(user);
-    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
 
@@ -664,10 +664,10 @@ describe("UpdateField — filestore target", () => {
     await user.type(targetBox, "SA99");
     await pickFilestoreItem(user);
     expect(targetBox).toHaveValue("");
-    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
 
     await user.type(targetBox, "SA7");
-    expect(screen.queryByText("My S3: /XRD/run.dat")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.field.filestoreItemLabel")).not.toBeInTheDocument();
   });
 
   it("asks for a relation type once a filestore item is picked without one", async () => {
@@ -689,7 +689,7 @@ describe("UpdateField — filestore target", () => {
     await selectFieldType("Text");
     await selectFieldType("Link");
 
-    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
   });
 
   it("reopens an existing filestore link with its path, valid and unchanged", () => {

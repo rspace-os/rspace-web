@@ -93,6 +93,12 @@ describe("filestoreTargetOf", () => {
     expect(filestoreTargetOf(filestoreNode)).toBeNull();
   });
 
+  it.each(["", "/", "//"])("refuses the filestore's root, given as %j, which the server refuses too", (remotePath) => {
+    const root = { id: null, name: "My S3", path: [filestoreNode], remotePath } as unknown as GalleryFile;
+
+    expect(filestoreTargetOf(root)).toBeNull();
+  });
+
   it("refuses a file of another Gallery section", () => {
     const gallerySubfolder = { id: 7, name: "Gels", path: [] };
     const local = { id: 5, name: "gel.png", globalId: "GL5", path: [gallerySubfolder] } as unknown as GalleryFile;

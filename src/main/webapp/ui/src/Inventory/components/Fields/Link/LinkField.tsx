@@ -91,7 +91,10 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   // the filestore's name is shown to its owner only; anyone else, or a summary still loading, gets the path
   const filestoreLabel = filestoreTarget
     ? targetSummary?.readable && targetSummary.name
-      ? `${targetSummary.name}: ${filestoreTarget.remotePath}`
+      ? t("fields.link.field.filestoreItemLabel", {
+          filestore: targetSummary.name,
+          path: filestoreTarget.remotePath,
+        })
       : filestoreTarget.remotePath
     : "";
   const targetDeleted = targetSummary?.deleted === true;

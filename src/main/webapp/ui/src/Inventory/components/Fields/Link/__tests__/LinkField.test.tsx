@@ -2,8 +2,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
+import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "../../../../../theme";
 
 vi.mock("../InventoryInfoDialog", () => ({
@@ -589,8 +592,23 @@ describe("LinkField", () => {
     renderField({ link: filestoreLink });
 
     expect(screen.getByText("IsSourceOf")).toBeInTheDocument();
-    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
     expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("", { filestoreId: 12, remotePath: "/XRD/run.dat" });
+  });
+
+  it("labels a filestore item with the filestore's name and the path, in the catalogue's words", async () => {
+    mockUseLinkTargetSummary.mockReturnValue(ownerSummary);
+    const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
+
+    render(
+      <I18nextProvider i18n={i18n}>
+        <ThemeProvider theme={materialTheme}>
+          <LinkField name="Raw data" link={filestoreLink} editable={false} />
+        </ThemeProvider>
+      </I18nextProvider>,
+    );
+
+    expect(screen.getByLabelText("Filestore item My S3: /XRD/run.dat")).toHaveTextContent("My S3: /XRD/run.dat");
   });
 
   it("shows the path alone with No access to a viewer who does not own the filestore", () => {

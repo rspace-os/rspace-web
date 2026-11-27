@@ -119,6 +119,7 @@ async function renderFieldWithRealI18n(props: {
   sourceGlobalId: string;
   disabled: boolean;
   onChange: () => void;
+  allowFilestoreTarget?: boolean;
 }) {
   const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
   render(
@@ -686,7 +687,7 @@ describe("LinkFieldValue", () => {
     await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
 
     expect(targetBox).toHaveValue("");
-    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.field.filestoreItemLabel")).toBeInTheDocument();
   });
 
   it("shows the link card for a committed filestore link", () => {
@@ -744,6 +745,56 @@ describe("LinkFieldValue", () => {
     expect(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" })).toBeEnabled();
   });
 
+  it("asks for a relation type once a filestore item is picked without one", async () => {
+    const user = userEvent.setup();
+    renderItemField(linkField());
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+
+    expect(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" })).toBeDisabled();
+    expect(screen.getByText("inventory:sample.fields.linkFieldValue.selectBothBeforeApplying")).toBeInTheDocument();
+  });
+
+  it("drops a picked filestore item on Discard and keeps the committed Global ID link", async () => {
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    const { container } = renderItemField(
+      linkField({
+        setAttributesDirty,
+        link: { relationType: "IsDerivedFrom", targetGlobalId: "SA20", versionPin: null },
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.discardLabel" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+
+    expect(container.querySelector('[data-test-id="LinkTarget-filestore"]')).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" })).toHaveValue("SA20");
+    expect(setAttributesDirty).not.toHaveBeenCalled();
+  });
+
+  it("names the filestore and the path of a picked item, on the chip and in its accessible name", async () => {
+    const user = userEvent.setup();
+    await renderFieldWithRealI18n({
+      field: linkField(),
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+      allowFilestoreTarget: true,
+    });
+
+    await user.click(screen.getByRole("button", { name: "Browse filestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+
+    expect(screen.getByRole("button", { name: "Filestore item My S3: /XRD/run.dat" })).toHaveTextContent(
+      "My S3: /XRD/run.dat",
+    );
+  });
+
   it("keeps a typed Global ID, not the earlier pick, when a Global ID follows a filestore item", async () => {
     const user = userEvent.setup();
     const setAttributesDirty = vi.fn();
@@ -755,7 +806,7 @@ describe("LinkFieldValue", () => {
     await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
     await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA20");
 
-    expect(screen.queryByText("My S3: /XRD/run.dat")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.field.filestoreItemLabel")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
     expect(setAttributesDirty).toHaveBeenCalledWith({
       link: { relationType: "IsDerivedFrom", targetGlobalId: "SA20", versionPin: null },

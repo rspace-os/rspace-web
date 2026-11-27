@@ -176,7 +176,7 @@ function LinkFieldValue({
           };
     // a structurally-valid Global ID must also resolve to a real, readable
     // record; check (re)targeted links against the server before committing.
-    // A filestore item was picked from the user's own listing, so it is not checked.
+    // A picked filestore item is not checked here: the server checks on save that the filestore is the user's own.
     if (nextLink && !nextLink.filestoreTarget && nextLink.targetGlobalId !== committedTargetGlobalId) {
       setCheckingTarget(true);
       const exists = await checkLinkTargetExists(nextLink.targetGlobalId);

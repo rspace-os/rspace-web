@@ -65,6 +65,19 @@ describe("useLinkTargetSummary", () => {
     expect(result.current?.name).toBe("My S3");
   });
 
+  it("asks once when the caller rebuilds an equal filestore target on every render", async () => {
+    mockGet.mockResolvedValue({
+      data: { globalId: null, name: "My S3", type: "FILESTORE_ITEM", deleted: false, readable: true },
+    });
+
+    const { result, rerender } = renderHook(() => useLinkTargetSummary("", { filestoreId: 12, remotePath: "/a" }));
+    await waitFor(() => expect(result.current).not.toBeNull());
+    rerender();
+
+    expect(result.current?.name).toBe("My S3");
+    expect(mockGet).toHaveBeenCalledTimes(1);
+  });
+
   it("asks nothing when the link has neither kind of target", () => {
     const { result } = renderHook(() => useLinkTargetSummary("", null));
 

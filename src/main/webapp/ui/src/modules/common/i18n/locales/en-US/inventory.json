@@ -981,6 +981,7 @@
         "workspaceTreeLabel": "Workspace tree"
       },
       "field": {
+        "filestoreItemLabel": "{filestore}: {path}",
         "filestoreTarget": "Filestore item {target}",
         "label": "Link field",
         "namedLabel": "Link field {name}"
