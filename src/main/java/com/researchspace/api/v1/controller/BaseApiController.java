@@ -11,6 +11,7 @@ import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.SecurityLogger;
+import com.researchspace.model.record.RecordNames;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -193,6 +195,17 @@ public class BaseApiController implements ServletContextAware {
     }
     apiSearchResult.setItems(apiItemList);
     apiSearchResult.addNavigationLinks(getApiBaseURI(), pgCrit, srchConfig);
+  }
+
+  /** Adds an error on the "name" field if the name contains a character names must not have. */
+  protected void rejectInvalidRecordName(String name, Errors errors) {
+    if (RecordNames.hasInvalidCharacters(name)) {
+      errors.rejectValue(
+          "name",
+          "errors.invalidChars",
+          new Object[] {RecordNames.INVALID_CHARACTER, getMessage("label.nameLowercase")},
+          null);
+    }
   }
 
   protected void throwBindExceptionIfErrors(BindingResult errors) throws BindException {

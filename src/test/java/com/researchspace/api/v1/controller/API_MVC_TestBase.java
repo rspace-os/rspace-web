@@ -11,6 +11,7 @@ import com.google.common.base.Supplier;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.apiutils.ApiError;
+import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
 import com.researchspace.webapp.controller.MVCTestBase;
 import java.io.ByteArrayInputStream;
@@ -173,6 +174,12 @@ public class API_MVC_TestBase extends MVCTestBase {
   protected MockHttpServletRequestBuilder folderCreate(
       User anyUser, String apiKey, ApiFolder folderPost) {
     return createBuilderForPostWithJSONBody(apiKey, "/folders", anyUser, folderPost);
+  }
+
+  protected void assertNameWithSlashRejected(MvcResult result) throws Exception {
+    ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
+    Assertions.assertEquals(ApiErrorCodes.INVALID_FIELD.getCode(), error.getInternalCode());
+    assertApiErrorContainsMessage(error, "name: / is not an allowed character for name");
   }
 
   /** Asserts that the supplied msgFragement exists in any error message in getErrors() */

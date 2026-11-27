@@ -21,6 +21,8 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestGroup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -104,6 +106,26 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertEquals(ApiErrorCodes.INVALID_FIELD.getCode(), error.getInternalCode());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  public void folderOrNotebookNameWithSlashIsRejected(boolean notebook) throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    long initialFolderCount = getCountOfEntityTable("Folder");
+    ApiFolder folderPost = new ApiFolder();
+    folderPost.setName("a/b");
+    folderPost.setNotebook(notebook);
+
+    MvcResult result =
+        this.mockMvc
+            .perform(folderCreate(anyUser, apiKey, folderPost))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+
+    assertNameWithSlashRejected(result);
+    assertEquals(initialFolderCount, getCountOfEntityTable("Folder").longValue());
   }
 
   private MockHttpServletRequestBuilder getNotebook(

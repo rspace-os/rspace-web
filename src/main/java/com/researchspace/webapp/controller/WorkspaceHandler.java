@@ -5,12 +5,12 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.RecordNames;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,12 +25,14 @@ public class WorkspaceHandler {
   @Autowired private MessageSourceUtils messages;
 
   public Notebook createNotebook(long parentRecordId, String notebookName, User user) {
-    if (StringUtils.contains(notebookName, "/")) {
+    if (RecordNames.hasInvalidCharacters(notebookName)) {
       // TODO a nicer way to return an error to the form
       throw new IllegalArgumentException(
           messages.getMessage(
               "errors.invalidChars",
-              new Object[] {"/", messages.getMessage("label.nameLowercase")}));
+              new Object[] {
+                RecordNames.INVALID_CHARACTER, messages.getMessage("label.nameLowercase")
+              }));
     }
     Folder newNotebook =
         folderManager.createNewNotebook(

@@ -42,6 +42,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
+import com.researchspace.model.record.RecordNames;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.FolderRecordPair;
@@ -396,7 +397,7 @@ public class StructuredDocumentController extends BaseController {
         targetFolderId = folderManager.getRootFolderForUser(user).getId();
       }
 
-      if (StringUtils.isBlank(newname) || newname.contains("/")) {
+      if (StringUtils.isBlank(newname) || RecordNames.hasInvalidCharacters(newname)) {
         newname = messages.getMessage("document.create.defaultName");
       }
 
@@ -492,8 +493,11 @@ public class StructuredDocumentController extends BaseController {
     String message = null;
     if (StringUtils.isBlank(newName)) {
       message = getText("errors.required", getText("label.name"));
-    } else if (newName.contains("/")) {
-      message = getText("errors.invalidChars", new Object[] {"/", getText("label.nameLowercase")});
+    } else if (RecordNames.hasInvalidCharacters(newName)) {
+      message =
+          getText(
+              "errors.invalidChars",
+              new Object[] {RecordNames.INVALID_CHARACTER, getText("label.nameLowercase")});
     }
     return message;
   }

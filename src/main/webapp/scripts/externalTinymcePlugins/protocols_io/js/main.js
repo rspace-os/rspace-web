@@ -69,7 +69,12 @@ $(document).ready(function () {
 					type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {
+						var renamedCount = response.data.renamedCount;
+						var namesChangedMsg = RS.msg("legacyjs.tinymce.protocols.namesChanged", renamedCount);
 						if (isTinyMCEPlugin) {
+							if (renamedCount > 0) {
+								parent.RS.confirm(namesChangedMsg, 'notice', 8000);
+							}
 							//get list of recordInformation back and importFolder Id.
 							$.each(response.data.results, function (i, doc) {
 								//RA  would be better if this returned a Promise?
@@ -85,8 +90,18 @@ $(document).ready(function () {
 						} else {
 						  parent.RS.trackEvent("user:import:from_protocols_io:workspace");
 							var importFolderId = response.data.importFolderId;
-							window.parent.RS.confirmAndNavigateTo(RS.msg("legacyjs.core.word.allImported"),
-								'success', 3000, window.parent.createURL('/workspace/' + importFolderId));
+							var importFolderUrl = window.parent.createURL('/workspace/' + importFolderId);
+							if (renamedCount > 0) {
+								// navigating reloads the page and drops the toast, so navigate once it has been read
+								window.parent.RS.confirm(RS.msg("legacyjs.core.word.allImported") + " " + namesChangedMsg,
+									'notice', 8000);
+								setTimeout(function () {
+									window.parent.RS.navigateTo(importFolderUrl);
+								}, 8000);
+							} else {
+								window.parent.RS.confirmAndNavigateTo(RS.msg("legacyjs.core.word.allImported"),
+									'success', 3000, importFolderUrl);
+							}
 						}
 					})
 				.fail(function (result) {

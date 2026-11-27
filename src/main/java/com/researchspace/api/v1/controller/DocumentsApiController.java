@@ -268,6 +268,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
       @RequestAttribute(name = "user") User user)
       throws BindException {
 
+    rejectInvalidRecordName(apiDocument.getName(), errors);
     throwBindExceptionIfErrors(errors);
 
     RSForm docForm = formMgr.retrieveFormForApiForm(user, apiDocument.getForm(), FormType.NORMAL);
@@ -291,6 +292,11 @@ public class DocumentsApiController extends BaseApiController implements Documen
 
     throwBindExceptionIfErrors(errors);
     StructuredDocument doc = retrieveDocumentForApiUser(id, user);
+    // only a rename is checked, so a document with an older name containing "/" can still be saved
+    if (!StringUtils.equals(apiDocument.getName(), doc.getName())) {
+      rejectInvalidRecordName(apiDocument.getName(), errors);
+      throwBindExceptionIfErrors(errors);
+    }
     validateDocIsMutable(errors, doc);
     convertApiFieldsToMatchDocFields(apiDocument, doc.getFields());
     apiFieldsHelper.checkApiFieldsMatchingFormFields(

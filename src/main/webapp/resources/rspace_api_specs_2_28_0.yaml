@@ -200,6 +200,7 @@ paths:
         ### When parsing `name` and `tags` properties:
           * the properties may be omitted
           * if provided, should be valid `name` or `tags` for the document
+          * `name` must not contain "/"; a name containing it is rejected with HTTP 400
           * `tags` are saved by populating the `tags` field, any values in the `tagMetaData` field are ignored
           * If `enforceOntologies` is true then API document creation that would add tag values will be rejected.
 
@@ -324,6 +325,12 @@ paths:
                     _links:
                       - link: https://myrspace.com/api/v1/documents/22
                         rel: self
+        "400":
+          description: The request body is invalid, for example `name` contains "/".
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
         "500":
@@ -456,6 +463,7 @@ paths:
 
         ### Updating document name or tags
           * If `name` or `tags/tagMetaData` are provided, they should be valid `name` or `tags` for the document
+          * A new `name` must not contain "/"; a rename to a name containing it is rejected with HTTP 400
           * The `tags` field may only contain tag values. **The API may not save tagMetaData.** Values in the
         tagMetaData field of API updates are ignored. If tag values are unchanged, existing tagMetaData is unchanged in the DB. If the API creates new tagValues, they will be saved to tagMetaData as values with no meta data and will appear in the UI as 'local ontology'.
 
@@ -554,6 +562,12 @@ paths:
         "200":
           description: Success. New revision of a document was created, and is attached in
             response body.
+        "400":
+          description: The request body is invalid, for example `name` contains "/".
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1381,6 +1395,12 @@ paths:
                     lastModified: 2017-12-07T13:07:57.000Z
                     notebook: true
                     parentFolderId: 456
+        "400":
+          description: The request body is invalid, for example `name` contains "/".
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   "/folders/{folderId}":
     get:
       summary: Gets a Folder by its ID
@@ -4404,7 +4424,8 @@ components:
       properties:
         name:
           type: string
-          description: The folder's name.
+          description: The folder's name. It must not contain "/"; a name containing it is
+            rejected with HTTP 400.
         parentFolderId:
           type: integer
           format: int64

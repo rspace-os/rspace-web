@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
@@ -108,6 +109,31 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     assertEquals(initialDocCount, getCountOfEntityTable("StructuredDocument").longValue());
   }
 
+  @Test
+  public void slashInImportedNameIsReplacedAndCounted() throws Exception {
+    createInitAndLoginAnyUser();
+    String protocol = readFileToString(RSpaceTestUtils.getResource("p_io_8163.json"), "UTF-8");
+    String plainTitle = objectMapper.readTree(protocol).get("title").asText();
+    ObjectNode slashTitled = (ObjectNode) objectMapper.readTree(protocol);
+    slashTitled.put("title", "SARS-CoV-2 BA.2/BA.3 test");
+    String protocolList = "[" + objectMapper.writeValueAsString(slashTitled) + "," + protocol + "]";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/importer/generic/protocols_io")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(protocolList))
+            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+            .andReturn();
+
+    Integer renamedId = (Integer) getJsonPathValue(result, "$.data.results[0].id");
+    assertEquals("SARS-CoV-2 BA.2-BA.3 test", recordMgr.get(renamedId).getName());
+    assertEquals("SARS-CoV-2 BA.2-BA.3 test", getJsonPathValue(result, "$.data.results[0].name"));
+    assertEquals(plainTitle, getJsonPathValue(result, "$.data.results[1].name"));
+    assertEquals(1, getJsonPathValue(result, "$.data.renamedCount"));
+  }
+
   private int getImagesInFieldDataCount(String docContentString) throws Exception {
     return doInTransaction(
         () ->
@@ -144,6 +170,7 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
         getFromJsonAjaxReturnObject(result, ProtocolsIOController.PIOResponse.class);
     assertNotNull(recordInformation.getResults().get(0));
     assertNotNull(recordInformation.getImportFolderId());
+    assertEquals(0, getJsonPathValue(result, "$.data.renamedCount"));
 
     Integer newId = (Integer) getJsonPathValue(result, "$.data.results[0].id");
     // is an ProtocolsIO form
