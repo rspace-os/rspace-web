@@ -32,6 +32,7 @@ export const apiV2GuaranteedReadFields = {
     "end",
     "id",
     "kind",
+    "location",
     "privacy",
     "purpose",
     "requester",

@@ -97,6 +97,7 @@ export function FilterValueInput<TDocument>({
             ariaLabel={ariaLabel}
             className="rounded-sm"
             compact
+            browseWhenEmpty={control.source.browsable === true}
             multiple={multiple}
             value={multiple ? listValue(value).join(",") : scalarValue(value)}
             onChange={(next) => onChange(multiple ? next.split(",").filter(Boolean) : next)}

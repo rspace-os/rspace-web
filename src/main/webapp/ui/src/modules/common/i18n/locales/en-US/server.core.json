@@ -146,7 +146,7 @@
             "invalidTitle": "The time increment is invalid."
           },
           "openingHours": {
-            "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+            "invalid": "Opening hours must use HH:mm with start before end; the end may be 24:00 to close at midnight."
           },
           "buffer": {
             "invalid": "Booking buffers must be between 0 and 10,080 minutes.",
@@ -182,6 +182,10 @@
           "startInPast": "The booking start must be in the future.",
           "duration": "Bookings may not last longer than 527,040 elapsed minutes (366 days of 24 hours).",
           "durationTitle": "The booking is too long.",
+          "cancellationReason": {
+            "length": "The cancellation reason must not exceed 500 characters.",
+            "requiresCancel": "A cancellation reason can only be supplied when cancelling a booking."
+          },
           "target": {
             "unavailable": "The selected target is not available for booking."
           },

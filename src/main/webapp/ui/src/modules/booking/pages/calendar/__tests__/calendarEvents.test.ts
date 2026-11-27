@@ -221,6 +221,6 @@ describe("calendar events", () => {
 
 it("requests the calendar booking fields in a fixed order", () => {
   expect(apiV2Fields(CALENDAR_BOOKING_FIELDS)).toBe(
-    "id,version,target,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+    "id,version,target,location,requester,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
   );
 });

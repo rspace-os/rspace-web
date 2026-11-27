@@ -38,6 +38,7 @@ export function dashboardBookingFixture(
     target: bookingTarget(id, `Instrument ${id}`),
     requester: { relationTo: "users", value: { id: currentUser.id } },
     canViewConfiguration: true,
+    location: null,
     timezone: "UTC",
     start,
     end,
@@ -71,6 +72,7 @@ export const dashboardBookings: readonly BookingListDocument[] = [
     purpose: null,
     bookedBy: null,
     canViewConfiguration: false,
+    location: null,
   }),
 ];
 

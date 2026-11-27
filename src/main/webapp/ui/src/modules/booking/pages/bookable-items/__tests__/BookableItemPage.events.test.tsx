@@ -36,6 +36,7 @@ const booking = {
   purpose: null,
   bookedBy: "Ada Lovelace",
   canViewConfiguration: true,
+  location: null,
   createdBy: null,
   canEdit: false,
   canCancel: false,
@@ -135,7 +136,7 @@ describe("BookableItemPage", () => {
     renderPage("/booking/bookable-items/IN123/details");
 
     await screen.findByText("booking:bookableItemDetails.rules");
-    expect(screen.queryByText("booking:bookableItemDetails.fields.updatedAt")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:allBookableItems.fields.updatedAt")).not.toBeInTheDocument();
   });
 
   it("reformats existing events after a configuration timezone refresh without refetching events", async () => {

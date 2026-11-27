@@ -29,6 +29,7 @@ function booking(id: number, start: string, end: string, name = "Confocal micros
         parentContainer: null,
       },
     },
+    location: null,
     start: Temporal.Instant.from(start),
     end: Temporal.Instant.from(end),
   };

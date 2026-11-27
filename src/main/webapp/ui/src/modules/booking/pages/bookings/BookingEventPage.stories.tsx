@@ -36,6 +36,7 @@ const booking = {
     globalId: "IN123",
   },
   canViewConfiguration: true,
+  location: null,
   timezone: "Europe/Berlin",
   start: Temporal.Instant.from("2026-10-19T08:00:00Z"),
   end: Temporal.Instant.from("2026-10-19T10:00:00Z"),

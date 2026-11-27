@@ -1,0 +1,140 @@
+import { Temporal } from "@js-temporal/polyfill";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { calendarAvailabilityRow } from "@/modules/booking/domain/availability";
+import { bookingCatalogueQuery, catalogueItemAsConfiguration } from "@/modules/booking/domain/bookingCatalogue";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
+import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import type { TableListProps } from "@/modules/common/table-list/TableList";
+import type { FilterExpression } from "@/modules/common/table-list/types";
+import {
+  type AllBookableItem,
+  keepAcrossMinutes,
+  serverAvailabilityFilter,
+  todayAvailabilityWindow,
+  useAvailabilityCounts,
+  withAvailability,
+} from "./availabilityQuickFilters";
+import { createAvailabilityTableConfig } from "./availabilityTableConfig";
+
+export function useCalendarAvailabilityLayout({
+  expression,
+  q,
+  date,
+  enabled,
+}: {
+  expression: FilterExpression<AllBookableItem> | null;
+  q: string;
+  date: string;
+  enabled: boolean;
+}) {
+  const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
+  const rowConfig = useMemo(
+    () =>
+      createAvailabilityTableConfig(
+        t("availabilityLayout.quickFilters.availableNow"),
+        t("availabilityLayout.quickFilters.freeLaterToday"),
+        (globalId) => commonT("tableList.filters.openRecord", { globalId }),
+      ),
+    [t, commonT],
+  );
+  const preferences = useBookingDisplayPreferences();
+  const minute = useAlignedMinute();
+  const minuteInstant = Temporal.Instant.fromEpochMilliseconds(minute);
+  const userToday = todayInTimeZone(preferences.timeZone, minuteInstant);
+  const today = todayAvailabilityWindow(
+    minuteInstant,
+    preferences.timeZone,
+    preferences.availabilityWindow.start,
+    preferences.availabilityWindow.end,
+  );
+  const split = serverAvailabilityFilter(expression);
+  const quickMode = split.supported ? split.availability : undefined;
+  const countsFilter = withAvailability(expression, undefined);
+  const counts = useAvailabilityCounts(
+    { q, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
+    today,
+    enabled && split.supported,
+  );
+  const signature = JSON.stringify([q, expression, date]);
+  const [paging, setPaging] = useState({ signature, pageIndex: 0, pageSize: 20 });
+  const page = paging.signature === signature ? paging : { signature, pageIndex: 0, pageSize: paging.pageSize };
+  const options = bookingCatalogueQuery({
+    q,
+    where: split.supported && split.where ? serializeRsqlExpression(split.where) : undefined,
+    availability: quickMode,
+    availabilityWindow: today,
+    page: page.pageIndex + 1,
+    pageSize: page.pageSize,
+    totals: true,
+  });
+  // Plain useQuery: the calendar grid stays mounted while this layout's availability loads.
+  const catalogue = useQuery({
+    ...options,
+    enabled: enabled && split.supported,
+    placeholderData: quickMode ? keepAcrossMinutes(options.queryKey) : undefined,
+  });
+  const rows = enabled && split.supported ? (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration) : [];
+  const tableProps: TableListProps<AllBookableItem> = {
+    config: rowConfig,
+    rows,
+    getRowId: (row) => String(row.id),
+    clientSide: false,
+    status: !split.supported
+      ? "idle"
+      : catalogue.isError
+        ? "error"
+        : catalogue.isPending
+          ? "loading"
+          : catalogue.isFetching
+            ? "refreshing"
+            : "idle",
+    error: catalogue.error,
+    features: {
+      filtering: false,
+      sorting: false,
+      columns: false,
+      pagination: {
+        value: page,
+        rowCount: catalogue.data?.total ?? 0,
+        onChange: (next) => setPaging({ ...next, signature }),
+      },
+    },
+  };
+  const rowsDate = quickMode ? today.date : date;
+  const rowsBounds = quickMode
+    ? today.bounds
+    : displayInterval(
+        date,
+        preferences.timeZone,
+        preferences.availabilityWindow.start,
+        preferences.availabilityWindow.end,
+      );
+  const availabilityRows = enabled
+    ? rows.flatMap((row) => {
+        if (!row.target) return [];
+        const item = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
+        return item ? [item] : [];
+      })
+    : [];
+  const availability = useCalendarAvailability(availabilityRows, rowsBounds);
+  return {
+    tableProps,
+    counts,
+    quickMode,
+    rowsDate,
+    rowsBounds,
+    userToday,
+    minute,
+    preferences,
+    availability,
+    supported: split.supported,
+    queryReady: enabled && split.supported,
+    refetch: () => (enabled && split.supported ? catalogue.refetch() : Promise.resolve(catalogue)),
+  };
+}
