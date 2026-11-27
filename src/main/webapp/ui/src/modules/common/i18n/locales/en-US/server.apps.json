@@ -14,10 +14,17 @@
     },
     "dmp": {
       "errors": {
-        "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
         "import": "Couldn't import DMP",
         "invalidLicenseUrl": "{0} is not a valid URL",
-        "list": "Couldn't list DMPs"
+        "list": "Couldn't list DMPs",
+        "zenodoSinglePlanOnly": "Only one DMP can be associated with an export to Zenodo."
+      },
+      "platformName": {
+        "argos": "Argos",
+        "dmpAssistant": "DMP Assistant",
+        "dmpOnline": "DMPonline",
+        "dmpTool": "DMPTool",
+        "dsw": "DSW / FAIR Wizard"
       }
     },
     "dmpAssistant": {
@@ -41,8 +48,9 @@
         "downloadFile": "Couldn''t download DMP file for id: {0}",
         "getDetails": "Couldn''t get details of DMP with id: {0}",
         "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
-        "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
-        "updateDoi": "Couldn''t update DMP with DOI: {0}"
+        "noAccessToken": "Access token isn't enabled - user must connect in Apps page.",
+        "relatedIdentifierRefused": "DMPTool refused the update (error {0}).",
+        "relatedIdentifierUnreachable": "DMPTool could not be reached."
       },
       "update": {
         "success": "DMP updated"

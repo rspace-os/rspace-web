@@ -303,6 +303,8 @@ public class DMPOnlineController extends BaseOAuth2Controller {
                       DMPSource.DMP_ONLINE,
                       currentDmp.getDoiLink(),
                       currentDmp.getDmpLink())));
+    } else {
+      dmpUser.get().adoptSourceIfUnknown(DMPSource.DMP_ONLINE);
     }
     if (file != null) {
       dmpUser.get().setDmpDownloadFile(file);

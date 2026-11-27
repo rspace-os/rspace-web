@@ -12,20 +12,15 @@ import Switch from "@mui/material/Switch";
 import { observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DEFAULT_STATE } from "@/Export/constants";
+import type { DMPUserInternalId, Plan } from "@/eln-dmp-integration/linkedPlan";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
 import { mapNullable } from "../util/Util";
 import type { Validator } from "../util/Validator";
-import {
-  type DMPUserInternalId,
-  type Person,
-  REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
-  type Repo,
-  type RepoDetails,
-} from "./repositories/common";
+import { type Person, REPOS_WITHOUT_PEOPLE_OR_SUBJECT, type Repo, type RepoDetails } from "./repositories/common";
 import DataverseRepo from "./repositories/DataverseRepo";
 import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import DryadRepo from "./repositories/DryadRepo";
@@ -55,15 +50,36 @@ type ExportRepoArgs = {
   fetchTags: () => Promise<Array<Tag>>;
 };
 
+// a remembered tick can name a plan that is no longer listed
+const listedPlans = (
+  selectedPlans: Array<DMPUserInternalId>,
+  linkedDMPs: Array<Plan> | null,
+): Array<DMPUserInternalId> =>
+  selectedPlans.filter((id) => (linkedDMPs ?? []).some((plan) => plan.dmpUserInternalId === id));
+
+const parseFunder = (funder: unknown): { name: string } | null => {
+  if (typeof funder !== "string") return null;
+  try {
+    const parsed: unknown = JSON.parse(funder);
+    return parsed && typeof parsed === "object" && "name" in parsed && typeof parsed.name === "string"
+      ? { name: parsed.name }
+      : null;
+  } catch {
+    return null;
+  }
+};
+
 const DmpSelector = observer(
   ({
     state,
     handleSwitch,
     repo,
+    onSelectionChange,
   }: {
     state: { selectedPlans: Array<DMPUserInternalId>; linkDMP: boolean };
     handleSwitch: (foo: "linkDMP") => (event: { target: { checked: boolean } }) => void;
     repo: Repo;
+    onSelectionChange: () => void;
   }) => {
     const { t } = useTranslation("workspace");
     const addSelectedPlan = (id: DMPUserInternalId) => {
@@ -71,6 +87,7 @@ const DmpSelector = observer(
         runInAction(() => {
           state.selectedPlans = [...state.selectedPlans, id];
         });
+        onSelectionChange();
       }
     };
 
@@ -78,6 +95,7 @@ const DmpSelector = observer(
       runInAction(() => {
         state.selectedPlans = state.selectedPlans.filter((planId) => planId !== id);
       });
+      onSelectionChange();
     };
 
     return mapNullable(
@@ -88,7 +106,10 @@ const DmpSelector = observer(
               control={
                 <Switch
                   checked={state.linkDMP}
-                  onChange={handleSwitch("linkDMP")}
+                  onChange={(event) => {
+                    handleSwitch("linkDMP")(event);
+                    onSelectionChange();
+                  }}
                   value="link DMP"
                   color="primary"
                   data-test-id="link DMP"
@@ -106,7 +127,7 @@ const DmpSelector = observer(
                 addSelectedPlan={addSelectedPlan}
                 removeSelectedPlan={removeSelectedPlan}
               />
-              {repo.repoName === "app.zenodo" && state.selectedPlans.length > 1 && (
+              {repo.repoName === "app.zenodo" && listedPlans(state.selectedPlans, dmps).length > 1 && (
                 <Alert severity="error">{t("export.repositories.dmp.zenodoLimit")}</Alert>
               )}
             </Collapse>
@@ -127,6 +148,14 @@ function ExportRepo({
   fetchTags,
 }: ExportRepoArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
+  // coming back to this step remounts the form, so start from the saved request
+  const savedOtherProperties: Record<string, unknown> = repoDetails.meta.otherProperties ?? {};
+  const savedLicense = (repoList[repoDetails.repoChoice]?.license.licenses ?? []).findIndex(
+    (license) => license.licenseDefinition.name === repoDetails.meta.licenseName,
+  );
+  const savedFunder = parseFunder(savedOtherProperties.funder);
+  // the saved request carries the deposit tags once the form has been saved, an empty list included
+  const savedTags = (repoDetails.meta as { tags?: Array<Tag> }).tags;
   const [state] = useState(
     observable({
       inputValidations: STANDARD_VALIDATIONS,
@@ -135,23 +164,35 @@ function ExportRepo({
       title: repoDetails.meta.title,
       description: repoDetails.meta.description,
       subject: repoDetails.meta.subject,
-      license: 0,
+      license: Math.max(savedLicense, 0),
       publish: repoDetails.meta.publish,
       authors: repoDetails.meta.authors,
       contacts: repoDetails.meta.contacts,
-      otherProperties: {},
-      linkDMP: false,
-      selectedPlans: [] as Array<DMPUserInternalId>,
+      otherProperties: savedOtherProperties,
+      linkDMP: repoDetails.selectedDMPs.length > 0,
+      selectedPlans: repoDetails.selectedDMPs,
       crossrefFunders: [] as Array<{ name: string }>,
       selectedFunder: {},
-      tags: [] as Array<Tag>,
-      metadataLanguage: "",
+      tags: savedTags ?? ([] as Array<Tag>),
+      metadataLanguage:
+        typeof savedOtherProperties.metadataLanguage === "string" ? savedOtherProperties.metadataLanguage : "",
       exportToRaid: upstreamState.repositoryConfig.exportToRaid,
     }),
   );
   const [fetchingTags, setFetchingTags] = useState(false);
+  const savedSinceMount = useRef(false);
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+  const plansToSend = (): Array<DMPUserInternalId> =>
+    state.linkDMP ? listedPlans(state.selectedPlans, repoList[state.repoChoice].linkedDMPs) : [];
 
   useEffect(() => {
+    if (savedTags) return;
     void (async () => {
       setFetchingTags(true);
       const tags = await fetchTags();
@@ -159,6 +200,9 @@ function ExportRepo({
         state.tags = tags;
       });
       setFetchingTags(false);
+      // a save made while the tags loaded holds an empty list, which would read as cleared on return;
+      // once the step is left, the dialog's request is no longer this form's to change
+      if (savedSinceMount.current && mounted.current) updateRemoteConfig();
     })();
   }, []);
 
@@ -190,9 +234,7 @@ function ExportRepo({
       });
 
       return Promise.resolve(
-        [...Object.values(validations), !(repo.repoName === "app.zenodo" && state.selectedPlans.length > 1)].every(
-          (b) => b,
-        ),
+        [...Object.values(validations), !(repo.repoName === "app.zenodo" && plansToSend().length > 1)].every((b) => b),
       );
     });
   }, []);
@@ -205,7 +247,7 @@ function ExportRepo({
       appName: repo.repoName,
       depositToRepository: true,
       repoCfg: repo.repoCfg,
-      selectedDMPs: state.selectedPlans,
+      selectedDMPs: plansToSend(),
       meta: {
         title: state.title,
         description: state.description,
@@ -224,6 +266,7 @@ function ExportRepo({
 
   const updateRemoteConfig = () => {
     const params = getParams();
+    savedSinceMount.current = true;
     updateRepoConfig(params);
   };
 
@@ -232,6 +275,8 @@ function ExportRepo({
   }) => {
     runInAction(() => {
       state[event.target.name] = event.target.value;
+      // a licence index only means something in its own repository's list
+      if (event.target.name === "repoChoice") state.license = 0;
     });
     updateRemoteConfig();
   };
@@ -261,11 +306,9 @@ function ExportRepo({
     updateRemoteConfig();
   };
 
-  const handleCrossrefFunderChange = (_: unknown, values: { name: string }) => {
+  const handleCrossrefFunderChange = (_: unknown, values: { name: string } | null) => {
     runInAction(() => {
-      state.otherProperties = {
-        funder: JSON.stringify(values),
-      };
+      state.otherProperties = values ? { funder: JSON.stringify(values) } : {};
     });
     updateRemoteConfig();
   };
@@ -342,12 +385,13 @@ function ExportRepo({
       <Grid>
         {repo.repoName === "app.dryad" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DryadRepo
               repo={repo}
               handleChange={handleChange}
               updatePeople={updatePeople}
               handleCrossrefFunderChange={handleCrossrefFunderChange}
+              savedFunder={savedFunder}
               handleFetchCrossrefFunder={handleFetchCrossrefFunder}
               crossrefFunders={state.crossrefFunders}
               inputValidations={state.inputValidations as typeof DRYAD_VALIDATIONS}
@@ -359,7 +403,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.dataverse" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <DataverseRepo
               repo={repo}
               handleChange={handleChange}
@@ -387,7 +431,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.figshare" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <FigshareRepo
               repo={repo}
               handleChange={handleChange}
@@ -406,7 +450,7 @@ function ExportRepo({
         )}
         {repo.repoName === "app.zenodo" && (
           <>
-            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} />
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
             <ZenodoRepo
               handleChange={handleChange}
               inputValidations={state.inputValidations}
@@ -425,16 +469,19 @@ function ExportRepo({
           </>
         )}
         {repo.repoName === "app.digitalCommonsData" && (
-          <DigitalCommonsDataRepo
-            handleChange={handleChange}
-            inputValidations={state.inputValidations}
-            submitAttempt={state.submitAttempt}
-            title={state.title}
-            description={state.description}
-            tags={state.tags}
-            fetchingTags={fetchingTags}
-            onTagsChange={() => {}}
-          />
+          <>
+            <DmpSelector state={state} handleSwitch={handleSwitch} repo={repo} onSelectionChange={updateRemoteConfig} />
+            <DigitalCommonsDataRepo
+              handleChange={handleChange}
+              inputValidations={state.inputValidations}
+              submitAttempt={state.submitAttempt}
+              title={state.title}
+              description={state.description}
+              tags={state.tags}
+              fetchingTags={fetchingTags}
+              onTagsChange={() => {}}
+            />
+          </>
         )}
       </Grid>
     </Grid>

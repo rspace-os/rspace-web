@@ -1,6 +1,5 @@
 package com.researchspace.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Locale;
@@ -93,16 +92,5 @@ public class IntegrationInfo implements Serializable {
       firstOptionValue = firstOptionSet.values().iterator().next();
     }
     return firstOptionValue;
-  }
-
-  /**
-   * For an integration where an OAUth access token is stored, this method returns
-   * {@code}true{@code} if the app is available, enabled and an access token is stored.
-   *
-   * @return
-   */
-  @JsonIgnore
-  public boolean isOAuthAppUsable() {
-    return isAvailable() && isEnabled() && isOauthConnected();
   }
 }

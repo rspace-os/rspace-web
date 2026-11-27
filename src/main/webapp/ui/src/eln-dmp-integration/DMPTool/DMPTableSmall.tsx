@@ -8,16 +8,9 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
-
-type DMPId = number | string;
-type DMPUserInternalId = number;
-
-type Plan = {
-  dmpId: DMPId;
-  dmpTitle: string;
-  dmpUserInternalId: DMPUserInternalId;
-};
+import type { DMPUserInternalId, Plan } from "@/eln-dmp-integration/linkedPlan";
 
 const tableRowSx = { width: "100%", display: "flex", flexDirection: "row" };
 const tableRowCellSx: SxProps<Theme> = (_theme) => ({
@@ -44,7 +37,23 @@ export default function DMPTableSmall({
   addSelectedPlan,
   removeSelectedPlan,
 }: TableArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "workspace"]);
+  const warningIdPrefix = useId();
+  const writeBackWarning = (plan: Plan): string | null => {
+    const platform = plan.platformName;
+    switch (plan.writeBackStatus) {
+      case "NOT_CONNECTED":
+        return t("workspace:export.repositories.dmp.warning.notConnected", { platform });
+      case "PLATFORM_OFF":
+        return t("workspace:export.repositories.dmp.warning.platformOff", { platform });
+      case "NOT_SUPPORTED":
+        return t("workspace:export.repositories.dmp.warning.notSupported", { platform });
+      case "UNKNOWN_SOURCE":
+        return t("workspace:export.repositories.dmp.warning.unknownSource");
+      default:
+        return null;
+    }
+  };
   return (
     <TableContainer sx={{ overflowX: "hidden" }}>
       <Table size="small">
@@ -67,6 +76,8 @@ export default function DMPTableSmall({
           {plans.map((plan, i) => {
             const id = plan.dmpUserInternalId;
             const isSelected = selectedPlans.includes(id);
+            const warning = writeBackWarning(plan);
+            const warningId = warning ? `${warningIdPrefix}-${i}` : undefined;
             return (
               <TableRow
                 key={i}
@@ -95,7 +106,10 @@ export default function DMPTableSmall({
                       value={"dmpUserInternalId"}
                       checked={isSelected}
                       slotProps={{
-                        input: { "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: plan.dmpTitle }) },
+                        input: {
+                          "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: plan.dmpTitle }),
+                          "aria-describedby": warningId,
+                        },
                       }}
                     />
                   </Box>
@@ -107,6 +121,15 @@ export default function DMPTableSmall({
                     })}
                   >
                     {plan.dmpTitle}
+                    {warningId && (
+                      <Box
+                        component="span"
+                        id={warningId}
+                        sx={{ display: "block", typography: "body2", color: "warning.dark" }}
+                      >
+                        {warning}
+                      </Box>
+                    )}
                   </Box>
                   <Box
                     component="span"

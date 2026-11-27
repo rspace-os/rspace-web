@@ -2,7 +2,6 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,22 +22,21 @@ import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementDescriptor;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.dmps.DMPUser;
-import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.repository.spi.properties.RepoProperty;
 import com.researchspace.repository.spi.properties.StringRepoProperty;
-import com.researchspace.service.DMPManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.DMPUpdateHandler;
 import com.researchspace.testutils.TestFactory;
 import java.net.MalformedURLException;
 import java.util.Collections;
@@ -62,8 +60,8 @@ class RepositoryConfigurationControllerTest {
   @Mock private UserAppConfigManager appCfgMgr;
   @Mock private IntegrationsHandler integrationsHandler;
   @Mock private UserManager userManager;
-  @Mock private DMPManager dmpManager;
   @Mock private IPermissionUtils permissionUtils;
+  @Mock private DMPUpdateHandler dmpUpdateHandler;
 
   @InjectMocks private RepositoryConfigurationController repositoryConfigurationController;
 
@@ -253,24 +251,34 @@ class RepositoryConfigurationControllerTest {
   }
 
   @Test
-  void getDMPs() throws MalformedURLException {
-    IntegrationInfo dfinf = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
-    // Dataverse has to have options otherwise it's filtered out as unconfigured
-    Map<String, Object> options = new HashMap<>();
-    options.put("op", "value");
-    dfinf.setOptions(options);
-    IntegrationInfo dmpInf = createEnabledAvailableInfo(DMPTOOL_APP_NAME);
-    when(integrationsHandler.getIntegration(eq(exporter), anyString()))
-        .thenReturn(dfinf, new IntegrationInfo(), new IntegrationInfo(), dmpInf);
-    when(dmpManager.findDMPsForUser(exporter))
-        .thenReturn(List.of(new DMPUser(exporter, new DmpDto("id", "title"))));
-    setupApp();
-    mockUICfgInfo();
+  void linkablePlansAreCopiedOntoEachRepository() throws MalformedURLException {
+    givenDataverseActive();
+    List<LinkedDMP> plans = List.of(new LinkedDMP(1L, "title1", "id1", "DMPTool", "OK"));
+    when(dmpUpdateHandler.linkablePlans(exporter)).thenReturn(plans);
+
     List<RepoUIConfigInfo> activeRepos =
         repositoryConfigurationController.getAllActiveRepositories();
+
     assertThat(activeRepos).hasSize(1);
-    assertThat(activeRepos.get(0).getLinkedDMPs()).hasSize(1);
-    assertEquals("title", activeRepos.get(0).getLinkedDMPs().get(0).getDmpTitle());
+    assertEquals(plans, activeRepos.get(0).getLinkedDMPs());
+  }
+
+  @Test
+  void plansAreNotLookedUpWithoutAnActiveRepository() throws MalformedURLException {
+    when(integrationsHandler.getIntegration(eq(exporter), anyString())).thenReturn(null);
+
+    assertThat(repositoryConfigurationController.getAllActiveRepositories()).isEmpty();
+    verifyNoInteractions(dmpUpdateHandler);
+  }
+
+  private void givenDataverseActive() throws MalformedURLException {
+    IntegrationInfo dataverse = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
+    dataverse.setOptions(new HashMap<>(Map.of("op", "value")));
+    when(integrationsHandler.getIntegration(eq(exporter), anyString()))
+        .thenAnswer(
+            invocation -> DATAVERSE_APP_NAME.equals(invocation.getArgument(1)) ? dataverse : null);
+    setupApp();
+    mockUICfgInfo();
   }
 
   private IntegrationInfo createEnabledAvailableInfo(String name) {

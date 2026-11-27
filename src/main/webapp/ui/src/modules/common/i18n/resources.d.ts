@@ -5623,10 +5623,17 @@ export default interface Resources {
       },
       "dmp": {
         "errors": {
-          "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
           "import": "Couldn't import DMP",
           "invalidLicenseUrl": "{0} is not a valid URL",
-          "list": "Couldn't list DMPs"
+          "list": "Couldn't list DMPs",
+          "zenodoSinglePlanOnly": "Only one DMP can be associated with an export to Zenodo."
+        },
+        "platformName": {
+          "argos": "Argos",
+          "dmpAssistant": "DMP Assistant",
+          "dmpOnline": "DMPonline",
+          "dmpTool": "DMPTool",
+          "dsw": "DSW / FAIR Wizard"
         }
       },
       "dmpAssistant": {
@@ -5650,8 +5657,9 @@ export default interface Resources {
           "downloadFile": "Couldn''t download DMP file for id: {0}",
           "getDetails": "Couldn''t get details of DMP with id: {0}",
           "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
-          "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
-          "updateDoi": "Couldn''t update DMP with DOI: {0}"
+          "noAccessToken": "Access token isn't enabled - user must connect in Apps page.",
+          "relatedIdentifierRefused": "DMPTool refused the update (error {0}).",
+          "relatedIdentifierUnreachable": "DMPTool could not be reached."
         },
         "update": {
           "success": "DMP updated"
@@ -6712,6 +6720,22 @@ export default interface Resources {
   "server.email.notifications": {
     "email": {
       "notification": {
+        "dmpUpdateCompleteNotification": {
+          "doiLink": "The DOI link for this deposit is <a href=\"{0}\">{0}</a>.",
+          "failedNoValue": "The plan could not be updated. {0}",
+          "intro": "RSpace tried to add your deposit on \"{0}\" to {1, plural, one {the plan you selected} other {the plans you selected}}.",
+          "notConnected": "{0} is not connected, so the plan was not updated.",
+          "notSupported": "RSpace cannot yet update plans on {0}.",
+          "nothingToSend": "{0} returned no DOI and no link, so nothing was added.",
+          "planHeading": "{0} ({1})",
+          "platformOff": "{0} is switched off, so the plan was not updated.",
+          "repositoryLink": "You can open your deposit on {0} at <a href=\"{1}\">{1}</a>.",
+          "unexpectedError": "An unexpected error occurred.",
+          "unknownSource": "RSpace does not know which service this plan came from, so it was not updated.",
+          "updateFailed": "RSpace could not update {1, plural, one {the plan you selected} other {the plans you selected}} after your deposit on \"{0}\". You can add the deposit to {1, plural, one {it} other {them}} by hand.",
+          "valueFailed": "<a href=\"{0}\">{0}</a> could not be added. {1} You can add this link to the plan by hand.",
+          "valueWritten": "<a href=\"{0}\">{0}</a> was added to the plan."
+        },
         "exportCompleteNotification": {
           "archiveSummary": "{0, plural, =0 {No records were exported.} one {The archive includes # record.} other {The archive includes # records.}}",
           "archiveSummaryWithNfs": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}{1, plural, =0 {. No filestore links were included} one { and # linked filestore item} other { and # linked filestore items}}{2, plural, =0 {.} one {.<br/><br/># filestore link was not included.} other {.<br/><br/># filestore links were not included.}}",
@@ -11267,6 +11291,12 @@ export default interface Resources {
         },
         "dmp": {
           "associateLabel": "Associate export with a Data Management Plans (DMPs)",
+          "warning": {
+            "notConnected": "{platform} is not connected, so this plan will not be updated.",
+            "notSupported": "RSpace cannot yet update plans on {platform}, so this plan will not be updated.",
+            "platformOff": "{platform} is switched off, so this plan will not be updated.",
+            "unknownSource": "RSpace does not know which service this plan came from, so it will not be updated."
+          },
           "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
         },
         "dryad": {

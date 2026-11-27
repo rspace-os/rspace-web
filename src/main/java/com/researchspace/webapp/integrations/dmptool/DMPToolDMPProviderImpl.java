@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.dmptool;
 
 import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
+import static com.researchspace.service.dmp.DmpLogging.planIdForLog;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.analytics.service.AnalyticsManager;
@@ -33,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -61,31 +63,48 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   @Override
   public ServiceOperationResult<String> addDoiIdentifierToDMP(
-      String dmpId, String doiIdentifier, String accessToken) {
-    var relatedIdentifier = new RelatedIdentifier("documents", "dataset", "doi", doiIdentifier);
+      String dmpId, String doiIdentifier, User user) {
+    return addRelatedIdentifierToDMP(dmpId, "doi", doiIdentifier, user);
+  }
+
+  ServiceOperationResult<String> addRelatedIdentifierToDMP(
+      String dmpId, String type, String identifier, String accessToken) {
+    var relatedIdentifier = new RelatedIdentifier("documents", "dataset", type, identifier);
     try {
       this.dmpToolClient.postRelatedIdentifiers(dmpId, relatedIdentifier, accessToken);
+    } catch (HttpStatusCodeException e) {
+      // the response body may echo the identifier (e.g. a Dryad edit link), so only the status
+      int status = e.getStatusCode().value();
+      log.warn(
+          "DMPtool refused related identifier for plan {}: HTTP {}", planIdForLog(dmpId), status);
+      return ServiceOperationResult.fromOptionalError(
+          Optional.of(
+              messages.getMessage(
+                  "apps.dmpTool.errors.relatedIdentifierRefused",
+                  new Object[] {String.valueOf(status)})));
     } catch (RestClientException
         | MalformedURLException
         | URISyntaxException
         | JsonProcessingException e) {
+      log.warn(
+          "Couldn't send related identifier to DMPtool plan {}: {}",
+          planIdForLog(dmpId),
+          e.getClass().getSimpleName());
       return ServiceOperationResult.fromOptionalError(
-          Optional.of(
-              messages.getMessage("apps.dmpTool.errors.updateDoi", new Object[] {e.getMessage()})));
+          Optional.of(messages.getMessage("apps.dmpTool.errors.relatedIdentifierUnreachable")));
     }
 
     return new ServiceOperationResult<>(messages.getMessage("apps.dmpTool.update.success"), true);
   }
 
   @Override
-  public ServiceOperationResult<String> addDoiIdentifierToDMP(
-      String dmpId, String doiIdentifier, User user) {
+  public ServiceOperationResult<String> addRelatedIdentifierToDMP(
+      String dmpId, String type, String identifier, User user) {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return ServiceOperationResult.fromOptionalError(Optional.of(noAccessTokenMsg()));
     }
-    String accessToken = optConn.get().getAccessToken();
-    var result = addDoiIdentifierToDMP(dmpId, doiIdentifier, accessToken);
+    var result = addRelatedIdentifierToDMP(dmpId, type, identifier, optConn.get().getAccessToken());
     analyticsManager.dmpsViewed(user);
     return result;
   }
@@ -186,7 +205,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
       throws URISyntaxException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
-    if (!assertIsNewDMP(dmp, user)) {
+    if (!isNewDmpElseAdoptSource(dmp, user)) {
       return null;
     }
     return saveJsonDMP(dmp, title, user, getJson(dmp, accessToken));

@@ -5,6 +5,8 @@ import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepositor
 import static com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository.RAID_METADATA_PROPERTY;
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
+import static com.researchspace.service.dmp.DmpPlatformStatusResolver.platformNameKey;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,8 +17,8 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
-import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepoDepositTag;
@@ -27,18 +29,19 @@ import com.researchspace.repository.spi.IRepository;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.repository.spi.LicenseDefs;
 import com.researchspace.repository.spi.RepositoryConfig;
-import com.researchspace.repository.spi.RepositoryDepositException;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.repository.spi.SubmissionMetadata;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IAsyncArchiveDepositor;
-import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFileResult;
+import com.researchspace.service.dmp.DepositReport;
+import com.researchspace.service.dmp.PlanReportResult;
+import com.researchspace.service.dmp.ValueOutcome;
 import com.researchspace.service.raid.RaIDDoiNotFoundException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import java.io.File;
@@ -52,8 +55,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -64,10 +67,10 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +85,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   private @Autowired UserExternalIdResolver extIdResolver;
   private @Autowired UserManager userManager;
 
-  private @Autowired IntegrationsHandler integrationsHandler;
   private @Autowired DMPManager dmpManager;
 
   @Setter(value = AccessLevel.PROTECTED) /* test purposes */
@@ -110,6 +112,10 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   private @Autowired DMPUpdateHandler dmpUpdateHandler;
+
+  void setDmpUpdateHandler(DMPUpdateHandler dmpUpdateHandler) {
+    this.dmpUpdateHandler = dmpUpdateHandler;
+  }
 
   private RepositoryOperationResult doDepositArchive(
       User subject,
@@ -162,7 +168,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       File archive,
       RepoDepositConfig repoDepositConfig) {
     notifyRepoDepositComplete(depositResult, app, subject, archive);
-    updateDMPS(depositResult, subject, repoDepositConfig);
+    updateDMPS(depositResult, app, subject, repoDepositConfig);
   }
 
   private RaidUpdateResult reportDoiToRaid(
@@ -223,39 +229,118 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   }
 
   /**
-   * Updates the DMPs after a deposit has been made.
+   * Writes the deposit's link onto each ticked plan, then notifies the user of each plan's outcome.
+   * Never throws, so write-back cannot fail the deposit.
    *
    * @param result the result of the deposit to the repository
+   * @param app the repository app deposited to
    * @param subject the user who made the deposit
    * @param repoDepositConfig the configuration of the deposit
    */
   void updateDMPS(
-      RepositoryOperationResult result, User subject, RepoDepositConfig repoDepositConfig) {
-    if (result.isSucceeded() && repoDepositConfig.hasDMPs()) {
-      // Dryad exports return an in progress dataset edit link, so we create the future public link
-      // here to send to DMP
-      if (repoDepositConfig.getAppName().equals(App.APP_DRYAD)) {
-        RepositoryOperationResult newResultWithPublicLink =
-            new RepositoryOperationResult(
-                true, result.getMessage(), getDryadPublicUrl(result), result.getDoiUrl());
-        dmpUpdateHandler.updateDMPS(
-            newResultWithPublicLink::getUrl, subject, repoDepositConfig.getSelectedDMPs());
-      } else {
-        dmpUpdateHandler.updateDMPS(result::getUrl, subject, repoDepositConfig.getSelectedDMPs());
-      }
+      RepositoryOperationResult result,
+      App app,
+      User subject,
+      RepoDepositConfig repoDepositConfig) {
+    if (!result.isSucceeded() || !repoDepositConfig.hasDMPs()) {
+      return;
+    }
+    DepositReport deposit;
+    List<PlanReportResult> planResults;
+    try {
+      deposit = buildDepositReport(result, app.getLabel(), app.getName());
+      planResults = dmpUpdateHandler.report(deposit, subject, repoDepositConfig.getSelectedDMPs());
+    } catch (RuntimeException e) {
+      log.error("Updating plans after a deposit to {} failed", app.getLabel(), e);
+      notifyDmpUpdateFailed(app.getLabel(), repoDepositConfig.getSelectedDMPs().size(), subject);
+      return;
+    }
+    try {
+      URL repositoryLink =
+          deposit.identifier() == null ? null : repositoryLink(result, app.getName());
+      notifyDmpUpdateComplete(planResults, deposit, repositoryLink, subject);
+    } catch (RuntimeException e) {
+      log.error("Notifying the plan updates after a deposit to {} failed", app.getLabel(), e);
     }
   }
 
-  private URL getDryadPublicUrl(RepositoryOperationResult result) {
-    String baseUrl = result.getUrl().toString();
-    URL publicUrl = null;
+  private void notifyDmpUpdateFailed(String repositoryName, int planCount, User subject) {
     try {
-      publicUrl = new URL(baseUrl.replace("/stash/edit/", "/stash/dataset/"));
-    } catch (MalformedURLException e) {
-      log.error("Failed to create public URL for Dryad", e);
-      throw new RepositoryDepositException("Failed to create public URL for Dryad DMP Update");
+      String msg =
+          messages.format(
+              DMP_NOTIFICATION_KEY + "updateFailed",
+              List.of(escapeHtml(repositoryName), planCount));
+      commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+    } catch (RuntimeException e) {
+      log.error("Notifying that plans could not be updated after a deposit failed", e);
     }
-    return publicUrl;
+  }
+
+  /** The DOI link if there is one, otherwise the repository link (Dryad's made public). */
+  DepositReport buildDepositReport(
+      RepositoryOperationResult result, String repositoryName, String appName) {
+    if (result.getDoiUrl() != null) {
+      return new DepositReport(repositoryName, result.getDoiUrl(), null);
+    }
+    return new DepositReport(repositoryName, null, repositoryLink(result, appName));
+  }
+
+  /** The deposit's repository link, with Dryad's edit link made public. */
+  private URL repositoryLink(RepositoryOperationResult result, String appName) {
+    URL link = result.getUrl();
+    if (link != null && App.APP_DRYAD.equals(appName)) {
+      return getDryadPublicUrl(link);
+    }
+    return link;
+  }
+
+  /**
+   * Dryad returns an edit link holding a secret edit code; turns it into the dataset's landing page
+   * on the link's own host, with the code removed. A landing page link is returned unchanged; any
+   * other link gives null, so nothing is sent.
+   */
+  private URL getDryadPublicUrl(URL repositoryUrl) {
+    String path = repositoryUrl.getPath();
+    if (!path.contains(DRYAD_EDIT_PATH)) {
+      return isDryadLandingPage(repositoryUrl) ? repositoryUrl : null;
+    }
+    String landing;
+    if (path.startsWith(DRYAD_OLD_EDIT_PATH)) {
+      landing = landingPath("/stash/dataset/", path.substring(DRYAD_OLD_EDIT_PATH.length()));
+    } else if (path.startsWith(DRYAD_EDIT_PATH)) {
+      landing = landingPath("/dataset/", path.substring(DRYAD_EDIT_PATH.length()));
+    } else {
+      return null;
+    }
+    if (landing == null) {
+      return null;
+    }
+    try {
+      return new URL(
+          repositoryUrl.getProtocol(), repositoryUrl.getHost(), repositoryUrl.getPort(), landing);
+    } catch (MalformedURLException e) {
+      // the link holds a secret edit code, so it is not logged
+      log.warn("Couldn't make a Dryad landing page from its edit link");
+      return null;
+    }
+  }
+
+  private static boolean isDryadLandingPage(URL url) {
+    return (url.getPath().startsWith("/dataset/") || url.getPath().startsWith("/stash/dataset/"))
+        && url.getQuery() == null
+        && url.getRef() == null
+        && url.getUserInfo() == null;
+  }
+
+  private static final String DRYAD_OLD_EDIT_PATH = "/stash/edit/";
+  private static final String DRYAD_EDIT_PATH = "/edit/";
+
+  // Dryad URL-encodes the DOI into one path segment; what follows it is the edit code
+  private static String landingPath(String landingPrefix, String doiAndEditCode) {
+    String doi = StringUtils.substringBefore(doiAndEditCode, "/");
+    return StringUtils.startsWithAny(doi.toLowerCase(Locale.ROOT), "doi:", "doi%3a")
+        ? landingPrefix + doi
+        : null;
   }
 
   private void notifyRepoDepositComplete(
@@ -293,6 +378,84 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "raidUpdateCompleteNotification.vm", "UTF-8", config);
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+  }
+
+  private void notifyDmpUpdateComplete(
+      List<PlanReportResult> planResults, DepositReport deposit, URL repositoryLink, User subject) {
+    if (planResults.isEmpty()) {
+      return;
+    }
+    List<Map<String, String>> plans = new ArrayList<>();
+    for (PlanReportResult planResult : planResults) {
+      String title = escapeHtml(planResult.planTitle());
+      if (planResult.platform() == DMPSource.UNKNOWN) {
+        plans.add(
+            Map.of(
+                "heading",
+                title,
+                "outcome",
+                messages.getMessage(DMP_NOTIFICATION_KEY + "unknownSource")));
+        continue;
+      }
+      String platformName = messages.getMessage(platformNameKey(planResult.platform()));
+      plans.add(
+          Map.of(
+              "heading",
+              messages.format(DMP_NOTIFICATION_KEY + "planHeading", List.of(title, platformName)),
+              "outcome",
+              planOutcomeLines(planResult, platformName, deposit)));
+    }
+    Map<String, Object> config = new HashMap<>();
+    config.put("repo", escapeHtml(deposit.repositoryApp()));
+    config.put(
+        "doi", deposit.identifier() == null ? null : escapeHtml4(deposit.identifier().toString()));
+    config.put("repoLink", repositoryLink == null ? null : escapeHtml4(repositoryLink.toString()));
+    config.put("msg", messages);
+    config.put("plans", plans);
+    config.put("planCount", planResults.size());
+    String msg =
+        VelocityEngineUtils.mergeTemplateIntoString(
+            velocity, "dmpUpdateCompleteNotification.vm", "UTF-8", config);
+    commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, subject.getUsername(), true);
+  }
+
+  private static final String DMP_NOTIFICATION_KEY =
+      "email.notification.dmpUpdateCompleteNotification.";
+
+  private String planOutcomeLines(
+      PlanReportResult planResult, String platformName, DepositReport deposit) {
+    return switch (planResult.status()) {
+      case REPORTED ->
+          planResult.values().stream()
+              .map(this::valueOutcomeLine)
+              .collect(Collectors.joining("<br/>"));
+      case NOTHING_TO_SEND ->
+          messages.format(
+              DMP_NOTIFICATION_KEY + "nothingToSend", List.of(escapeHtml(deposit.repositoryApp())));
+      case NOT_SUPPORTED ->
+          messages.format(DMP_NOTIFICATION_KEY + "notSupported", List.of(platformName));
+      case PLATFORM_OFF ->
+          messages.format(DMP_NOTIFICATION_KEY + "platformOff", List.of(platformName));
+      case NOT_CONNECTED ->
+          messages.format(DMP_NOTIFICATION_KEY + "notConnected", List.of(platformName));
+      case UNKNOWN_SOURCE -> messages.getMessage(DMP_NOTIFICATION_KEY + "unknownSource");
+    };
+  }
+
+  private String valueOutcomeLine(ValueOutcome outcome) {
+    if (outcome.value() == null) {
+      return messages.format(
+          DMP_NOTIFICATION_KEY + "failedNoValue", List.of(escapeHtml(outcome.error())));
+    }
+    String value = escapeHtml(outcome.value());
+    return outcome.written()
+        ? messages.format(DMP_NOTIFICATION_KEY + "valueWritten", List.of(value))
+        : messages.format(
+            DMP_NOTIFICATION_KEY + "valueFailed", List.of(value, escapeHtml(outcome.error())));
+  }
+
+  private static String escapeHtml(String text) {
+    return escapeHtml4(StringUtils.defaultString(text));
   }
 
   @Override
@@ -386,118 +549,77 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
   @Qualifier("compositeFileStore")
   private FileStore fileStore;
 
-  private SubmissionMetadata setDmpOnlineDmpToolOnSubmissionMetadata(
-      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
-      throws IOException, IllegalStateException {
-    if (archiveConfig.hasDMPs()) {
-      if (isDmpOnlineEnabledAndAvailable(subject) || isDmpToolEnabledAndAvailable(subject)) {
-        List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
-        if (!dmpsForUser.isEmpty()) {
-
-          List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
-          List<DMPUser> dmpsToUpdate =
-              dmpsForUser.stream()
-                  .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-                  .collect(Collectors.toList());
-          if (dmpsToUpdate.size() != 1) {
-            throw new NoSuchElementException("Could not find DMP with selected ID.");
-          }
-
-          DMPUser selectedDMP = dmpsToUpdate.get(0);
-          EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadFile();
-          File file = fileStore.findFile(jsonFile.getFileProperty());
-
-          // read json from file
-          ObjectMapper objectMapper = new ObjectMapper();
-          JsonNode dmpFile = objectMapper.readValue(file, JsonNode.class);
-          Optional<String> url = extractUrlFromDmpFile(dmpFile);
-          if (url.isPresent()) {
-            metadata.setDmpDoi(url);
-          } else {
-            log.warn("it is not been possible to attach the Dmp DOI to the metadata");
-          }
-        }
-      }
-    }
-    return metadata;
-  }
-
-  private boolean isDmpOnlineEnabledAndAvailable(User subject) {
-    IntegrationInfo dmpOnlineInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPONLINE_APP_NAME);
-    return dmpOnlineInfo.isEnabled() && dmpOnlineInfo.isAvailable();
-  }
-
-  private boolean isDmpToolEnabledAndAvailable(User subject) {
-    IntegrationInfo dmpToolInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
-    return dmpToolInfo.isEnabled() && dmpToolInfo.isAvailable();
-  }
-
-  @Nullable
-  private static Optional<String> extractUrlFromDmpFile(JsonNode dmpFile) {
-    String url = null;
-    if (dmpFile.get("dmp_id") != null) { // DMPOnline json file
-      url = dmpFile.get("dmp_id").get("identifier").asText().replace("/api/v1", "");
-    } else { // DMPTool json file
-      Iterator<JsonNode> nodeIt = dmpFile.get("items").iterator();
-      while (nodeIt.hasNext() && url == null) {
-        JsonNode dmpNode = nodeIt.next();
-        if (dmpNode.get("dmp") != null) {
-          url = dmpNode.get("dmp").get("dmp_id").get("identifier").asText().replace("/api/v1", "");
-        }
-      }
-    }
-    UrlValidator urlValidator = new UrlValidator();
-    return urlValidator.isValid(url) ? Optional.of(url) : Optional.empty();
-  }
-
-  private SubmissionMetadata setArgosDmpDoiOnSubmissionMetadata(
-      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig)
-      throws IOException, IllegalStateException {
-    if (!archiveConfig.hasDMPs()) {
+  /**
+   * Sets the ticked plan's identifier on a Zenodo deposit's metadata, read from the plan's stored
+   * file by the plan's own platform, whatever is switched on. Only Zenodo reads it, so other
+   * repositories skip the lookup and several ticked plans are refused on Zenodo. A plan without a
+   * readable identifier sets nothing.
+   */
+  private SubmissionMetadata setPlanIdentifierOnSubmissionMetadata(
+      User subject, SubmissionMetadata metadata, RepoDepositConfig archiveConfig) {
+    if (!archiveConfig.hasDMPs() || !APP_ZENODO.equals(archiveConfig.getAppName())) {
       return metadata;
     }
-
-    IntegrationInfo argosInfo =
-        integrationsHandler.getIntegration(subject, IntegrationsHandler.ARGOS_APP_NAME);
-    if (argosInfo.isEnabled() && argosInfo.isAvailable()) {
-
-      IntegrationInfo dmpToolInfo =
-          integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
-      if (dmpToolInfo.isEnabled()) {
-        throw new IllegalStateException(
-            messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled"));
-      }
-
-      List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
-      if (dmpsForUser.isEmpty()) {
-        return metadata;
-      }
-
-      List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
-      List<DMPUser> dmpsToUpdate =
-          dmpsForUser.stream()
-              .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
-              .collect(Collectors.toList());
-      if (dmpsToUpdate.size() != 1) {
-        throw new NoSuchElementException("Could not find DMP with selected ID.");
-      }
-
-      DMPUser selectedDMP = dmpsToUpdate.get(0);
-      EcatDocumentFile jsonFile = selectedDMP.getDmpDownloadFile();
-      File file = fileStore.findFile(jsonFile.getFileProperty());
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      ArgosDMP dmp = objectMapper.readValue(file, ArgosDMP.class);
-      Optional<String> doi = dmp.getDoi();
-      if (doi.isPresent()) {
-        metadata.setDmpDoi(doi);
-      } else {
-        throw new NoSuchElementException("DMP doesn't have a DOI");
-      }
+    List<Long> dmpUserIds = archiveConfig.getSelectedDMPs();
+    List<DMPUser> selected =
+        dmpManager.findDMPsForUser(subject).stream()
+            .filter(dmpUser -> dmpUserIds.contains(dmpUser.getId()))
+            .collect(Collectors.toList());
+    if (selected.isEmpty()) {
+      log.warn(
+          "None of the {} plans ticked by {} is one of their plans, so no plan identifier is set",
+          dmpUserIds.size(),
+          subject.getUsername());
+      return metadata;
     }
+    if (selected.size() > 1) {
+      throw new NoSuchElementException(messages.getMessage("apps.dmp.errors.zenodoSinglePlanOnly"));
+    }
+    readPlanIdentifier(selected.get(0))
+        .ifPresent(identifier -> metadata.setDmpDoi(Optional.of(identifier)));
     return metadata;
+  }
+
+  private Optional<String> readPlanIdentifier(DMPUser plan) {
+    DMPSource source = plan.getSource();
+    if (source != DMPSource.DMP_TOOL
+        && source != DMPSource.DMP_ONLINE
+        && source != DMPSource.ARGOS) {
+      return Optional.empty();
+    }
+    Optional<String> identifier;
+    try {
+      File file = fileStore.findFile(plan.getDmpDownloadFile().getFileProperty());
+      ObjectMapper objectMapper = new ObjectMapper();
+      identifier =
+          source == DMPSource.ARGOS
+              ? objectMapper.readValue(file, ArgosDMP.class).getDoi()
+              : extractUrlFromDmpFile(objectMapper.readValue(file, JsonNode.class));
+    } catch (IOException | RuntimeException e) {
+      // parser messages can quote the file, so only the exception type is logged
+      log.warn(
+          "Couldn't read the identifier of plan {}: {}",
+          plan.getId(),
+          e.getClass().getSimpleName());
+      return Optional.empty();
+    }
+    if (identifier.isEmpty()) {
+      log.warn("Plan {} has no identifier to attach to the deposit", plan.getId());
+    }
+    return identifier;
+  }
+
+  // DMPonline saves the plan's dmp object, DMPTool its API response holding the plan
+  private static Optional<String> extractUrlFromDmpFile(JsonNode dmpFile) {
+    JsonNode dmp = dmpFile.has("dmp_id") ? dmpFile : dmpFile.path("items").path(0).path("dmp");
+    // DMPonline stores its API address; the browser-facing plan page drops the API segment
+    String url =
+        dmp.path("dmp_id")
+            .path("identifier")
+            .asText()
+            .replace("/api/v1", "")
+            .replace("/api/v2", "");
+    return new UrlValidator().isValid(url) ? Optional.of(url) : Optional.empty();
   }
 
   private SubmissionMetadata generateSubmissionMetaData(
@@ -568,10 +690,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           .put(IGSN_INVENTORY_LINKED_ITEMS, String.join(",", igsnInventoryLinkedItems));
     }
 
-    return setDmpOnlineDmpToolOnSubmissionMetadata(
-        subject,
-        setArgosDmpDoiOnSubmissionMetadata(subject, metadata, archiveConfig),
-        archiveConfig);
+    return setPlanIdentifierOnSubmissionMetadata(subject, metadata, archiveConfig);
   }
 
   private List<String> getSubjects(RepoDepositConfig archiveConfig) {

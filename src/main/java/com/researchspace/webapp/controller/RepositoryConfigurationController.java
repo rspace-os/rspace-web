@@ -4,7 +4,6 @@ import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrat
 import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 
@@ -13,15 +12,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.repository.LinkedDMP;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.RepositoryOperationResult;
-import com.researchspace.service.DMPManager;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.service.impl.DMPUpdateHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +50,7 @@ public class RepositoryConfigurationController extends BaseController {
 
   private @Autowired RepositoryDepositHandler depositHandler;
   private @Autowired UserAppConfigManager userAppConfigMgr;
-  private @Autowired DMPManager dmpManager;
+  private @Autowired DMPUpdateHandler dmpUpdateHandler;
 
   /**
    * Gets information on active repositories
@@ -79,24 +77,13 @@ public class RepositoryConfigurationController extends BaseController {
       info.setOptions(getOptionsForRepoUIConfigInfo(inf.getName(), inf.getOptions()));
       uiConfigs.add(info);
     }
-    if (isDMPEnabled(user)) {
-      List<DMPUser> dmpUsers = dmpManager.findDMPsForUser(user);
-      // Filter out DMPs that belong to DSW, since that integration is not yet
-      // enabled for callbacks during save to repository.
-      // TODO:  This fix is purely for DSW DMPs for the first release of the DSW
-      // integration.  This should be revisted during work on RPD-276.
-      dmpUsers =
-          dmpUsers.stream()
-              .filter(d -> !d.getSource().name().equals(DSW_APP_NAME))
-              .collect(Collectors.toList());
-      if (!dmpUsers.isEmpty()) {
-        List<LinkedDMP> linkedDMPdt =
-            dmpUsers.stream()
-                .map(dmpu -> new LinkedDMP(dmpu.getId(), dmpu.getTitle(), dmpu.getDmpId()))
-                .collect(Collectors.toList());
-        for (RepoUIConfigInfo info : uiConfigs) {
-          info.setLinkedDMPs(linkedDMPdt);
-        }
+    if (uiConfigs.isEmpty()) {
+      return uiConfigs;
+    }
+    List<LinkedDMP> linkedDMPs = dmpUpdateHandler.linkablePlans(user);
+    if (!linkedDMPs.isEmpty()) {
+      for (RepoUIConfigInfo info : uiConfigs) {
+        info.setLinkedDMPs(linkedDMPs);
       }
     }
     return uiConfigs;

@@ -79,7 +79,21 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
   abstract String getJson(DMPToolDMP dmp, String accessToken)
       throws URISyntaxException, MalformedURLException;
 
-  boolean assertIsNewDMP(DMPToolDMP dmp, User user) {
-    return !dmpManager.findByDmpId(dmp.getId() + "", user).isPresent();
+  /**
+   * @return true if the user has no plan with this id; otherwise false, and an existing plan whose
+   *     source is not yet known is recorded as a DMPtool plan
+   */
+  boolean isNewDmpElseAdoptSource(DMPToolDMP dmp, User user) {
+    Optional<DMPUser> existing = dmpManager.findByDmpId(dmp.getId() + "", user);
+    if (existing.isEmpty()) {
+      return true;
+    }
+    DMPUser plan = existing.get();
+    DMPSource before = plan.getSource();
+    plan.adoptSourceIfUnknown(DMPSource.DMP_TOOL);
+    if (plan.getSource() != before) {
+      dmpManager.save(plan);
+    }
+    return false;
   }
 }

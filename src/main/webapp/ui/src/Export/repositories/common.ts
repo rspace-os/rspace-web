@@ -7,6 +7,8 @@
  * components.
  */
 
+import type { DMPUserInternalId, Plan } from "@/eln-dmp-integration/linkedPlan";
+
 /**
  * The definition of a person when collecting metadata such as author and
  * contact.
@@ -15,26 +17,6 @@ export type Person = {
   uniqueName: string;
   email: string;
   type: string;
-};
-
-/**
- * The Id of DMP, according to the service from which is originated.
- */
-type DMPId = number | string;
-
-/**
- * The Id of DMP, according to RSpace.
- */
-export type DMPUserInternalId = number;
-
-/**
- * A definition of a DMP, for the purposes of selecting one to attach to a
- * deposit to a repository.
- */
-export type Plan = {
-  dmpId: DMPId;
-  dmpTitle: string;
-  dmpUserInternalId: DMPUserInternalId;
 };
 
 /**
@@ -99,6 +81,7 @@ export const DEFAULT_REPO_CONFIG = {
   },
   depositToRepository: false as boolean,
   exportToRaid: false,
+  selectedDMPs: [] as Array<DMPUserInternalId>,
 };
 
 export type RepoDetails = typeof DEFAULT_REPO_CONFIG;

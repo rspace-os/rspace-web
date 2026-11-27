@@ -60,4 +60,23 @@ public class DMPUser {
     this.doiLink = dmpDto.getDoiLink();
     this.timestamp = Instant.now();
   }
+
+  /**
+   * Records the platform a plan was imported from when its source is not yet known; a known source
+   * is kept.
+   *
+   * @param importedFrom the platform the plan is being imported from
+   */
+  public void adoptSourceIfUnknown(DMPSource importedFrom) {
+    if (!hasKnownSource()) {
+      source = importedFrom;
+    }
+  }
+
+  /**
+   * @return true when the plan's platform is recorded, false when it is missing or {@code UNKNOWN}
+   */
+  public boolean hasKnownSource() {
+    return source != null && source != DMPSource.UNKNOWN;
+  }
 }
