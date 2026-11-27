@@ -15,7 +15,7 @@ const window = {
   limit: 1,
 };
 const operationPaths = {
-  catalogue: getSearchBookingCatalogueQueryKey({ page: 1, limit: 1 })[0],
+  catalogue: getSearchBookingCatalogueQueryKey({ mine: false, page: 1, limit: 1 })[0],
   locations: getSearchBookingCatalogueLocationsQueryKey({ page: 1, limit: 1 })[0],
   calendarCatalogue: getSearchCalendarCatalogueQueryKey(window)[0],
   calendarEvents: getSearchCalendarEventsQueryKey(window)[0],

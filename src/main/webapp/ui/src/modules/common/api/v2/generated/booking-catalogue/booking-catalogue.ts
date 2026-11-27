@@ -341,7 +341,7 @@ export function useSearchBookingCatalogueSuspense<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export const getCountBookingCatalogueAvailabilityUrl = (params?: CountBookingCatalogueAvailabilityParams) => {
+export const getCountBookingCatalogueAvailabilityUrl = (params: CountBookingCatalogueAvailabilityParams) => {
   const encodedParams = { ...params };
   if (encodedParams.start != null) {
     encodedParams.start =
@@ -389,7 +389,7 @@ export const getCountBookingCatalogueAvailabilityUrl = (params?: CountBookingCat
  * @summary Count bookable items by current availability
  */
 export const countBookingCatalogueAvailability = async (
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: Parameters<typeof apiV2Fetch>[1],
 ): Promise<BookingCatalogueAvailabilityCounts> => {
   return apiV2Fetch<BookingCatalogueAvailabilityCounts>(getCountBookingCatalogueAvailabilityUrl(params), {
@@ -407,7 +407,7 @@ export const getCountBookingCatalogueAvailabilityQueryOptions = <
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>>;
     request?: SecondParameter<typeof apiV2Fetch>;
@@ -437,7 +437,7 @@ export function useCountBookingCatalogueAvailability<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params: undefined | CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>> &
       Pick<
@@ -457,7 +457,7 @@ export function useCountBookingCatalogueAvailability<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>> &
       Pick<
@@ -477,7 +477,7 @@ export function useCountBookingCatalogueAvailability<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>>;
     request?: SecondParameter<typeof apiV2Fetch>;
@@ -489,7 +489,7 @@ export function useCountBookingCatalogueAvailability<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>>;
     request?: SecondParameter<typeof apiV2Fetch>;
@@ -510,7 +510,7 @@ export function useCountBookingCatalogueAvailability<
  */
 export const invalidateCountBookingCatalogueAvailability = async (
   queryClient: QueryClient,
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: InvalidateOptions,
 ): Promise<QueryClient> => {
   await queryClient.invalidateQueries({ queryKey: getCountBookingCatalogueAvailabilityQueryKey(params) }, options);
@@ -522,7 +522,7 @@ export const getCountBookingCatalogueAvailabilitySuspenseQueryOptions = <
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>
@@ -556,7 +556,7 @@ export function useCountBookingCatalogueAvailabilitySuspense<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params: undefined | CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options: {
     query: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>
@@ -570,7 +570,7 @@ export function useCountBookingCatalogueAvailabilitySuspense<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>
@@ -584,7 +584,7 @@ export function useCountBookingCatalogueAvailabilitySuspense<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>
@@ -598,7 +598,7 @@ export function useCountBookingCatalogueAvailabilitySuspense<
   TData = Awaited<ReturnType<typeof countBookingCatalogueAvailability>>,
   TError = ErrorType<unknown>,
 >(
-  params?: CountBookingCatalogueAvailabilityParams,
+  params: CountBookingCatalogueAvailabilityParams,
   options?: {
     query?: Partial<
       UseSuspenseQueryOptions<Awaited<ReturnType<typeof countBookingCatalogueAvailability>>, TError, TData>

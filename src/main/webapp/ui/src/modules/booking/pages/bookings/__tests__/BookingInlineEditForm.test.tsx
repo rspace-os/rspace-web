@@ -207,10 +207,11 @@ describe("BookingInlineEditForm", () => {
         end: Temporal.Instant.from(document.end),
         page: 1,
         limit: 100,
+        mine: false,
       }),
       "calendarEvents",
     ];
-    const catalogueKey = getSearchBookingCatalogueQueryKey({ page: 1, limit: 20 });
+    const catalogueKey = getSearchBookingCatalogueQueryKey({ page: 1, limit: 20, mine: false });
     for (const key of [calendarKey, catalogueKey]) {
       queryClient.setQueryDefaults(key, { staleTime: 30_000 });
       queryClient.setQueryData(key, { docs: [], page: 1, limit: 100 });

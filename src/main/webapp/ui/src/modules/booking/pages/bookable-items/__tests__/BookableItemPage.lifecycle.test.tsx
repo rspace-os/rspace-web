@@ -1,18 +1,19 @@
 import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import type { ListBookingConfigurationsResponse } from "@/modules/common/api/v2/generated/valibot/native";
 import "@/__tests__/__mocks__/matchMedia";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, HttpResponse, http } from "msw";
 import type * as v from "valibot";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-
 import type { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";
 
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
 type ListBookingConfigurations200 = v.InferInput<typeof ListBookingConfigurationsResponse>;
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
@@ -20,6 +21,48 @@ vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi
 beforeEach(() => setupPage());
 
 describe("BookableItemPage", () => {
+  it("keeps only valid inventory access rows and treats only true flags as enabled", async () => {
+    let sharingMode: "WHITELIST" | "OWNER_GROUPS" = "WHITELIST";
+    const sharedWith = [
+      { group: { id: 11, name: "String flags" }, shared: "true", itemOwnerGroup: "true" },
+      { group: { id: 12, name: "Boolean owner" }, shared: true, itemOwnerGroup: true },
+      { group: { id: "13", name: "Invalid id" }, shared: true, itemOwnerGroup: true },
+      null,
+    ];
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          collectionPage(
+            [
+              {
+                ...configuration,
+                capabilities: { ...configuration.capabilities, canViewAccess: false },
+              },
+            ],
+            2,
+          ),
+        ),
+      ),
+      oauthTokenHandler(),
+      http.get("/api/inventory/v1/instruments/123", () => HttpResponse.json({ sharingMode, sharedWith })),
+    );
+    const { queryClient } = renderPage("/booking/bookable-items/IN123/access");
+    const explicitAccessTable = await screen.findByRole("table");
+    const stringFlagsCheckbox = within(explicitAccessTable).getByRole("checkbox", { name: "String flags" });
+    const booleanOwnerCheckbox = within(explicitAccessTable).getByRole("checkbox", { name: "Boolean owner" });
+
+    expect(within(explicitAccessTable).getAllByRole("row")).toHaveLength(3);
+    expect(within(explicitAccessTable).queryByText("Invalid id")).not.toBeInTheDocument();
+    expect(stringFlagsCheckbox).toHaveAttribute("aria-checked", "false");
+    expect(booleanOwnerCheckbox).toHaveAttribute("aria-checked", "true");
+
+    sharingMode = "OWNER_GROUPS";
+    await act(() => queryClient.refetchQueries({ queryKey: ["inventory", "instruments", 123, "access"] }));
+    expect(await screen.findByRole("link", { name: "Boolean owner" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "String flags" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Invalid id" })).not.toBeInTheDocument();
+  });
+
   it("archives an owned configuration after confirmation", async () => {
     let deleteRequest: Request | undefined;
     let postArchiveListGets = 0;
