@@ -216,7 +216,6 @@ jobs:
               "-Ddcd.base.url=http://localhost:$E2E_MOCK_PORT/dcd"
               "-Ddcd.client.id=mock-client"
               "-Ddcd.client.secret=mock-secret"
-              "-Degnyte.client.id=mock-client"
               "-Downcloud.url=http://localhost:$E2E_MOCK_PORT/owncloud"
               "-Downcloud.client.id=mock-client"
               "-Downcloud.secret=mock-secret"

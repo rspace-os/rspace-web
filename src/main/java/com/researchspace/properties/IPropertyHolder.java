@@ -244,13 +244,6 @@ public interface IPropertyHolder extends Versionable {
   String getImportArchiveFromServerFolder();
 
   /**
-   * Filestore implementation used by this RSpace instance.
-   *
-   * @return 'LOCAL' for standard filestore, but may be other.
-   */
-  String getFileStoreType();
-
-  /**
    * Boolean value of the property <code>sysadmin.limitedIpAddresses.enabled</code>
    *
    * @return

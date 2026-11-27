@@ -34,7 +34,6 @@ function loadChemistryConfiguration(enabled: boolean, available: boolean) {
               CHEMISTRY: integration(enabled, available),
               CLUSTERMARKET: integration(),
               DROPBOX: integration(false, false, { "dropbox.linking.enabled": false }),
-              EGNYTE: integration(),
               GALAXY: integration(),
               GITHUB: integration(),
               GOOGLEDRIVE: integration(false, false, { "googledrive.linking.enabled": false }),

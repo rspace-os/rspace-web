@@ -40,8 +40,8 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
           PIDINST_DATACITE_PASSWORD.getPropertyName(),
           PIDINST_B2INST_TOKEN.getPropertyName());
 
-  @Value("${egnyte.client.id}")
-  private String egnyteClientId;
+  @Value("${box.client.id}")
+  private String boxClientId;
 
   @Autowired private DeploymentPropertiesController deploymentPropertiesController;
 
@@ -85,14 +85,10 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
 
     res =
         mockMvc
-            .perform(get("/deploymentproperties/ajax/property").param("name", "egnyte.client.id"))
+            .perform(get("/deploymentproperties/ajax/property").param("name", "box.client.id"))
+            .andExpect(status().isOk())
             .andReturn();
-    result = res.getResponse().getContentAsString();
-    assertEquals(egnyteClientId, result);
-
-    mockMvc
-        .perform(get("/deploymentproperties/ajax/property").param("name", "box.client.id"))
-        .andExpect(status().isOk());
+    assertEquals(boxClientId, res.getResponse().getContentAsString());
   }
 
   @Test

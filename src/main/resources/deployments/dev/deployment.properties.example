@@ -78,10 +78,6 @@ nextcloud.server.name=nextcloud
 nextcloud.client.id=
 nextcloud.secret=
 
-# egnyte integration that redirects to https://localhost:8443 after authentication
-egnyte.client.id=
-egnyte.internal.app.client.id=
-
 
 # clustermarket - now rebranded as Calira
 clustermarket.client.id=
@@ -190,8 +186,6 @@ datacite.realConnectionTest.prefix=
 dmptool.realConnectionTest.base.url=
 dmptool.realConnectionTest.client.id=
 dmptool.realConnectionTest.client.secret=
-egnyte.realConnectionTest.username=
-egnyte.realConnectionTest.password=
 msteams.realConnectionTest.webhookUrl=
 slack.realConnectionTest.webhookUrl=
 

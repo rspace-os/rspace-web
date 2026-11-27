@@ -327,8 +327,8 @@ public class FileProperty implements Serializable {
   }
 
   /**
-   * Boolean as to whether file is stored externally ( e.g. on Egnyte) or not. This will always be
-   * <code>false</code> if an external FS is not used.
+   * Whether the file was saved to an external file store. RSpace no longer supports external file
+   * stores, so new files are always local.
    *
    * @return a boolean
    */

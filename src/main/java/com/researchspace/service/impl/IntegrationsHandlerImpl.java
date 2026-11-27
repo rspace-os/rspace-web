@@ -101,7 +101,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
           "DATAVERSE_URL",
           "DSW_ALIAS",
           "DSW_URL",
-          "EGNYTE_DOMAIN",
           "GALAXY_ALIAS",
           "GALAXY_URL",
           "GITHUB_REPOSITORY_FULL_NAME",
@@ -553,9 +552,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
 
   private void saveConfigOptionsForAppsWithSingleOptionSet(User user, IntegrationInfo newInfo) {
     switch (newInfo.getName()) {
-      case EGNYTE_APP_NAME:
-        saveAppConfigWithSingleOptionSet(user, newInfo, EGNYTE_APP_NAME, EGNYTE_DOMAIN_SETTING);
-        break;
       case ZENODO_APP_NAME:
         saveNewUserConnectionForSingleOptionApp(
             (String) newInfo.getOptions().get(ZENODO_USER_TOKEN), user, ZENODO_APP_NAME);
@@ -660,20 +656,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       }
     }
     userConnManager.deleteByUserAndProvider(user.getUsername(), appName, aliasDiscriminant);
-  }
-
-  private void saveAppConfigWithSingleOptionSet(
-      User user, IntegrationInfo newInfo, String appName, String optionName) {
-    // enabling or disabling posts no options, and must not create a set holding null
-    if (!newInfo.getOptions().containsKey(optionName)) {
-      return;
-    }
-    String currentId = getIntegration(user, appName).retrieveFirstOptionsId();
-    Long optionIdToSave = currentId == null ? null : Long.valueOf(currentId);
-
-    Map<String, String> newOptions = new HashMap<>();
-    newOptions.put(optionName, (String) newInfo.getOptions().get(optionName));
-    saveAppOptions(optionIdToSave, newOptions, appName, false, user);
   }
 
   private void savePreferenceAppOptions(Preference prefApp, User user, IntegrationInfo newInfo) {
@@ -884,7 +866,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     switch (integrationName) {
       case CLUSTERMARKET_APP_NAME:
       case OMERO_APP_NAME:
-      case EGNYTE_APP_NAME:
       case PROTOCOLS_IO_APP_NAME:
       case DMPTOOL_APP_NAME:
       case DMPASSISTANT_APP_NAME:

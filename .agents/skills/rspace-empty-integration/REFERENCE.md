@@ -314,14 +314,14 @@ return isValidEmptyIntegration(integrationName)
 ```
 
 > **Why a separate method?** `isSingleOptionSetAppConfigIntegration` is for
-> integrations with exactly one stored credential (e.g. Egnyte domain, Zenodo
-> token). An empty integration has no per-user options, so it must not appear
+> integrations with exactly one stored option set (e.g. Calira or
+> protocols.io). An empty integration has no per-user options, so it must not appear
 > there. `isValidEmptyIntegration` is the correct home.
 
 ### `locales/en-US/server.system.json`
 
 Inside `system.property.description`, add an entry alphabetically among the
-other `*Available` descriptions (for example `egnyteAvailable`):
+other `*Available` descriptions (for example `dryadAvailable`):
 
 ```json
 "<name>Available": "Makes <Name> integration available.",
