@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import TimeAgo from "react-timeago-i18n";
 import axios from "@/common/axios";
 import type { PersonId } from "@/stores/definitions/Person";
+import { modeGrey } from "@/util/colors";
 import * as Parsers from "../util/parsers";
 
 type UserDetailsArgs = {
@@ -166,8 +167,8 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
           cursor: "default",
           ...(variant === "filled"
             ? {
-                backgroundColor: theme.palette.grey[300],
-                color: theme.palette.grey[800],
+                backgroundColor: modeGrey(theme, 300),
+                color: modeGrey(theme, 800),
                 fontWeight: theme.typography.fontWeightRegular,
               }
             : {}),

@@ -479,7 +479,11 @@ class AdvancedSearch extends React.Component<any, any> {
               </RadioGroup>
             )}
           </CardContent>
-          <CardActions sx={{ backgroundColor: "#eceff1" }}>
+          <CardActions
+            sx={(theme) => ({
+              backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.default : "#eceff1",
+            })}
+          >
             <span></span>
             <span className="group-right">
               <Button onClick={this.reset} data-test-id="a-search-reset">

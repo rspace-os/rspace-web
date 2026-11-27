@@ -96,12 +96,12 @@ function Genericsearchbar({ handleSearch, placeholder, searchToolTip }: Generics
             display: "flex",
             alignItems: "center",
             borderRadius: "25px",
-            background: "white",
+            bgcolor: "background.paper",
             paddingLeft: 5,
           },
           '& span[role="tooltip"]': {
             borderRadius: "25px",
-            background: "white",
+            bgcolor: "background.paper",
           },
           [`& .${inputBaseClasses.root}`]: {
             flexGrow: 1,
@@ -119,7 +119,7 @@ function Genericsearchbar({ handleSearch, placeholder, searchToolTip }: Generics
           sx={{
             display: "flex",
             alignItems: "center",
-            background: "white",
+            bgcolor: "background.paper",
             border: "1px solid #808080",
           }}
           elevation={0}

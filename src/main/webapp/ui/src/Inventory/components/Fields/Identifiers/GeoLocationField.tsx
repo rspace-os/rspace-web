@@ -425,7 +425,8 @@ const GeoLocationField = ({
               <Box
                 component="fieldset"
                 sx={{
-                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  border: 1,
+                  borderColor: "divider",
                   margin: 0,
                   borderRadius: "4px",
                   padding: "16px",
@@ -451,7 +452,8 @@ const GeoLocationField = ({
               <Box
                 component="fieldset"
                 sx={{
-                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  border: 1,
+                  borderColor: "divider",
                   margin: 0,
                   borderRadius: "4px",
                   padding: "16px",
@@ -474,7 +476,8 @@ const GeoLocationField = ({
               <Box
                 component="fieldset"
                 sx={{
-                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  border: 1,
+                  borderColor: "divider",
                   margin: 0,
                   borderRadius: "4px",
                   padding: "16px",

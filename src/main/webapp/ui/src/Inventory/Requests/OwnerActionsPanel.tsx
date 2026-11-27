@@ -6,6 +6,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { modeGrey } from "@/util/colors";
 import {
   approveButtonSx,
   approvedDisabledButtonSx,
@@ -47,7 +48,7 @@ export default function OwnerActionsPanel({
 
   return (
     <>
-      <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
+      <Box sx={{ p: 1, backgroundColor: modeGrey(theme, 100) }}>
         <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
       </Box>
       <Divider />

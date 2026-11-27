@@ -33,7 +33,7 @@ export default function TreeSort({ justifyContent = "flex-end", selectPaddingLef
   const [sortOrder, setSortOrder] = React.useState("DESC");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const selectSx = {
-    background: "white",
+    bgcolor: "background.paper",
     height: "100%",
     padding: 0,
     borderRadius: 1,

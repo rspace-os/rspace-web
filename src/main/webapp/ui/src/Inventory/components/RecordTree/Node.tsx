@@ -72,7 +72,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
             <CardHeader
               action={node.canNavigateToChildren && <NavigateToNode node={node} />}
               avatar={
-                <Avatar sx={{ backgroundColor: "white", color: "black" }} variant="rounded">
+                <Avatar sx={{ backgroundColor: "background.paper", color: "text.primary" }} variant="rounded">
                   {nodeAvatar()}
                 </Avatar>
               }

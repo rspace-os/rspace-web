@@ -928,7 +928,10 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
-      }
+      },
+      "switchToDarkMode": "Switch to dark mode",
+      "switchToLightMode": "Switch to light mode",
+      "useSystemColorMode": "Use system theme"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"

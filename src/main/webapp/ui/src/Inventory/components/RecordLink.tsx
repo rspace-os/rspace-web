@@ -5,6 +5,7 @@ import { observer } from "mobx-react-lite";
 import { type MouseEvent, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import { modeGrey } from "@/util/colors";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
@@ -37,17 +38,17 @@ const interactiveChipSx =
         }),
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
-    backgroundColor: theme.palette.grey[200],
-    color: theme.palette.grey[800],
+    backgroundColor: modeGrey(theme, 200),
+    color: modeGrey(theme, 800),
     "&&": {
-      backgroundColor: `${theme.palette.grey[200]} !important`,
-      color: `${theme.palette.grey[800]} !important`,
+      backgroundColor: `${modeGrey(theme, 200)} !important`,
+      color: `${modeGrey(theme, 800)} !important`,
       "&:hover, &:focus": {
-        backgroundColor: `${theme.palette.grey[300]} !important`,
+        backgroundColor: `${modeGrey(theme, 300)} !important`,
       },
       "&:active": {
         boxShadow: theme.shadows[1],
-        backgroundColor: `${emphasize(theme.palette.grey[300], 0.12)} !important`,
+        backgroundColor: `${emphasize(modeGrey(theme, 300), 0.12)} !important`,
       },
     },
     ...(clickable
@@ -58,14 +59,14 @@ const interactiveChipSx =
     fontWeight: theme.typography.fontWeightRegular ?? 400,
     transitionDuration: "500ms",
     "&:hover, &:focus": {
-      backgroundColor: theme.palette.grey[300],
+      backgroundColor: modeGrey(theme, 300),
     },
     "&:focus-visible": {
       outline: `2px solid ${theme.palette.primary.main}`,
     },
     "&:active": {
       boxShadow: theme.shadows[1],
-      backgroundColor: emphasize(theme.palette.grey[300], 0.12),
+      backgroundColor: emphasize(modeGrey(theme, 300), 0.12),
     },
     [`& .${chipClasses.label}`]: {
       ...(overflow
@@ -78,7 +79,7 @@ const interactiveChipSx =
             paddingRight: theme.spacing(2),
           }
         : {}),
-      color: `${theme.palette.grey[800]} !important`,
+      color: `${modeGrey(theme, 800)} !important`,
     },
   });
 
@@ -96,11 +97,11 @@ const staticChipSx =
         }),
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
-    backgroundColor: theme.palette.grey[300],
-    color: theme.palette.grey[800],
+    backgroundColor: modeGrey(theme, 300),
+    color: modeGrey(theme, 800),
     "&&": {
-      backgroundColor: `${theme.palette.grey[300]} !important`,
-      color: `${theme.palette.grey[800]} !important`,
+      backgroundColor: `${modeGrey(theme, 300)} !important`,
+      color: `${modeGrey(theme, 800)} !important`,
     },
     fontWeight: theme.typography.fontWeightRegular ?? 400,
     [`& .${chipClasses.label}`]: {
@@ -114,7 +115,7 @@ const staticChipSx =
             paddingRight: theme.spacing(2),
           }
         : {}),
-      color: `${theme.palette.grey[800]} !important`,
+      color: `${modeGrey(theme, 800)} !important`,
     },
   });
 

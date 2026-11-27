@@ -180,8 +180,8 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                       // The Inventory accented theme's MuiButton override out-specifies a plain
                       // sx class; "&&" repeats this rule's own selector to match and win.
                       "&&": {
-                        backgroundColor: "white",
-                        "&:hover": { backgroundColor: "white" },
+                        backgroundColor: "background.paper",
+                        "&:hover": { backgroundColor: "background.paper" },
                       },
                     }}
                   >

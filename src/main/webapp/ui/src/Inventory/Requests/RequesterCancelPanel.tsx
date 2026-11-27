@@ -5,6 +5,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { modeGrey } from "@/util/colors";
 
 /**
  * Matches the "Cancel" button behaviour in the Sample form's "Request this sample" box: shown to
@@ -22,7 +23,7 @@ export default function RequesterCancelPanel({
 
   return (
     <>
-      <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
+      <Box sx={{ p: 1, backgroundColor: modeGrey(theme, 100) }}>
         <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
       </Box>
       <Divider />
@@ -34,11 +35,11 @@ export default function RequesterCancelPanel({
             disabled={isProcessingAction}
             sx={{
               "&&": {
-                color: theme.palette.grey[700],
-                borderColor: theme.palette.grey[500],
+                color: modeGrey(theme, 700),
+                borderColor: modeGrey(theme, 500),
                 "&:hover": {
-                  borderColor: theme.palette.grey[700],
-                  backgroundColor: theme.palette.grey[100],
+                  borderColor: modeGrey(theme, 700),
+                  backgroundColor: modeGrey(theme, 100),
                 },
               },
             }}

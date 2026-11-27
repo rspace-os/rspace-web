@@ -315,7 +315,7 @@ const CustomTreeItem = observer(
                   aspectRatio: "1 / 1",
                   fontSize: "5em",
                   margin: "2px 12px 2px 8px",
-                  background: "white",
+                  bgcolor: "background.paper",
                 }}
                 slotProps={{
                   img: {

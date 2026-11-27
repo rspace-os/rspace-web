@@ -16,7 +16,7 @@ const border = (color: string, isImportant: boolean = false) => `3px solid ${col
 // Shared styling for the placeholder number shown in empty GRID/IMAGE locations.
 const numberBoxSx = {
   fontSize: "12px",
-  backgroundColor: "white",
+  backgroundColor: "background.paper",
   width: "100%",
   height: "100%",
   textAlign: "center",
@@ -118,7 +118,7 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "white",
+            backgroundColor: "background.paper",
             transition: theme.transitions.filterToggle,
             aspectRatio: "1 / 1",
 

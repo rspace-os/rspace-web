@@ -13,6 +13,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { modeGrey } from "@/util/colors";
 import useGroups, { type GroupDetail } from "../hooks/api/useGroups";
 
 type GroupDetailsArgs = {
@@ -69,9 +70,9 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
         onClick={handlePopoverOpen}
         sx={(theme) => ({
           my: 0.5,
-          backgroundColor: theme.palette.grey[300],
+          backgroundColor: modeGrey(theme, 300),
           height: theme.spacing(3),
-          color: theme.palette.grey[800],
+          color: modeGrey(theme, 800),
           fontWeight: theme.typography.fontWeightRegular,
           cursor: "default",
         })}

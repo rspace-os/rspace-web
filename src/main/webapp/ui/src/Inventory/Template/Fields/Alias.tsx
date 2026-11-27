@@ -176,7 +176,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
-                sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "black" } }}
+                sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "text.primary" } }}
                 placeholder={t("fields.templateFields.alias.minimumPlaceholder")}
                 value={customSelected ? value.alias : ""}
                 onChange={(e) => {
@@ -204,7 +204,7 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
-                sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "black" } }}
+                sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "text.primary" } }}
                 placeholder={t("fields.templateFields.alias.minimumPlaceholder")}
                 value={customSelected ? value.plural : ""}
                 onChange={(e) => {

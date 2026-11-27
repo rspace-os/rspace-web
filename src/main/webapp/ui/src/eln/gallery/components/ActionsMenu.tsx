@@ -1294,7 +1294,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             ? {
                 // just enough contrast for the AA standard,
                 // but we don't want it to be too prominent
-                color: `hsl(${ACCENT_COLOR.main.hue} 1% 45% / 1)`,
+                color: `hsl(${ACCENT_COLOR.main.hue} 1% ${theme.palette.mode === "dark" ? 55 : 45}% / 1)`,
               }
             : {}),
         }}

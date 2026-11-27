@@ -1041,7 +1041,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
           visibility: "visible",
           right: 0,
           left: 0,
-          backgroundColor: "white",
+          backgroundColor: "background.paper",
           borderTopLeftRadius: theme.spacing(2),
           borderTopRightRadius: theme.spacing(2),
           boxShadow: "hsl(280deg 66% 10% / 5%) 0px -8px 8px 2px",

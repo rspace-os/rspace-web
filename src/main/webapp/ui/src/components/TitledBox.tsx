@@ -19,7 +19,7 @@ function TitledBox({ title, children, allowOverflow = true, border = false }: Ti
         display: "flex",
         flexDirection: "column",
         maxHeight: "100%",
-        backgroundColor: "white !important",
+        backgroundColor: `${theme.palette.background.paper} !important`,
         ...(border
           ? {
               border: theme.borders.section,

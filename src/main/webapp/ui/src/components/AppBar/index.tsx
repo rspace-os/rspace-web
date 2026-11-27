@@ -62,6 +62,7 @@ import HelpLinkIcon from "../HelpLinkIcon";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
 import AboutRSpaceDialog from "./AboutRSpaceDialog";
+import ColorModeMenuItem from "./ColorModeMenuItem";
 import type SidebarToggle from "./SidebarToggle";
 import useUiNavigationData, { type UiNavigationData } from "./useUiNavigationData";
 
@@ -348,6 +349,13 @@ function GalleryAppBar({
 }: GalleryAppBarArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const theme = useTheme();
+  const logOutColors =
+    theme.palette.mode === "dark"
+      ? { backgroundColor: theme.palette.error.dark, foregroundColor: lighten(theme.palette.error.light, 0.7) }
+      : {
+          backgroundColor: lighten(theme.palette.error.light, 0.5),
+          foregroundColor: darken(theme.palette.error.dark, 0.3),
+        };
   const { isViewportSmall } = useViewportDimensions();
   const uiNavigationData = useUiNavigationData();
   const [appMenuAnchorEl, setAppMenuAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -850,6 +858,11 @@ function GalleryAppBar({
                     setAccountMenuAnchorEl(null);
                   }}
                 />
+                <ColorModeMenuItem
+                  onClose={() => {
+                    setAccountMenuAnchorEl(null);
+                  }}
+                />
                 <AccentMenuItem
                   title={t("appBar.aboutRSpace")}
                   avatar={<InfoIcon />}
@@ -867,8 +880,7 @@ function GalleryAppBar({
                       key="release"
                       title={t("appBar.release")}
                       avatar={<LogoutIcon />}
-                      backgroundColor={lighten(theme.palette.error.light, 0.5)}
-                      foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                      {...logOutColors}
                       compact
                       onClick={() => {
                         JwtService.destroyToken();
@@ -881,8 +893,7 @@ function GalleryAppBar({
                     <AccentMenuItem
                       title={t("appBar.logOut")}
                       avatar={<LogoutIcon />}
-                      backgroundColor={lighten(theme.palette.error.light, 0.5)}
-                      foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                      {...logOutColors}
                       compact
                       onClick={() => {
                         JwtService.destroyToken();

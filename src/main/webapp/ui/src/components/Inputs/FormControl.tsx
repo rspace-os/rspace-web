@@ -92,7 +92,7 @@ function CustomFormControl({
       sx={{
         [`& .${inputBaseClasses.root}.${inputBaseClasses.disabled}, & .${formControlLabelClasses.label}.${formControlLabelClasses.disabled}`]:
           {
-            color: "black",
+            color: "text.primary",
             "& input": { color: "unset" },
             [`& .${svgIconClasses.root}.${selectClasses.icon}`]: {
               display: "none",
