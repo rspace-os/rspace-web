@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verify;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.FormDao;
@@ -17,6 +20,10 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.UserOrGroup;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditTrailService;
+import com.researchspace.model.audittrail.GenericEvent;
+import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
@@ -34,15 +41,22 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordSharingTest extends SpringTransactionalTest {
@@ -52,6 +66,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
   private @Autowired RecordGroupSharingDao regGrpDao;
   private @Autowired FormDao formDao;
   private @Autowired IPermissionUtils permissionUtils;
+  private @Autowired AuditTrailService auditService;
+  private @Autowired IMutablePropertyHolder propertyHolder;
 
   private Group group;
   private User piUser;
@@ -577,12 +593,14 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(piUser))).hasSize(2);
 
     // as other user create two documents, then share with pi individually, and through group
+    logoutAndLoginAs(other);
     StructuredDocument userDoc1 = createBasicDocumentInRootFolderWithText(other, "any1");
     sharingMgr.shareRecord(other, userDoc1.getId(), getGrpShareCommand(group, "write"));
     sharingMgr.shareRecord(other, userDoc1.getId(), getIndividualShareCommand(piUser, "read"));
 
     StructuredDocument userDoc2 = createBasicDocumentInRootFolderWithText(other, "any2");
     sharingMgr.shareRecord(other, userDoc2.getId(), getGrpShareCommand(group, "read"));
+    logoutAndLoginAs(piUser);
 
     // verify sharing information, and that pi can edit first doc through group share permission
     List<RecordGroupSharing> sharingInfo1 = sharingMgr.getRecordSharingInfo(userDoc1.getId());
@@ -601,22 +619,248 @@ public class RecordSharingTest extends SpringTransactionalTest {
     assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(other))).isEmpty();
     assertThat(folderDao.getChildren(folderDao.getLabGroupFolderForUser(piUser))).hasSize(1);
 
-    // verify sharing information and that pi can still view the first document through individual
-    // share
+    // RSDEV-1429: the individual share ends too, as other and pi share no group any more
     sharingInfo1 = sharingMgr.getRecordSharingInfo(userDoc1.getId());
-    assertThat(sharingInfo1).hasSize(1);
+    assertThat(sharingInfo1).isEmpty();
     assertFalse(permissionUtils.isPermitted(userDoc1, PermissionType.WRITE, piUser));
-    assertTrue(permissionUtils.isPermitted(userDoc1, PermissionType.READ, piUser));
+    assertFalse(permissionUtils.isPermitted(userDoc1, PermissionType.READ, piUser));
     // but pi shouldn't see second doc anymore
     sharingInfo2 = sharingMgr.getRecordSharingInfo(userDoc2.getId());
     assertThat(sharingInfo2).isEmpty();
     assertFalse(permissionUtils.isPermitted(userDoc2, PermissionType.READ, piUser));
+  }
 
-    // unshare the first doc individually, confirm pi can no longer see
-    sharingMgr.unshareRecord(other, userDoc1.getId(), getIndividualShareCommand(piUser, "read"));
-    sharingInfo1 = sharingMgr.getRecordSharingInfo(userDoc1.getId());
-    assertThat(sharingInfo1).isEmpty();
-    assertFalse(permissionUtils.isPermitted(userDoc1, PermissionType.READ, piUser));
+  // RSDEV-1429
+  @Test
+  public void leavingLastCommonGroupRevokesOwnSharesOnlyAndKeepsOtherEntrySharers()
+      throws InterruptedException {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User leaver = createAndSaveUserIfNotExists(getRandomAlphabeticString("lvr"));
+    User recipient = createAndSaveUserIfNotExists(getRandomAlphabeticString("rcp"));
+    User otherSharer = createAndSaveUserIfNotExists(getRandomAlphabeticString("oth"));
+    initialiseContentWithEmptyContent(pi, leaver, recipient, otherSharer);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, leaver, recipient, otherSharer);
+    Group secondGroup = createGroup("g2", pi);
+    addUsersToGroup(pi, secondGroup, recipient, otherSharer);
+
+    logoutAndLoginAs(leaver);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(leaver, "doc");
+    Notebook notebook = createNotebookWithNEntries(leaver.getRootFolder().getId(), "nb", 2, leaver);
+    List<BaseRecord> entries = folderDao.getChildren(notebook);
+    sharingMgr.shareRecord(leaver, doc.getId(), getIndividualShareCommand(recipient, "write"));
+    sharingMgr.shareRecord(leaver, notebook.getId(), getIndividualShareCommand(recipient, "read"));
+    sharingMgr.shareRecord(
+        leaver, entries.get(0).getId(), getIndividualShareCommand(recipient, "read"));
+    RecordGroupSharing legacyEntryShare =
+        extractShare(
+            sharingMgr.shareRecord(
+                leaver, entries.get(1).getId(), getIndividualShareCommand(recipient, "read")));
+    // a legacy row recorded as shared by a user who still shares a group with the recipient
+    legacyEntryShare.setSharedBy(otherSharer);
+    regGrpDao.save(legacyEntryShare);
+    logoutAndLoginAs(recipient);
+    StructuredDocument incoming = createBasicDocumentInRootFolderWithText(recipient, "in");
+    sharingMgr.shareRecord(recipient, incoming.getId(), getIndividualShareCommand(leaver, "read"));
+    RecordGroupSharing docShare = onlyShare(doc);
+    List<Long> revokedShares =
+        List.of(docShare.getId(), onlyShare(notebook).getId(), onlyShare(entries.get(0)).getId());
+
+    logoutAndLoginAs(pi);
+    clearInvocations(auditService);
+    grpMgr.removeUserFromGroup(leaver.getUsername(), labGroup.getId(), pi);
+
+    assertThat(sharingMgr.getRecordSharingInfo(doc.getId())).isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(notebook.getId())).isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(entries.get(0).getId())).isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(entries.get(1).getId())).hasSize(1);
+    assertThat(sharingMgr.getRecordSharingInfo(incoming.getId())).hasSize(1);
+    assertThat(unshareEvents()).containsExactlyInAnyOrderElementsOf(events(revokedShares, pi));
+    // a later call for a row already removed emits nothing
+    clearInvocations(auditService);
+    assertFalse(sharingMgr.revokeIndividualShare(docShare, true));
+    assertThat(unshareEvents()).isEmpty();
+    Folder pairFolder = folderDao.getIndividualSharedFolderForUsers(leaver, recipient, null);
+    assertThat(folderDao.getChildren(pairFolder)).doesNotContain(doc, notebook, entries.get(0));
+    logoutAndLoginAs(recipient);
+    assertFalse(permissionUtils.isPermitted(doc, PermissionType.READ, recipient));
+    assertFalse(permissionUtils.isPermitted(notebook, PermissionType.READ, recipient));
+    assertFalse(permissionUtils.isPermitted(entries.get(0), PermissionType.READ, recipient));
+    assertTrue(permissionUtils.isPermitted(entries.get(1), PermissionType.READ, recipient));
+    assertThat(storedAcl(entries.get(1).getId()))
+        .extracting(ACLElement::getUserOrGrpUniqueName)
+        .contains(recipient.getUsername());
+  }
+
+  // RSDEV-1429
+  @Test
+  public void directShareKeptWhileUsersShareAnotherGroup() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User leaver = createAndSaveUserIfNotExists(getRandomAlphabeticString("lvr"));
+    User recipient = createAndSaveUserIfNotExists(getRandomAlphabeticString("rcp"));
+    initialiseContentWithEmptyContent(pi, leaver, recipient);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, leaver, recipient);
+    Group secondGroup = createGroup("g2", pi);
+    addUsersToGroup(pi, secondGroup, leaver, recipient);
+    logoutAndLoginAs(leaver);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(leaver, "doc");
+    sharingMgr.shareRecord(leaver, doc.getId(), getIndividualShareCommand(recipient, "read"));
+
+    logoutAndLoginAs(pi);
+    clearInvocations(auditService);
+    grpMgr.removeUserFromGroup(leaver.getUsername(), labGroup.getId(), pi);
+
+    assertThat(sharingMgr.getRecordSharingInfo(doc.getId())).hasSize(1);
+    assertThat(unshareEvents()).isEmpty();
+  }
+
+  // RSDEV-1429
+  @Test
+  public void directShareKeptOnCloudWhenSharerLeavesGroup() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User leaver = createAndSaveUserIfNotExists(getRandomAlphabeticString("lvr"));
+    User recipient = createAndSaveUserIfNotExists(getRandomAlphabeticString("rcp"));
+    initialiseContentWithEmptyContent(pi, leaver, recipient);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, leaver, recipient);
+    logoutAndLoginAs(leaver);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(leaver, "doc");
+    sharingMgr.shareRecord(leaver, doc.getId(), getIndividualShareCommand(recipient, "read"));
+
+    logoutAndLoginAs(pi);
+    propertyHolder.setCloud("true");
+    try {
+      grpMgr.removeUserFromGroup(leaver.getUsername(), labGroup.getId(), pi);
+    } finally {
+      propertyHolder.setCloud("false");
+    }
+
+    assertThat(sharingMgr.getRecordSharingInfo(doc.getId())).hasSize(1);
+  }
+
+  // RSDEV-1429: every member is judged against the whole membership, whatever the removal order
+  @Test
+  public void groupDeletionRevokesDirectSharesInBothDirections() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User first = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
+    User second = createAndSaveUserIfNotExists(getRandomAlphabeticString("u2"));
+    initialiseContentWithEmptyContent(pi, first, second);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, first, second);
+    logoutAndLoginAs(first);
+    StructuredDocument firstDoc = createBasicDocumentInRootFolderWithText(first, "first");
+    RecordGroupSharing firstShare =
+        extractShare(
+            sharingMgr.shareRecord(
+                first, firstDoc.getId(), getIndividualShareCommand(second, "read")));
+    logoutAndLoginAs(second);
+    StructuredDocument secondDoc = createBasicDocumentInRootFolderWithText(second, "second");
+    RecordGroupSharing legacy =
+        extractShare(
+            sharingMgr.shareRecord(
+                second, secondDoc.getId(), getIndividualShareCommand(first, "read")));
+    // a legacy row without a recorded sharer counts as shared by the owner
+    legacy.setSharedBy(null);
+    regGrpDao.save(legacy);
+
+    logoutAndLoginAs(pi);
+    clearInvocations(auditService);
+    grpMgr.removeGroup(labGroup.getId(), pi);
+
+    assertThat(sharingMgr.getRecordSharingInfo(firstDoc.getId())).isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(secondDoc.getId())).isEmpty();
+    assertThat(unshareEvents())
+        .containsExactlyInAnyOrderElementsOf(
+            events(List.of(firstShare.getId(), legacy.getId()), pi));
+  }
+
+  // RSDEV-1429: group deletion revokes the leaving sharer's notebook but keeps an entry another
+  // member shared, who still shares a group with the recipient. The pre-pass visits the members
+  // in hash-set order, so each order of the two sharers is set up explicitly.
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void groupDeletionRevokesMixedSharerNotebookButKeepsOtherSharersEntry(
+      boolean notebookOwnerVisitedFirst) throws InterruptedException {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User u1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u1"));
+    User u2 = createAndSaveUserIfNotExists(getRandomAlphabeticString("u2"));
+    User recipient = createAndSaveUserIfNotExists(getRandomAlphabeticString("rcp"));
+    initialiseContentWithEmptyContent(pi, u1, u2, recipient);
+    Group labGroup = createGroup("g1", pi);
+    addUsersToGroup(pi, labGroup, u1, u2, recipient);
+    List<User> visitOrder = new ArrayList<>(new HashSet<>(labGroup.getMembers()));
+    boolean u1VisitedFirst = visitOrder.indexOf(u1) < visitOrder.indexOf(u2);
+    User owner = u1VisitedFirst == notebookOwnerVisitedFirst ? u1 : u2;
+    User otherSharer = owner.equals(u1) ? u2 : u1;
+    Group secondGroup = createGroup("g2", pi);
+    addUsersToGroup(pi, secondGroup, recipient, otherSharer);
+
+    logoutAndLoginAs(owner);
+    Notebook notebook = createNotebookWithNEntries(owner.getRootFolder().getId(), "nb", 2, owner);
+    List<BaseRecord> entries = folderDao.getChildren(notebook);
+    sharingMgr.shareRecord(owner, notebook.getId(), getIndividualShareCommand(recipient, "read"));
+    sharingMgr.shareRecord(
+        owner, entries.get(0).getId(), getIndividualShareCommand(recipient, "read"));
+    RecordGroupSharing keptShare =
+        extractShare(
+            sharingMgr.shareRecord(
+                owner, entries.get(1).getId(), getIndividualShareCommand(recipient, "write")));
+    // a legacy row recorded as shared by the other member
+    keptShare.setSharedBy(otherSharer);
+    regGrpDao.save(keptShare);
+    List<Long> revokedShares =
+        List.of(onlyShare(notebook).getId(), onlyShare(entries.get(0)).getId());
+    Folder pairFolder = folderDao.getIndividualSharedFolderForUsers(owner, recipient, null);
+
+    logoutAndLoginAs(pi);
+    clearInvocations(auditService);
+    grpMgr.removeGroup(labGroup.getId(), pi);
+
+    assertThat(sharingMgr.getRecordSharingInfo(notebook.getId())).isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(entries.get(0).getId())).isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(entries.get(1).getId()))
+        .extracting(RecordGroupSharing::getId)
+        .containsExactly(keptShare.getId());
+    assertThat(unshareEvents()).containsExactlyInAnyOrderElementsOf(events(revokedShares, pi));
+    assertThat(folderDao.getChildren(pairFolder))
+        .contains(entries.get(1))
+        .doesNotContain(notebook, entries.get(0));
+    logoutAndLoginAs(recipient);
+    assertFalse(permissionUtils.isPermitted(notebook, PermissionType.READ, recipient));
+    assertFalse(permissionUtils.isPermitted(entries.get(0), PermissionType.READ, recipient));
+    assertTrue(permissionUtils.isPermitted(entries.get(1), PermissionType.WRITE, recipient));
+  }
+
+  private RecordGroupSharing onlyShare(BaseRecord item) {
+    List<RecordGroupSharing> shares = sharingMgr.getRecordSharingInfo(item.getId());
+    assertThat(shares).hasSize(1);
+    return shares.get(0);
+  }
+
+  private RecordGroupSharing extractShare(
+      ServiceOperationResult<List<RecordGroupSharing>> shareRecord) {
+    return shareRecord.getEntity().get(0);
+  }
+
+  // the UNSHARE events as (share row id, subject)
+  private List<Map.Entry<Long, String>> unshareEvents() {
+    ArgumentCaptor<HistoricalEvent> events = ArgumentCaptor.forClass(HistoricalEvent.class);
+    verify(auditService, atLeast(0)).notify(events.capture());
+    return events.getAllValues().stream()
+        .filter(e -> e instanceof GenericEvent && e.getAuditAction() == AuditAction.UNSHARE)
+        .map(
+            e ->
+                Map.entry(
+                    ((RecordGroupSharing) e.getAuditedObject()).getId(),
+                    e.getSubject().getUniqueName()))
+        .collect(Collectors.toList());
+  }
+
+  private static List<Map.Entry<Long, String>> events(List<Long> shareIds, User subject) {
+    return shareIds.stream()
+        .map(id -> Map.entry(id, subject.getUsername()))
+        .collect(Collectors.toList());
   }
 
   // RSDEV-1636: the item is unlinked from the sharer's folder whoever unshares it

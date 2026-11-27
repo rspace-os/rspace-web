@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -332,7 +333,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     }
 
     List<RecordGroupSharing> shared =
-        doRecordOrNotebookShare(subject, recordOrNotebook, sharingConfigs, true);
+        doRecordOrNotebookShare(subject, recordOrNotebook, sharingConfigs, true, rgs -> false);
     // don't notify if autoshare is set
     // we dont mix sharing and publishing in the same 'share' action
     if (!shared.isEmpty() && !isAutoshare(sharingConfigs) && !publishing) {
@@ -369,14 +370,18 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   public void unshareRecord(
       User unsharing, Long recordToUnshareId, ShareConfigElement[] groupIdsToUnshareWith)
       throws IllegalAddChildOperation {
-    unshareAndListRemoved(unsharing, recordToUnshareId, groupIdsToUnshareWith);
+    unshareAndListRemoved(unsharing, recordToUnshareId, groupIdsToUnshareWith, rgs -> false);
   }
 
   private List<RecordGroupSharing> unshareAndListRemoved(
-      User unsharing, Long recordToUnshareId, ShareConfigElement[] groupIdsToUnshareWith) {
+      User unsharing,
+      Long recordToUnshareId,
+      ShareConfigElement[] groupIdsToUnshareWith,
+      Predicate<RecordGroupSharing> keepEntryShare) {
     BaseRecord recordOrNotebook = getRecordOrNotebook(recordToUnshareId);
     List<RecordGroupSharing> unshared =
-        doRecordOrNotebookShare(unsharing, recordOrNotebook, groupIdsToUnshareWith, false);
+        doRecordOrNotebookShare(
+            unsharing, recordOrNotebook, groupIdsToUnshareWith, false, keepEntryShare);
     if (!unshared.isEmpty() && !isAutoshare(groupIdsToUnshareWith)) {
       NotificationConfig cfg =
           NotificationConfig.builder()
@@ -399,6 +404,14 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
 
   @Override
   public boolean revokeIndividualShare(RecordGroupSharing share, boolean notifySharee) {
+    return revokeIndividualShare(share, notifySharee, rgs -> false);
+  }
+
+  @Override
+  public boolean revokeIndividualShare(
+      RecordGroupSharing share,
+      boolean notifySharee,
+      Predicate<RecordGroupSharing> keepEntryShare) {
     AbstractUserOrGroupImpl sharee = share.getSharee();
     BaseRecord shared = share.getShared();
     if (!sharee.isUser()
@@ -425,7 +438,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         new ShareConfigElement(share, perm.getActions().iterator().next().toString());
     config.setAutoshare(!notifySharee);
     List<RecordGroupSharing> removed =
-        unshareAndListRemoved(unsharer, shared.getId(), new ShareConfigElement[] {config});
+        unshareAndListRemoved(
+            unsharer, shared.getId(), new ShareConfigElement[] {config}, keepEntryShare);
     Object principal = SecurityUtils.getSubject().getPrincipal();
     User initiator = principal == null ? unsharer : userDao.getUserByUsername(principal.toString());
     removed.forEach(
@@ -614,11 +628,16 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
    * @param recordOrNotebook
    * @param groupShareCfgs
    * @param share true= sharing, false = unsharing
+   * @param keepEntryShare when unsharing a notebook, the separately shared entries to keep shared
    * @return a list of created/removed recordGroupSharings
    * @throws IllegalAddChildOperation
    */
   private List<RecordGroupSharing> doRecordOrNotebookShare(
-      User subject, BaseRecord recordOrNotebook, ShareConfigElement[] groupShareCfgs, boolean share)
+      User subject,
+      BaseRecord recordOrNotebook,
+      ShareConfigElement[] groupShareCfgs,
+      boolean share,
+      Predicate<RecordGroupSharing> keepEntryShare)
       throws IllegalAddChildOperation {
 
     List<RecordGroupSharing> sharees = new ArrayList<>();
@@ -641,7 +660,14 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
         continue;
       }
 
-      doSharing(subject, grpShareCfg, share, recordOrNotebook, userOrGroup, isAlreadyShared)
+      doSharing(
+              subject,
+              grpShareCfg,
+              share,
+              recordOrNotebook,
+              userOrGroup,
+              isAlreadyShared,
+              keepEntryShare)
           .stream()
           .forEach(sharees::add);
     }
@@ -683,7 +709,8 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       boolean share,
       BaseRecord docOrNotebook,
       AbstractUserOrGroupImpl toShareWith,
-      boolean isAlreadyShared)
+      boolean isAlreadyShared,
+      Predicate<RecordGroupSharing> keepEntryShare)
       throws IllegalAddChildOperation {
 
     String usernameInSession = SecurityUtils.getSubject().getPrincipal().toString();
@@ -699,7 +726,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     /* unshare operation handled by a separate method */
     if (!share) {
       log.info("Unsharing doc [{}] with [{}]", docOrNotebook.getId(), toShareWith.getDisplayName());
-      return doUnshare(subject, groupShareCfg, docOrNotebook, toShareWith);
+      return doUnshare(subject, groupShareCfg, docOrNotebook, toShareWith, keepEntryShare);
     }
 
     log.info("Sharing doc [{}] with [{}]", docOrNotebook.getId(), toShareWith.getDisplayName());
@@ -933,9 +960,11 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       User subject,
       ShareConfigElement groupShareCfg,
       BaseRecord docOrNotebook,
-      AbstractUserOrGroupImpl toUnshareWith) {
+      AbstractUserOrGroupImpl toUnshareWith,
+      Predicate<RecordGroupSharing> keepEntryShare) {
 
     List<RecordGroupSharing> unshared = new ArrayList<>();
+    List<BaseRecord> keptEntries = new ArrayList<>();
     List<BaseRecord> originalItemsToUnshare = TransformerUtils.toList(docOrNotebook);
     // there may be more items to unshare, e.g. shared entries of a shared notebook
     List<BaseRecord> otherItemsToUnshare = new ArrayList<>();
@@ -950,6 +979,12 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     for (BaseRecord toUnshare : otherItemsToUnshare) {
       Optional<RecordGroupSharing> rgsToDelete =
           groupshareRecordDao.findByRecordAndUserOrGroup(toUnshareWith.getId(), toUnshare.getId());
+      if (!toUnshare.equals(docOrNotebook)
+          && rgsToDelete.isPresent()
+          && keepEntryShare.test(rgsToDelete.get())) {
+        keptEntries.add(toUnshare);
+        continue;
+      }
       if (rgsToDelete.isPresent()) {
         unshared.add(rgsToDelete.get());
         groupshareRecordDao.removeRecordFromGroupShare(toUnshareWith.getId(), toUnshare.getId());
@@ -1014,6 +1049,17 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
             sharedParent.get().getId());
       }
       updateACL(toUnshare, removed, List.of());
+    }
+    // a kept entry share lost its access entry with the notebook's
+    for (BaseRecord entry : keptEntries) {
+      ConstraintBasedPermission own =
+          permissnUtils.findBy(
+              toUnshareWith.getPermissions(),
+              PermissionDomain.RECORD,
+              new IdConstraint(entry.getId()));
+      if (own != null) {
+        updateACL(entry, List.of(), List.of(toACLElement(toUnshareWith, own)));
+      }
     }
     return unshared;
   }

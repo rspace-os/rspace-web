@@ -13,6 +13,7 @@ import com.researchspace.model.record.RSPath;
 import com.researchspace.model.views.ServiceOperationResult;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 /** Services for sharing records with other users/ groups. */
 public interface RecordSharingManager {
@@ -139,6 +140,19 @@ public interface RecordSharingManager {
    *     sharee's permission is already gone, or if neither the sharer nor the owner may unshare
    */
   boolean revokeIndividualShare(RecordGroupSharing share, boolean notifySharee);
+
+  /**
+   * Like {@link #revokeIndividualShare(RecordGroupSharing, boolean)}, keeping some separately
+   * shared entries of a revoked notebook shared.
+   *
+   * @param share a share with a user other than the anonymous guest
+   * @param notifySharee false suppresses the "stopped sharing" notification
+   * @param keepEntryShare selects the separately shared entry shares to keep when a notebook is
+   *     revoked
+   * @return true if the share was revoked
+   */
+  boolean revokeIndividualShare(
+      RecordGroupSharing share, boolean notifySharee, Predicate<RecordGroupSharing> keepEntryShare);
 
   /**
    * ALters permission for a record that is already shared.

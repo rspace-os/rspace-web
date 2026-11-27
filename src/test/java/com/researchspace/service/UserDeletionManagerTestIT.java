@@ -579,6 +579,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(sharee);
     StructuredDocument shareesDoc = createBasicDocumentInRootFolderWithText(sharee, "own");
     share(sharee, shareesDoc, owner, "read");
+    Long outgoingShare = shareId(shareesDoc, owner);
     // residue of an older version: an entry without a share
     jdbcTemplate.update(
         "update BaseRecord set acl = concat(acl, '&', ?, '=RECORD:READ:') where id = ?",
@@ -610,9 +611,13 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(
         1,
         countRowsInTableWhere(jdbcTemplate, "BaseRecord", "name='" + pairFolder.getName() + "'"));
-    // one event per removed row, the notebook's separately shared entry included
+    // one event per removed row: the three incoming shares (the notebook's separately shared entry
+    // included) and the deleted user's own share with the owner (RSDEV-1429)
     assertThat(unshareEvents())
-        .containsExactlyInAnyOrderElementsOf(events(incomingShares, sysadmin));
+        .containsExactlyInAnyOrderElementsOf(
+            events(
+                Stream.concat(incomingShares.stream(), Stream.of(outgoingShare)).toList(),
+                sysadmin));
 
     User reused = createAndSaveUser(sharee.getUsername());
     initUsers(reused);
@@ -628,6 +633,40 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
             assertFalse(permissionUtils.isPermitted(item, PermissionType.WRITE, reused));
           }
         });
+  }
+
+  // RSDEV-1429 with RSDEV-1636: shares made by and with the deleted user both end
+  @Test
+  public void deletionRevokesIncomingAndOutgoingIndividualShares() throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User toDelete = createAndSaveUser(getRandomAlphabeticString("toDelete"));
+    User colleague = createAndSaveUser(getRandomAlphabeticString("colleague"));
+    initUsers(pi, toDelete, colleague);
+    logoutAndLoginAs(pi);
+    createGroupForUsers(pi, pi.getUsername(), "", pi, toDelete, colleague);
+    logoutAndLoginAs(toDelete);
+    StructuredDocument outgoing = createBasicDocumentInRootFolderWithText(toDelete, "out");
+    share(toDelete, outgoing, colleague, "read");
+    logoutAndLoginAs(colleague);
+    StructuredDocument incoming = createBasicDocumentInRootFolderWithText(colleague, "in");
+    share(colleague, incoming, toDelete, "write");
+    List<Long> shares = List.of(shareId(outgoing, colleague), shareId(incoming, toDelete));
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    Mockito.clearInvocations(auditService);
+    assertTrue(
+        userDeletionMgr
+            .removeUser(toDelete.getId(), unrestrictedDeletionPolicy(), sysadmin)
+            .isSucceeded());
+
+    assertEquals(
+        0,
+        countRowsInTableWhere(
+            jdbcTemplate,
+            "RecordGroupSharing",
+            "sharee_id=" + toDelete.getId() + " or shared_id=" + outgoing.getId()));
+    assertThat(aclNames(incoming.getId())).doesNotContain(toDelete.getUsername());
+    assertThat(unshareEvents()).containsExactlyInAnyOrderElementsOf(events(shares, sysadmin));
   }
 
   // RSDEV-1636: a legacy share whose recorded sharer did not create the folder it is linked in

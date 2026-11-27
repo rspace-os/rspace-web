@@ -67,6 +67,7 @@ import com.researchspace.model.views.GroupInvitation;
 import com.researchspace.model.views.GroupInvitation.Invitee;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserView;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNotSharedException;
@@ -92,6 +93,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -128,6 +130,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired UserGroupDao ugDao;
   private @Autowired RecordGroupSharingDao groupshareRecordDao;
   private @Autowired RecordSharingManager sharingManager;
+  private @Autowired IPropertyHolder properties;
   private @Autowired UserManager userManager;
   private @Autowired UserDao userDao;
   private @Autowired FolderDao folderDao;
@@ -249,6 +252,11 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   public Group removeUserFromGroup(String uname, Long grpId, User subject) {
+    return removeUserFromGroup(uname, grpId, subject, true);
+  }
+
+  private Group removeUserFromGroup(
+      String uname, Long grpId, User subject, boolean revokeIndividualShares) {
 
     Group grp = groupDao.get(grpId);
     User userToRemove = groupPermUtils.assertLeaveGroupPermissions(uname, subject, grp);
@@ -264,8 +272,9 @@ public class GroupManagerImpl implements GroupManager {
       sharingManager.unshareRecord(userToRemove, recordSharing.getShared().getId(), config);
     }
 
-    /* TODO: records shared with individual group members are kept shared after removing from group,
-     * that's probably not right and is raised as RSPAC-2047. */
+    if (revokeIndividualShares) {
+      revokeIndividualSharesOnLeave(userToRemove, grp, new HashSet<>(grp.getMembers()));
+    }
 
     if (grp.getCommunalGroupFolderId() != null) {
       Folder communalGrpFolder = folderDao.get(grp.getCommunalGroupFolderId());
@@ -778,9 +787,58 @@ public class GroupManagerImpl implements GroupManager {
     return false;
   }
 
+  /**
+   * Revokes the shares the leaving user made with members of the group they no longer share any
+   * group with (RSPAC-2047). Not on Cloud, where users may share without a common group.
+   */
+  private void revokeIndividualSharesOnLeave(User leaver, Group grp, Set<User> members) {
+    if (properties.isCloud()) {
+      return;
+    }
+    Set<Group> otherGroups = new HashSet<>(leaver.getGroups());
+    otherGroups.remove(grp);
+    Set<User> recipients = new HashSet<>(members);
+    recipients.remove(leaver);
+    recipients.removeAll(Group.getUniqueUsersInGroups(otherGroups, null));
+    if (recipients.isEmpty()) {
+      return;
+    }
+    Predicate<RecordGroupSharing> revoked =
+        rgs -> rgs.getSharee().isUser() && recipients.contains(rgs.getSharee().asUser());
+    for (RecordGroupSharing rgs : groupshareRecordDao.getSharesMadeBy(leaver)) {
+      if (!revoked.test(rgs)) {
+        continue;
+      }
+      // a separately shared entry with another recorded sharer is not this user's to revoke
+      boolean done =
+          sharingManager.revokeIndividualShare(
+              rgs, true, entry -> !madeBy(entry, leaver) || !revoked.test(entry));
+      // an inconsistent share row must not block the group removal or user deletion
+      if (!done
+          && groupshareRecordDao
+              .findByRecordAndUserOrGroup(rgs.getSharee().getId(), rgs.getShared().getId())
+              .isPresent()) {
+        log.warn(
+            "Could not revoke share [{}] of record [{}], kept",
+            rgs.getId(),
+            rgs.getShared().getId());
+      }
+    }
+  }
+
+  private static boolean madeBy(RecordGroupSharing rgs, User user) {
+    User sharer = rgs.getSharedBy() != null ? rgs.getSharedBy() : rgs.getShared().getOwner();
+    return sharer.equals(user);
+  }
+
   @Override
   public Group removeGroup(Long groupId, User subject) {
     Group group = groupDao.get(groupId);
+    // judge every member against the whole membership, so removal order does not matter
+    Set<User> members = new HashSet<>(group.getMembers());
+    for (User member : members) {
+      revokeIndividualSharesOnLeave(member, group, members);
+    }
     // remove any permissions from admins
     Set<User> admins = group.getLabAdminsWithViewAllPermission();
     removeUserFoldersAndLabAdminPermissions(group.getAllNonPIMembers(), admins, group);
@@ -789,10 +847,10 @@ public class GroupManagerImpl implements GroupManager {
     for (UserGroup ug : ugs) {
       User u = ug.getUser();
       if (!u.equals(subject)) {
-        removeUserFromGroup(u.getUsername(), groupId, subject);
+        removeUserFromGroup(u.getUsername(), groupId, subject, false);
       }
     }
-    removeUserFromGroup(subject.getUsername(), groupId, subject);
+    removeUserFromGroup(subject.getUsername(), groupId, subject, false);
     groupshareRecordDao.removeAllForGroup(group);
     if (group.isCollaborationGroup()) {
       CollabGroupCreationTracker todelete = collabGrpTrackerDao.getByGroupId(group);
