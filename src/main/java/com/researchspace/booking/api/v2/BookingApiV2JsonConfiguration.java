@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Configuration;
 public class BookingApiV2JsonConfiguration {
   @Bean
   public ApiV2JsonBodyTypes strictRequestBodyTypes() {
-    return new ApiV2JsonBodyTypes(List.of(BookingSettingsController.SettingsPatch.class));
+    return new ApiV2JsonBodyTypes(
+        List.of(
+            BookingSettingsController.SettingsPatch.class,
+            BookingDisplayPreferencesController.Replacement.class));
   }
 }

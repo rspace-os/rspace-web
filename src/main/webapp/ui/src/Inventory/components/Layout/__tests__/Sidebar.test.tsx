@@ -7,6 +7,8 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import type React from "react";
 import axios from "@/common/axios";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { deploymentPropertyQueryClient, deploymentPropertyQueryKeys } from "@/hooks/api/deploymentPropertyQueryClient";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 import NavigateContext from "../../../../stores/contexts/Navigate";
@@ -26,6 +28,9 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
     value: false,
   }),
 }));
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
+}));
 
 // Defaults to DENIED so the two pre-existing tests below are unaffected; the Requests-visibility
 // tests further down set this explicitly for each case.
@@ -37,9 +42,49 @@ function seedDeploymentProperties(sampleRequestsAvailable: "ALLOWED" | "DENIED" 
 }
 
 const mockAxios = new MockAdapter(axios);
+
+function renderBookingSidebar(rootStore: ReturnType<typeof makeMockRootStore>) {
+  seedDeploymentProperties();
+  return renderWithProviders(
+    <ThemeProvider theme={materialTheme}>
+      <LandmarksProvider>
+        <storesContext.Provider value={rootStore}>
+          <Sidebar id="foo" />
+        </storesContext.Provider>
+      </LandmarksProvider>
+    </ThemeProvider>,
+  );
+}
+
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
+  });
+
+  test("Booking System links to Booking when enabled", () => {
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    renderBookingSidebar(rootStore);
+
+    expect(useIsFeatureFlagEnabled).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
+    expect(screen.getByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).toHaveAttribute(
+      "href",
+      "/booking",
+    );
+  });
+
+  test("Booking System is hidden when the feature is disabled", () => {
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    renderBookingSidebar(rootStore);
+
+    expect(screen.queryByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).not.toBeInTheDocument();
   });
 
   test("Should have no axe violations.", async () => {
