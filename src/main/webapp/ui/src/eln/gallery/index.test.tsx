@@ -735,7 +735,7 @@ describe("Gallery", () => {
     /** A folder listed with each page's entries given in order; `failingPage` answers 500. */
     function mockPagedFolder(
       pages: ReadonlyArray<ReadonlyArray<ReturnType<typeof listingEntry>>>,
-      { failingPage }: { failingPage?: number } = {},
+      { failingPage, slowPage }: { failingPage?: number; slowPage?: Promise<void> } = {},
     ) {
       mockAxios.onGet(`/api/v1/files/${LINKED_ITEM_ID}`).reply(200, {
         id: LINKED_ITEM_ID,
@@ -747,9 +747,10 @@ describe("Gallery", () => {
         version: 1,
         parentFolderId: 123,
       });
-      mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(async ({ params }) => {
         const pageNumber = Number((params as URLSearchParams).get("pageNumber"));
         if (pageNumber === failingPage) return [500, {}];
+        if (pageNumber > 0) await slowPage;
         return [
           200,
           {
@@ -797,31 +798,64 @@ describe("Gallery", () => {
       expect(requestedPages()).toEqual(["0", "1"]);
     });
 
-    test("a failed page is not retried on its own, and a search afterwards pages only on request", async () => {
+    test("pressing Load more while the linked item's page is loading does not request it twice", async () => {
       const user = userEvent.setup();
-      const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
-      mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
-        failingPage: 1,
+      let releasePages = () => {};
+      const slowPage = new Promise<void>((resolve) => {
+        releasePages = resolve;
       });
+      mockPagedFolder(
+        [
+          [listingEntry(1, "newest.png")],
+          [listingEntry(2, "middle.png")],
+          [listingEntry(LINKED_ITEM_ID, "linked.png")],
+        ],
+        { slowPage },
+      );
 
       render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
 
       await waitFor(() => {
         expect(requestedPages()).toEqual(["0", "1"]);
       });
-      // the failed page can still be requested by hand
-      expect(screen.getByRole("button", { name: "gallery:loadMore" })).toBeVisible();
+      await user.click(screen.getByRole("button", { name: "gallery:loadMore" }));
+      releasePages();
 
-      await user.type(screen.getByPlaceholderText("gallery:mainPanel.searchPlaceholder"), "newest{Enter}");
-      expect(await screen.findByRole("gridcell", { name: /newest\.png/ })).toBeInTheDocument();
       await waitFor(() => {
-        expect(requestedPages("newest")).toEqual(["0"]);
+        expect(screen.getByRole("gridcell", { name: /linked\.png/ })).toHaveAttribute("aria-selected", "true");
       });
-      // give a wrongly resumed auto-paging the chance to request page 1
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      expect(requestedPages("newest")).toEqual(["0"]);
-      expect(requestedPages()).toEqual(["0", "1"]);
-      restoreConsole();
+      expect(requestedPages()).toEqual(["0", "1", "2"]);
+      expect(screen.getByRole("gridcell", { name: /middle\.png/ })).toBeInTheDocument();
+    });
+
+    test("a failed page is not retried on its own, and a search afterwards pages only on request", async () => {
+      const user = userEvent.setup();
+      const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
+      try {
+        mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
+          failingPage: 1,
+        });
+
+        render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+        await waitFor(() => {
+          expect(requestedPages()).toEqual(["0", "1"]);
+        });
+        // the failed page can still be requested by hand
+        expect(screen.getByRole("button", { name: "gallery:loadMore" })).toBeVisible();
+
+        await user.type(screen.getByPlaceholderText("gallery:mainPanel.searchPlaceholder"), "newest{Enter}");
+        expect(await screen.findByRole("gridcell", { name: /newest\.png/ })).toBeInTheDocument();
+        await waitFor(() => {
+          expect(requestedPages("newest")).toEqual(["0"]);
+        });
+        // give a wrongly resumed auto-paging the chance to request page 1
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(requestedPages("newest")).toEqual(["0"]);
+        expect(requestedPages()).toEqual(["0", "1"]);
+      } finally {
+        restoreConsole();
+      }
     });
   });
 
