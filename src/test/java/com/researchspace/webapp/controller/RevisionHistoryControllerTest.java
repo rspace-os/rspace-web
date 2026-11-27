@@ -174,13 +174,16 @@ public class RevisionHistoryControllerTest {
 
   @Test
   public void listRevisions() throws IOException {
+    user.setId(7L);
 
     final StructuredDocument sd1 = TestFactory.createAnySD();
     sd1.setOwner(user);
     sd1.setId(1L);
+    sd1.setModifiedBy("firstEditor");
 
     final StructuredDocument sd2 = sd1.copy();
     sd2.setId(1L);
+    sd2.setModifiedBy("secondEditor");
     sd2.setUserVersion(sd1.getUserVersion().increment());
 
     AuditedRecord auditedSD1 = new AuditedRecord(sd1, 11L);
@@ -198,6 +201,13 @@ public class RevisionHistoryControllerTest {
     List<RecordInformation> revisions = revisionsResponse.getData();
     assertThat(revisions).hasSize(2);
     assertEquals(Long.valueOf(11), revisions.get(0).getRevision());
+    assertEquals(Long.valueOf(12), revisions.get(1).getRevision());
+    assertEquals(sd1.getUserVersion().getVersion().longValue(), revisions.get(0).getVersion());
+    assertEquals(sd2.getUserVersion().getVersion().longValue(), revisions.get(1).getVersion());
+    assertEquals(user.getId(), revisions.get(0).getOwnerId());
+    assertEquals(user.getId(), revisions.get(1).getOwnerId());
+    assertEquals("firstEditor", revisions.get(0).getModifiedBy());
+    assertEquals("secondEditor", revisions.get(1).getModifiedBy());
   }
 
   private void generalExpectations() {

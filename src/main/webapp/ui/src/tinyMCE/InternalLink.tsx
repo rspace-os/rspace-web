@@ -18,12 +18,11 @@ import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import type { InternalLinkInsertParams, RevisionIdentifier, TinyMceEditor } from "@/tinyMCE/types";
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
-import UserDetails from "../components/UserDetails";
 import { getSorting, paginationOptions } from "../util/table";
 import type { Order } from "../util/types";
 
 type RevisionVersion = RevisionIdentifier;
-type RevisionSortKey = "version" | "name" | "ownerFullName" | "modificationDate";
+type RevisionSortKey = "version" | "name" | "modifiedBy" | "modificationDate";
 type RevisionSelection = RevisionVersion | null;
 interface RevisionRecord {
   id: RevisionIdentifier;
@@ -35,6 +34,7 @@ interface RevisionRecord {
   };
   ownerId: number;
   ownerFullName: string;
+  modifiedBy?: string | null;
   modificationDate: string;
 }
 interface RevisionHistoryResponse {
@@ -85,7 +85,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
     { id: "version", numeric: true, disablePadding: false, label: t("tinymce.internalLink.columns.version") },
     { id: "name", numeric: false, disablePadding: false, label: t("tinymce.internalLink.columns.name") },
     {
-      id: "ownerFullName",
+      id: "modifiedBy",
       numeric: false,
       disablePadding: false,
       label: t("tinymce.internalLink.columns.modifiedBy"),
@@ -151,7 +151,9 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
         const response = await axios.get<RevisionHistoryResponse>(
           `/workspace/revisionHistory/ajax/${props.id}/versions`,
         );
-        const fetchedRevisions = [...response.data.data].reverse();
+        const fetchedRevisions = response.data.data
+          .map((revision) => ({ ...revision, modifiedBy: revision.modifiedBy ?? "" }))
+          .reverse();
         const latest = fetchedRevisions[0] ?? null;
         setLatestRevision(latest);
         setRevisions(fetchedRevisions);
@@ -213,13 +215,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
                     {latestRevision.name}
                   </a>
                 </TableCell>
-                <TableCell align="left">
-                  <UserDetails
-                    userId={latestRevision.ownerId}
-                    fullName={latestRevision.ownerFullName}
-                    position={["bottom", "right"]}
-                  />
-                </TableCell>
+                <TableCell align="left">{latestRevision.modifiedBy}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -286,14 +282,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
                           {revision.name}
                         </a>
                       </TableCell>
-                      <TableCell align="left">
-                        <UserDetails
-                          userId={revision.ownerId}
-                          fullName={revision.ownerFullName}
-                          position={["bottom", "right"]}
-                          variant="outlined"
-                        />
-                      </TableCell>
+                      <TableCell align="left">{revision.modifiedBy}</TableCell>
                       <TableCell align="left">
                         <TimeAgoCustom time={revision.modificationDate} />
                       </TableCell>
