@@ -2,17 +2,20 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatImageAnnotation;
@@ -22,16 +25,20 @@ import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.AuditManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
@@ -40,17 +47,23 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 @TestPropertySource(
     properties = {"sample.png=src/test/resources/TestResources/GalleryThumbnail54x76.png"})
 public class ImageControllerMVCIT extends MVCTestBase {
 
   private User testUser, other;
+  private @Autowired EcatImageAnnotationDao imageAnnotationDao;
+  private @Autowired AuditManager auditManager;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -241,7 +254,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     EcatImageAnnotation annotation =
         postSaveImageAnnotation(
             RSpaceTestUtils.getAnyAnnotationOrSketchJson(),
-            getBase64Image(),
+            getImageBytes(),
             source.getId(),
             field.getId());
     String annotatedImage =
@@ -294,7 +307,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     EcatImageAnnotation annotation =
         postSaveImageAnnotation(
             RSpaceTestUtils.getAnyAnnotationOrSketchJson(),
-            getBase64Image(),
+            getImageBytes(),
             annotated.getId(),
             field.getId());
     doAutosaveMVC(
@@ -332,20 +345,18 @@ public class ImageControllerMVCIT extends MVCTestBase {
     // follow steps of this bug report and check revision can be retrieved
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     final Field field = doc.getFields().get(0);
-    String base64Image = getBase64Image();
+    byte[] image = getImageBytes();
     // create 2nd annotation, autosave and do real save
     String annot = RSpaceTestUtils.getAnyAnnotationOrSketchJson();
     EcatImage img = addImageToGallery(testUser);
 
-    EcatImageAnnotation ann =
-        postSaveImageAnnotation(annot, base64Image, img.getId(), field.getId());
+    EcatImageAnnotation ann = postSaveImageAnnotation(annot, image, img.getId(), field.getId());
     String annotationLink = richTextUpdater.generateAnnotatedImageElement(ann, field.getId() + "");
     doAutosaveAndSaveMVC(field, annotationLink, testUser);
 
     // create 2nd annotation, autosave and cancel
     EcatImage img2 = addImageToGallery(testUser);
-    EcatImageAnnotation an2 =
-        postSaveImageAnnotation(annot, base64Image, img2.getId(), field.getId());
+    EcatImageAnnotation an2 = postSaveImageAnnotation(annot, image, img2.getId(), field.getId());
     annotationLink = richTextUpdater.generateAnnotatedImageElement(an2, field.getId() + "");
     String currContent = fieldMgr.get(field.getId(), testUser).get().getFieldData();
     doAutosaveAndCancelMVC(field, currContent + " " + annotationLink, testUser);
@@ -360,6 +371,71 @@ public class ImageControllerMVCIT extends MVCTestBase {
         .andReturn();
   }
 
+  @Test
+  public void loadAnnotationsAtRevisionBeforeAnnotationExistedReturnsEmptyAnnotation()
+      throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    EcatImageAnnotation annotation =
+        postSaveImageAnnotation("drawn", getImageBytes(), imageId, field.getId());
+    String beforeAnnotation = revisionBeforeCreation(annotation);
+
+    mockMvc
+        .perform(
+            getImageAnnotationStringURL(field, imageId)
+                .param("revision", beforeAnnotation)
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").value(""));
+    mockMvc
+        .perform(
+            getSketchImageAnnotationStringURL(field, annotation.getId())
+                .param("revision", beforeAnnotation)
+                .principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").value(""));
+
+    // the annotated image at that revision falls back to the plain Gallery image
+    Field unannotatedField =
+        createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    byte[] galleryImage =
+        fetchBytes(
+            get("/image/getImage/{id}/{unused}", unannotatedField.getId() + "-" + imageId, "1"));
+    assertThat(galleryImage).isNotEmpty();
+    assertArrayEquals(
+        galleryImage,
+        fetchBytes(getAnnotatedImageURL(annotation).param("revision", beforeAnnotation)));
+
+    // a sketch at a revision before it existed falls back to the current sketch
+    EcatImageAnnotation sketch = addSketchToField(field, testUser);
+    assertArrayEquals(
+        doInTransaction(() -> imageAnnotationDao.get(sketch.getId()).getData()),
+        fetchBytes(
+            get("/image/getImageSketch/{id}/{unused}", sketch.getId(), "1")
+                .param("revision", revisionBeforeCreation(sketch))));
+  }
+
+  private String revisionBeforeCreation(EcatImageAnnotation annotation) {
+    int created =
+        auditManager
+            .getRevisionsForEntity(EcatImageAnnotation.class, annotation.getId())
+            .get(0)
+            .getRevision()
+            .intValue();
+    // Envers revision numbers are global and increasing, so the one before an entity's first
+    // revision predates it
+    return (created - 1) + "";
+  }
+
+  private byte[] fetchBytes(MockHttpServletRequestBuilder request) throws Exception {
+    return mockMvc
+        .perform(request.principal(new MockPrincipal(testUser.getUsername())))
+        .andExpect(status().is2xxSuccessful())
+        .andReturn()
+        .getResponse()
+        .getContentAsByteArray();
+  }
+
   private String getRevisionNumberofAnnotation(final Field fld) {
     String currContent;
     currContent = fieldMgr.get(fld.getId(), testUser).get().getFieldData();
@@ -370,14 +446,14 @@ public class ImageControllerMVCIT extends MVCTestBase {
     return revisionNumber;
   }
 
-  EcatImageAnnotation postSaveImageAnnotation(String annot, String base64, Long imgId, Long fieldId)
+  EcatImageAnnotation postSaveImageAnnotation(String annot, byte[] image, Long imgId, Long fieldId)
       throws Exception {
     MvcResult result =
         mockMvc
             .perform(
                 getSaveImageAnnotationURL()
+                    .file(imagePart(image))
                     .param("annotations", annot)
-                    .param("image", base64)
                     .param("imageId", imgId + "")
                     .param("parentId", fieldId + "")
                     .principal(new MockPrincipal(testUser.getUsername())))
@@ -447,6 +523,178 @@ public class ImageControllerMVCIT extends MVCTestBase {
     assertAuthorizationException(result);
   }
 
+  @Test
+  public void saveImageAnnotationStoresUploadedPngUnchanged() throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    byte[] png = noisyPng(400, 400);
+    assertThat(png.length).isGreaterThan(200_000);
+
+    EcatImageAnnotation saved = postSaveImageAnnotation("large", png, imageId, field.getId());
+
+    assertEquals(400, saved.getWidth());
+    assertArrayEquals(png, doInTransaction(() -> imageAnnotationDao.get(saved.getId()).getData()));
+  }
+
+  @Test
+  public void savesRejectEmptyOrUnreadableImagesAndKeepThePreviousImage() throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    byte[] original = getImageBytes();
+    Long annotationId =
+        postSaveImageAnnotation("original", original, imageId, field.getId()).getId();
+
+    byte[] notAnImage = "not a png".getBytes(StandardCharsets.UTF_8);
+    assertInstanceOf(
+        IllegalArgumentException.class,
+        saveImageAnnotationAs(testUser, field.getId(), imageId, annotationId, "changed", notAnImage)
+            .getResolvedException());
+    assertInstanceOf(
+        IllegalArgumentException.class,
+        saveImageAnnotationAs(testUser, field.getId(), imageId, null, "new", new byte[0])
+            .getResolvedException());
+    MvcResult emptySketch =
+        mockMvc
+            .perform(
+                multipart("/image/ajax/saveSketch")
+                    .file(imagePart(new byte[0]))
+                    .param("sketchId", "")
+                    .param("fieldId", field.getId() + "")
+                    .param("annotations", "any annotation")
+                    .principal(new MockPrincipal(testUser.getUsername())))
+            .andReturn();
+    assertInstanceOf(IllegalArgumentException.class, emptySketch.getResolvedException());
+
+    assertEquals("original", getAnnotations(annotationId));
+    assertArrayEquals(
+        original, doInTransaction(() -> imageAnnotationDao.get(annotationId).getData()));
+    assertThat(getAnnotationIdsInField(field.getId())).containsExactly(annotationId);
+  }
+
+  private byte[] noisyPng(int width, int height) throws IOException {
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    Random random = new Random(1);
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        image.setRGB(x, y, random.nextInt(0x1000000));
+      }
+    }
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ImageIO.write(image, "png", out);
+    return out.toByteArray();
+  }
+
+  @Test
+  public void saveImageAnnotationKeepsEachImageOccurrenceSeparate() throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    byte[] image = getImageBytes();
+
+    EcatImageAnnotation first = postSaveImageAnnotation("first", image, imageId, field.getId());
+    EcatImageAnnotation second = postSaveImageAnnotation("second", image, imageId, field.getId());
+    assertNotEquals(first.getId(), second.getId());
+
+    EcatImageAnnotation updated =
+        getFromJsonAjaxReturnObject(
+            saveImageAnnotationAs(testUser, field.getId(), imageId, second.getId(), "updated"),
+            EcatImageAnnotation.class);
+    assertEquals(second.getId(), updated.getId());
+    assertEquals("first", getAnnotations(first.getId()));
+    assertEquals("updated", getAnnotations(second.getId()));
+    assertThat(getAnnotationIdsInField(field.getId()))
+        .containsExactlyInAnyOrder(first.getId(), second.getId());
+  }
+
+  @Test
+  public void saveImageAnnotationRejectsMismatchedAnnotationOrMissingWritePermission()
+      throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Field otherField = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    Long otherImageId = addImageToGallery(testUser).getId();
+    Long annotationId =
+        postSaveImageAnnotation("original", getImageBytes(), imageId, field.getId()).getId();
+
+    assertAuthorizationException(
+        saveImageAnnotationAs(testUser, otherField.getId(), imageId, annotationId, "changed"));
+    assertAuthorizationException(
+        saveImageAnnotationAs(testUser, field.getId(), otherImageId, annotationId, "changed"));
+    assertInstanceOf(
+        ObjectRetrievalFailureException.class,
+        saveImageAnnotationAs(testUser, field.getId(), imageId, annotationId + 1000, "changed")
+            .getResolvedException());
+
+    logoutAndLoginAs(other);
+    assertAuthorizationException(
+        saveImageAnnotationAs(other, field.getId(), imageId, null, "changed"));
+    assertAuthorizationException(
+        saveImageAnnotationAs(other, field.getId(), imageId, annotationId, "changed"));
+    logoutAndLoginAs(testUser);
+
+    assertEquals("original", getAnnotations(annotationId));
+    assertThat(getAnnotationIdsInField(field.getId())).containsExactly(annotationId);
+    assertThat(getAnnotationIdsInField(otherField.getId())).isEmpty();
+  }
+
+  @Test
+  public void legacyImageLinkLoadsTheOldestAnnotationForItsFieldAndImage() throws Exception {
+    Field field = createBasicDocumentInRootFolderWithText(testUser, "any").getFields().get(0);
+    Long imageId = addImageToGallery(testUser).getId();
+    byte[] image = getImageBytes();
+
+    assertEquals("", getLegacyLinkAnnotations(field, imageId));
+    postSaveImageAnnotation("oldest", image, imageId, field.getId());
+    assertEquals("oldest", getLegacyLinkAnnotations(field, imageId));
+    postSaveImageAnnotation("newer", image, imageId, field.getId());
+    assertEquals("oldest", getLegacyLinkAnnotations(field, imageId));
+  }
+
+  private MvcResult saveImageAnnotationAs(
+      User user, Long fieldId, Long imageId, Long annotationId, String annotations)
+      throws Exception {
+    return saveImageAnnotationAs(
+        user, fieldId, imageId, annotationId, annotations, getImageBytes());
+  }
+
+  private MvcResult saveImageAnnotationAs(
+      User user, Long fieldId, Long imageId, Long annotationId, String annotations, byte[] png)
+      throws Exception {
+    MockHttpServletRequestBuilder request =
+        getSaveImageAnnotationURL()
+            .file(imagePart(png))
+            .param("annotations", annotations)
+            .param("imageId", imageId + "")
+            .param("parentId", fieldId + "")
+            .principal(new MockPrincipal(user.getUsername()));
+    if (annotationId != null) {
+      request.param("annotationId", annotationId + "");
+    }
+    return mockMvc.perform(request).andReturn();
+  }
+
+  private String getAnnotations(Long annotationId) throws Exception {
+    return doInTransaction(() -> imageAnnotationDao.get(annotationId).getAnnotations());
+  }
+
+  private List<Long> getAnnotationIdsInField(Long fieldId) throws Exception {
+    return doInTransaction(
+        () ->
+            imageAnnotationDao.getAllImageAnnotationsFromField(fieldId).stream()
+                .map(EcatImageAnnotation::getId)
+                .toList());
+  }
+
+  private String getLegacyLinkAnnotations(Field field, Long imageId) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                getImageAnnotationStringURL(field, imageId)
+                    .principal(new MockPrincipal(testUser.getUsername())))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    return (String) parseJSONObjectFromResponseStream(result).get("data");
+  }
+
   MockHttpServletRequestBuilder getImageAnnotationStringURL(Field fld, Long id) {
     return get("/image/ajax/loadImageAnnotations")
         .param("parentId", fld.getId() + "")
@@ -469,8 +717,12 @@ public class ImageControllerMVCIT extends MVCTestBase {
     return get("/image/getImageSketch/{id}/{unused}", id, "1234");
   }
 
-  MockHttpServletRequestBuilder getSaveImageAnnotationURL() {
-    return post("/image/ajax/saveImageAnnotation");
+  MockMultipartHttpServletRequestBuilder getSaveImageAnnotationURL() {
+    return multipart("/image/ajax/saveImageAnnotation");
+  }
+
+  private MockMultipartFile imagePart(byte[] png) {
+    return new MockMultipartFile("image", "sketch.png", MediaType.IMAGE_PNG_VALUE, png);
   }
 
   @Test
@@ -541,13 +793,13 @@ public class ImageControllerMVCIT extends MVCTestBase {
   public void saveLoadSketch() throws Exception {
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(testUser, "any");
     Long fId = sd.getFields().get(0).getId();
-    String base64 = getBase64Image();
+    byte[] image = getImageBytes();
     mockPrincipal = new MockPrincipal(testUser.getUsername());
     MvcResult result =
         mockMvc
             .perform(
-                post("/image/ajax/saveSketch")
-                    .param("image", base64)
+                multipart("/image/ajax/saveSketch")
+                    .file(imagePart(image))
                     .param("sketchId", "")
                     .param("fieldId", fId + "")
                     .param("annotations", "any annotation")
@@ -567,8 +819,8 @@ public class ImageControllerMVCIT extends MVCTestBase {
     result =
         mockMvc
             .perform(
-                post("/image/ajax/saveSketch")
-                    .param("image", base64)
+                multipart("/image/ajax/saveSketch")
+                    .file(imagePart(image))
                     .param("sketchId", "")
                     .param("fieldId", fId + "")
                     .param("annotations", "any annotation")

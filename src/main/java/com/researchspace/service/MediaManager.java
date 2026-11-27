@@ -240,17 +240,18 @@ public interface MediaManager {
    * Updates an existing sketch, or creates a new one.
    *
    * @param annotations
-   * @param imageBase64
+   * @param imageBytes the sketch PNG
    * @param sketchId can be "", in which case a new sketch is created
    * @param fieldId
    * @param record
    * @param subject
    * @return EcatImageAnnotation
+   * @throws IllegalArgumentException if <code>imageBytes</code> is empty or not a readable image
    * @throws IOException
    */
   EcatImageAnnotation saveSketch(
       String annotations,
-      String imageBase64,
+      byte[] imageBytes,
       String sketchId,
       long fieldId,
       Record record,
@@ -258,20 +259,29 @@ public interface MediaManager {
       throws IOException;
 
   /**
-   * @param annotations
-   * @param imageBase64
-   * @param fieldId
-   * @param record
-   * @param imageId
-   * @return EcatImageAnnotation
+   * Saves an annotation drawn on one occurrence of a Gallery image in a text field.
+   *
+   * @param annotations the Zwibbler drawing data
+   * @param imageBytes the annotated PNG
+   * @param fieldId the text field containing the image
+   * @param record the document owning the field
+   * @param imageId the annotated Gallery image
+   * @param annotationId the annotation to update, or <code>null</code> to create a new one
+   * @param subject the user saving the annotation
+   * @return the saved EcatImageAnnotation
+   * @throws org.apache.shiro.authz.AuthorizationException if <code>subject</code> cannot edit
+   *     <code>record</code>, or <code>annotationId</code> doesn't belong to this field, record and
+   *     image
+   * @throws IllegalArgumentException if <code>imageBytes</code> is empty or not a readable image
    * @throws IOException
    */
   EcatImageAnnotation saveImageAnnotation(
       String annotations,
-      String imageBase64,
+      byte[] imageBytes,
       long fieldId,
       Record record,
       long imageId,
+      Long annotationId,
       User subject)
       throws IOException;
 

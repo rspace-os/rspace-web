@@ -32,6 +32,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -199,13 +200,19 @@ public class RichTextUpdater {
   }
 
   /**
-   * Parses and img src URL for an image in a text field, returning a POJO with the link
-   * information, or <code>null</code> if could not be parsed.
+   * Whether an image src uses the pre-1.29 <code>/image/getImage/fieldId-imageId</code> form, the
+   * only image link that refers to an annotation by field and image rather than annotation ID.
+   */
+  public static boolean isLegacyImageURL(String src) {
+    return src != null && src.contains(GET_IMAGE_URL);
+  }
+
+  /**
+   * Parses an image URL from a text field.
    *
-   * @param sourceURL
-   * @param sourceType one of IMAGE, CHEMfor thumbnil images, or empty string if it's another link
-   *     type
-   * @return An {@link ImageURL}.
+   * @param sourceURL the image src
+   * @param sourceType IMAGE or CHEM for thumbnail URLs, or the empty string for other links
+   * @return the image link information, or <code>null</code> if the URL could not be parsed
    */
   public static ImageURL parseImageIdFromSrcURLInTextField(String sourceURL, String sourceType) {
     // This pattern no longer matches uploaded images
@@ -453,6 +460,26 @@ public class RichTextUpdater {
    */
   public String updateImageIdsAndAnnoIdsInCopy(
       Map<Long, Long> oldParent2NewParent, Map<Long, Long> oldAnnoId2NewAnnoId, String fieldData) {
+    return updateImageIdsAndAnnoIdsInCopy(
+        oldParent2NewParent, oldAnnoId2NewAnnoId, Collections.emptyMap(), fieldData);
+  }
+
+  /**
+   * Updates image and annotation links in copied field content.
+   *
+   * @param oldParent2NewParent source field ID to copied field ID
+   * @param oldAnnoId2NewAnnoId source annotation ID to copied annotation ID
+   * @param legacyLink2OldAnnoId source "fieldId-imageId" to the source annotation that a legacy
+   *     <code>/image/getImage/</code> link with that ID resolves to. Such links become explicit
+   *     links to the copied annotation, as the copy's own oldest annotation may be a different one.
+   * @param fieldData the copied content
+   * @return the updated content
+   */
+  public String updateImageIdsAndAnnoIdsInCopy(
+      Map<Long, Long> oldParent2NewParent,
+      Map<Long, Long> oldAnnoId2NewAnnoId,
+      Map<String, Long> legacyLink2OldAnnoId,
+      String fieldData) {
 
     if (StringUtils.isBlank(fieldData)) {
       return fieldData;
@@ -470,7 +497,23 @@ public class RichTextUpdater {
         Long newFld = oldParent2NewParent.get(oldFld);
         if (newFld != null) {
           el.attr("id", newFld + "-" + oldImg);
-          el.attr("src", GET_IMAGE_URL + newFld + "-" + oldImg + "/" + randomGenerator.nextLong());
+          String src = el.attr("src");
+          Long legacyOldAnnoId =
+              el.hasAttr(DATA_ID) || !isLegacyImageURL(src)
+                  ? null
+                  : legacyLink2OldAnnoId.get(oldId);
+          Long legacyAnnoId =
+              legacyOldAnnoId == null ? null : oldAnnoId2NewAnnoId.get(legacyOldAnnoId);
+          if (src.startsWith("/thumbnail/data")) {
+            el.attr("src", withThumbnailParentId(src, newFld));
+          } else if (legacyAnnoId != null) {
+            // as an explicit link to the source annotation, which is mapped to its copy below
+            el.attr(DATA_ID, "" + legacyOldAnnoId);
+            el.attr(DATA_TYPE, DATA_TYPE_ANNOTATION);
+          } else {
+            el.attr(
+                "src", GET_IMAGE_URL + newFld + "-" + oldImg + "/" + randomGenerator.nextLong());
+          }
         }
 
         if (el.hasAttr(DATA_TYPE)
@@ -1565,15 +1608,17 @@ public class RichTextUpdater {
             CLASS, FieldParserConstants.IMAGE_DROPPED_CLASS_NAME);
     for (Element elm : elms) {
       if (elm.attr("src").startsWith("/thumbnail")) {
-        String src = elm.attr("src");
-        src = src.replaceFirst("sourceParentId=\\d+", "sourceParentId=" + newParentId);
-        elm.attr("src", src);
+        elm.attr("src", withThumbnailParentId(elm.attr("src"), newParentId));
         String id = elm.attr("id");
         id = id.replaceFirst("^\\d+-", newParentId + "-");
         elm.attr("id", id);
       }
     }
     return dc.body().html();
+  }
+
+  private String withThumbnailParentId(String src, Long parentId) {
+    return src.replaceFirst(SOURCE_PARENT_ID + "=\\d+", SOURCE_PARENT_ID + "=" + parentId);
   }
 
   /** Generates new src URL for a thumbnail */

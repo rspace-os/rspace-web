@@ -178,7 +178,7 @@ public interface AuditManager {
    * @param cls
    * @param primaryKey
    * @param revision
-   * @return
+   * @return the element at that revision, or <code>null</code> if it didn't exist then
    */
   <T extends IFieldLinkableElement> AuditedEntity<T> getLinkableElementForRevision(
       Class<T> cls, Long primaryKey, Number revision);

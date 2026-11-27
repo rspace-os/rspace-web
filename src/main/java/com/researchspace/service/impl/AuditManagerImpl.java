@@ -384,6 +384,9 @@ public class AuditManagerImpl implements AuditManager {
   public <T extends IFieldLinkableElement> AuditedEntity<T> getLinkableElementForRevision(
       Class<T> cls, Long primaryKey, Number revision) {
     AuditedEntity<T> element = auditDao.getObjectForRevision(cls, primaryKey, revision);
+    if (element == null) {
+      return null;
+    }
     baseRecordAdapter.getAsBaseRecord(element.getEntity());
     return element;
   }

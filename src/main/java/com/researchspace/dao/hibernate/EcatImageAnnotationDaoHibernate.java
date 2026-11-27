@@ -20,7 +20,7 @@ public class EcatImageAnnotationDaoHibernate extends GenericDaoHibernate<EcatIma
         getSession()
             .createQuery(
                 "from EcatImageAnnotation annot where annot.parentId = :parentId and annot.imageId"
-                    + " = :imageId",
+                    + " = :imageId order by annot.id",
                 EcatImageAnnotation.class);
     query.setParameter("parentId", parentId);
     query.setParameter("imageId", imageId);

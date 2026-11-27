@@ -438,10 +438,11 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // save new version of image annotation
     mediaMgr.saveImageAnnotation(
         newAnnotation,
-        getBase64Image(),
+        getImageBytes(),
         ann.getParentId(),
         ann.getRecord(),
         ann.getImageId(),
+        ann.getId(),
         piUser);
     // so now, there are 2 revisions of
     assertThat(auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, ann.getId())).hasSize(2);

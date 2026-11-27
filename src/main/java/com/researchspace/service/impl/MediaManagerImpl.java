@@ -82,7 +82,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -109,7 +108,6 @@ public class MediaManagerImpl implements MediaManager {
   private @Autowired IFileIndexer fileIndexer;
 
   private @Autowired IPermissionUtils permUtils;
-  private @Autowired BaseRecordAdaptable recordAdapter;
   private @Autowired IMediaFactory mediaFactory;
   private @Autowired FieldManager fieldMgr;
 
@@ -735,7 +733,7 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatImageAnnotation saveSketch(
       String annotations,
-      String imageBase64,
+      byte[] imageBytes,
       String sketchId,
       long fieldId,
       Record record,
@@ -745,10 +743,7 @@ public class MediaManagerImpl implements MediaManager {
       log.warn("Subject should not be null; this method is authorised");
     }
 
-    Base64 dec = new Base64();
-    byte[] decodedBytes = dec.decode(imageBase64.split(",")[1]);
-
-    BufferedImage bufferedImage = getImageFromBytes(decodedBytes);
+    BufferedImage bufferedImage = readUploadedImage(imageBytes);
 
     EcatImageAnnotation ecatImageAnnotation = null;
     if (!sketchId.isEmpty()) {
@@ -757,15 +752,13 @@ public class MediaManagerImpl implements MediaManager {
 
     if (ecatImageAnnotation != null) {
       // we modify an already existing annotation
-      ecatImageAnnotation.setData(decodedBytes);
+      ecatImageAnnotation.setData(imageBytes);
       ecatImageAnnotation.setAnnotations(annotations);
     } else {
-      ecatImageAnnotation = new EcatImageAnnotation(fieldId, record, decodedBytes, annotations);
+      ecatImageAnnotation = new EcatImageAnnotation(fieldId, record, imageBytes, annotations);
     }
-    if (bufferedImage != null) {
-      ecatImageAnnotation.setHeight(bufferedImage.getHeight());
-      ecatImageAnnotation.setWidth(bufferedImage.getWidth());
-    }
+    ecatImageAnnotation.setHeight(bufferedImage.getHeight());
+    ecatImageAnnotation.setWidth(bufferedImage.getWidth());
 
     Record parentRecord = recordManager.get(ecatImageAnnotation.getRecord().getId());
     if (subject != null && !permUtils.isPermitted(parentRecord, PermissionType.READ, subject)) {
@@ -777,10 +770,17 @@ public class MediaManagerImpl implements MediaManager {
     return ecatImageAnnotation;
   }
 
-  private BufferedImage getImageFromBytes(byte[] decodedBytes) throws IOException {
+  /** Reads an uploaded sketch or annotation, rejecting bytes that aren't a readable image. */
+  private BufferedImage readUploadedImage(byte[] imageBytes) throws IOException {
     BufferedImage bufferedImage = null;
-    try (ByteArrayInputStream bis = new ByteArrayInputStream(decodedBytes)) {
-      bufferedImage = ImageIO.read(bis);
+    if (imageBytes != null && imageBytes.length > 0) {
+      try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
+        bufferedImage = ImageIO.read(bis);
+      }
+    }
+    if (bufferedImage == null) {
+      throw new IllegalArgumentException(
+          "The uploaded sketch image is empty or not a readable image");
     }
     return bufferedImage;
   }
@@ -800,55 +800,49 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatImageAnnotation saveImageAnnotation(
       String annotations,
-      String imageBase64,
+      byte[] imageBytes,
       long parentId,
       Record record,
       long imageId,
+      Long annotationId,
       User subject)
       throws IOException {
 
-    Base64 dec = new Base64();
-    byte[] decodedBytes = dec.decode(imageBase64.split(",")[1]);
-
-    BufferedImage bufferedImage = getImageFromBytes(decodedBytes);
-
-    EcatImageAnnotation ecatImageAnnotation =
-        ecatImageAnnotationManager.getByParentIdAndImageId(parentId, imageId, subject);
-    if (ecatImageAnnotation != null) {
-      Optional<BaseRecord> brOpt = recordAdapter.getAsBaseRecord(ecatImageAnnotation);
-      if (!brOpt.isPresent()
-          || (subject != null
-              && !permUtils.isPermitted(brOpt.get(), PermissionType.WRITE, subject))) {
-        throw new AuthorizationException(
-            messages.getMessage(
-                "errors.authorization.failure.saveAnnotation",
-                new Object[] {subject.getUsername()}));
-      }
+    if (subject == null || !permUtils.isPermitted(record, PermissionType.WRITE, subject)) {
+      throw saveAnnotationAuthorizationException(subject);
     }
+    BufferedImage bufferedImage = readUploadedImage(imageBytes);
 
-    boolean updatingExistingAnnotation = false;
-    if (ecatImageAnnotation != null) {
-      updatingExistingAnnotation = true;
-      ecatImageAnnotation.setData(decodedBytes);
-      ecatImageAnnotation.setAnnotations(annotations);
-    } else {
-      ecatImageAnnotation = new EcatImageAnnotation(parentId, record, decodedBytes, annotations);
+    EcatImageAnnotation ecatImageAnnotation;
+    if (annotationId == null) {
+      // each save from a raw image creates a separate annotation for that image occurrence
+      ecatImageAnnotation = new EcatImageAnnotation(parentId, record, null, annotations);
       ecatImageAnnotation.setImageId(imageId);
+    } else {
+      ecatImageAnnotation = ecatImageAnnotationManager.get(annotationId, subject);
+      if (ecatImageAnnotation.getParentId() == null
+          || ecatImageAnnotation.getParentId() != parentId
+          || ecatImageAnnotation.getImageId() == null
+          || ecatImageAnnotation.getImageId() != imageId
+          || ecatImageAnnotation.getRecord() == null
+          || !ecatImageAnnotation.getRecord().getId().equals(record.getId())) {
+        throw saveAnnotationAuthorizationException(subject);
+      }
+      ecatImageAnnotation.setAnnotations(annotations);
     }
 
-    if (bufferedImage != null) {
-      ecatImageAnnotation.setHeight(bufferedImage.getHeight());
-      ecatImageAnnotation.setWidth(bufferedImage.getWidth());
-    }
+    ecatImageAnnotation.setData(imageBytes);
+    ecatImageAnnotation.setHeight(bufferedImage.getHeight());
+    ecatImageAnnotation.setWidth(bufferedImage.getWidth());
     ecatImageAnnotationManager.save(ecatImageAnnotation, subject);
-
-    if (updatingExistingAnnotation) {
-      // force revision AFTER we've saved the annotation - the document revision will be >
-      // than the annotation revision
-      //	recordManager.forceVersionUpdate(parentId, DeltaType.IMAGE_ANNOTATION, null);
-    }
-
     return ecatImageAnnotation;
+  }
+
+  private AuthorizationException saveAnnotationAuthorizationException(User subject) {
+    String username = subject == null ? null : subject.getUsername();
+    return new AuthorizationException(
+        messages.getMessage(
+            "errors.authorization.failure.saveAnnotation", new Object[] {username}));
   }
 
   @Override

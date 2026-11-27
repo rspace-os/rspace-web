@@ -59,6 +59,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 /** This controller returns an image so that it may be displayed within an image tag or CSS */
 @Controller
@@ -431,10 +432,9 @@ public class ImageController extends BaseController {
       ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
       ecatImageCurrent = ecatImageAnnotation;
     } else {
-      ecatImageAnnotation =
-          auditManager
-              .getLinkableElementForRevision(EcatImageAnnotation.class, sketchId, revision)
-              .getEntity();
+      AuditedEntity<EcatImageAnnotation> audited =
+          auditManager.getLinkableElementForRevision(EcatImageAnnotation.class, sketchId, revision);
+      ecatImageAnnotation = audited == null ? null : audited.getEntity();
       // failover for case where there is no audit table pre 0.8
       if (ecatImageAnnotation == null) {
         ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
@@ -466,12 +466,15 @@ public class ImageController extends BaseController {
     EcatImageAnnotation annotation =
         ecatImageAnnotationManager.getByParentIdAndImageId(parentId, imageId, subject);
     if (revision != null && annotation != null) {
-      annotation =
-          auditManager
-              .getObjectForRevision(EcatImageAnnotation.class, annotation.getId(), revision)
-              .getEntity();
+      annotation = getAnnotationAtRevision(annotation.getId(), revision);
     }
     return returnAnnotationData(annotation, subject);
+  }
+
+  private EcatImageAnnotation getAnnotationAtRevision(long annotationId, Integer revision) {
+    AuditedEntity<EcatImageAnnotation> audited =
+        auditManager.getObjectForRevision(EcatImageAnnotation.class, annotationId, revision);
+    return audited == null ? null : audited.getEntity();
   }
 
   /**
@@ -479,23 +482,30 @@ public class ImageController extends BaseController {
    *
    * @param sketchId the id of the sketch.
    * @param revision an optional revision number
+   * @param missingAsEmpty whether to return an empty drawing for a missing Gallery image annotation
    * @return {@link AjaxReturnObject} of type String with annotation data
    */
   @GetMapping("ajax/loadSketchImageAnnotations")
   @ResponseBody
   public AjaxReturnObject<String> loadSketchAnnotations(
       @RequestParam("sketchId") long sketchId,
-      @RequestParam(value = "revision", required = false) Integer revision) {
+      @RequestParam(value = "revision", required = false) Integer revision,
+      @RequestParam(value = "missingAsEmpty", defaultValue = "false") boolean missingAsEmpty) {
 
     User u = userManager.getAuthenticatedUserInSession();
-    EcatImageAnnotation ecatImageAnnotation = null;
+    EcatImageAnnotation ecatImageAnnotation;
     if (revision == null) {
-      ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
+      try {
+        ecatImageAnnotation = ecatImageAnnotationManager.get(sketchId, null);
+      } catch (ObjectRetrievalFailureException e) {
+        if (!missingAsEmpty) {
+          throw e;
+        }
+        log.warn("Gallery image annotation {} no longer exists", sketchId);
+        return returnAnnotationData(null, u);
+      }
     } else {
-      ecatImageAnnotation =
-          auditManager
-              .getObjectForRevision(EcatImageAnnotation.class, sketchId, revision)
-              .getEntity();
+      ecatImageAnnotation = getAnnotationAtRevision(sketchId, revision);
     }
     return returnAnnotationData(ecatImageAnnotation, u);
   }
@@ -514,20 +524,21 @@ public class ImageController extends BaseController {
    * Method to save an annotated image (EcatImageAnnotation).
    *
    * @param annotations
-   * @param imageBase64
+   * @param image the annotated PNG, sent as a file so form size limits don't apply
    * @param fieldId
    * @param imageId
+   * @param annotationId the annotation to update; omitted when annotating a raw image
    * @return EcatImageAnnotation
    * @throws IOException
    */
   @PostMapping("ajax/saveImageAnnotation")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"image"})
   @ResponseBody
   public AjaxReturnObject<EcatImageAnnotation> saveImageAnnotation(
       @RequestParam("annotations") String annotations,
-      @RequestParam("image") String imageBase64,
+      @RequestParam("image") MultipartFile image,
       @RequestParam("parentId") long fieldId,
       @RequestParam("imageId") long imageId,
+      @RequestParam(value = "annotationId", required = false) Long annotationId,
       Principal principal)
       throws IOException {
 
@@ -535,17 +546,22 @@ public class ImageController extends BaseController {
     Field field = fieldManager.get(fieldId, subject).get();
     EcatImageAnnotation ecatImageAnnotation =
         mediaManager.saveImageAnnotation(
-            annotations, imageBase64, fieldId, field.getStructuredDocument(), imageId, subject);
+            annotations,
+            image.getBytes(),
+            fieldId,
+            field.getStructuredDocument(),
+            imageId,
+            annotationId,
+            subject);
     ecatImageAnnotation.setData(null);
     return new AjaxReturnObject<>(ecatImageAnnotation, null);
   }
 
   @PostMapping("ajax/saveSketch")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"image"})
   @ResponseBody
   public AjaxReturnObject<EcatImageAnnotation> saveSketch(
       @RequestParam("annotations") String annotations,
-      @RequestParam("image") String imageBase64,
+      @RequestParam("image") MultipartFile image,
       @RequestParam("sketchId") String sketchId,
       @RequestParam("fieldId") long fieldId)
       throws Exception {
@@ -555,7 +571,7 @@ public class ImageController extends BaseController {
     EcatImageAnnotation ecatImageAnnotation =
         mediaManager.saveSketch(
             annotations,
-            imageBase64,
+            image.getBytes(),
             sketchId,
             field.getId(),
             field.getStructuredDocument(),

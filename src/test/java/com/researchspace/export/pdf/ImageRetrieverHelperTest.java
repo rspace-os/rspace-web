@@ -3,6 +3,8 @@ package com.researchspace.export.pdf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -229,12 +231,12 @@ public class ImageRetrieverHelperTest {
   public void testThumbnailImageIncluded() throws IOException {
     EcatImage rawimg = TestFactory.createEcatImage(5L);
     rawimg.setWorkingImage(new ImageBlob(getAnyPngImage()));
-    setPermissionsToReturn(rawimg, true);
     String thumbnailLink = textupdater.generateRawImageElement(rawimg, 3L + "");
-    // simulate no image annotation
-    when(imageMgr.getByParentIdAndImageId(3L, rawimg.getId(), null)).thenReturn(null);
     when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true)).thenReturn(rawimg);
-    assertNotNull(imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config));
+    // a raw thumbnail never picks up an annotation of another copy of the image in the field
+    assertThat(imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config))
+        .containsExactly(getAnyPngImage());
+    verify(imageMgr, never()).getByParentIdAndImageId(anyLong(), anyLong(), any());
 
     when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true)).thenReturn(null);
     assertThat(imgRetriever.getImageBytesFromImgSrc(thumbnailLink, config))
@@ -254,6 +256,19 @@ public class ImageRetrieverHelperTest {
     when(auditMgr.getObjectForRevision(EcatImage.class, rawimg.getId(), 23L))
         .thenReturn(new AuditedEntity<EcatImage>(rawimg, 23));
     assertNotNull(imgRetriever.getImageBytesFromImgSrc(revisionedLink, config));
+  }
+
+  @Test
+  public void testLegacyImageLinkIncludesAnnotationForFieldAndImage() throws IOException {
+    EcatImage rawimg = TestFactory.createEcatImage(5L);
+    EcatImageAnnotation annotation = TestFactory.createImageAnnoatation(3L, 2L);
+    byte[] annotationBytes = new byte[] {7, 8, 9};
+    annotation.setData(annotationBytes);
+    when(imageMgr.getByParentIdAndImageId(3L, rawimg.getId(), config.getExporter()))
+        .thenReturn(annotation);
+    String legacyLink = textupdater.generateURLStringForEcatImageLink(rawimg, 3L + "");
+    assertThat(imgRetriever.getImageBytesFromImgSrc(legacyLink, config))
+        .containsExactly(annotationBytes);
   }
 
   RSChemElement setUpChemElement() throws IOException {

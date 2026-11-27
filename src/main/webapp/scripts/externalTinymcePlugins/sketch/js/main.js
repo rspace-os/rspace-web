@@ -26,6 +26,7 @@ var sketchDialog = {
     var data = null;
     var url = null;
     var src = null;
+    var loadingAnnotationById = false;
 
     // if sketch was selected it loads sketch
     if ((n.nodeName = "IMG") && ($(n).hasClass("sketch"))) {
@@ -43,17 +44,24 @@ var sketchDialog = {
       var parentId = id.split("-")[0];
       var imageId = id.split("-")[1];
       var revision = n.getAttribute("data-rsrevision");
+      var annotationId = /^\d+$/.test(n.getAttribute("data-id") || "") ? n.getAttribute("data-id") : null;
       $('.sketchId').attr('data-id', imageId);
       $('.dataSize').attr('data-size', n.getAttribute("data-size"));
       $('.typeSketch').attr('data-type', "imageAnnotationType");
+      sketchDialog.selectedImage = n;
+      sketchDialog.annotationId = annotationId;
 
-      data = {
-        parentId: parentId,
-        imageId: imageId,
-        revision: revision
-      };
       src = prefix.concat("/image/getImageToAnnotate/" + id + "/1");
-      url = prefix.concat("/image/ajax/loadImageAnnotations");
+      // each image occurrence has its own annotation; raw thumbnails start with a clean canvas
+      if (annotationId) {
+        loadingAnnotationById = true;
+        data = { sketchId: annotationId, revision: revision, missingAsEmpty: true };
+        url = prefix.concat("/image/ajax/loadSketchImageAnnotations");
+      } else if ((n.getAttribute("src") || "").indexOf("/image/getImage/") !== -1) {
+        // links from before 1.29 identify their annotation by field and image
+        data = { parentId: parentId, imageId: imageId, revision: revision };
+        url = prefix.concat("/image/ajax/loadImageAnnotations");
+      }
     }
 
     if (url != null) {
@@ -62,9 +70,12 @@ var sketchDialog = {
         function (result) {
           if (result != null && result.data != "") {
             listElem = result.data;
+          } else if (loadingAnnotationById && result != null && result.data === "") {
+            sketchDialog.annotationId = null;
           }
         }, "json");
       jxqr.fail(function () {
+        sketchDialog.annotationLoadFailed = loadingAnnotationById;
         tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.loadAnnotationsFailed"));
       });
       jxqr.always(function () {
@@ -453,11 +464,69 @@ var sketchDialog = {
 
   insert: function (ed) {
     // repeated Insert clicks must not save the same sketch more than once
-    if (sketchDialog.insertInProgress) {
+    if (sketchDialog.insertInProgress || sketchDialog.annotationLoadFailed) {
       return;
     }
     sketchDialog.insertInProgress = true;
 
+    var onFailure = function () {
+      sketchDialog.insertInProgress = false;
+      tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.saveFailed"));
+    };
+
+    // a saved sketch that was not inserted is kept, so a retry doesn't create another annotation
+    var saved = sketchDialog.savedResult;
+    if (saved && saved.inserted) {
+      sketchDialog.insertSaved(ed, null, onFailure);
+      return;
+    }
+
+    var request;
+    try {
+      request = sketchDialog.prepareSave(ed, saved);
+    } catch (e) {
+      console.error("Preparing the sketch for saving failed", e);
+      onFailure();
+      return;
+    }
+
+    // fetch the template before saving, so a failed fetch leaves no saved annotation behind
+    $.get(request.templateUrl).done(function (htmlTemplate) {
+      if (typeof htmlTemplate !== "string" || $.trim(htmlTemplate) === "") {
+        onFailure();
+        return;
+      }
+      if (saved && saved.annotations === request.annotations) {
+        sketchDialog.insertSaved(ed, htmlTemplate, onFailure);
+        return;
+      }
+      $.ajax({
+        url: request.url,
+        type: "POST",
+        data: request.formData,
+        processData: false,
+        contentType: false,
+        dataType: "json"
+      }).done(function (result) {
+        // an error page or a JSON error has no saved annotation id
+        if (!result || !result.data || result.data.id == null) {
+          onFailure();
+          return;
+        }
+        // The annotation is saved even if inserting it fails, and an update of an existing one stays
+        // saved if the user then cancels. A retry inserts this one, updating it if the drawing changed.
+        sketchDialog.savedResult = {
+          data: result.data,
+          annotations: request.annotations,
+          compositeId: request.compositeId
+        };
+        sketchDialog.insertSaved(ed, htmlTemplate, onFailure);
+      }).fail(onFailure);
+    }).fail(onFailure);
+  },
+
+  /** Serialises the drawing and builds its save request; saved is the earlier save to update. */
+  prepareSave: function (ed, saved) {
     var prefix = tinymceDialogUtils.getContextPath();
     var sketchId = $('.sketchId').attr('data-id');
 
@@ -465,69 +534,110 @@ var sketchDialog = {
     var dataPng = context.save("png");
 
     // removing background image so it's not saved into db as a part of annotation
+    var data;
     var bgImageNodeId = context.findNode('bgImage');
     if (bgImageNodeId) {
       context.deleteNode(bgImageNodeId);
     }
-
-    // saving zwibbler format (no bg image)
-    var dataZwibbler = context.save("zwibbler3");
-
-    // reapplying backround image (in case of save failure)
-    if (bgImageNodeId) {
-      context.undo();
+    try {
+      // saving zwibbler format (no bg image)
+      data = {
+        annotations: context.save("zwibbler3")
+      };
+    } finally {
+      // the background image goes back on the canvas, so the sketch can be saved again
+      if (bgImageNodeId) {
+        context.undo();
+      }
     }
-
-    var data = {
-      annotations: dataZwibbler,
-      image: dataPng
-    };
-
-    var url;
-    var templateUrl;
-    var compositeId;
-    var milliseconds = new Date().getTime();
+    var request = { annotations: data.annotations };
 
     // the plugin is used for sketch or image annotations
     var typeSketch = $('.typeSketch').attr('data-type');
     if (typeSketch == "sketchType") {
       data.fieldId = this.fieldId;
-      data.sketchId = sketchId;
+      data.sketchId = saved ? saved.data.id : sketchId;
 
-      url = prefix.concat("/image/ajax/saveSketch");
-      templateUrl = "/fieldTemplates/ajax/sketchLink";
+      request.url = prefix.concat("/image/ajax/saveSketch");
+      request.templateUrl = "/fieldTemplates/ajax/sketchLink";
     } else {
       data.parentId = this.fieldId;
       data.imageId = sketchId;
-      compositeId = this.fieldId + "-" + sketchId;
+      var annotationId = sketchDialog.annotationId;
+      request.compositeId = this.fieldId + "-" + sketchId;
+      if (saved) {
+        data.annotationId = saved.data.id;
+      } else if (annotationId && sketchDialog.isOnlyReference(ed, annotationId, request.compositeId)) {
+        // images sharing one annotation keep it; the edited one gets a new annotation
+        data.annotationId = annotationId;
+      }
 
-      url = prefix.concat("/image/ajax/saveImageAnnotation");
-      templateUrl = "/fieldTemplates/ajax/annotatedImageLink";
+      request.url = prefix.concat("/image/ajax/saveImageAnnotation");
+      request.templateUrl = "/fieldTemplates/ajax/annotatedImageLink";
     }
 
-    var onFailure = function () {
-      sketchDialog.insertInProgress = false;
-      tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.saveFailed"));
-    };
+    // the PNG goes as a file part: form-encoded fields are capped by the server's form size limit
+    request.formData = new FormData();
+    $.each(data, function (name, value) {
+      request.formData.append(name, value);
+    });
+    request.formData.append("image", sketchDialog.dataUrlToBlob(dataPng), "sketch.png");
+    return request;
+  },
 
-    // fetch the template before saving, so a failed fetch leaves no saved annotation behind
-    $.get(templateUrl).done(function (htmlTemplate) {
-      $.post(url, data).done(function (result) {
-        var props = {
-          id: compositeId || result.data.id,
-          annotationId: result.data.id,
-          height: result.data.height,
-          width: result.data.width,
-          unused: milliseconds
-        };
-        var html = Mustache.render(htmlTemplate, props);
-        if (html != "") {
-          ed.execCommand('mceInsertContent', false, html);
+  /**
+   * Whether the edited image is the only one showing the annotation. A legacy link to the same
+   * field and image shows the field's oldest annotation for that image, which may be this one.
+   */
+  isOnlyReference: function (ed, annotationId, compositeId) {
+    var body = $(ed.getBody());
+    var legacySrc = "/image/getImage/" + compositeId + "/";
+    var legacyLinks = body.find("img.imageDropped").filter(function () {
+      return !this.hasAttribute("data-id") && (this.getAttribute("src") || "").indexOf(legacySrc) !== -1;
+    });
+    return legacyLinks.length === 0 && body.find('img.imageDropped[data-id="' + annotationId + '"]').length === 1;
+  },
+
+  /** Inserts the saved sketch into the editor and closes the dialog, which discards savedResult. */
+  insertSaved: function (ed, htmlTemplate, onFailure) {
+    var saved = sketchDialog.savedResult;
+    try {
+      if (!saved.inserted) {
+        var html = Mustache.render(htmlTemplate, {
+          id: saved.compositeId || saved.data.id,
+          annotationId: saved.data.id,
+          height: saved.data.height,
+          width: saved.data.width,
+          unused: new Date().getTime()
+        });
+        if ($.trim(html) === "") {
+          throw new Error("The sketch link template rendered nothing");
         }
-        // close the front most window (dialog.htm)
-        ed.windowManager.close();
-      }).fail(onFailure);
-    }).fail(onFailure);
+        var image = sketchDialog.selectedImage;
+        if (image && ed.getBody().contains(image)) {
+          ed.selection.select(image);
+        }
+        ed.execCommand('mceInsertContent', false, html);
+        saved.inserted = true;
+      }
+      // close the front most window (dialog.htm)
+      ed.windowManager.close();
+      sketchDialog.savedResult = null;
+    } catch (e) {
+      console.error("Inserting the saved sketch failed", e);
+      onFailure();
+    }
+  },
+
+  dataUrlToBlob: function (dataUrl) {
+    var parts = dataUrl.split(",");
+    var mimeType = parts[0].split(":")[1].split(";")[0];
+    var binary = atob(parts[1]);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mimeType });
   }
 
 };
