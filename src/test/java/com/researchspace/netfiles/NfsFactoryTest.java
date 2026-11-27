@@ -220,6 +220,23 @@ public class NfsFactoryTest {
     assertEquals(spellings("NONE"), factory.spellingsOfTheSameFile(testFileSystem, "report.txt"));
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "report.txt, NONE",
+    "/report.txt, ONE MORE",
+    // a path starting with the home is read as it is, unless two slashes precede it
+    "/tempZone/home/alice/report.txt, ONE",
+    "//tempZone/home/alice/report.txt, MORE"
+  })
+  public void iRodsMatchesTheSpellingsItOpensAsOneObject(String path, String expectedSpellings) {
+    testFileSystem.setClientType(NfsClientType.IRODS);
+    testFileSystem.setUrl("irods.example.com");
+    testFileSystem.setClientOption(NfsFileSystemOption.IRODS_HOME_DIR, "/tempZone/home/alice");
+
+    assertEquals(
+        spellings(expectedSpellings), factory.spellingsOfTheSameFile(testFileSystem, path));
+  }
+
   @Test
   public void elsewhereAPathWithALeadingSlashIsReadApartFromOneWithout() {
     testFileSystem.setClientType(NfsClientType.SFTP);

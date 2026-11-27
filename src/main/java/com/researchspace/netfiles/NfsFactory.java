@@ -18,6 +18,7 @@ import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Setter;
@@ -227,39 +228,50 @@ public class NfsFactory {
    * The leading-slash spellings of an absolute path (a filestore's path followed by an item's path)
    * that the file system's client opens as the same file as the path's own spelling. SMBJ can strip
    * a first folder named like the share, or glue the folder the server URL names after the share to
-   * a path without a separator, so it is asked; jcifs puts a slash in front of any path, and hands
-   * downloads to SMBJ when so configured. Elsewhere, as on SFTP and iRODS, a path starting with a
-   * slash is read apart from one without.
+   * a path without a separator, and iRODS reads a path starting with the home as it is and puts the
+   * home in front of any other, so both are asked; jcifs puts a slash in front of any path, and
+   * hands downloads to SMBJ when so configured. Elsewhere, as on SFTP, a path starting with a slash
+   * is read apart from one without.
    */
   public Set<LeadingSlashes> spellingsOfTheSameFile(NfsFileSystem fileSystem, String absolutePath) {
     if (NfsClientType.SMBJ.equals(fileSystem.getClientType())) {
-      return smbjSpellingsOfTheSameFile(
-          fileSystem.getUrl(),
-          fileSystem.getClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME),
-          absolutePath);
+      String share = fileSystem.getClientOption(NfsFileSystemOption.SAMBA_SHARE_NAME);
+      return spellingsOpening(
+          absolutePath, path -> SmbjClient.pathOnShare(fileSystem.getUrl(), share, path));
     }
     if (NfsClientType.SAMBA.equals(fileSystem.getClientType())) {
       return Boolean.TRUE.equals(smbjDownload)
-          ? smbjSpellingsOfTheSameFile(fileSystem.getUrl(), smbjShareName, absolutePath)
+          ? spellingsOpening(
+              absolutePath,
+              path -> SmbjClient.pathOnShare(fileSystem.getUrl(), smbjShareName, path))
           : EnumSet.allOf(LeadingSlashes.class);
+    }
+    if (NfsClientType.IRODS.equals(fileSystem.getClientType())) {
+      String home =
+          StringUtils.defaultString(fileSystem.getClientOption(NfsFileSystemOption.IRODS_HOME_DIR));
+      // iRODS reads a run of slashes as one
+      return spellingsOpening(
+          absolutePath,
+          path ->
+              StringUtils.removeEnd(
+                  JargonFacade.absoluteIrodsPath(path, home).replaceAll("/+", "/"), "/"));
     }
     return LeadingSlashes.of(absolutePath) == LeadingSlashes.NONE
         ? EnumSet.of(LeadingSlashes.NONE)
         : EnumSet.of(LeadingSlashes.ONE, LeadingSlashes.MORE);
   }
 
-  private static Set<LeadingSlashes> smbjSpellingsOfTheSameFile(
-      String serverUrl, String shareName, String absolutePath) {
+  /** The spellings that {@code opened} maps to what the path's own spelling maps to. */
+  private static Set<LeadingSlashes> spellingsOpening(
+      String absolutePath, UnaryOperator<String> opened) {
     String path = NfsFieldLink.normalisePath(absolutePath);
     LeadingSlashes own = LeadingSlashes.of(absolutePath);
-    String opened = SmbjClient.pathOnShare(serverUrl, shareName, own.spell(path));
-    if (opened == null) {
+    String target = opened.apply(own.spell(path));
+    if (target == null) {
       return EnumSet.of(own);
     }
     return EnumSet.allOf(LeadingSlashes.class).stream()
-        .filter(
-            spelling ->
-                opened.equals(SmbjClient.pathOnShare(serverUrl, shareName, spelling.spell(path))))
+        .filter(spelling -> target.equals(opened.apply(spelling.spell(path))))
         .collect(Collectors.toCollection(() -> EnumSet.noneOf(LeadingSlashes.class)));
   }
 

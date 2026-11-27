@@ -48,8 +48,10 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    after none or one slash but not after two. So the lookup asks the file system's client which
    spellings of the stored form (no leading slash, one, or more) it opens as the same file as the
    looked-up path, and matches links only in those, still reading the spelling from the filestore's
-   base and the link's own path. SMBJ is asked by running its own path resolution on each spelling;
-   jcifs opens all three alike; elsewhere a path with a leading slash stays apart from one without.
+   base and the link's own path. SMBJ and iRODS are asked by running their own path resolution on
+   each spelling (iRODS reads a path starting with the account's home as it is, so a second slash in
+   front of the home makes another object); jcifs opens all three alike; elsewhere a path with a
+   leading slash stays apart from one without.
    Recomputing the stored form instead would have needed a data migration.
 3. Rows follow autosaved content, as `FieldAttachment` does: a link counts as soon as it is in the
    editor, and cancelling an edit re-reads the saved content.

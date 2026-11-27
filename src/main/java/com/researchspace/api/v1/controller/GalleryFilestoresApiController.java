@@ -209,18 +209,21 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     throw new NotFoundException(getMessage("netFileStores.export.resourceNotAccessible"));
   }
 
-  /** Whether {@code path} is listed as a folder in its parent; throws if it is not listed. */
+  /**
+   * Whether {@code path} is listed as a folder in its parent; throws if the parent cannot be
+   * listed.
+   */
   private static boolean isFolderIn(NfsClient client, String path) throws IOException {
     int slash = path.lastIndexOf('/');
     String parentPath = slash < 0 ? "" : slash == 0 ? "/" : path.substring(0, slash);
     NfsFolderDetails parent = client.queryForNfsFolder(new NfsTarget(parentPath, null));
     String name = path.substring(slash + 1);
+    // an item its parent does not list is opened as a file: SMBJ glues the folder a server URL
+    // names after the share to a path without a slash, so that file is not in the listed folder
     return parent.getContent().stream()
-            // iRODS names a listed collection by its absolute path
-            .filter(item -> name.equals(StringUtils.substringAfterLast("/" + item.getName(), "/")))
-            .findFirst()
-            .orElseThrow(() -> new IOException("not listed in its parent folder"))
-        instanceof NfsFolderDetails;
+        // iRODS names a listed collection by its absolute path
+        .filter(item -> name.equals(StringUtils.substringAfterLast("/" + item.getName(), "/")))
+        .anyMatch(NfsFolderDetails.class::isInstance);
   }
 
   /**

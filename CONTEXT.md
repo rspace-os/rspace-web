@@ -456,9 +456,10 @@ resolved during design. This file is a glossary only — no implementation detai
   matches a link only where the file system's client reads their leading
   slashes (none, one, or more) as the same file: SFTP, iRODS and SMB under a
   server URL's folder can read a path with a leading slash apart from one
-  without, and SMBJ reads a first folder named like the share as the share
-  unless two slashes precede it; the same holds for the Inventory items linking
-  the item.
+  without, SMBJ reads a first folder named like the share as the share unless
+  two slashes precede it, and iRODS reads a path starting with the account's
+  home as it is unless two slashes precede it; the same holds for the Inventory
+  items linking the item.
   _Avoid_: linking document, referencing document
 - **Filestore link index** — RSpace's own record of every Filestore link in
   current document content, kept in step with the documents so that the Linked

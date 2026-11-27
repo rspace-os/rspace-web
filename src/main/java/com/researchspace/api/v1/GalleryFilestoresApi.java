@@ -65,12 +65,12 @@ public interface GalleryFilestoresApi {
    * filestores, and only where the client reads the item's path and the link's path, each following
    * its filestore's path, as the same file by their leading slashes (none, one, or more): SFTP,
    * iRODS and SMB under a server URL's folder can read a path with a leading slash apart from one
-   * without, and SMBJ reads a first folder named like the share as the share unless two slashes
-   * precede it. The item path is taken as sent, except that a missing leading slash is added under
-   * a filestore path that does not end with one. Every row carries its {@code type}: {@code
-   * DOCUMENT} or the kind of item. Documents and items the user cannot read in full are
-   * placeholders with only the type and the owner's name. Requires read access; works for every
-   * filestore type.
+   * without, SMBJ reads a first folder named like the share as the share, and iRODS a path starting
+   * with the account's home as it is, unless two slashes precede it. The item path is taken as
+   * sent, except that a missing leading slash is added under a filestore path that does not end
+   * with one. Every row carries its {@code type}: {@code DOCUMENT} or the kind of item. Documents
+   * and items the user cannot read in full are placeholders with only the type and the owner's
+   * name. Requires read access; works for every filestore type.
    */
   @GetMapping("/filestores/{filestoreId}/linkedDocuments")
   List<ApiGalleryFilestoreLinkedDocument> getFilestoreItemLinkedDocuments(

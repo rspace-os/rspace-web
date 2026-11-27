@@ -1029,6 +1029,22 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
+  void getFilestoreItemLinkedDocuments_perUserLoginOpensAFileItsParentListingLeavesOut()
+      throws IOException {
+    NfsClient client = loginToIrodsFilestore();
+    // like SMBJ under a server URL naming a folder after the share: report.txt opens
+    // projectreport.txt at the share root, while the parent "" lists the folder itself
+    when(client.queryForNfsFolder(atPath(""))).thenReturn(folderListing());
+    NfsFileDetails readable = new NfsFileDetails("projectreport.txt");
+    readable.setRemoteInputStream(new ByteArrayInputStream(new byte[0]));
+    when(client.queryNfsFileForDownload(atPath("report.txt"))).thenReturn(readable);
+    when(nfsFieldLinkManager.getLinkedDocuments(1L, "report.txt", user)).thenReturn(List.of());
+
+    assertThat(controller.getFilestoreItemLinkedDocuments(1L, "report.txt", user)).isEmpty();
+    verify(client).releaseNfsFileAfterDownload(readable);
+  }
+
+  @Test
   void getFilestoreItemLinkedDocuments_perUserLoginFilesystemAnswersForListableFolder()
       throws IOException {
     NfsClient client = loginToIrodsFilestore();
