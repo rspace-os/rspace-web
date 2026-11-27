@@ -79,7 +79,7 @@ function WrapperComponent() {
 function LoadMoreDuringReloadWrapper() {
   const listingOf = React.useMemo(() => ({ tag: "section" as const, section: "Images" as const, path: [] }), []);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const { galleryListing } = useGalleryListing({
+  const { galleryListing, refreshListing } = useGalleryListing({
     listingOf,
     searchTerm,
     sortOrder: "DESC",
@@ -91,8 +91,12 @@ function LoadMoreDuringReloadWrapper() {
     listing.loadMore.do((loadMore) => void loadMore());
   }, [searchTerm]);
   return (
-    // biome-ignore lint/a11y/useButtonType: matches the wrappers above
-    <button onClick={() => setSearchTerm("new")}>{listing === null ? "loading" : "Search"}</button>
+    <>
+      {/** biome-ignore lint/a11y/useButtonType: matches the wrappers above */}
+      <button onClick={() => setSearchTerm("new")}>{listing === null ? "loading" : "Search"}</button>
+      {/** biome-ignore lint/a11y/useButtonType: matches the wrappers above */}
+      <button onClick={() => void refreshListing()}>{"Refresh"}</button>
+    </>
   );
 }
 
@@ -237,13 +241,14 @@ describe("useGalleryListing", () => {
         { ...page1, data: { ...page1.data, items: { ...page1.data.items, totalPages: 1 } } },
       ],
     },
-  ])("a next page asked for during a reload is not fetched when the new listing $newListing", async ({ firstPage }) => {
+  ])("a next page asked for during a reload is dropped when the new listing $newListing", async ({ firstPage }) => {
     const user = userEvent.setup();
     const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
     try {
+      let newFirstPage = firstPage;
       mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
         const search = params as URLSearchParams;
-        if (search.get("name") === "new" && search.get("pageNumber") === "0") return firstPage();
+        if (search.get("name") === "new" && search.get("pageNumber") === "0") return newFirstPage();
         return [200, search.get("pageNumber") === "0" ? page1 : page2];
       });
       const requestedPages = (name: string) =>
@@ -260,6 +265,15 @@ describe("useGalleryListing", () => {
       });
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(requestedPages("new")).toEqual(["0"]);
+
+      // files were added, so a refresh now finds a second page; it still waits for Load more
+      newFirstPage = () => [200, page1];
+      await user.click(screen.getByRole("button", { name: "Refresh" }));
+      await waitFor(() => {
+        expect(requestedPages("new")).toEqual(["0", "0"]);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(requestedPages("new")).toEqual(["0", "0"]);
     } finally {
       restoreConsole();
     }

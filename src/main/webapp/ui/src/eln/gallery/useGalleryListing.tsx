@@ -1695,17 +1695,25 @@ export function useGalleryListing({
 
   /*
    * Load more only asks for the next page; the effect below fetches it, so
-   * asking again for a page on its way changes nothing. The request is cleared
-   * once the page is added, so a refresh that leaves fewer pages cannot fetch
-   * it again, and when it fails, so Load more can ask for it again.
+   * asking again for a page on its way changes nothing. A request is cleared
+   * once its page is added, when it fails, so Load more can ask again, and
+   * when the settled listing no longer has that page next, so no later refresh
+   * can fetch it unasked. The effect follows whether the page is in range
+   * rather than the page count, so a refresh that changes the count does not
+   * restart a page already on its way.
    */
   function loadMore(): Promise<void> {
     setRequestedPage(page + 1);
     return Promise.resolve();
   }
 
+  const requestedPageInRange = requestedPage !== null && requestedPage < totalPages;
   React.useEffect(() => {
-    if (loading || requestedPage !== page + 1 || requestedPage >= totalPages) return;
+    if (loading || requestedPage === null) return;
+    if (requestedPage !== page + 1 || !requestedPageInRange) {
+      setRequestedPage(null);
+      return;
+    }
     let superseded = false;
     void (async () => {
       try {
@@ -1728,7 +1736,7 @@ export function useGalleryListing({
     return () => {
       superseded = true;
     };
-  }, [requestedPage, page, loading, totalPages]);
+  }, [requestedPage, page, loading, requestedPageInRange]);
 
   React.useEffect(() => {
     Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
