@@ -504,11 +504,10 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
   protected EcatImageAnnotation updateExistingImageAnnotation(
       Long imageAnnotationId, Field field, User user, String newannnotation) throws Exception {
 
-    String base64Image = getBase64Image();
     EcatImageAnnotation ann = imgAnnotationMgr.get(imageAnnotationId, user);
     return mediaMgr.saveImageAnnotation(
         newannnotation,
-        base64Image,
+        getImageBytes(),
         field.getId(),
         field.getStructuredDocument(),
         ann.getImageId(),

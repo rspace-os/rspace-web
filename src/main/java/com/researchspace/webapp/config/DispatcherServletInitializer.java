@@ -80,6 +80,7 @@ public class DispatcherServletInitializer implements ServletContextListener {
   static final String[] MULTIPART_SOURCE_PATTERNS = {
     "/api/*",
     "/gallery/*",
+    "/image/*",
     "/export/*",
     "/workspace/*",
     "/system/*",

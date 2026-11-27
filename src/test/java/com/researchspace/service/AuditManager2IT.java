@@ -438,7 +438,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // save new version of image annotation
     mediaMgr.saveImageAnnotation(
         newAnnotation,
-        getBase64Image(),
+        getImageBytes(),
         ann.getParentId(),
         ann.getRecord(),
         ann.getImageId(),

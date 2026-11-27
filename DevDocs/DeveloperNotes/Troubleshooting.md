@@ -37,6 +37,8 @@ You can configure the ***local*** form size using the system property:
 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=2000000 (which gives 2MB, like Tomcat)
 ```
 
+Sketch and image annotation saves send the PNG as a multipart file upload, so they are not limited by the form size.
+
 If a document has too much data in a single field of the document it will fail on autosave (autosaveField
 will be visible as an ajax call) and as a result there will be a redirect to /workspace which will then try to serialise
 several hibernate entities (StructuredDocument,User,SearchResults and many others).

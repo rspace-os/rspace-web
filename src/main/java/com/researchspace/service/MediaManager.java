@@ -240,17 +240,18 @@ public interface MediaManager {
    * Updates an existing sketch, or creates a new one.
    *
    * @param annotations
-   * @param imageBase64
+   * @param imageBytes the sketch PNG
    * @param sketchId can be "", in which case a new sketch is created
    * @param fieldId
    * @param record
    * @param subject
    * @return EcatImageAnnotation
+   * @throws IllegalArgumentException if <code>imageBytes</code> is empty or not a readable image
    * @throws IOException
    */
   EcatImageAnnotation saveSketch(
       String annotations,
-      String imageBase64,
+      byte[] imageBytes,
       String sketchId,
       long fieldId,
       Record record,
@@ -261,7 +262,7 @@ public interface MediaManager {
    * Saves an annotation drawn on one occurrence of a Gallery image in a text field.
    *
    * @param annotations the Zwibbler drawing data
-   * @param imageBase64 the annotated PNG as a data URL
+   * @param imageBytes the annotated PNG
    * @param fieldId the text field containing the image
    * @param record the document owning the field
    * @param imageId the annotated Gallery image
@@ -271,11 +272,12 @@ public interface MediaManager {
    * @throws org.apache.shiro.authz.AuthorizationException if <code>subject</code> cannot edit
    *     <code>record</code>, or <code>annotationId</code> doesn't belong to this field, record and
    *     image
+   * @throws IllegalArgumentException if <code>imageBytes</code> is empty or not a readable image
    * @throws IOException
    */
   EcatImageAnnotation saveImageAnnotation(
       String annotations,
-      String imageBase64,
+      byte[] imageBytes,
       long fieldId,
       Record record,
       long imageId,

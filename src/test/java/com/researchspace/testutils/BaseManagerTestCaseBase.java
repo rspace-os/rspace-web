@@ -139,6 +139,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -883,13 +884,12 @@ public abstract class BaseManagerTestCaseBase {
   protected EcatImageAnnotation addImageAnnotationToField(Field textField, User user)
       throws IOException {
 
-    String base64Image = getBase64Image();
     EcatImage img = addImageToGallery(user);
 
     EcatImageAnnotation annot =
         mediaMgr.saveImageAnnotation(
             getTestZwibblerAnnotationString(""),
-            base64Image,
+            getImageBytes(),
             textField.getId(),
             textField.getStructuredDocument(),
             img.getId(),
@@ -917,11 +917,10 @@ public abstract class BaseManagerTestCaseBase {
    */
   protected EcatImageAnnotation addSketchToField(Field textField, User user) throws IOException {
 
-    String base64Image = getBase64Image();
     EcatImageAnnotation sketch =
         mediaMgr.saveSketch(
             getTestZwibblerAnnotationString("text"),
-            base64Image,
+            getImageBytes(),
             "",
             textField.getId(),
             textField.getStructuredDocument(),
@@ -947,7 +946,7 @@ public abstract class BaseManagerTestCaseBase {
     EcatImageAnnotation annotation =
         mediaMgr.saveImageAnnotation(
             getTestZwibblerAnnotationString("strokes"),
-            getBase64Image(),
+            getImageBytes(),
             field.getId(),
             field.getStructuredDocument(),
             image.getId(),
@@ -973,6 +972,13 @@ public abstract class BaseManagerTestCaseBase {
   protected String getBase64Image() throws IOException {
     File base64 = RSpaceTestUtils.getResource("base64Image.txt");
     return "data:image/png;base64," + FileUtils.readFileToString(base64, Charset.defaultCharset());
+  }
+
+  /** Gets the PNG encoded by {@link #getBase64Image()}. */
+  protected byte[] getImageBytes() throws IOException {
+    File base64 = RSpaceTestUtils.getResource("base64Image.txt");
+    return Base64.getMimeDecoder()
+        .decode(FileUtils.readFileToString(base64, Charset.defaultCharset()));
   }
 
   /**

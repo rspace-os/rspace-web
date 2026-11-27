@@ -59,6 +59,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 /** This controller returns an image so that it may be displayed within an image tag or CSS */
 @Controller
@@ -524,7 +525,7 @@ public class ImageController extends BaseController {
    * Method to save an annotated image (EcatImageAnnotation).
    *
    * @param annotations
-   * @param imageBase64
+   * @param image the annotated PNG, sent as a file so form size limits don't apply
    * @param fieldId
    * @param imageId
    * @param annotationId the annotation to update; omitted when annotating a raw image
@@ -532,11 +533,10 @@ public class ImageController extends BaseController {
    * @throws IOException
    */
   @PostMapping("ajax/saveImageAnnotation")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"image"})
   @ResponseBody
   public AjaxReturnObject<EcatImageAnnotation> saveImageAnnotation(
       @RequestParam("annotations") String annotations,
-      @RequestParam("image") String imageBase64,
+      @RequestParam("image") MultipartFile image,
       @RequestParam("parentId") long fieldId,
       @RequestParam("imageId") long imageId,
       @RequestParam(value = "annotationId", required = false) Long annotationId,
@@ -548,7 +548,7 @@ public class ImageController extends BaseController {
     EcatImageAnnotation ecatImageAnnotation =
         mediaManager.saveImageAnnotation(
             annotations,
-            imageBase64,
+            image.getBytes(),
             fieldId,
             field.getStructuredDocument(),
             imageId,
@@ -559,11 +559,10 @@ public class ImageController extends BaseController {
   }
 
   @PostMapping("ajax/saveSketch")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"image"})
   @ResponseBody
   public AjaxReturnObject<EcatImageAnnotation> saveSketch(
       @RequestParam("annotations") String annotations,
-      @RequestParam("image") String imageBase64,
+      @RequestParam("image") MultipartFile image,
       @RequestParam("sketchId") String sketchId,
       @RequestParam("fieldId") long fieldId)
       throws Exception {
@@ -573,7 +572,7 @@ public class ImageController extends BaseController {
     EcatImageAnnotation ecatImageAnnotation =
         mediaManager.saveSketch(
             annotations,
-            imageBase64,
+            image.getBytes(),
             sketchId,
             field.getId(),
             field.getStructuredDocument(),

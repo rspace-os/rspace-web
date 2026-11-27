@@ -189,6 +189,130 @@ test.describe("Document image annotations", () => {
     expect(await sketch.strokeCount(), "The untouched copy keeps its original stroke").toBe(1);
     await sketch.cancel();
   });
+
+  test("As a user, I see an error when a sketch save fails and can insert the sketch again", async ({
+    page,
+    pageWorkspace,
+    clientFiles,
+  }) => {
+    const fileName = `${alphaNumericUnique("e2eSketchSaveFailure")}.png`;
+    await clientFiles.uploadFile({ name: fileName, mimeType: "image/png", buffer: TINY_PNG });
+    await pageWorkspace.open();
+    const editor = await pageWorkspace.createBasicDocument();
+    const field = await editor.getField("", 0);
+    const images = field.galleryImages;
+    for (const count of [1, 2, 3, 4, 5, 6]) {
+      const picker = await editor.openGalleryPicker();
+      await picker.goToSection("Images");
+      await picker.openFolder("Api Inbox");
+      await picker.selectItem(fileName);
+      await picker.add();
+      await expect(images).toHaveCount(count);
+      await field.moveCaretToNewLineAtEnd();
+    }
+    const saveRoute = "**/image/ajax/saveImageAnnotation";
+    let saveRequests = 0;
+    const savedIds: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes("/image/ajax/saveImageAnnotation")) saveRequests++;
+    });
+    page.on("response", (response) => {
+      if (!response.url().includes("/image/ajax/saveImageAnnotation")) return;
+      void response
+        .json()
+        .then((json: { data?: { id?: number } }) => {
+          if (json.data?.id) savedIds.push(String(json.data.id));
+        })
+        .catch(() => {});
+    });
+
+    // An HTML page instead of JSON, as when the container redirects an oversized request.
+    let sketch = await field.openSketch(images.nth(0));
+    await sketch.drawStroke(0.15);
+    await page.route(saveRoute, (route) =>
+      route.fulfill({ status: 200, contentType: "text/html", body: "<html><body>Workspace</body></html>" }),
+    );
+    expect(await sketch.insertExpectingFailure()).toMatch(/failed/i);
+    await expect(sketch.dialog).toBeVisible();
+    await page.unroute(saveRoute);
+    let requestsBefore = saveRequests;
+    await sketch.insert();
+    expect(saveRequests, "The retry saves once").toBe(requestsBefore + 1);
+    await expect(images.nth(0)).toHaveAttribute("data-id", /^\d+$/);
+
+    // The drawing can't be exported, so nothing is sent.
+    for (const [index, format] of [
+      [1, "png"],
+      [2, "zwibbler3"],
+    ] as const) {
+      sketch = await field.openSketch(images.nth(index));
+      await sketch.drawStroke(0.35);
+      const strokes = await sketch.strokes();
+      await sketch.failNextExport(format);
+      requestsBefore = saveRequests;
+      expect(await sketch.insertExpectingFailure()).toMatch(/failed/i);
+      await expect(sketch.dialog).toBeVisible();
+      expect(saveRequests, `No save is sent when the ${format} export fails`).toBe(requestsBefore);
+      await sketch.waitForReady();
+      expect(await sketch.strokes(), "The drawing is kept for the retry").toEqual(strokes);
+      await sketch.insert();
+      expect(saveRequests, "The retry saves once").toBe(requestsBefore + 1);
+      await expect(images.nth(index)).toHaveAttribute("data-id", /^\d+$/);
+    }
+
+    // The sketch is saved but can't be inserted, so the retry inserts it without saving again.
+    sketch = await field.openSketch(images.nth(3));
+    await sketch.drawStroke(0.55);
+    await sketch.failNextEditorInsertion();
+    requestsBefore = saveRequests;
+    expect(await sketch.insertExpectingFailure()).toMatch(/failed/i);
+    await expect(sketch.dialog).toBeVisible();
+    await sketch.insertSaved();
+    expect(saveRequests, "The sketch is saved once").toBe(requestsBefore + 1);
+    await expect(images, "The sketch is inserted once, replacing the raw copy").toHaveCount(6);
+    await expect(images.nth(3)).toHaveAttribute("data-id", /^\d+$/);
+
+    // A stroke added after the failed insertion updates the saved annotation instead of adding one.
+    sketch = await field.openSketch(images.nth(4));
+    await sketch.drawStroke(0.15);
+    await sketch.failNextEditorInsertion();
+    requestsBefore = saveRequests;
+    const idsBefore = savedIds.length;
+    expect(await sketch.insertExpectingFailure()).toMatch(/failed/i);
+    await expect.poll(() => savedIds.length).toBe(idsBefore + 1);
+    const savedId = savedIds[idsBefore];
+    await sketch.drawStroke(0.55);
+    await sketch.insert();
+    expect(saveRequests, "The changed drawing is saved again").toBe(requestsBefore + 2);
+    await expect(images).toHaveCount(6);
+    await expect(images.nth(4), "The first save's annotation is updated and inserted").toHaveAttribute(
+      "data-id",
+      savedId,
+    );
+    const ids = await images.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-id")));
+    expect(ids.filter((id) => id === savedId)).toHaveLength(1);
+    const stored = await page.request.get(`/image/ajax/loadSketchImageAnnotations?sketchId=${savedId}`);
+    const drawing = ((await stored.json()) as { data: string }).data;
+    const nodes = JSON.parse(drawing.slice("zwibbler3.".length)) as Array<{ type: string }>;
+    expect(
+      nodes.filter((node) => /Brush|Path/.test(node.type)),
+      "The stored drawing has both strokes",
+    ).toHaveLength(2);
+
+    // An empty link template is rejected before anything is saved.
+    const templateRoute = "**/fieldTemplates/ajax/annotatedImageLink";
+    sketch = await field.openSketch(images.nth(5));
+    await sketch.drawStroke(0.35);
+    await page.route(templateRoute, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "" }));
+    requestsBefore = saveRequests;
+    expect(await sketch.insertExpectingFailure()).toMatch(/failed/i);
+    expect(saveRequests, "No save is sent with an empty template").toBe(requestsBefore);
+    await expect(sketch.dialog).toBeVisible();
+    await page.unroute(templateRoute);
+    await sketch.insert();
+    expect(saveRequests, "Only the retry saves").toBe(requestsBefore + 1);
+    await expect(images.nth(5)).toHaveAttribute("data-id", /^\d+$/);
+  });
 });
 
 dynamicUserTest.describe("Document recovery and downloadable exports", () => {
