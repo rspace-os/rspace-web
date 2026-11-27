@@ -775,11 +775,9 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         this::getDefaultPgCrit,
         pc ->
             dao.getActiveRequestsAndMessagesForUser(fx.target(), pc, MessageTypeFilter.ALL_TYPES));
-    // a sent message has one target row per recipient, so its lastStatusUpdate order is undefined;
-    // production only sorts this listing by creationTime
     assertPagesAreSlicesOfFullListing(
         5,
-        EnumSet.complementOf(EnumSet.of(CommunicationSort.LAST_STATUS_UPDATE)),
+        allSorts,
         this::getDefaultPgCrit,
         pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(fx.target(), pc));
     assertPagesAreSlicesOfFullListing(
@@ -830,6 +828,48 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         dao.getActiveRequestsAndMessagesForUser(oldPi, pc, witnessRequests);
     assertThat(pastTheEnd.getResults()).isEmpty();
     assertEquals(numRequests, pastTheEnd.getTotalHits().intValue());
+
+    // 2^62 * 4 wraps to 0 in a long, which would return the first page
+    pc.setResultsPerPage(4);
+    pc.setPageNumber(1L << 62);
+    ISearchResults<MessageOrRequest> hugePageNumber =
+        dao.getActiveRequestsAndMessagesForUser(oldPi, pc, witnessRequests);
+    assertThat(hugePageNumber.getResults()).isEmpty();
+    assertEquals(numRequests, hugePageNumber.getTotalHits().intValue());
+  }
+
+  @Test
+  public void lastStatusUpdateSortUsesEachMessagesLatestTargetUpdate() {
+    User sender = createAndSaveUserIfNotExists(getRandomAlphabeticString("sender"));
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("user"));
+    User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    // the sent message's two target updates straddle the received message's update
+    MessageOrRequest sent =
+        saveNMessages(1, user, MessageType.SIMPLE_MESSAGE, sender, other).get(0);
+    MessageOrRequest received = saveNMessages(1, sender, MessageType.SIMPLE_MESSAGE, user).get(0);
+    Date base = getDateFor("2024-01-01");
+    List<CommunicationTarget> sentTargets = new ArrayList<>(sent.getRecipients());
+    sentTargets.get(0).setLastStatusUpdate(DateUtils.addDays(base, 1));
+    sentTargets.get(1).setLastStatusUpdate(DateUtils.addDays(base, 5));
+    received.getRecipients().forEach(ct -> ct.setLastStatusUpdate(DateUtils.addDays(base, 3)));
+    sessionFactory.getCurrentSession().flush();
+
+    PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
+    pc.setOrderBy(CommunicationSort.LAST_STATUS_UPDATE.key());
+    pc.setResultsPerPage(1);
+    for (SortOrder order : SortOrder.values()) {
+      pc.setSortOrder(order);
+      List<Long> paged = new ArrayList<>();
+      for (long page = 0; page < 2; page++) {
+        pc.setPageNumber(page);
+        paged.addAll(idsOf(dao.getAllSentAndReceivedSimpleMessagesForUser(user, pc)));
+      }
+      List<Long> expected =
+          SortOrder.DESC.equals(order)
+              ? List.of(sent.getId(), received.getId())
+              : List.of(received.getId(), sent.getId());
+      assertEquals(expected, paged, order.toString());
+    }
   }
 
   private record ListingFixture(User senderA, User target) {}
