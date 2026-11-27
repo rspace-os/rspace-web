@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import { SketchDialogComponent } from "./SketchDialogComponent";
 
 export class ImageQuickToolbar {
   readonly imageDetailsButton: Locator;
@@ -22,6 +23,13 @@ export class ImageQuickToolbar {
     await this.imageDetailsButton.click();
     const dialog = new RecordInfoDialog(this.page);
     await dialog.waitUntilVisible();
+    return dialog;
+  }
+
+  async openSketch(): Promise<SketchDialogComponent> {
+    await this.sketchButton.click();
+    const dialog = new SketchDialogComponent(this.page);
+    await dialog.waitUntilReady();
     return dialog;
   }
 }

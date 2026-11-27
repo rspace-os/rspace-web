@@ -78,6 +78,8 @@ label {
 	vertical-align: middle;
 	text-align: center;
 	width: 110px;
+	/* fixed height so lazy tiles keep their place before they load */
+	height: 100px;
 	margin: 10px 0px;
 }
 
