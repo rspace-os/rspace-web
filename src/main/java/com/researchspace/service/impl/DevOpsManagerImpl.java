@@ -203,11 +203,9 @@ public class DevOpsManagerImpl implements DevOpsManager {
       return SKIP_OWNERS_GROUPS_WOULD_GAIN_ACCESS;
     }
     // The document's ACL holds everyone it is shared with, including through a shared notebook.
+    // The owner's own entry counts too: groups whose name prefixes it can read the document.
     for (ACLElement element : doc.getSharingACL().getAclElements()) {
       String name = element.getUserOrGrpUniqueName();
-      if (owner.getUsername().equals(name)) {
-        continue;
-      }
       Optional<Set<User>> readers = resolveReaders(name);
       if (readers.isEmpty()) {
         return SKIP_UNKNOWN_READER + name;

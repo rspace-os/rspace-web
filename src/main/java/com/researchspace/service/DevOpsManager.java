@@ -43,8 +43,10 @@ public interface DevOpsManager {
   /**
    * As {@link #reportAnnotatedImagesInField(Long)}, but restores each link that isn't skipped.
    *
-   * <p>A link is restored only if the document owner may read the Gallery image, so a repair never
-   * grants access the owner did not already have. Templates and deleted Gallery images are skipped.
+   * <p>A link lets every reader of the document download the Gallery image, so it is restored only
+   * if it gives nobody new access: the document owner, everyone the document's ACL lets read it,
+   * and the owner's PIs and admins must already be able to read the image. Templates, published
+   * documents and deleted Gallery images are skipped.
    *
    * @param fieldId id of a field returned by {@link #findFieldIdsWithAnnotatedImages()}
    * @return one entry per annotated image whose link was missing or deleted
