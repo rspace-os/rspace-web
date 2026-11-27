@@ -87,6 +87,9 @@ var tinymcesetup = {
 	lineheight_formats: '9px 10px 12px 14px 16px 20px 24px 30px 40px 64px',
 	gecko_spellcheck: true,
 	relative_urls: false,
+	urlconverter_callback(url, node, onSave, name) {
+		return RS.tinymcePasteHandler.convertEditorUrl.call(this, url, node, onSave, name);
+	},
 	content_css: ["/styles/simplicity/typoEdit.css", "/scripts/tinymce/tinymce5109/plugins/codesample/css/prism.css"],
 	image_advtab: true,
 	smart_paste: false,
@@ -95,6 +98,7 @@ var tinymcesetup = {
 	paste_data_images: false,
 
 	paste_postprocess(plugin, args) {
+		RS.tinymcePasteHandler.absolutizePastedLinks(args.node);
 		var innerText = args.node.innerText.trim();
 		var innerHTML = args.node.innerHTML.trim();
 

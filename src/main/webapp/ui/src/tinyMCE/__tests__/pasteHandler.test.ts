@@ -280,4 +280,141 @@ describe("tinymceRS_pasteHandler", () => {
       );
     });
   });
+
+  describe("links to this RSpace server (RSDEV-614)", () => {
+    const origin = window.location.origin;
+
+    function stubEditor() {
+      return {
+        settings: { convert_urls: true, relative_urls: false, remove_script_host: true },
+        documentBaseURI: {
+          toAbsolute: vi.fn((url: string) => `default:${url}`),
+          toRelative: vi.fn((url: string) => `relative:${url}`),
+        },
+      };
+    }
+
+    function convert(editor: ReturnType<typeof stubEditor>, url: string, node: unknown, name: string): string {
+      return pasteHandler.convertEditorUrl.call(editor, url, node, true, name) as string;
+    }
+
+    it.each([
+      ["a tag name from the parser", "a"],
+      ["an element from DOMUtils", document.createElement("a")],
+    ])("keeps an absolute same-origin href unchanged when node is %s", (_, node) => {
+      const editor = stubEditor();
+      const url = `${origin}/inventory/sample/1?x=1#y`;
+
+      expect(convert(editor, url, node, "href")).toBe(url);
+      expect(editor.documentBaseURI.toAbsolute).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      `${origin}/globalId/SD1`,
+      `${origin}/globalId/SD1?version=2#top`,
+      `${origin}/Streamfile/5`,
+      `${origin}/Streamfile/5/file.txt?x=1`,
+      `${origin}/public/publicView/Streamfile/5`,
+      "/inventory/search",
+      "https://other.example/inventory/sample/1",
+    ])("uses the default conversion for href %s", (url) => {
+      const editor = stubEditor();
+
+      expect(convert(editor, url, "a", "href")).toBe(`default:${url}`);
+      expect(editor.documentBaseURI.toAbsolute).toHaveBeenCalledWith(url, true);
+    });
+
+    it("uses the default conversion for a same-origin src", () => {
+      const editor = stubEditor();
+      const url = `${origin}/thumbnail/data?sourceId=1`;
+
+      expect(convert(editor, url, document.createElement("img"), "src")).toBe(`default:${url}`);
+      expect(editor.documentBaseURI.toAbsolute).toHaveBeenCalledWith(url, true);
+    });
+
+    it.each([
+      ["an empty url", "", "a"],
+      ["a file: url", "file:///tmp/x.html", "a"],
+      ["a LINK element", "/styles/x.css", document.createElement("link")],
+    ])("returns %s unchanged without conversion", (_, url, node) => {
+      const editor = stubEditor();
+
+      expect(convert(editor, url, node, "href")).toBe(url);
+      expect(editor.documentBaseURI.toAbsolute).not.toHaveBeenCalled();
+    });
+
+    it("returns urls unchanged when convert_urls is off", () => {
+      const editor = stubEditor();
+      editor.settings.convert_urls = false;
+
+      expect(convert(editor, "/inventory/search", "a", "href")).toBe("/inventory/search");
+      expect(editor.documentBaseURI.toAbsolute).not.toHaveBeenCalled();
+    });
+
+    function pastedNode(html: string): HTMLDivElement {
+      const node = document.createElement("div");
+      node.innerHTML = html;
+      return node;
+    }
+
+    it("makes a pasted root-relative href absolute, keeping query and fragment", () => {
+      const node = pastedNode('<p><a href="/inventory/search?query=RSDEV614#r">rel</a></p>');
+
+      pasteHandler.absolutizePastedLinks(node);
+
+      expect(node.querySelector("a")).toHaveAttribute("href", `${origin}/inventory/search?query=RSDEV614#r`);
+    });
+
+    it("leaves a pasted absolute same-origin href unchanged", () => {
+      const href = `${origin}/inventory/sample/1?x=1`;
+      const node = pastedNode(`<a href="${href}">abs</a>`);
+
+      pasteHandler.absolutizePastedLinks(node);
+
+      expect(node.querySelector("a")).toHaveAttribute("href", href);
+    });
+
+    it.each([
+      ["linkedRecord", "/workspace/editor/structuredDocument/1?v=2#top"],
+      ["attachmentLinked", "/gallery/item/5"],
+    ])("makes a pasted absolute same-origin %s href root-relative", (cssClass, path) => {
+      const node = pastedNode(`<a class="${cssClass}" href="${origin}${path}">x</a>`);
+
+      pasteHandler.absolutizePastedLinks(node);
+
+      expect(node.querySelector("a")).toHaveAttribute("href", path);
+    });
+
+    it("keeps a pasted absolute same-origin RSpace element href whose path starts with //", () => {
+      const href = `${origin}//other.example/x`;
+      const node = pastedNode(`<a class="linkedRecord" href="${href}">x</a>`);
+
+      pasteHandler.absolutizePastedLinks(node);
+
+      const anchor = node.querySelector("a");
+      expect(anchor).toHaveAttribute("href", href);
+      expect(new URL(anchor?.getAttribute("href") ?? "", origin).host).toBe(new URL(origin).host);
+    });
+
+    it.each([
+      '<a href="/globalId/SD1">x</a>',
+      '<a href="/globalId/SD1?v=1#x">x</a>',
+      '<a href="/Streamfile/5">x</a>',
+      '<a href="/public/publicView/Streamfile/5">x</a>',
+      '<a class="linkedRecord" href="/workspace/editor/structuredDocument/1">x</a>',
+      '<a class="attachmentLinked" href="/gallery/item/5">x</a>',
+      '<a href="//cdn.example/x">x</a>',
+      '<a href="#frag">x</a>',
+      '<a href="mailto:someone@example.com">x</a>',
+      '<a href="https://other.example/inventory">x</a>',
+      '<a href="foo.html">x</a>',
+    ])("leaves the pasted link %s unchanged", (html) => {
+      const node = pastedNode(html);
+      const before = node.querySelector("a")?.getAttribute("href");
+
+      pasteHandler.absolutizePastedLinks(node);
+
+      expect(node.querySelector("a")).toHaveAttribute("href", before);
+    });
+  });
 });
