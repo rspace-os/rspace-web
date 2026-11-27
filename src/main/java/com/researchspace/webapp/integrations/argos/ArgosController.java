@@ -27,8 +27,8 @@ public class ArgosController extends BaseController {
   @PostMapping("/importPlan/{id}")
   @ResponseBody
   public AjaxReturnObject<Boolean> importDmp(@PathVariable("id") String id) {
-    // Argos plan ids are UUIDs. Parsing here keeps request paths out of the outbound URL and
-    // gives one stored id per plan, whatever spelling the request used.
+    // Argos plan ids are UUIDs. Parsing here keeps the raw path variable out of the outbound
+    // URL and gives one stored id per plan, whatever spelling the request used.
     UUID planId;
     try {
       planId = UUID.fromString(id);

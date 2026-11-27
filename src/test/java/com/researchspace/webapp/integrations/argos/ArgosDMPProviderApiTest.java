@@ -180,13 +180,14 @@ class ArgosDMPProviderApiTest {
     provider.mediaManager = mediaManager;
     provider.dmpManager = dmpManager;
     provider.userManager = mock(UserManager.class);
+    UUID planId = UUID.fromString(id);
 
-    assertThrows(RestClientException.class, () -> provider.importDmp(UUID.fromString(id)));
+    assertThrows(RestClientException.class, () -> provider.importDmp(planId));
     verifyNoInteractions(mediaManager, dmpManager);
   }
 
   @Test
-  void importStoresTheCanonicalPlanIdWhateverTheRequestSpelling() throws Exception {
+  void importUsesTheCanonicalPlanIdForTheRequestLookupAndRecord() throws Exception {
     MediaManager mediaManager = mock(MediaManager.class);
     DMPManager dmpManager = mock(DMPManager.class);
     UserManager userManager = mock(UserManager.class);
