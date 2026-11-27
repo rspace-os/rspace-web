@@ -145,7 +145,7 @@ jobs:
           docker run -d --name rspace-app --network "$ZAP_NETWORK" --network-alias rspace \
             --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 --memory 8g \
             -e CATALINA_OPTS="-Xmx4g \
-              -Dspring.profiles.active=run \
+              -Dspring.profiles.active=prod \
               -DreactDevMode=false \
               -Demail.enabled=false \
               -Dcsrf.filters.enabled=true \

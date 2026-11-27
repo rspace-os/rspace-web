@@ -52,7 +52,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Run profile spring configuration used for running the web application in test/dev environments.
  *
- * <p>This is the default setting when running the web app ( this default is set in web.xml)<br>
+ * <p>Legacy: being replaced by the prod profile plus dev properties. web.xml defaults to prod.<br>
  * Activate using property -Dspring.profiles.active=run
  */
 @Configuration

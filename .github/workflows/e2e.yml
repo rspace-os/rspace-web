@@ -287,7 +287,7 @@ jobs:
             -DskipTests=true -Dmaven.war.skip=true \
             -Dtimestamp=${{ github.run_id }} \
             -Denvironment=drop-recreate-db \
-            -Dspring.profiles.active=run \
+            -Dspring.profiles.active=prod \
             -DreactDevMode=false \
             -Dchemistry.provider=indigo \
             -Dchemistry.service.url=http://localhost:8090 \

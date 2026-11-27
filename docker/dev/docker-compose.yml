@@ -94,6 +94,8 @@ services:
       RSPACE_LEGACY_ASSET_CACHE_BUSTING: ${RSPACE_LEGACY_ASSET_CACHE_BUSTING:-true}
       # Rebuild the Lucene full-text index on startup (default off; slows boot).
       RSPACE_INDEX_ON_STARTUP: ${RSPACE_INDEX_ON_STARTUP:-false}
+      # Spring profile; prod by default, run for the legacy dev wiring.
+      RSPACE_SPRING_PROFILE: ${RSPACE_SPRING_PROFILE:-prod}
       # Optional chemistry microservice (started with `rspace-dev up --chemistry`,
       # which activates the "chemistry" compose profile). When enabled, the
       # entrypoint passes the chemistry.* properties to the app.

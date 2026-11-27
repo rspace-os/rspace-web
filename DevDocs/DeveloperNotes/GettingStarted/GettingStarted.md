@@ -312,7 +312,7 @@ When starting RSpace for the first time use the following command:
 
 ```bash
 mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
--Dspring.profiles.active=run -DreactDevMode=true \
+-Dspring.profiles.active=prod -DreactDevMode=true \
 -Dlog4j2.configurationFile=log4j2-dev.xml
 ```
 This command clears and sets up the database, so it takes a bit longer to run.
@@ -422,7 +422,7 @@ docker run -d --name mailpit --rm \
   axllent/mailpit:latest
 
 mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
-  -Dspring.profiles.active=run -DreactDevMode=true \
+  -Dspring.profiles.active=prod -DreactDevMode=true \
   -Demail.enabled=true -Dmail.emailHost=localhost -Dmail.port=1025 \
   -Dmail.emailAccount=mailpit -Dmail.password=mailpit -Dmail.ssl.enabled=false \
   -Dmail.from=noreply@rspace-e2e.local
@@ -441,10 +441,15 @@ address`) on `MAIL FROM`. Read captured mail at
 bare `mvn jetty:run`, use `rspace-dev up --mailpit` instead (see
 `docker/dev/README.md`) — it wires the same properties automatically.
 
-#### Running RSpace in production mode locally
+#### Choosing the Spring profile
 
-Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`
-i.e. pass a `-Dspring.profiles.active=prod` parameter.
+The commands above use `prod`, the wiring customers run. It is also the default
+when you pass no profile. Properties in `deployments/dev/deployment.properties`
+set the development differences, for example `email.enabled`,
+`license.server.active`, `aspose.enabled` and `rs.dev.groupcreation`. To compare
+against the legacy `run` wiring, pass `-Dspring.profiles.active=run` instead. If
+a database was first set up under one profile, recreate it with
+`-Denvironment=drop-recreate-db` before switching to the other.
 
 Note that when running through jetty, the `defaultDeployment.properties` file is not used for some reason.
 That means deployment properties that are not explicitly set in your `deployment.properties` file may have unexpected values. 
