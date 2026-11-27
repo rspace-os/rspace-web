@@ -7,6 +7,7 @@ import type { PrivateLinkedRecordsByOwner } from "@/modules/workspace/schema";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
+import type { URL as Url } from "../../util/types";
 import { type GalleryFile, idToString } from "./useGalleryListing";
 
 /**
@@ -14,6 +15,9 @@ import { type GalleryFile, idToString } from "./useGalleryListing";
  * completed request fresh while the second observer and React Strict Mode attach.
  */
 const INFO_PANEL_STALE_TIME = 5_000;
+
+/** Converted PDFs stay cached long enough to cover a Gallery session's back and forth. */
+const ASPOSE_PDF_GC_TIME = 30 * 60_000;
 
 export type Document = {
   id: number;
@@ -49,6 +53,8 @@ export const galleryQueryKeys = {
   linkedDocuments: (fileId: string) => [...galleryQueryKeys.all, "linkedDocuments", fileId] as const,
   referencingInventoryItems: (globalId: string | null) =>
     [...galleryQueryKeys.all, "referencingInventoryItems", globalId] as const,
+  asposePdf: (fileId: string, version: number | null) =>
+    [...galleryQueryKeys.all, "asposePdf", fileId, version] as const,
 };
 
 class LinkableDocument implements LinkableRecord {
@@ -116,6 +122,42 @@ export function useLinkedDocumentsQuery(file: GalleryFile) {
     enabled: fileId !== null && isLinkableMediaFile(file),
     retry: false,
     staleTime: INFO_PANEL_STALE_TIME,
+  });
+}
+
+async function convertToPdfWithAspose(fileId: string, signal: AbortSignal): Promise<Url> {
+  const { data } = await axios.get<unknown>(`/Streamfile/ajax/convert/${fileId}?outputFormat=pdf`, { signal });
+  const fileName = Parsers.isObject(data)
+    .flatMap(Parsers.isNotNull)
+    .flatMap(Parsers.getValueWithKey("data"))
+    .flatMap(Parsers.isString)
+    .orElse(null);
+  if (!fileName) throw new Error("Aspose did not return a converted file");
+  return `/Streamfile/direct/${fileId}?fileName=${fileName}`;
+}
+
+/**
+ * The URL of a PDF that Aspose converts the file into, keyed by file id and version. A successful
+ * conversion is never refetched while it stays cached, as the server keeps the converted file. A
+ * failed one is not retried on window focus or reconnect, as each attempt reruns the conversion on
+ * the server. Disabling the query, such as when stepping past the file in the carousel, leaves an
+ * in-flight conversion running so that stepping back reuses it; aborting would not stop the
+ * server's synchronous conversion anyway. Unmounting the last observer aborts the request, so a
+ * file unmounted mid-conversion and revisited may be converted again.
+ */
+export function useAsposePdfQuery(file: GalleryFile, { enabled }: { enabled: boolean }) {
+  const fileId = idToString(file.id).orElse("");
+  // Plain useQuery rather than a suspense query: conversion is conditional on `enabled`, and a
+  // neighbour's conversion must not suspend the whole carousel.
+  return useQuery({
+    queryKey: galleryQueryKeys.asposePdf(fileId, file.version ?? null),
+    queryFn: ({ signal }) => convertToPdfWithAspose(fileId, signal),
+    enabled: enabled && fileId !== "",
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    gcTime: ASPOSE_PDF_GC_TIME,
   });
 }
 

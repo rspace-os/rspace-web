@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -309,6 +309,62 @@ describe("RemoteFile.canDelete", () => {
     expect(file.canDelete.isOk).toBe(false);
     expect(file.canDelete.orElseGet(([e]) => e)).toMatchObject({
       message: expect.stringContaining("S3 filestore"),
+    });
+  });
+});
+
+describe("RemoteFile.takeOverDownloadOf", () => {
+  // each call makes new Date objects, so only an equal time counts as unchanged
+  function makeRemoteImage({ fileSize = 1024, modifiedAt = "2026-01-01T00:00:00Z" } = {}): RemoteFile {
+    return new RemoteFile({
+      nfsId: 7,
+      name: "test.jpg",
+      folder: false,
+      fileSize,
+      modificationDate: new Date(modifiedAt),
+      path: [makeFilestore("S3")],
+      logicPath: "42:/test.jpg",
+      token: "",
+      ownerName: "gallery:unknownOwner",
+    });
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("an unchanged file shares the download, neither downloading again nor revoking it", async () => {
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL");
+    mockAxios.onGet("/api/v1/gallery/filestores/42/download").reply(200, new Blob(["content"]));
+    const previous = makeRemoteImage();
+    const url = await previous.downloadHref?.();
+    const next = makeRemoteImage();
+
+    expect(next.takeOverDownloadOf(previous)).toBe(true);
+
+    await expect(next.downloadHref?.()).resolves.toBe(url);
+    expect(mockAxios.history.get).toHaveLength(1);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ["modification date", { modifiedAt: "2026-02-01T00:00:00Z" }],
+    ["size", { fileSize: 2048 }],
+  ])("a file whose %s changed downloads afresh and the old download is revoked", async (_, changed) => {
+    const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL");
+    mockAxios.onGet("/api/v1/gallery/filestores/42/download").reply(200, new Blob(["content"]));
+    const previous = makeRemoteImage();
+    const url = await previous.downloadHref?.();
+    const next = makeRemoteImage(changed);
+
+    expect(next.takeOverDownloadOf(previous)).toBe(false);
+    // as useGalleryListing does with a file that was not taken over
+    previous.deconstructor();
+
+    await expect(next.downloadHref?.()).resolves.not.toBe(url);
+    expect(mockAxios.history.get).toHaveLength(2);
+    await vi.waitFor(() => {
+      expect(revokeObjectURL).toHaveBeenCalledWith(url);
     });
   });
 });

@@ -16,7 +16,8 @@ import usePrimaryAction, {
   useImagePreviewOfGalleryFile,
   usePdfPreviewOfGalleryFile,
 } from "../primaryActionHooks";
-import { type GalleryFile, idToString } from "../useGalleryListing";
+import { useAsposePdfQuery } from "../queries";
+import type { GalleryFile } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
@@ -29,9 +30,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Typography from "@mui/material/Typography";
-import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import * as Parsers from "../../../util/parsers";
 import type { URL as Url } from "../../../util/types";
 import { useFolderOpen } from "./OpenFolderProvider";
 import ResetZoomIcon from "./ResetZoomIcon";
@@ -204,15 +203,24 @@ const PreviewWrapper = ({
   );
 };
 
-const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; visible: boolean }) => {
+const Preview = React.memo(function Preview({
+  file,
+  zoom,
+  visible,
+}: {
+  file: GalleryFile;
+  zoom: number;
+  visible: boolean;
+}) {
   const { t } = useTranslation("gallery");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  // a new version of the file is loaded afresh; an unchanged file from a refreshed listing keeps its preview
+  // filestore files have no version, so their size and modification date stand in for one
+  const fileVersion = `${file.key}@${file.version ?? `${file.size}@${file.modificationDate?.getTime() ?? ""}`}`;
+  const loadedVersion = React.useRef<string | null>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
-  const [asposePdfUrl, setAsposePdfUrl] = React.useState<
-    { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
-  >(null);
   const [imageUrl, setImageUrl] = React.useState<
     { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
@@ -221,6 +229,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   >(null);
 
   React.useEffect(() => {
+    if (loadedVersion.current === fileVersion) return;
     canPreviewAsImage(file)
       .map((getDownloadHref) => ({ key: "image", getDownloadHref }))
       .orElseTry(() =>
@@ -229,74 +238,39 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
           getDownloadHref,
         })),
       )
-      .orElseTry<
-        | { key: "image"; getDownloadHref: () => Promise<Url> }
-        | { key: "pdf"; getDownloadHref: () => Promise<Url> }
-        | { key: "aspose" }
-      >(() =>
-        canPreviewWithAspose(file).map(() => ({
-          key: "aspose",
-        })),
-      )
       .do((preview) => {
+        loadedVersion.current = fileVersion;
+        // drops the result of loading a version that has since been replaced
+        const ifStillCurrent = (update: () => void) => {
+          if (loadedVersion.current === fileVersion) update();
+        };
         void (async () => {
           if (preview.key === "image") {
             setImageUrl({ tag: "loading" });
             try {
               const downloadHref = await preview.getDownloadHref();
-              setImageUrl({ tag: "loaded", url: downloadHref });
+              ifStillCurrent(() => setImageUrl({ tag: "loaded", url: downloadHref }));
             } catch {
-              setImageUrl({ tag: "error" });
+              ifStillCurrent(() => setImageUrl({ tag: "error" }));
             }
-          } else if (preview.key === "pdf") {
+          } else {
             setPdfUrl({ tag: "loading" });
             try {
               const downloadHref = await preview.getDownloadHref();
-              setPdfUrl({ tag: "loaded", url: downloadHref });
+              ifStillCurrent(() => setPdfUrl({ tag: "loaded", url: downloadHref }));
             } catch {
-              setPdfUrl({ tag: "error" });
-            }
-          } else {
-            setAsposePdfUrl({ tag: "loading" });
-            try {
-              const { data } = await axios.get<unknown>(
-                `/Streamfile/ajax/convert/${idToString(file.id).elseThrow()}?outputFormat=pdf`,
-              );
-              const fileName = Parsers.isObject(data)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("data"))
-                .flatMap(Parsers.isString)
-                .orElse(null);
-              if (fileName) {
-                setAsposePdfUrl({
-                  tag: "loaded",
-                  url: `/Streamfile/direct/${idToString(file.id).elseThrow()}?fileName=${fileName}`,
-                });
-              } else {
-                Parsers.isObject(data)
-                  .flatMap(Parsers.isNotNull)
-                  .flatMap(Parsers.getValueWithKey("exceptionMessage"))
-                  .flatMap(Parsers.isString)
-                  .do((msg) => {
-                    throw new Error(msg);
-                  });
-                Parsers.objectPath(["error", "errorMessages"], data)
-                  .flatMap(Parsers.isArray)
-                  .flatMap((array) => Parsers.isNotBottom(array.at(0)))
-                  .flatMap(Parsers.isString)
-                  .do((msg) => {
-                    throw new Error(msg);
-                  });
-              }
-            } catch {
-              setAsposePdfUrl({
-                tag: "error",
-              });
+              ifStillCurrent(() => setPdfUrl({ tag: "error" }));
             }
           }
         })();
       });
-  }, []);
+  }, [fileVersion]);
+
+  // conversion is expensive, so only the visible file is converted; aspose.enabled may load late
+  const asposePdf = useAsposePdfQuery(file, {
+    enabled:
+      visible && canPreviewAsImage(file).isError && canPreviewAsPdf(file).isError && canPreviewWithAspose(file).isOk,
+  });
 
   function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
     setNumPages(nextNumPages);
@@ -305,7 +279,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   let loadingLabel = null;
   if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = t("carousel.loadingImage");
   if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = t("carousel.loadingPdf");
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading") loadingLabel = t("carousel.generatingPdf");
+  if (asposePdf.isLoading) loadingLabel = t("carousel.generatingPdf");
   if (loadingLabel !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -314,11 +288,10 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
     );
 
   let imageSrc = null;
-  if (imageUrl === null && pdfUrl === null && asposePdfUrl === null) imageSrc = file.thumbnailUrl;
+  if (imageUrl === null && pdfUrl === null && asposePdf.data === undefined) imageSrc = file.thumbnailUrl;
   if (imageUrl !== null && imageUrl.tag === "loaded") imageSrc = imageUrl.url;
   if (imageUrl !== null && imageUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (pdfUrl !== null && pdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
@@ -340,7 +313,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
 
   let pdfSrc = null;
   if (pdfUrl !== null && pdfUrl.tag === "loaded") pdfSrc = pdfUrl.url;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded") pdfSrc = asposePdfUrl.url;
+  if (asposePdf.data !== undefined) pdfSrc = asposePdf.data;
   if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -361,7 +334,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
     );
 
   return null;
-};
+});
 
 type CarouselArgs = {
   listing:
@@ -375,6 +348,13 @@ type CarouselArgs = {
       };
 };
 
+function indexOfFile(list: ReadonlyArray<GalleryFile>, file: GalleryFile): number {
+  return Math.max(
+    0,
+    list.findIndex(({ id }) => id === file.id),
+  );
+}
+
 /**
  * The carousel view of files allows the user to view files one at a time,
  * using the preview (image or pdf) of the file to identify it. The user can
@@ -382,8 +362,16 @@ type CarouselArgs = {
  * files that vary only in small details.
  */
 export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
-  const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
+  // start on the selected file so that the first previews mounted are the ones shown
+  const [visibleIndex, setVisibleIndex] = React.useState(() =>
+    listing.tag === "list"
+      ? selection
+          .asSet()
+          .only.map((selectedFile) => indexOfFile(listing.list, selectedFile))
+          .orElse(0)
+      : 0,
+  );
   const [zoom, setZoom] = React.useState(1);
   const { t } = useTranslation(["gallery", "common"]);
 
@@ -391,12 +379,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
     if (listing.tag !== "list") return;
     // when enter Carousel view, focus on already selected file
     selection.asSet().only.do((selectedFile) => {
-      setVisibleIndex(
-        Math.max(
-          0,
-          listing.list.findIndex(({ id }) => id === selectedFile.id),
-        ),
-      );
+      setVisibleIndex(indexOfFile(listing.list, selectedFile));
     });
     // otherwise select the first file
     if (selection.isEmpty) {
@@ -567,9 +550,12 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
           minHeight: "0",
         }}
       >
-        {listing.list.map((f, i) => (
-          <Preview file={f} zoom={zoom} visible={i === visibleIndex} key={f.key} />
-        ))}
+        {/* Only the visible file and its neighbours are mounted, so the rest are not downloaded */}
+        {listing.list.map((f, i) =>
+          Math.abs(i - visibleIndex) <= 1 ? (
+            <Preview file={f} zoom={i === visibleIndex ? zoom : 1} visible={i === visibleIndex} key={f.key} />
+          ) : null,
+        )}
       </Box>
     </Stack>
   );
