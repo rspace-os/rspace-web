@@ -16,6 +16,7 @@ import ImportRouter from "./Import/ImportRouter";
 import PermalinkRouter from "./PermalinkRouter";
 import Requests from "./Requests";
 import SearchRouter from "./Search/SearchRouter";
+import UppercaseSearchParams from "./Search/UppercaseSearchParams";
 
 const RedirectToBench = () => {
   const {
@@ -43,7 +44,14 @@ function InventoryRouter(): React.ReactNode {
                 <Route path="/sampletemplate/:id" element={<PermalinkRouter type="sampletemplate" />} />
                 <Route path="/instrument/:id" element={<PermalinkRouter type="instrument" />} />
                 <Route path="/instrumenttemplate/:id" element={<PermalinkRouter type="instrumenttemplate" />} />
-                <Route path="/search/*" element={<SearchRouter />} />
+                <Route
+                  path="/search/*"
+                  element={
+                    <UppercaseSearchParams>
+                      <SearchRouter />
+                    </UppercaseSearchParams>
+                  }
+                />
                 <Route path="/import/*" element={<ImportRouter />} />
                 <Route path="/identifiers/*" element={<IdentifiersRouter />} />
                 <Route path="/requests" element={<Requests />} />
