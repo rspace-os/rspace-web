@@ -9,7 +9,9 @@ import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RecordManager;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.function.Predicate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -45,8 +47,12 @@ public class SnippetServiceImpl implements SnippetService {
         .map(RecordToFolder::getFolder)
         .filter(
             folder -> !folder.isDeleted() && !folder.getShortestPathToParent(galleryRoot).isEmpty())
-        .findFirst()
-        .or(() -> ownerParent)
-        .filter(folder -> permissionUtils.isPermitted(folder, PermissionType.READ, user));
+        .filter(isReadable(user))
+        .min(Comparator.comparing(Folder::getId))
+        .or(() -> ownerParent.filter(isReadable(user)));
+  }
+
+  private Predicate<Folder> isReadable(User user) {
+    return folder -> permissionUtils.isPermitted(folder, PermissionType.READ, user);
   }
 }

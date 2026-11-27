@@ -454,7 +454,11 @@ function GalleryFileInFolder() {
       });
       if (hasBeenSuperseded()) return;
       setFileName(Parsers.objectPath(["name"], data).flatMap(Parsers.isString).orElse(null));
-      const folderId = Parsers.objectPath(["parentFolderId"], data).flatMap(Parsers.isNumber).elseThrow();
+      /* a snippet's is null when no folder holding it is readable by this user */
+      const folderId = Parsers.objectPath(["parentFolderId"], data)
+        .flatMap(Parsers.isNumber)
+        .mapError(() => new Error(t("landingPage.notInGallery")))
+        .elseThrow();
 
       if (typeof versionParam === "undefined") {
         setResolution({ tag: "success", value: { tag: "live", folderId } });

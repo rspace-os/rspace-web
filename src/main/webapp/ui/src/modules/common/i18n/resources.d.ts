@@ -1956,7 +1956,8 @@ export default interface Resources {
       "error": "Error: {error}",
       "filestoreEnabledError": "Error checking if filestores are enabled.",
       "invalidSection": "Not a valid Gallery section.",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "notInGallery": "This item isn't in a Gallery folder you can open."
     },
     "linkedDocumentsPanel": {
       "columns": {

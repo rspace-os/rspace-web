@@ -320,20 +320,78 @@ describe("Gallery", () => {
       );
     });
 
-    test("On '/item/{id}?type=snippet', the snippet is fetched from the snippets API", async () => {
+    test("On '/item/{id}?type=snippet', the snippet is fetched from the snippets API and selected", async () => {
       mockAxios.onGet("/api/v1/snippets/634").reply(200, {
         id: 634,
         globalId: "ST634",
         name: "shared snippet",
         parentFolderId: 123,
       });
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
+        data: {
+          parentId: 123,
+          items: {
+            totalHits: 1,
+            totalPages: 1,
+            results: [
+              {
+                id: 634,
+                oid: { idString: "ST634" },
+                name: "shared snippet",
+                ownerId: 1,
+                ownerFullName: "Test User",
+                ownerUsername: "testuser",
+                description: null,
+                creationDate: 1672531200,
+                modificationDate: 1672531200,
+                type: "Snippet",
+                systemFolder: false,
+                sharedFolder: false,
+                extension: "txt",
+                thumbnailId: null,
+                size: 512,
+                version: 1,
+                originalImageOid: { idString: "ST634" },
+              },
+            ],
+          },
+        },
+        error: null,
+        success: true,
+        errorMsg: null,
+      });
+      server.use(
+        http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+          HttpResponse.json({ data: [], error: null, success: true }),
+        ),
+      );
 
       render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
 
       await waitFor(() => {
-        expect(mockAxios.history.get.map(({ url }) => url)).toContain("/api/v1/snippets/634");
+        expect(screen.getByRole("gridcell", { name: /shared snippet/ })).toHaveAttribute("aria-selected", "true");
       });
+      expect(mockAxios.history.get.map(({ url }) => url)).toContain("/api/v1/snippets/634");
       expect(mockAxios.history.get.map(({ url }) => url)).not.toContain("/api/v1/files/634");
+    });
+
+    test("A snippet with no Gallery folder the user can open says so", async () => {
+      mockAxios.onGet("/api/v1/snippets/634").reply(200, {
+        id: 634,
+        globalId: "ST634",
+        name: "shared snippet",
+        parentFolderId: null,
+      });
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
+
+      expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
+      expect(consoleError).toHaveBeenCalledWith(
+        "Error fetching file details",
+        expect.objectContaining({ message: "gallery:landingPage.notInGallery" }),
+      );
+      consoleError.mockRestore();
     });
   });
 
