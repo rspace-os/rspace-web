@@ -51,6 +51,7 @@ export const WorkspaceRecordInformationSchema = v.objectWithRest(
     revision: v.optional(v.nullable(v.number())),
     path: v.optional(v.nullable(v.string())),
     tags: v.optional(v.nullable(v.string())),
+    tagMetaData: v.optional(v.nullable(v.string())),
     fromImport: v.optional(v.boolean()),
     originalOwnerUsernamePreImport: v.optional(v.nullable(v.string())),
     creationDateWithClientTimezoneOffset: v.optional(v.string()),

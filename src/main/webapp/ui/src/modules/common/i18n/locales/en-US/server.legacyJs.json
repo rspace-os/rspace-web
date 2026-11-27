@@ -1019,6 +1019,7 @@
         "statusReadOnly": "read-only",
         "statusViewable": "viewable",
         "statusViewableEditable": "viewable & editable",
+        "tagSource": "from version {0} of {1}",
         "updatingInfoAction": "Updating info",
         "updatingRecordInformation": "Updating record information..."
       },

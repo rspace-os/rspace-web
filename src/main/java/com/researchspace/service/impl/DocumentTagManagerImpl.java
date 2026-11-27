@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -325,7 +326,17 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
   @Override
   public TreeSet<String> getTagsPlusOntologiesForViewableDocuments(
       User subject, String tagFilter, int pos) {
-    Set<String> unsorted = getTagsPlusOntologiesViewableByUser(subject, tagFilter);
+    return getTagsPlusOntologiesViewableByUser(subject, tagFilter)
+        .map(union -> pageOfTagSuggestions(union, pos))
+        .orElseGet(() -> new TreeSet<>(Set.of(TOO_MANY_ONTOLOGY_RESULTS)));
+  }
+
+  /**
+   * Pages the suggestions after dropping plain tags that duplicate an ontology term's label, so the
+   * size signals and page boundaries are computed on what the user is shown.
+   */
+  private static TreeSet<String> pageOfTagSuggestions(Set<String> union, int pos) {
+    Set<String> unsorted = withoutPlainTagsMatchingOntologyTerms(union);
     TreeSet<String> sorted = new TreeSet<>();
     if (unsorted.size() > MAX_ONTOLOGY_RESULTS_SIZE) {
       sorted.add(TOO_MANY_ONTOLOGY_RESULTS);
@@ -353,7 +364,35 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
     return new TreeSet(chosenData);
   }
 
-  private Set<String> getTagsPlusOntologiesViewableByUser(User subject, String tagFilter) {
+  /**
+   * Drops each plain tag whose label is also the label of an ontology term in {@code tags}; every
+   * ontology term is kept, so different vocabularies and versions of one label stay distinct.
+   */
+  private static Set<String> withoutPlainTagsMatchingOntologyTerms(Set<String> tags) {
+    Set<String> ontologyLabels =
+        tags.stream()
+            .filter(DocumentTagManagerImpl::isOntologyTerm)
+            .map(term -> decodeTagLabel(getTagValueFromMeta(term)))
+            .collect(Collectors.toSet());
+    return tags.stream()
+        .filter(tag -> isOntologyTerm(tag) || !ontologyLabels.contains(decodeTagLabel(tag)))
+        .collect(Collectors.toSet());
+  }
+
+  private static boolean isOntologyTerm(String tag) {
+    return tag.contains(RSPACE_EXTONTOLOGY_URL_DELIMITER);
+  }
+
+  private static String decodeTagLabel(String label) {
+    return label.replace(RSPACTAGS_FORSL__, "/").replace(RSPACTAGS_COMMA__, ",");
+  }
+
+  /**
+   * @return the union of tags and ontology terms, or empty when it exceeds {@link
+   *     #MAX_ONTOLOGY_RESULTS_SIZE} and collection stopped early
+   */
+  private Optional<Set<String>> getTagsPlusOntologiesViewableByUser(
+      User subject, String tagFilter) {
     Set<String> parsedOntologyTerms = new HashSet<>();
     Set<String> tagsPlusOntologyTermsViewableByUserFromStructureDocs = new HashSet<>();
     boolean allOntologiesAndTagsFromDocumentsAreAllowed =
@@ -438,12 +477,12 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
             count++;
           }
           if (count > MAX_ONTOLOGY_RESULTS_SIZE) {
-            return tagsPlusOntologyTermsViewableByUserFromStructureDocs;
+            return Optional.empty();
           }
         }
       }
     }
-    return tagsPlusOntologyTermsViewableByUserFromStructureDocs;
+    return Optional.of(tagsPlusOntologyTermsViewableByUserFromStructureDocs);
   }
 
   private boolean enforceOntologiesIfAnyGroupEnforces(User user) {

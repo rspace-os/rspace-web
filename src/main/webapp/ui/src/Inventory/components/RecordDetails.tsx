@@ -9,7 +9,7 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import DescriptionList from "../../components/DescriptionList";
 import GlobalId from "../../components/GlobalId";
 import TableCellBlank from "../../components/TableCellBlank";
-import TagListing from "../../components/Tags/TagListing";
+import TagListing, { searchHref } from "../../components/Tags/TagListing";
 import NavigateContext from "../../stores/contexts/Navigate";
 import type { Record } from "../../stores/definitions/Record";
 import useStores from "../../stores/use-stores";
@@ -122,13 +122,10 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
                     value: (
                       <TagListing
                         onClick={(tag) => {
-                          navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
+                          navigate(searchHref(tag));
                         }}
                         tags={record.recordDetails.tags}
                         size="small"
-                        // metadata popup is not shown because a popup inside a
-                        // popup is likely to be confusing
-                        showMetadataPopup={false}
                       />
                     ),
                   },
