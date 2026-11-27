@@ -78,6 +78,9 @@ public class GalleryController extends BaseController {
   /** URL to gallery item */
   public static final String GALLERY_ITEM_URL = "/gallery/item";
 
+  /** Tells the Gallery that a {@link #GALLERY_ITEM_URL} item is a snippet. */
+  public static final String SNIPPET_ITEM_QUERY = "?type=snippet";
+
   private static final int NUMBER_OF_RECORDS_ON_GALERY_PAGE = 20;
   private static final int MAX_FOLDER_NAME_LENGTH = 100;
   private static final int MAX_IDS_TO_PROCESS = 50;

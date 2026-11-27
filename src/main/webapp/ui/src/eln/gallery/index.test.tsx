@@ -9,6 +9,7 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { HttpResponse, http } from "msw/http";
 import { MemoryRouter } from "react-router";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
@@ -26,7 +27,12 @@ import type { GallerySection } from "./common";
 function GalleryStory({
   urlSuffix,
 }: {
-  urlSuffix?: `?mediaType=${GallerySection}` | `/${number}` | `/item/${number}` | `/item/${number}/${string}`;
+  urlSuffix?:
+    | `?mediaType=${GallerySection}`
+    | `/${number}`
+    | `/item/${number}`
+    | `/item/${number}?type=snippet`
+    | `/item/${number}/${string}`;
 }) {
   return (
     <LandmarksProvider>
@@ -97,6 +103,52 @@ function folderDetails({
     sharedFolder: false,
     mediaType: "Images",
     pathToRootFolder: ancestors.map(ancestor),
+  };
+}
+
+function snippetListing({
+  id,
+  globalId,
+  name,
+  parentId,
+}: {
+  id: number;
+  globalId: string;
+  name: string;
+  parentId: number;
+}) {
+  return {
+    data: {
+      parentId,
+      items: {
+        totalHits: 1,
+        totalPages: 1,
+        results: [
+          {
+            id,
+            oid: { idString: globalId },
+            name,
+            ownerId: 1,
+            ownerFullName: "Test User",
+            ownerUsername: "testuser",
+            description: null,
+            creationDate: 1672531200,
+            modificationDate: 1672531200,
+            type: "Snippet",
+            systemFolder: false,
+            sharedFolder: false,
+            extension: "txt",
+            thumbnailId: null,
+            size: 512,
+            version: 1,
+            originalImageOid: { idString: globalId },
+          },
+        ],
+      },
+    },
+    error: null,
+    success: true,
+    errorMsg: null,
   };
 }
 
@@ -312,6 +364,56 @@ describe("Gallery", () => {
         ),
         { numRuns: 5 },
       );
+    });
+
+    test("On '/item/{id}?type=snippet', the snippet is fetched from the snippets API and selected", async () => {
+      mockAxios.onGet("/api/v1/snippets/634").reply(200, {
+        id: 634,
+        globalId: "ST634",
+        name: "shared snippet",
+        parentFolderId: 123,
+      });
+      mockAxios
+        .onGet("/gallery/getUploadedFiles")
+        .reply(200, snippetListing({ id: 634, globalId: "ST634", name: "shared snippet", parentId: 123 }));
+      server.use(
+        http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+          HttpResponse.json({ data: [], error: null, success: true }),
+        ),
+      );
+
+      render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("gridcell", { name: /shared snippet/ })).toHaveAttribute("aria-selected", "true");
+      });
+      const requestedUrls = mockAxios.history.get.map(({ url }) => url);
+      expect(requestedUrls).toContain("/api/v1/snippets/634");
+      expect(requestedUrls).not.toContain("/api/v1/files/634");
+    });
+
+    test("A snippet with no Gallery folder the user can open says so", async () => {
+      mockAxios.onGet("/api/v1/snippets/634").reply(200, {
+        id: 634,
+        globalId: "ST634",
+        name: "shared snippet",
+        parentFolderId: null,
+      });
+      const restoreConsole = silenceConsole(["error"], ["Error fetching file details"]);
+      try {
+        const consoleError = console.error;
+
+        render(<GalleryStory urlSuffix="/item/634?type=snippet" />);
+
+        expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
+        // the page shows only the key in tests, so the message is checked where it is logged
+        expect(consoleError).toHaveBeenCalledWith(
+          "Error fetching file details",
+          expect.objectContaining({ message: "gallery:landingPage.notInGallery" }),
+        );
+      } finally {
+        restoreConsole();
+      }
     });
   });
 
@@ -710,40 +812,9 @@ describe("Gallery", () => {
     test("Saving a snippet share from Gallery should surface the success alert", async () => {
       const user = userEvent.setup();
 
-      // A single snippet in the listing.
-      mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
-        data: {
-          parentId: 1,
-          items: {
-            totalHits: 1,
-            totalPages: 1,
-            results: [
-              {
-                id: 3,
-                oid: { idString: "SD3" },
-                name: "My Snippet",
-                ownerId: 1,
-                ownerFullName: "Test User",
-                ownerUsername: "testuser",
-                description: null,
-                creationDate: 1672531200,
-                modificationDate: 1672531200,
-                type: "Snippet",
-                systemFolder: false,
-                sharedFolder: false,
-                extension: "txt",
-                thumbnailId: null,
-                size: 512,
-                version: 1,
-                originalImageOid: { idString: "SD3" },
-              },
-            ],
-          },
-        },
-        error: null,
-        success: true,
-        errorMsg: null,
-      });
+      mockAxios
+        .onGet("/gallery/getUploadedFiles")
+        .reply(200, snippetListing({ id: 3, globalId: "SD3", name: "My Snippet", parentId: 1 }));
       server.use(
         http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
           HttpResponse.json({ data: [], error: null, success: true }),

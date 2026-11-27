@@ -63,4 +63,9 @@ public class GlobalLookupControllerRedirectTest {
   public void benchRedirectUnchanged() {
     assertEquals("redirect:/inventory/search?parentGlobalId=BE5", controller.globalIdLookUp("BE5"));
   }
+
+  @Test
+  public void snippetRedirectsToGalleryItemAsSnippet() {
+    assertEquals("redirect:/gallery/item/634?type=snippet", controller.globalIdLookUp("ST634"));
+  }
 }

@@ -26,6 +26,9 @@ public class SnippetApiController extends BaseApiController implements SnippetAp
     try {
       Snippet snippet = snippetService.getSnippet(id, user);
       ApiSnippet apiSnippet = new ApiSnippet(snippet);
+      snippetService
+          .getGalleryParentFolder(snippet, user)
+          .ifPresent(folder -> apiSnippet.setParentFolderId(folder.getId()));
       buildAndAddSelfLink("/snippets", apiSnippet);
       return apiSnippet;
     } catch (ObjectRetrievalFailureException | AuthorizationException e) {

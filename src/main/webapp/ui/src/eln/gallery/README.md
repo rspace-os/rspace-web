@@ -85,8 +85,13 @@ users as each users has their open separate Gallery.
 /gallery/{section}/folder/{path}      # Folder navigation
 /gallery/{section}/file/{id}          # Select file in its folder
 /gallery/item/{id}                    # Select item in its folder
+/gallery/item/{id}?type=snippet       # Same, for a snippet (ST global ID links)
 /gallery/item/{id}/{version}          # Same, pinned to a past version (read-only)
 ```
+
+Items resolve through `/api/v1/files/{id}`, or `/api/v1/snippets/{id}` when
+`type=snippet`. A snippet's `parentFolderId` is the folder through which the
+viewer reaches it in their own Gallery, such as a group's shared snippets folder.
 
 Every route also needs a matching rule in
 [urlrewrite.xml](../../../WEB-INF/urlrewrite.xml), which forwards it to the SPA

@@ -9,11 +9,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonPropertyOrder({"id", "globalId", "name", "owner", "content", "_links"})
+@JsonPropertyOrder({"id", "globalId", "name", "owner", "content", "parentFolderId", "_links"})
 public class ApiSnippet extends IdentifiableNameableApiObject {
   private ApiUser owner;
 
   private String content;
+
+  /** The folder through which the requesting user reaches this snippet in their Gallery. */
+  private Long parentFolderId;
 
   public ApiSnippet(Snippet snippet) {
     super(snippet.getId(), snippet.getGlobalIdentifier(), snippet.getName());
