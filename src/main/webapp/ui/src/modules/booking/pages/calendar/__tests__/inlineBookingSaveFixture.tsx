@@ -31,6 +31,7 @@ export function inlineBookingSaveFixture(EditorComponent = InlineBookingEditor) 
     privacy: "full",
     state: "CONFIRMED",
     canEdit: true,
+    cancellationReason: null,
   };
   const abortedAfterSave: string[] = [];
   const requests = {
@@ -80,6 +81,7 @@ export function inlineBookingSaveFixture(EditorComponent = InlineBookingEditor) 
       requests.saved = true;
       return HttpResponse.json({
         ...ownBooking,
+        cancellationReason: null,
         version: 8,
         start: event.start,
         end: Temporal.Instant.from("2030-10-07T11:15:00Z"),

@@ -9,6 +9,7 @@ import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   bookingDateTimeLocale,
   currentWallClock,
+  formatDurationMinutes,
   isPlainDate,
   sameTimeZone,
 } from "@/modules/booking/domain/bookingTime";
@@ -43,7 +44,7 @@ function ItemTimezoneTime({
         <button
           type="button"
           aria-label={t("bookings.itemInformation.timeWithInstrumentTime", { time, itemTime, timezone })}
-          className="inline-flex cursor-help appearance-none items-center gap-1 rounded-sm border-0 bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-ring"
+          className="inline-flex cursor-help appearance-none items-center gap-1 rounded-sm border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-2 focus-visible:outline-ring"
         />
       }
     >
@@ -172,7 +173,7 @@ export function BookingItemInformationContent({
       t("bookableItemDetails.fields.maximumDuration"),
       item.maxBookingDurationMinutes === 0
         ? t("bookableItemDetails.unlimited")
-        : t("bookableItemDetails.minutes", { count: item.maxBookingDurationMinutes }),
+        : formatDurationMinutes(item.maxBookingDurationMinutes),
     ],
     [
       t("bookings.itemInformation.doubleBookingAllowed"),

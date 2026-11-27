@@ -40,11 +40,17 @@ describe("booking response intervals", () => {
       updatedAt: Temporal.Instant.from("2026-08-02T10:00:00Z"),
     } as const;
 
-    expect(mapBookingDetails(redacted)).toEqual(redacted);
-    expect(mapBookingListDocument({ ...redacted, requester: { relationTo: "users", value: 84 } })).toEqual({
+    const details = { ...redacted, cancellationReason: null };
+    expect(mapBookingDetails(details)).toEqual(details);
+    const numericRequester = { ...redacted, requester: { relationTo: "users" as const, value: 84 } };
+    expect(mapBookingListDocument(numericRequester)).toEqual(numericRequester);
+    const expandedRequester = {
       ...redacted,
-      requester: { relationTo: "users", value: 84 },
-    });
+      requester: { relationTo: "users" as const, value: { id: 84, name: "Ada Lovelace" }, globalId: "US84" },
+    };
+    expect(mapBookingListDocument(expandedRequester)).toEqual(expandedRequester);
+    const concealedRequester = { ...redacted, requester: null };
+    expect(mapBookingListDocument(concealedRequester)).toEqual(concealedRequester);
   });
 
   it("retains a valid response and reports a non-increasing interval at end", () => {
@@ -76,6 +82,7 @@ describe("booking response intervals", () => {
       version: 1,
       canViewConfiguration: true,
       location: null,
+      cancellationReason: null,
       purpose: null,
       bookedBy: null,
       createdBy: null,
@@ -93,7 +100,7 @@ describe("booking response intervals", () => {
 
 it("requests the booking read fields in a fixed order", () => {
   expect(apiV2Fields(BOOKING_READ_FIELDS)).toBe(
-    "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+    "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,cancellationReason,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
   );
 });
 

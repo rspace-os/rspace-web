@@ -296,6 +296,7 @@ export const apiV2CollectionMetadata = {
       "start",
       "end",
       "state",
+      "cancellationReason",
       "purpose",
       "bookedBy",
       "createdBy",

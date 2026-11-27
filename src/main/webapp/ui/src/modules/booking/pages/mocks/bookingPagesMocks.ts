@@ -23,19 +23,14 @@ import {
 } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { busyBooking, collectionResponse, otherBooking, ownBooking } from "./bookingCalendarFixtures";
 
-export const availabilityBookingFields = apiV2Fields(BOOKING_READ_FIELDS);
 export const calendarBookingFields = apiV2Fields(CALENDAR_BOOKING_FIELDS);
 
 export const bookingPageRequests: {
   collectionQueries: string[];
-  bookingRequests: number;
-  bookingQuery: URL | undefined;
   calendarBookingRequests: URL[];
   createdPayloads: Array<Record<string, unknown>>;
 } = {
   collectionQueries: [],
-  bookingRequests: 0,
-  bookingQuery: undefined,
   calendarBookingRequests: [],
   createdPayloads: [],
 };
@@ -111,8 +106,6 @@ async function catalogueCandidates(url: URL): Promise<BookingCatalogueItem[]> {
 
 export function resetBookingPageRequests(): void {
   bookingPageRequests.collectionQueries = [];
-  bookingPageRequests.bookingRequests = 0;
-  bookingPageRequests.bookingQuery = undefined;
   bookingPageRequests.calendarBookingRequests = [];
   bookingPageRequests.createdPayloads = [];
 }
@@ -191,16 +184,8 @@ export function bookingPagesHandlers(): RequestHandler[] {
         bookingPageRequests.calendarBookingRequests.push(url);
         return apiV2CollectionResponse("bookings", request, [ownBooking, otherBooking, busyBooking]);
       }
-      if (fields === availabilityBookingFields) {
-        bookingPageRequests.bookingRequests += 1;
-        bookingPageRequests.bookingQuery = url;
-        return HttpResponse.json({
-          docs: availabilityBookings,
-          page: 1,
-          hasNextPage: false,
-          limit: 100,
-        });
-      }
+      if (fields === apiV2Fields(BOOKING_READ_FIELDS))
+        return apiV2CollectionResponse("bookings", request, availabilityBookings);
       return undefined;
     }),
     http.post("/api/v2/bookings", async ({ request }) => {
@@ -218,6 +203,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         state: "CONFIRMED",
         kind: payload.kind,
         purpose: payload.purpose ?? null,
+        cancellationReason: null,
         bookedBy: "Ada Lovelace",
         createdBy: "Ada Lovelace",
         privacy: "full",

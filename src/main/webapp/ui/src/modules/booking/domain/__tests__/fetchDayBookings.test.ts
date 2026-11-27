@@ -20,6 +20,7 @@ const busy = {
   kind: "BOOKING",
   privacy: "busy",
   purpose: null,
+  cancellationReason: null,
   bookedBy: null,
   canEdit: false,
   canCancel: false,

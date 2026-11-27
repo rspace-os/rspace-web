@@ -210,6 +210,7 @@ describe("the availability oracle", () => {
     start: Temporal.Instant.from(start),
     end: Temporal.Instant.from(end),
     state: "CONFIRMED",
+    cancellationReason: null,
     kind,
     privacy: "busy",
     purpose: null,

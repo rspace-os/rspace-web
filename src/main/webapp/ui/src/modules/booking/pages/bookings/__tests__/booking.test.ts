@@ -34,6 +34,7 @@ const document = {
   start: "2026-10-25T00:30:00Z",
   end: "2026-10-25T02:30:00Z",
   state: "CONFIRMED",
+  cancellationReason: null,
   privacy: "full",
   purpose: null,
   bookedBy: "Ada Lovelace",
@@ -45,6 +46,7 @@ const document = {
 
 const mutationDocument = {
   ...document,
+  cancellationReason: null,
   target: { relationTo: "instruments", value: 12, globalId: "IN12" },
 } satisfies BookingsRead;
 
@@ -101,7 +103,7 @@ describe("booking API", () => {
     });
     expect(requests[2].body).toEqual({ start: document.start, end: document.end, purpose: "Plate" });
     expect(requests[0].url.searchParams.get("fields[bookings]")).toBe(
-      "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
+      "id,version,target,location,canViewConfiguration,timezone,start,end,state,kind,purpose,cancellationReason,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
     );
     expect(requests[0].url.searchParams.get("fields[instruments]")).toBe("id,globalId,name,deleted,parentContainer");
     expect(requests[0].url.searchParams.get("fields[containers]")).toBe("id,globalId,name");
@@ -158,6 +160,7 @@ describe("booking API", () => {
           timezone: null,
           canViewConfiguration: false,
           location: null,
+          cancellationReason: null,
           canEdit: false,
           canCancel: false,
         }),
@@ -196,7 +199,7 @@ describe("booking API", () => {
     server.use(
       http.patch("/api/v2/bookings/41", ({ request: nextRequest }) => {
         request = nextRequest;
-        return HttpResponse.json({ ...document, state: "CANCELLED" });
+        return HttpResponse.json({ ...document, state: "CANCELLED", cancellationReason: null });
       }),
     );
 

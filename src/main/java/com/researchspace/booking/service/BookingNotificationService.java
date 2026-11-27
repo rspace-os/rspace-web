@@ -14,6 +14,7 @@ import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.NotificationConfig;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -49,6 +50,16 @@ public class BookingNotificationService {
    */
   @Transactional(propagation = Propagation.MANDATORY)
   public void notify(TimeSlotBooking booking, User actor, NotificationType notificationType) {
+    send(booking, actor, notificationType);
+  }
+
+  /** Notifies subscribers that a cancelled booking was restored, using the creation preference. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyRestored(TimeSlotBooking booking, User actor) {
+    send(booking, actor, NotificationType.NOTIFICATION_BOOKING_RESTORED);
+  }
+
+  private void send(TimeSlotBooking booking, User actor, NotificationType notificationType) {
     if (booking == null || booking.getKind() != BookingEventKind.BOOKING || actor == null) {
       return;
     }
@@ -59,9 +70,10 @@ public class BookingNotificationService {
     }
     Instrument targetInstrument = instrument.orElseThrow();
     Long requesterId = booking.getRequester() == null ? null : booking.getRequester().getId();
-    for (BookingNotificationRecipient recipient :
+    List<BookingNotificationRecipient> recipients =
         recipientReader.selectRecipients(
-            targetInstrument.getId(), notificationType, actor.getId(), requesterId)) {
+            targetInstrument.getId(), notificationType, actor.getId(), requesterId);
+    for (BookingNotificationRecipient recipient : recipients) {
       BookingNotificationData data = notificationData(booking, targetInstrument);
       data.setEmailDisplayTimezone(recipient.displayZone().getId());
       data.setEmailTimeFormat(recipient.timeFormat());
@@ -109,6 +121,7 @@ public class BookingNotificationService {
     data.setInstrumentGlobalIdentifier(instrument.getGlobalIdentifier());
     data.setStartTime(DateTimeFormatter.ISO_INSTANT.format(booking.getStartTime().toInstant()));
     data.setEndTime(DateTimeFormatter.ISO_INSTANT.format(booking.getEndTime().toInstant()));
+    data.setCancellationReason(booking.getCancellationReason());
     return data;
   }
 }

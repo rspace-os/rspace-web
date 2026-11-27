@@ -20,6 +20,7 @@ public final class NotificationTypeMessages {
       case PROCESS_COMPLETED -> "notificationType.processCompleted";
       case PROCESS_FAILED -> "notificationType.processFailed";
       case ARCHIVE_EXPORT_COMPLETED -> "notificationType.archiveExportCompleted";
+      case NOTIFICATION_BOOKING_RESTORED -> "notificationType.bookingRestored";
       case NOTIFICATION_BOOKING_CREATED -> "notificationType.bookingCreated";
       case NOTIFICATION_BOOKING_CHANGED -> "notificationType.bookingChanged";
       case NOTIFICATION_BOOKING_CANCELLED -> "notificationType.bookingCancelled";

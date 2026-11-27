@@ -185,6 +185,7 @@ describe("BookableItemPage", () => {
       createdBy: null,
       privacy: "full" as const,
       purpose: "Future calibration",
+      cancellationReason: null,
       bookedBy: "Ada Lovelace",
       canEdit: true,
       canCancel: false,
