@@ -16,7 +16,6 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
       confirmationDialogProps: null,
     },
     trackingStore: { trackEvent: () => {} },
-    unitStore: { getUnit: () => ({ label: "ml" }) },
   }),
 }));
 

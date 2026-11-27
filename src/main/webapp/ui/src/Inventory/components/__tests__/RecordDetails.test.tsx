@@ -9,7 +9,6 @@ import RecordDetails from "../RecordDetails";
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
-    unitStore: { getUnit: () => ({ label: "ml" }) },
     uiStore: { isVerySmall: false },
   }),
 }));

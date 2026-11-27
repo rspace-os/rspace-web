@@ -60,14 +60,6 @@ vi.mock("../../stores/stores/getRootStore", () => ({
     uiStore: {
       addAlert: () => {},
     },
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "items",
-        category: "dimensionless",
-        description: "",
-      }),
-    },
   }),
 }));
 
@@ -86,15 +78,6 @@ function renderContainerForm(activeResult: InventoryRecord) {
         },
         batchEditableInstance: { loading: false, submittable: IsValid() },
       },
-    },
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "items",
-        category: "dimensionless",
-        description: "",
-      }),
-      unitsOfCategory: () => [],
     },
   });
   render(
@@ -123,15 +106,6 @@ function renderForm(FormComponent: () => ReactNode, activeResult: InventoryRecor
         },
         batchEditableInstance: { loading: false, submittable: IsValid() },
       },
-    },
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "items",
-        category: "dimensionless",
-        description: "",
-      }),
-      unitsOfCategory: () => [],
     },
   });
   render(

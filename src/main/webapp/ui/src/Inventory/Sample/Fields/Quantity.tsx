@@ -12,8 +12,8 @@ import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import { getUnit } from "../../../stores/definitions/Units";
 import type SampleModel from "../../../stores/models/SampleModel";
-import useStores from "../../../stores/use-stores";
 import { Optional } from "../../../util/optional";
 import { isPlainLeftClick } from "../../../util/Util";
 import FormField from "../../components/Inputs/FormField";
@@ -27,7 +27,6 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
   const { t } = useTranslation("inventory");
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
-  const { unitStore } = useStores();
   const [valid, setValid] = useState(true);
   const [amount, setAmount] = useState<string | number>(sample.quantityValue);
 
@@ -75,17 +74,13 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     if (count === null || typeof count === "undefined") return Optional.empty<string>();
     if (count === 1) return Optional.empty<string>();
 
-    if (unitStore.units.length) {
-      const totalQuantity = sample.quantityValue * count;
-      return Optional.present(
-        t("sample.fields.quantity.total", {
-          quantity: totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2),
-          unit: sample.quantityUnitLabel,
-        }),
-      );
-    }
-
-    return Optional.empty<string>();
+    const totalQuantity = sample.quantityValue * count;
+    return Optional.present(
+      t("sample.fields.quantity.total", {
+        quantity: totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2),
+        unit: sample.quantityUnitLabel,
+      }),
+    );
   };
 
   const errorMessage = () => {
@@ -100,7 +95,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
   const categories = () => {
     if (sample.template?.defaultUnitId) {
       const defaultUnitId = sample.template.defaultUnitId;
-      const unit = unitStore.getUnit(defaultUnitId);
+      const unit = getUnit(defaultUnitId);
       if (!unit) throw new Error(`Could not find unit with id: ${defaultUnitId}`);
       return [unit.category];
     }

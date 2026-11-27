@@ -5,11 +5,7 @@ vi.mock("../../../../common/InvApiService", () => ({
   default: {},
 }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 describe("permalinkURL", () => {
   test("When the subsample has not yet been saved, the permalinkURL should be null.", () => {

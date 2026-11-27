@@ -1,7 +1,8 @@
+import i18n from "@/modules/common/i18n";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { match } from "../../util/Util";
-import type { UnitCategory } from "../stores/UnitStore";
+import unitsJson from "./units.json";
 
 /**
  * @module
@@ -10,6 +11,39 @@ import type { UnitCategory } from "../stores/UnitStore";
  *       for modelling quantities of those units, and functions for converting
  *       between them.
  */
+
+export type UnitCategory = "dimensionless" | "volume" | "mass" | "temperature" | "molarity" | "concentration";
+
+export type Unit = {
+  id: number;
+  label: string;
+  category: UnitCategory;
+};
+
+/**
+ * Every unit RSpace supports, in the order GET /api/v1/units returns them
+ * (category, then size). The backend `RSUnitDef` enum is the source of truth
+ * for ids and categories, and `RSUnitDefsTest` fails if units.json drifts from
+ * it. Labels are the frontend's own SI symbols, not the API's labels.
+ */
+const UNITS = unitsJson as ReadonlyArray<Unit>;
+
+/**
+ * "items" is a word rather than a symbol, so it is the one label that is translated.
+ */
+const displayUnit = (unit: Unit): Unit =>
+  unit.id === unitlessIds.items ? { ...unit, label: i18n.t("common:units.items") } : unit;
+
+export const getUnit = (id: number): Unit | undefined => {
+  const unit = UNITS.find((u) => u.id === id);
+  return unit ? displayUnit(unit) : undefined;
+};
+
+/**
+ * The units of the given categories, smallest first within each category.
+ */
+export const unitsOfCategory = (categories: ReadonlyArray<string>): Array<Unit> =>
+  UNITS.filter((u) => categories.includes(u.category)).map(displayUnit);
 
 /**
  * First, enums for different categories of units of measure, and objects that model
@@ -289,7 +323,7 @@ export type Temperature = {
 /**
  * Absolute zero in degrees Celsius.
  */
-export const ABSOLUTE_ZERO = -273;
+export const ABSOLUTE_ZERO = -273.15;
 
 /**
  * The boiling point of nitrogen in degrees Celsius. Useful in defining
@@ -311,6 +345,16 @@ export function temperatureFromTo(from: TemperatureScale, to: TemperatureScale, 
 }
 
 /**
+ * Whether a temperature is colder than absolute zero. Unlike `temperatureFromTo`
+ * this does not round, so -273.1 °C is allowed, matching the backend.
+ */
+export function isBelowAbsoluteZero(value: number, unitId: TemperatureScale): boolean {
+  if (unitId === KELVIN) return value < 0;
+  const celsius = unitId === FAHRENHEIT ? (value - 32) / 1.8 : value;
+  return celsius < ABSOLUTE_ZERO;
+}
+
+/**
  * If a non-null value is passed, then it is check to be not NaN and not less
  * than absolute zero.
  */
@@ -321,7 +365,7 @@ export const validateTemperature = (temp: Temperature | null): Result<null> =>
       .flatMapDiscarding((t) => Parsers.isNotNaN(t.numericValue))
       .mapError(() => new Error("Temperature is invalid"))
       .flatMap((t) =>
-        t.numericValue >= temperatureFromTo(CELSIUS, t.unitId, ABSOLUTE_ZERO)
+        !isBelowAbsoluteZero(t.numericValue, t.unitId)
           ? Result.Ok(null)
           : Result.Error([new Error("Temperature is less than absolute zero")]),
       ),

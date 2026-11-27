@@ -10,7 +10,6 @@ vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
     uiStore: { setDirty: vi.fn(), unsetDirty: vi.fn(), addAlert: vi.fn() },
-    unitStore: { assertValidUnitId: () => {} },
   }),
 }));
 

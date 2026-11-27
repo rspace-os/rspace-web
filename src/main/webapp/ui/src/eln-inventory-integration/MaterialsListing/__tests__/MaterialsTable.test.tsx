@@ -10,15 +10,6 @@ import MaterialsTable from "../MaterialsTable";
 vi.mock("../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../stores/stores/getRootStore", () => ({
   default: () => ({
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "foo",
-        category: "mass",
-        description: "foo is mass",
-      }),
-      unitsOfCategory: () => [],
-    },
     materialsStore: { canEdit: true },
   }),
 }));

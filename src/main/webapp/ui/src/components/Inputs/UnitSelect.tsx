@@ -5,17 +5,17 @@ import Select, { type SelectChangeEvent, selectClasses } from "@mui/material/Sel
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import useStores from "../../stores/use-stores";
+import { unitsOfCategory } from "../../stores/definitions/Units";
 
 type UnitSelectArgs = {
   /**
-   * A list of categories of units, as defined in the UnitStore.
+   * A list of categories of units, as defined in stores/definitions/units.json.
    * E.g. `[ "volume", "mass" ]` to get "ml", "kg", etc. in the menu
    */
   categories: Array<string>;
 
   /**
-   * The UnitId of the selected unit, as defined in the UnitStore, and
+   * The UnitId of the selected unit, as defined in stores/definitions/units.json, and
    * ultimately from the API. Whilst it is a numerical value, the specific
    * value is not significant and is purely a consistent identifier to a
    * particular unit.
@@ -31,7 +31,6 @@ type UnitSelectArgs = {
 
 function UnitSelect({ disabled, handleChange, value, categories, ariaLabel }: UnitSelectArgs): React.ReactNode {
   const { t } = useTranslation("common");
-  const { unitStore } = useStores();
 
   return (
     <InputAdornment position="end">
@@ -62,7 +61,7 @@ function UnitSelect({ disabled, handleChange, value, categories, ariaLabel }: Un
             },
           }}
         >
-          {unitStore.unitsOfCategory(categories).map((u) => (
+          {unitsOfCategory(categories).map((u) => (
             <MenuItem key={u.id} value={u.id}>
               {u.label}
             </MenuItem>

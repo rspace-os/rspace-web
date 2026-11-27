@@ -1,26 +1,7 @@
-import { fromCommonUnit, massIds, toCommonUnit, unitlessIds, volumeIds } from "@/stores/definitions/Units";
-
-const QUANTITY_UNIT_SYMBOLS: Record<number, string> = {
-  [unitlessIds.items]: "items",
-  [volumeIds.microliters]: "µL",
-  [volumeIds.milliliters]: "mL",
-  [volumeIds.liters]: "L",
-  [volumeIds.picoliters]: "pL",
-  [volumeIds.nanoliters]: "nL",
-  [volumeIds.millimeterscubed]: "mm³",
-  [volumeIds.centimeterscubed]: "cm³",
-  [volumeIds.decimeterscubed]: "dm³",
-  [volumeIds.meterscubed]: "m³",
-  [massIds.micrograms]: "µg",
-  [massIds.milligrams]: "mg",
-  [massIds.grams]: "g",
-  [massIds.picograms]: "pg",
-  [massIds.nanograms]: "ng",
-  [massIds.kilograms]: "kg",
-};
+import { fromCommonUnit, getUnit, massIds, toCommonUnit } from "@/stores/definitions/Units";
 
 export function getQuantityUnitSymbol(unitId: number): string | null {
-  return QUANTITY_UNIT_SYMBOLS[unitId] ?? null;
+  return getUnit(unitId)?.label ?? null;
 }
 
 export function isMassUnit(unitId: number): boolean {

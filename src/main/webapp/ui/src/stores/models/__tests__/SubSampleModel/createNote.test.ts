@@ -18,9 +18,6 @@ vi.mock("../../../stores/getRootStore", () => ({
       setDirty: () => {},
       unsetDirty: () => {},
     },
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
   }),
 }));
 

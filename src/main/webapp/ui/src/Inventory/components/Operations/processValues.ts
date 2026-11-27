@@ -1,5 +1,5 @@
 import { fetchPreferences } from "@/hooks/api/useUiPreference";
-import type { UnitCategory } from "@/stores/stores/UnitStore";
+import type { UnitCategory } from "@/stores/definitions/Units";
 import type { DocumentationSelection } from "./DocumentationStep";
 import type { TemplateDefault, TemplateMode } from "./templateResolution";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "./types";
