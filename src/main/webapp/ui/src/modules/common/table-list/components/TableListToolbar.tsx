@@ -1,6 +1,6 @@
 import { isEqual } from "es-toolkit";
 import { ArrowDownUpIcon, Columns3Icon, ListFilterIcon, RotateCcwIcon } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
@@ -109,18 +109,7 @@ export function TableListToolbar<TDocument>({
           <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
             <legend className="sr-only">{filterButtons.legend}</legend>
             {filterButtons.buttons.map((button) => (
-              <Button
-                key={button.id}
-                type="button"
-                aria-pressed={button.pressed}
-                disabled={button.disabled}
-                variant={button.pressed ? "secondary" : "outline"}
-                onClick={button.onClick}
-              >
-                {button.icon}
-                {button.label}
-                {button.count === undefined ? null : <CountBadge count={button.count} ariaHidden />}
-              </Button>
+              <FilterButton key={button.id} button={button} />
             ))}
           </fieldset>
         ) : null}
@@ -213,5 +202,36 @@ export function TableListToolbar<TDocument>({
         ) : null}
       </div>
     </div>
+  );
+}
+
+function FilterButton({ button }: { button: TableListFilterButtons["buttons"][number] }) {
+  const descriptionId = useId();
+  const props = {
+    type: "button",
+    "aria-pressed": button.pressed,
+    disabled: button.disabled,
+    variant: button.pressed ? "secondary" : "outline",
+    onClick: button.onClick,
+  } as const;
+  const content = (
+    <>
+      {button.icon}
+      {button.label}
+      {button.count === undefined ? null : <CountBadge count={button.count} ariaHidden />}
+    </>
+  );
+  if (!button.description) return <Button {...props}>{content}</Button>;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<Button {...props} aria-describedby={descriptionId} />}>{content}</TooltipTrigger>
+      <TooltipContent side="bottom" className="rounded-sm">
+        {button.description}
+      </TooltipContent>
+      {/* Base UI tooltips are visual only, so screen readers get the description through aria-describedby. */}
+      <span id={descriptionId} className="sr-only">
+        {button.description}
+      </span>
+    </Tooltip>
   );
 }

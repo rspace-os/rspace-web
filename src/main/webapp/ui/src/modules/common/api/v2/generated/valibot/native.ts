@@ -865,11 +865,16 @@ export const BookingDisplayPreferencesReplacement = v.object({
 
 export const BookingNotificationPreferenceReplacement = v.object({
   autoSubscribeOwnedItems: v.boolean(),
+  notifyOnCancelled: v.boolean(),
+  notifyOnCreated: v.boolean(),
   notifyOwnActions: v.boolean(),
 });
 
 export const BookingNotificationPreferences = v.object({
   autoSubscribeOwnedItems: v.boolean(),
+  emailDelivery: v.boolean(),
+  notifyOnCancelled: v.boolean(),
+  notifyOnCreated: v.boolean(),
   notifyOwnActions: v.boolean(),
 });
 
@@ -3433,12 +3438,14 @@ export const RotateUserBookingCalendarSubscriptionHeader = v.object({
 export const RotateUserBookingCalendarSubscriptionResponse = BookingCalendarSubscriptionCreated;
 
 /**
+ * Returns the default for new owned bookable instruments, the booking created and cancelled event preferences shared with My Profile, and the read-only effective My Profile email delivery preference.
  * @summary Get the caller's booking notification preferences
  */
 export const GetMyBookingNotificationPreferencesResponse = BookingNotificationPreferences;
 
 /**
- * @summary Change personal notification preferences without changing existing subscriptions
+ * Replaces the automatic subscription default and both booking event preferences. All four are required. Existing subscriptions and email delivery are unchanged.
+ * @summary Replace the caller's booking notification preferences
  */
 export const ReplaceMyBookingNotificationPreferencesBody = BookingNotificationPreferenceReplacement;
 
