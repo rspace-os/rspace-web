@@ -6086,25 +6086,51 @@ components:
     InventoryLink:
       description: >
         The value of a Link field, the `link` of a field of type 'link': a DataCite relation type
-        and one target, either `targetGlobalId` or `filestoreTarget`, never both. On a template it
-        is the default link, which cannot target a filestore item.
-      properties:
-        relationType:
-          type: string
-          description: A DataCite relationType, for example `IsDerivedFrom`.
-        targetGlobalId:
-          type: string
-          nullable: true
-          description: Global ID of the targeted record; null when the target is a filestore item.
-        versionPin:
-          type: integer
-          format: int64
-          nullable: true
-          description: Pinned version of a Global ID target, null for the latest. Not allowed with `filestoreTarget`.
-        filestoreTarget:
-          $ref: "#/components/schemas/InventoryLinkFilestoreTarget"
-      required:
-        - relationType
+        and exactly one target, a Global ID or a filestore item (one of the two variants below). On
+        a template it is the default link, which cannot target a filestore item.
+      oneOf:
+        - title: Global ID target
+          description: Targets an RSpace record by its Global ID, optionally pinned to a version.
+          additionalProperties: false
+          required:
+            - relationType
+            - targetGlobalId
+          properties:
+            relationType:
+              type: string
+              description: A DataCite relationType, for example `IsDerivedFrom`.
+            targetGlobalId:
+              type: string
+              minLength: 1
+              description: Global ID of the targeted record.
+            versionPin:
+              type: integer
+              format: int64
+              nullable: true
+              description: Pinned version of the target, null for the latest.
+        - title: Filestore target
+          description: Targets a file or folder inside a filestore, which has no versions.
+          additionalProperties: false
+          required:
+            - relationType
+            - filestoreTarget
+          properties:
+            relationType:
+              type: string
+              description: A DataCite relationType, for example `IsDerivedFrom`.
+            filestoreTarget:
+              $ref: "#/components/schemas/InventoryLinkFilestoreTarget"
+            targetGlobalId:
+              type: string
+              nullable: true
+              maxLength: 0
+              description: Returned as null; in a request, an empty value counts as absent.
+            versionPin:
+              type: integer
+              nullable: true
+              enum:
+                - null
+              description: Always null; a filestore item has no versions.
     InventoryLinkFilestoreTarget:
       description: >
         A file or folder inside a filestore; present only on links that target a filestore item.
