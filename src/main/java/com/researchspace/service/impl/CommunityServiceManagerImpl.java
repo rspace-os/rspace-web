@@ -86,6 +86,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
 
   @Override
   public Community addGroupToCommunity(Long grpId, Long communityId, User subject) {
+    communityDao.lockMembershipChanges();
     Community community = communityDao.get(communityId);
     if (!permUtils.isPermitted(community, PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
@@ -159,12 +160,16 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   }
 
   @Override
-  @CacheEvict(allEntries = true)
+  // After commit: an earlier clear lets a concurrent read cache the deleted community again.
+  @CacheEvict(allEntries = true, cacheResolver = "transactionAwareCacheResolver")
   public ServiceOperationResult<Community> removeCommunity(Long commId) {
-    Community comm = get(commId);
     if (Community.DEFAULT_COMMUNITY_ID.equals(commId)) {
-      return new ServiceOperationResult<Community>(comm, false);
+      return new ServiceOperationResult<Community>(get(commId), false);
     }
+    // Before any read, so a group assigned to this community by a move that committed first is
+    // moved too, instead of losing its membership row with the community.
+    communityDao.lockMembershipChanges();
+    Community comm = get(commId);
     Community defaultCommunity = communityDao.get(Community.DEFAULT_COMMUNITY_ID);
     for (Group grp : new ArrayList<>(comm.getLabGroups())) {
       comm.removeLabGroup(grp);
