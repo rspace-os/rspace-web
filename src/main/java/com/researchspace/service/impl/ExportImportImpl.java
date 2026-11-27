@@ -65,6 +65,7 @@ import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -197,10 +198,14 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   }
 
   private void postArchiveExportFailure(String exportName, User u, String detailMsg) {
+    String escapedDetail = StringEscapeUtils.escapeHtml4(detailMsg);
     String msg =
-        messageSource.getMessage(
-            "workspace.export.failureMessage",
-            new String[] {StringEscapeUtils.escapeHtml4(exportName), detailMsg});
+        StringUtils.isBlank(exportName)
+            ? messageSource.getMessage(
+                "workspace.export.unnamedFailureMessage", new String[] {escapedDetail})
+            : messageSource.getMessage(
+                "workspace.export.failureMessage",
+                new String[] {StringEscapeUtils.escapeHtml4(exportName), escapedDetail});
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, u.getUsername(), true);
   }
 
