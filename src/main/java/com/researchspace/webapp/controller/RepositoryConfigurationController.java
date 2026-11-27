@@ -77,6 +77,9 @@ public class RepositoryConfigurationController extends BaseController {
       info.setOptions(getOptionsForRepoUIConfigInfo(inf.getName(), inf.getOptions()));
       uiConfigs.add(info);
     }
+    if (uiConfigs.isEmpty()) {
+      return uiConfigs;
+    }
     List<LinkedDMP> linkedDMPs = dmpUpdateHandler.linkablePlans(user);
     if (!linkedDMPs.isEmpty()) {
       for (RepoUIConfigInfo info : uiConfigs) {

@@ -263,6 +263,14 @@ class RepositoryConfigurationControllerTest {
     assertEquals(plans, activeRepos.get(0).getLinkedDMPs());
   }
 
+  @Test
+  void plansAreNotLookedUpWithoutAnActiveRepository() throws MalformedURLException {
+    when(integrationsHandler.getIntegration(eq(exporter), anyString())).thenReturn(null);
+
+    assertThat(repositoryConfigurationController.getAllActiveRepositories()).isEmpty();
+    verifyNoInteractions(dmpUpdateHandler);
+  }
+
   private void givenDataverseActive() throws MalformedURLException {
     IntegrationInfo dataverse = createEnabledAvailableInfo(DATAVERSE_APP_NAME);
     dataverse.setOptions(new HashMap<>(Map.of("op", "value")));
