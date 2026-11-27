@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import FilestoreIcon from "@/eln/gallery/FilestoreIcon";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import type { ExtraInventoryLink } from "../../../../stores/definitions/ExtraField";
 import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
@@ -80,9 +81,19 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const iconData = iconForGlobalId(props.link.targetGlobalId);
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
   const [infoOpen, setInfoOpen] = useState(false);
+  const filestoreTarget = props.link.filestoreTarget ?? null;
   // current state of the target; null while loading or unresolvable, which
   // renders the card exactly as before the summary existed (no pill, Open on)
-  const targetSummary = useLinkTargetSummary(pinnedGlobalId(props.link.targetGlobalId, props.link.versionPin));
+  const targetSummary = useLinkTargetSummary(
+    filestoreTarget ? "" : pinnedGlobalId(props.link.targetGlobalId, props.link.versionPin),
+    filestoreTarget,
+  );
+  // the filestore's name is shown to its owner only; anyone else, or a summary still loading, gets the path
+  const filestoreLabel = filestoreTarget
+    ? targetSummary?.readable && targetSummary.name
+      ? `${targetSummary.name}: ${filestoreTarget.remotePath}`
+      : filestoreTarget.remotePath
+    : "";
   const targetDeleted = targetSummary?.deleted === true;
   // a target the viewer cannot resolve gets "No access", whatever its kind. The server
   // redacts unreadable and nonexistent targets identically (ADR-0002), so this covers both
@@ -120,25 +131,37 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             </Typography>
           )}
           <Chip size="small" label={props.link.relationType} data-test-id="LinkField-relation" />
-          <Chip
-            size="small"
-            icon={iconData ? <RecordTypeIcon record={iconData} aria-hidden /> : undefined}
-            label={props.link.targetGlobalId}
-            data-test-id="LinkField-target"
-          />
-          <IconButton
-            size="small"
-            aria-label={t("fields.link.linkField.showInfoLabel", { globalId: props.link.targetGlobalId })}
-            // an unreadable ("No access") target has nothing to show and its
-            // info route is just an error page, so grey out info alongside the
-            // (already-disabled) version-pin clock. Recomputed from the target
-            // summary, so changing the link's target clears it and reverting
-            // (e.g. Discard) to the unshared target reimposes it.
-            disabled={noAccess}
-            onClick={() => setInfoOpen(true)}
-          >
-            <InfoOutlinedIcon fontSize="small" />
-          </IconButton>
+          {filestoreTarget ? (
+            <Chip
+              size="small"
+              icon={<FilestoreIcon />}
+              label={filestoreLabel}
+              aria-label={t("fields.link.field.filestoreTarget", { target: filestoreLabel })}
+              data-test-id="LinkField-target"
+            />
+          ) : (
+            <>
+              <Chip
+                size="small"
+                icon={iconData ? <RecordTypeIcon record={iconData} aria-hidden /> : undefined}
+                label={props.link.targetGlobalId}
+                data-test-id="LinkField-target"
+              />
+              <IconButton
+                size="small"
+                aria-label={t("fields.link.linkField.showInfoLabel", { globalId: props.link.targetGlobalId })}
+                // an unreadable ("No access") target has nothing to show and its
+                // info route is just an error page, so grey out info alongside the
+                // (already-disabled) version-pin clock. Recomputed from the target
+                // summary, so changing the link's target clears it and reverting
+                // (e.g. Discard) to the unshared target reimposes it.
+                disabled={noAccess}
+                onClick={() => setInfoOpen(true)}
+              >
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
           {props.editable && supportsVersionPin(props.link.targetGlobalId) && (
             // a disabled affordance only: like the other link properties,
             // the pin is changed in the link editor (Edit) and committed
@@ -156,7 +179,9 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               </span>
             </Tooltip>
           )}
-          <Chip size="small" variant="outlined" label={versionLabel} data-test-id="LinkField-version" />
+          {!filestoreTarget && (
+            <Chip size="small" variant="outlined" label={versionLabel} data-test-id="LinkField-version" />
+          )}
           {targetDeleted && (
             <Chip
               size="small"
@@ -193,7 +218,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               />
             </Tooltip>
           )}
-          {!openBlocked && (
+          {!openBlocked && !filestoreTarget && (
             <Button
               size="small"
               startIcon={<OpenInNewIcon />}

@@ -41,7 +41,10 @@ vi.mock("../ElnRecordInfoDialog", () => ({
 
 const mockUseLinkTargetSummary = vi.hoisted(() => vi.fn());
 vi.mock("../useLinkTargetSummary", () => ({
-  default: (globalId: string) => mockUseLinkTargetSummary(globalId) as unknown,
+  default: (globalId: string, filestoreTarget?: unknown) =>
+    (filestoreTarget
+      ? mockUseLinkTargetSummary(globalId, filestoreTarget)
+      : mockUseLinkTargetSummary(globalId)) as unknown,
 }));
 
 import LinkField from "../LinkField";
@@ -570,5 +573,69 @@ describe("LinkField", () => {
     renderField({ link: { ...baseLink, versionPin: 7 } });
     expect(screen.getByText("inventory:fields.link.linkField.noAccess")).toBeInTheDocument();
     expect(screen.queryByText("inventory:fields.link.linkField.versionNotFound")).not.toBeInTheDocument();
+  });
+
+  const filestoreLink = {
+    relationType: "IsSourceOf",
+    targetGlobalId: "",
+    versionPin: null as number | null,
+    filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+  };
+  const ownerSummary = { globalId: null, name: "My S3", type: "FILESTORE_ITEM", deleted: false, readable: true };
+
+  it("names the filestore and the path of a filestore item for its owner", () => {
+    mockUseLinkTargetSummary.mockReturnValue(ownerSummary);
+
+    renderField({ link: filestoreLink });
+
+    expect(screen.getByText("IsSourceOf")).toBeInTheDocument();
+    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("", { filestoreId: 12, remotePath: "/XRD/run.dat" });
+  });
+
+  it("shows the path alone with No access to a viewer who does not own the filestore", () => {
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: null,
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+    });
+
+    renderField({ link: filestoreLink });
+
+    expect(screen.getByText("/XRD/run.dat")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.linkField.noAccess")).toBeInTheDocument();
+  });
+
+  it("shows the path while the filestore summary is still loading", () => {
+    // the default mock answers null
+    renderField({ link: filestoreLink });
+
+    expect(screen.getByText("/XRD/run.dat")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.linkField.noAccess")).not.toBeInTheDocument();
+  });
+
+  it("shows Target deleted once the owner removed the filestore from the Gallery", () => {
+    mockUseLinkTargetSummary.mockReturnValue({ ...ownerSummary, deleted: true });
+
+    renderField({ link: filestoreLink });
+
+    expect(screen.getByText("inventory:fields.link.linkField.targetDeleted")).toBeInTheDocument();
+  });
+
+  it("offers no version, pin, info or Open for a filestore item", () => {
+    mockUseLinkTargetSummary.mockReturnValue(ownerSummary);
+
+    const { container } = renderField({ link: filestoreLink });
+
+    expect(container.querySelector('[data-test-id="LinkField-version"]')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "inventory:fields.link.linkField.pinVersionLabel" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "inventory:fields.link.linkField.showInfoLabel" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).not.toBeInTheDocument();
   });
 });

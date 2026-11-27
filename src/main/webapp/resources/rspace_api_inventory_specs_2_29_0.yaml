@@ -7,7 +7,7 @@ info:
     This variant additionally documents the beta **Instruments** and **Instrument Templates** endpoints.
 
     **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
-  version: "2.28.0"
+  version: "2.29.0"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -4255,6 +4255,68 @@ paths:
           description: A list of materials, as it was at a requested historical revision
         "404":
           $ref: "#/components/responses/NotFound"
+  "/linkTargets/{globalId}/summary":
+    get:
+      summary: Summarise the record a Link field targets
+      description: >
+        Current state of a link target named by Global ID. A target the caller cannot read and one
+        that does not exist return the same redacted summary: `readable` false, no `name`, no
+        `type`. A `vN` suffix does not change the state reported; for a readable target it adds
+        `pinnedVersionFound`.
+      tags:
+        - Link fields
+      parameters:
+        - name: globalId
+          in: path
+          required: true
+          description: >
+            Global ID of the target: an Inventory item or template, or an ELN document, notebook or
+            Gallery file, optionally with a `vN` version suffix.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryLinkTargetSummary"
+        "422":
+          description: The id is malformed or is not a kind a Link field can target.
+  "/linkTargets/filestores/{filestoreId}/summary":
+    get:
+      summary: Summarise the filestore item a Link field targets
+      description: >
+        Describes the filestore the target lives in, to the user who owns it: its name, and
+        `deleted` true once it was removed from the Gallery. Anyone else, and an unknown filestore,
+        get the same redacted summary (`readable` false and nothing else). RSpace does not contact
+        the remote store, so the summary does not say whether the file is still there.
+      tags:
+        - Link fields
+      parameters:
+        - name: filestoreId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: remotePath
+          in: query
+          required: true
+          description: Path of the file or folder inside the filestore, for example `/XRD/run.dat`.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryLinkTargetSummary"
+        "400":
+          description: No `remotePath` given.
+        "422":
+          description: The path names no file or folder inside the filestore.
   "/public/view/{publicLink}":
     get:
       summary: Get published inventory item by public link
@@ -5966,6 +6028,13 @@ components:
           description: list of selected values for radio/choice field
           items:
             type: string
+        allowedRelationTypes:
+          type: array
+          description: "Link fields: the DataCite relation types the field accepts; empty means all."
+          items:
+            type: string
+        link:
+          $ref: "#/components/schemas/InventoryLink"
     InventoryEntityFieldList:
       description: List of the fields in an Inventory entity (Sample, Sample Template, SubSample, Instrument or Instrument Template)
       type: array
@@ -5983,13 +6052,15 @@ components:
           description: A unique identifier amongst all RSpace data types.
         type:
           type: string
-          description: The type of the field, allowed values are 'text' or 'number'.
+          description: The type of the field, allowed values are 'text', 'number' or 'link'.
         name:
           type: string
           description: The name of the field.
         content:
           type: string
           description: Current content of the field.
+        link:
+          $ref: "#/components/schemas/InventoryLink"
         parentGlobalId:
           type: string
           description: A unique identifier amongst all RSpace data types.
@@ -6012,6 +6083,68 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/ExtraField"
+    InventoryLink:
+      description: >
+        The value of a Link field, the `link` of a field of type 'link': a DataCite relation type
+        and one target, either `targetGlobalId` or `filestoreTarget`, never both. On a template it
+        is the default link, which cannot target a filestore item.
+      properties:
+        relationType:
+          type: string
+          description: A DataCite relationType, for example `IsDerivedFrom`.
+        targetGlobalId:
+          type: string
+          nullable: true
+          description: Global ID of the targeted record; null when the target is a filestore item.
+        versionPin:
+          type: integer
+          format: int64
+          nullable: true
+          description: Pinned version of a Global ID target, null for the latest. Not allowed with `filestoreTarget`.
+        filestoreTarget:
+          $ref: "#/components/schemas/InventoryLinkFilestoreTarget"
+      required:
+        - relationType
+    InventoryLinkFilestoreTarget:
+      description: >
+        A file or folder inside a filestore; present only on links that target a filestore item.
+        Only the caller's own filestores can be chosen: choosing one that is not the caller's, was
+        removed or does not exist is refused exactly like an unknown Global ID. A duplicated or
+        transferred item keeps its filestore links, and an unchanged target can be sent back as it is.
+      properties:
+        filestoreId:
+          type: integer
+          format: int64
+        remotePath:
+          type: string
+          description: Path inside the filestore; returned with a leading slash and without a trailing slash. Inner slashes are kept, since they name different S3 keys.
+          example: /XRD/run.dat
+      required:
+        - filestoreId
+        - remotePath
+    InventoryLinkTargetSummary:
+      description: Current state of a link target, as far as the caller may see it.
+      properties:
+        globalId:
+          type: string
+          nullable: true
+          description: Global ID of the target, without any version suffix; null for a filestore item.
+        name:
+          type: string
+          nullable: true
+          description: Name of the targeted record, or of the filestore for a filestore item.
+        type:
+          type: string
+          nullable: true
+          description: Kind of target, for example `SAMPLE`, `DOCUMENT` or `FILESTORE_ITEM`.
+        deleted:
+          type: boolean
+        readable:
+          type: boolean
+          description: False when the caller cannot read the target or it does not exist; the two are indistinguishable.
+        pinnedVersionFound:
+          type: boolean
+          description: Only for a readable Global ID target requested with a `vN` suffix.
     Barcode:
       description: Information about item's barcode.
       properties:

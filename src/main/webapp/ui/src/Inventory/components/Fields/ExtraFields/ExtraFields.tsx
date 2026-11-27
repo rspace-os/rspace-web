@@ -56,7 +56,7 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
                 />
               </div>
             )}
-            {ef.link?.targetGlobalId ? (
+            {ef.link?.targetGlobalId || ef.link?.filestoreTarget ? (
               <LinkField name={ef.name} link={ef.link} editable={editable} />
             ) : (
               // a Link row can exist before its link payload does; the

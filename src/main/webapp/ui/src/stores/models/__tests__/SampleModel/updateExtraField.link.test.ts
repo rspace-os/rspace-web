@@ -149,4 +149,42 @@ describe("InventoryBaseRecord.updateExtraField with a link payload", () => {
     // type changed -> the implementation clears link to null regardless of incoming payload
     expect(ef.link).toBeNull();
   });
+
+  test("dirties the field when only the filestore path changes", () => {
+    const sample = makeMockSample();
+    sample.currentlyEditableFields.add("extraFields");
+    sample.addExtraField({
+      id: 1,
+      globalId: "EF1",
+      name: "raw data",
+      lastModified: null,
+      type: "link",
+      content: "",
+      parentGlobalId: sample.globalId,
+      editing: false,
+      initial: false,
+      link: {
+        relationType: "IsSourceOf",
+        targetGlobalId: null,
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      },
+    });
+    const ef = sample.extraFields[0];
+    const dirtySpy = vi.spyOn(ef, "setAttributesDirty");
+
+    sample.updateExtraField("raw data", {
+      name: "raw data",
+      type: "Link",
+      link: {
+        relationType: "IsSourceOf",
+        targetGlobalId: "",
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/other.dat" },
+      },
+    });
+
+    expect(dirtySpy).toHaveBeenCalled();
+    expect(ef.link?.filestoreTarget?.remotePath).toBe("/XRD/other.dat");
+  });
 });

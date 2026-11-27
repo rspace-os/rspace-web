@@ -143,4 +143,25 @@ describe("ExtraFields - Link extra-field branch", () => {
     expect(setEditing).toHaveBeenCalledWith(true);
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
+
+  it("renders the link card for a link to a filestore item, which has no Global ID", () => {
+    const field = {
+      ...makeLinkField({}),
+      link: {
+        relationType: "IsSourceOf",
+        targetGlobalId: "",
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      },
+    };
+    const result = makeResult([field as unknown as ReturnType<typeof makeLinkField>]);
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <ExtraFields onErrorStateChange={() => {}} result={result as unknown as never} />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByTestId("link-field")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.extraFields.noLinkSet")).not.toBeInTheDocument();
+  });
 });

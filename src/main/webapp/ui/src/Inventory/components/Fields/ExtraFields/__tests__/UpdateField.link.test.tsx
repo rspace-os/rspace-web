@@ -57,6 +57,29 @@ vi.mock("../../Link/useLinkTargetSummary", () => ({
   default: (globalId: string) => mockUseLinkTargetSummary(globalId) as unknown,
 }));
 
+const { mockDeploymentProperty, pickedFile } = vi.hoisted(() => {
+  const filestoreNode = { id: 12, name: "My S3", path: [] };
+  return {
+    mockDeploymentProperty: vi.fn(),
+    pickedFile: { id: null, name: "run.dat", path: [filestoreNode], remotePath: "/XRD/run.dat" },
+  };
+});
+vi.mock("@/hooks/api/useDeploymentProperty", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/api/useDeploymentProperty")>()),
+  useDeploymentProperty: (name: string) => mockDeploymentProperty(name) as unknown,
+}));
+vi.mock("@/eln/gallery/picker", async () => {
+  const { default: RsSet } = await import("@/util/set");
+  return {
+    default: ({ open, onSubmit }: { open: boolean; onSubmit: (files: unknown) => void }) =>
+      open ? (
+        <button type="button" onClick={() => onSubmit(new RsSet([pickedFile]))}>
+          {"pick run.dat"}
+        </button>
+      ) : null,
+  };
+});
+
 import type { ExtraField } from "../../../../../stores/definitions/ExtraField";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import UpdateField from "../UpdateField";
@@ -74,15 +97,7 @@ const FIELD_TYPE_LABELS = {
   Link: "inventory:fields.extraFields.fieldTypes.link",
 } as const;
 
-function makeExtraField(
-  overrides: Partial<ExtraField> & {
-    link?: {
-      relationType: string;
-      targetGlobalId: string;
-      versionPin: number | null;
-    } | null;
-  } = {},
-): ExtraField {
+function makeExtraField(overrides: Partial<ExtraField> & { link?: ExtraField["link"] } = {}): ExtraField {
   return {
     id: null,
     name: "",
@@ -123,6 +138,7 @@ async function selectFieldType(label: "Text" | "Number" | "Link") {
 
 beforeEach(() => {
   mockUseLinkTargetSummary.mockReturnValue(null);
+  mockDeploymentProperty.mockReturnValue({ tag: "loading" });
 });
 
 describe("UpdateField — Field Type select includes Link", () => {
@@ -584,5 +600,157 @@ describe("UpdateField — version pin is edited in the editor and committed on U
     renderExistingLinkField("SD5");
 
     expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
+  });
+});
+
+describe("UpdateField — filestore target", () => {
+  afterEach(cleanup);
+
+  beforeEach(() => {
+    mockDeploymentProperty.mockReturnValue({ tag: "success", value: true });
+    mockCheckLinkTargetExists.mockClear();
+  });
+
+  function renderUpdateField(extraField: ExtraField, record: InventoryRecord) {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <UpdateField extraField={extraField} index={0} record={record} />
+      </ThemeProvider>,
+    );
+  }
+
+  async function pickFilestoreItem(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseFilestores" }));
+    await user.click(await screen.findByRole("button", { name: "pick run.dat" }));
+  }
+
+  it("commits a picked filestore item without the Global ID existence check", async () => {
+    const record = makeRecord();
+    const user = userEvent.setup();
+    renderUpdateField(makeExtraField(), record);
+
+    await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Raw data");
+    await selectFieldType("Link");
+    await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "IsSourceOf");
+    await pickFilestoreItem(user);
+    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const updateExtraField = record.updateExtraField;
+    expect(vi.mocked(updateExtraField).mock.calls.at(-1)).toEqual([
+      "",
+      {
+        name: "Raw data",
+        type: "Link",
+        link: {
+          relationType: "IsSourceOf",
+          targetGlobalId: "",
+          versionPin: null,
+          filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+        },
+      },
+    ]);
+    expect(mockCheckLinkTargetExists).not.toHaveBeenCalled();
+  });
+
+  it("keeps only the last choice when a Global ID is typed and a filestore item picked", async () => {
+    const user = userEvent.setup();
+    renderUpdateField(makeExtraField(), makeRecord());
+    await selectFieldType("Link");
+    const targetBox = screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" });
+
+    await user.type(targetBox, "SA99");
+    await pickFilestoreItem(user);
+    expect(targetBox).toHaveValue("");
+    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+
+    await user.type(targetBox, "SA7");
+    expect(screen.queryByText("My S3: /XRD/run.dat")).not.toBeInTheDocument();
+  });
+
+  it("asks for a relation type once a filestore item is picked without one", async () => {
+    const user = userEvent.setup();
+    renderUpdateField(makeExtraField(), makeRecord());
+    await selectFieldType("Link");
+
+    await pickFilestoreItem(user);
+
+    expect(screen.getByText(RELATION_HELPER)).toBeInTheDocument();
+  });
+
+  it("keeps a picked filestore item when the field type is switched away and back to Link", async () => {
+    const user = userEvent.setup();
+    renderUpdateField(makeExtraField(), makeRecord());
+    await selectFieldType("Link");
+    await pickFilestoreItem(user);
+
+    await selectFieldType("Text");
+    await selectFieldType("Link");
+
+    expect(screen.getByText("My S3: /XRD/run.dat")).toBeInTheDocument();
+  });
+
+  it("reopens an existing filestore link with its path, valid and unchanged", () => {
+    const extraField = makeExtraField({
+      id: 4,
+      name: "Raw data",
+      type: "Link",
+      initial: false,
+      link: {
+        relationType: "IsSourceOf",
+        targetGlobalId: "",
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      },
+    });
+    renderUpdateField(extraField, makeRecord());
+
+    expect(screen.getByText("/XRD/run.dat")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.targetValidation.required")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: UPDATE_FIELD_LABEL })).toBeDisabled();
+  });
+
+  it("switches an existing Global ID link to a filestore item without the existence check", async () => {
+    const record = makeRecord();
+    const user = userEvent.setup();
+    const extraField = makeExtraField({
+      id: 4,
+      name: "Raw data",
+      type: "Link",
+      initial: false,
+      link: { relationType: "IsSourceOf", targetGlobalId: "SA42", versionPin: null },
+    });
+    renderUpdateField(extraField, record);
+
+    await pickFilestoreItem(user);
+    await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
+
+    expect(mockCheckLinkTargetExists).not.toHaveBeenCalled();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const updateExtraField = record.updateExtraField;
+    expect(vi.mocked(updateExtraField)).toHaveBeenCalled();
+  });
+
+  it("lets an existing filestore link be repointed to another item", async () => {
+    const user = userEvent.setup();
+    const extraField = makeExtraField({
+      id: 4,
+      name: "Raw data",
+      type: "Link",
+      initial: false,
+      link: {
+        relationType: "IsSourceOf",
+        targetGlobalId: "",
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/old.dat" },
+      },
+    });
+    renderUpdateField(extraField, makeRecord());
+
+    await pickFilestoreItem(user);
+
+    expect(screen.getByRole("button", { name: UPDATE_FIELD_LABEL })).toBeEnabled();
   });
 });

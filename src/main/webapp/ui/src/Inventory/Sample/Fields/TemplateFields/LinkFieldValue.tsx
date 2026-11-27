@@ -8,6 +8,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
+import type { FilestoreLinkTarget } from "../../../../stores/definitions/ExtraField";
 import type { Field, FieldLink } from "../../../../stores/definitions/Field";
 import { DATACITE_RELATION_TYPES } from "../../../components/Fields/Link/dataciteRelationTypes";
 import { supportsVersionPin } from "../../../components/Fields/Link/iconForGlobalId";
@@ -34,6 +35,11 @@ type LinkFieldValueArgs = {
   targetHeading?: string;
   /** Passed through to {@link LinkEditor}; see its docblock. */
   nestHeadings?: boolean;
+  /**
+   * Offers Browse filestores. Off in the template editor: a template's default link cannot target a
+   * filestore item.
+   */
+  allowFilestoreTarget?: boolean;
 };
 
 /**
@@ -53,12 +59,14 @@ function LinkFieldValue({
   showFieldName = true,
   targetHeading,
   nestHeadings,
+  allowFilestoreTarget = false,
 }: LinkFieldValueArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const committedRelationType = field.link?.relationType ?? "";
   const committedTargetGlobalId = field.link?.targetGlobalId ?? "";
   const committedVersionPin = field.link?.versionPin ?? null;
-  const hasLink = committedTargetGlobalId !== "";
+  const committedFilestoreTarget = field.link?.filestoreTarget ?? null;
+  const hasLink = committedTargetGlobalId !== "" || committedFilestoreTarget !== null;
 
   // Show the display card for an existing link; drop straight into the editor for an empty field.
   const [editing, setEditing] = useState(!hasLink);
@@ -70,6 +78,10 @@ function LinkFieldValue({
   const [stagedRelationType, setStagedRelationType] = useState<string>(committedRelationType);
   const [stagedTargetGlobalId, setStagedTargetGlobalId] = useState<string>(committedTargetGlobalId);
   const [stagedVersionPin, setStagedVersionPin] = useState<number | null>(committedVersionPin);
+  const [stagedFilestoreTarget, setStagedFilestoreTarget] = useState<FilestoreLinkTarget | null>(
+    committedFilestoreTarget,
+  );
+  const [stagedFilestoreName, setStagedFilestoreName] = useState("");
 
   // A no-access committed target cannot be version-pinned, so the clock stays
   // greyed while editing it. Keyed on the committed target and only fetched
@@ -81,23 +93,43 @@ function LinkFieldValue({
   const setStagedTarget = (targetGlobalId: string): void => {
     setTargetExistenceError(null);
     setStagedTargetGlobalId(targetGlobalId);
+    setStagedFilestoreTarget(null);
     // a version pin belongs to a specific target, so retargeting reverts to Latest
     if (targetGlobalId !== stagedTargetGlobalId) {
       setStagedVersionPin(null);
     }
   };
 
-  // re-sync staged state when the committed link changes (record switch, post-save round-trip)
+  const setStagedFilestore = (target: FilestoreLinkTarget | null, filestoreName: string): void => {
+    setTargetExistenceError(null);
+    setStagedFilestoreTarget(target);
+    setStagedFilestoreName(filestoreName);
+    setStagedTargetGlobalId("");
+    setStagedVersionPin(null);
+  };
+
+  // re-sync staged state when the committed link changes (record switch, post-save round-trip).
+  // Keyed on the target's values, not its object: a refetch rebuilds the field models.
+  const committedFilestoreId = committedFilestoreTarget?.filestoreId;
+  const committedRemotePath = committedFilestoreTarget?.remotePath;
   useEffect(() => {
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
     setStagedVersionPin(committedVersionPin);
-  }, [committedRelationType, committedTargetGlobalId, committedVersionPin]);
+    setStagedFilestoreTarget(
+      committedFilestoreId !== undefined && committedRemotePath !== undefined
+        ? { filestoreId: committedFilestoreId, remotePath: committedRemotePath }
+        : null,
+    );
+    setStagedFilestoreName("");
+  }, [committedRelationType, committedTargetGlobalId, committedVersionPin, committedFilestoreId, committedRemotePath]);
 
   const changed =
     stagedRelationType !== committedRelationType ||
     stagedTargetGlobalId !== committedTargetGlobalId ||
-    stagedVersionPin !== committedVersionPin;
+    stagedVersionPin !== committedVersionPin ||
+    stagedFilestoreTarget?.filestoreId !== committedFilestoreTarget?.filestoreId ||
+    stagedFilestoreTarget?.remotePath !== committedFilestoreTarget?.remotePath;
 
   // Block record Save while the editor is open or holds unapplied changes; the `hasLink` guard
   // keeps an empty optional field saveable. A dedicated flag, not field.error, so an open editor
@@ -114,8 +146,9 @@ function LinkFieldValue({
   const relationOptions =
     field.allowedRelationTypes.length > 0 ? field.allowedRelationTypes : [...DATACITE_RELATION_TYPES];
 
-  const bothEmpty = stagedRelationType === "" && stagedTargetGlobalId === "";
-  const bothSet = stagedRelationType !== "" && stagedTargetGlobalId !== "";
+  const stagedHasTarget = stagedTargetGlobalId !== "" || stagedFilestoreTarget !== null;
+  const bothEmpty = stagedRelationType === "" && !stagedHasTarget;
+  const bothSet = stagedRelationType !== "" && stagedHasTarget;
   // typed targets are validated like the extra-field editor: parseable, a
   // supported prefix, and not a self-link
   const targetValidity =
@@ -129,14 +162,22 @@ function LinkFieldValue({
   const apply = async (): Promise<void> => {
     const nextLink: FieldLink | null = bothEmpty
       ? null
-      : {
-          relationType: stagedRelationType,
-          targetGlobalId: stagedTargetGlobalId,
-          versionPin: stagedVersionPin,
-        };
+      : stagedFilestoreTarget
+        ? {
+            relationType: stagedRelationType,
+            targetGlobalId: "",
+            versionPin: null,
+            filestoreTarget: stagedFilestoreTarget,
+          }
+        : {
+            relationType: stagedRelationType,
+            targetGlobalId: stagedTargetGlobalId,
+            versionPin: stagedVersionPin,
+          };
     // a structurally-valid Global ID must also resolve to a real, readable
-    // record; check (re)targeted links against the server before committing
-    if (nextLink && nextLink.targetGlobalId !== committedTargetGlobalId) {
+    // record; check (re)targeted links against the server before committing.
+    // A filestore item was picked from the user's own listing, so it is not checked.
+    if (nextLink && !nextLink.filestoreTarget && nextLink.targetGlobalId !== committedTargetGlobalId) {
       setCheckingTarget(true);
       const exists = await checkLinkTargetExists(nextLink.targetGlobalId);
       setCheckingTarget(false);
@@ -160,6 +201,8 @@ function LinkFieldValue({
     setStagedRelationType(committedRelationType);
     setStagedTargetGlobalId(committedTargetGlobalId);
     setStagedVersionPin(committedVersionPin);
+    setStagedFilestoreTarget(committedFilestoreTarget);
+    setStagedFilestoreName("");
     if (hasLink) {
       setEditing(false);
     }
@@ -169,7 +212,7 @@ function LinkFieldValue({
   // Show the committed link card whenever there is a committed link and we are not actively
   // editing it - or, in view mode (disabled), always: the editor is never shown when disabled, so
   // a transient `editing` flag left set must not collapse an existing link to the "None" placeholder.
-  if (committedLink && committedTargetGlobalId !== "" && (!editing || disabled)) {
+  if (committedLink && hasLink && (!editing || disabled)) {
     return (
       <Box sx={{ position: "relative" }}>
         {!disabled && (
@@ -229,6 +272,11 @@ function LinkFieldValue({
           supportsVersionPin(stagedTargetGlobalId) &&
           !committedNoAccess
         }
+        {...(allowFilestoreTarget && {
+          filestoreTarget: stagedFilestoreTarget,
+          filestoreName: stagedFilestoreName,
+          onFilestoreTargetChange: setStagedFilestore,
+        })}
       />
       <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
         <Button

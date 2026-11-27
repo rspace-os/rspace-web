@@ -273,6 +273,7 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
               field={field}
               sourceGlobalId={instrument.globalId ?? ""}
               disabled={!instrument.isFieldEditable("fields")}
+              allowFilestoreTarget
               onChange={() =>
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error)
               }

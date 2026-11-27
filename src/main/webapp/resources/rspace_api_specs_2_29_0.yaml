@@ -1883,7 +1883,7 @@ paths:
           description: The item's created-by username and creation time (either may be null)
   "/gallery/filestores/{filestoreId}/linkedDocuments":
     get:
-      summary: List the ELN documents linking a filestore item
+      summary: List the ELN documents and Inventory items linking a filestore item
       description: >-
         Returns the current, non-deleted ELN documents whose text links the file or folder at
         `remotePath` (relative to the filestore root), through any user's filestore of the same
@@ -1896,7 +1896,11 @@ paths:
         path starting with the account's home as it is, unless two slashes precede it.
         `remotePath` is taken as sent, except that a missing leading slash is added under a
         non-empty filestore path that does not end with one. Documents the caller cannot read
-        are returned as owner-only placeholders (no `id`, `globalId` or `name`).
+        are returned as placeholders with `type` and `ownerFullName` only.
+        Inventory items whose Link field targets the item follow the documents, matched the same
+        way. Each row says what it is through `type`. An item the caller cannot read in full is
+        returned with its `type` and `ownerFullName` only. Items in the trash are not returned.
+        Each item appears once, by Global ID, however many of its Link fields target the item.
         Requires read access to the filesystem. On filesystems with per-user logins the user must
         also be logged into the filesystem (see /login endpoint), and that login must be able to
         read the item: list it if it is a folder, open it if it is a file. Any filestore type.
@@ -1912,7 +1916,7 @@ paths:
             type: string
       responses:
         "200":
-          description: The linking documents, oldest first
+          description: The linking documents, oldest first, then the linking Inventory items
           content:
             application/json:
               schema:
@@ -2178,7 +2182,10 @@ paths:
         anything. Auto-populated from the S3 file listing, the current user, and
         the RSpace instance configuration. ELN documents linking the folder or its
         files appear as `relatedIdentifiers` (URL, IsDocumentedBy), readable ones
-        only. S3 only; non-S3 backends return **404**.
+        only. Inventory items whose Link field targets the folder or one of its files
+        appear there too, readable ones only, with the inverse of the link's relation
+        (`IsReferencedBy` where DataCite 4.3 has no such inverse). S3 only; non-S3
+        backends return **404**.
       tags:
         - Gallery Filestores
       parameters:
@@ -2214,7 +2221,10 @@ paths:
         (or `<bucketName>.sidecar.yaml` at the filestore root), overwriting any
         existing one, recording a `CREATE` audit event. ELN documents linking the
         folder or its files appear as `relatedIdentifiers` (URL, IsDocumentedBy),
-        readable ones only. S3 only; non-S3 backends return **404**.
+        readable ones only. Inventory items whose Link field targets the folder or one
+        of its files appear there too, readable ones only, with the inverse of the
+        link's relation (`IsReferencedBy` where DataCite 4.3 has no such inverse). S3
+        only; non-S3 backends return **404**.
       tags:
         - Gallery Filestores
       parameters:
@@ -4914,10 +4924,12 @@ components:
           type: string
           description: The serialized sidecar content (YAML).
     GalleryFilestoreLinkedDocument:
-      description: An ELN document linking a filestore item. `id`, `globalId` and `name` are
-        absent when the caller cannot read the document; `ownerFullName` is always given.
+      description: An ELN document or an Inventory item linking a filestore item, as `type` says.
+        `id`, `globalId` and `name` are absent when the caller cannot read it; `type` and
+        `ownerFullName` are always given.
       required:
         - ownerFullName
+        - type
       properties:
         id:
           type: integer
@@ -4929,6 +4941,15 @@ components:
           type: string
         ownerFullName:
           type: string
+        type:
+          type: string
+          enum:
+            - DOCUMENT
+            - SAMPLE
+            - SUBSAMPLE
+            - CONTAINER
+            - INSTRUMENT
+          description: "What the row is: an ELN document or the kind of Inventory item. Always present."
     ExternalStorageOperationResult:
       description: Per-file outcomes of a filestore write or transfer operation.
       properties:

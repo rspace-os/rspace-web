@@ -47,4 +47,28 @@ describe("useLinkTargetSummary", () => {
     await waitFor(() => expect(mockGet).toHaveBeenCalled());
     expect(result.current).toBeNull();
   });
+
+  it("asks the filestore form of the endpoint for a filestore item, with the path encoded", async () => {
+    mockGet.mockResolvedValue({
+      data: { globalId: null, name: "My S3", type: "FILESTORE_ITEM", deleted: false, readable: true },
+    });
+
+    const { result } = renderHook(() =>
+      useLinkTargetSummary("", { filestoreId: 12, remotePath: "/XRD/run 1+2#final.dat" }),
+    );
+
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(mockGet).toHaveBeenCalledTimes(1);
+    expect(mockGet).toHaveBeenCalledWith(
+      "linkTargets/filestores/12/summary?remotePath=%2FXRD%2Frun%201%2B2%23final.dat",
+    );
+    expect(result.current?.name).toBe("My S3");
+  });
+
+  it("asks nothing when the link has neither kind of target", () => {
+    const { result } = renderHook(() => useLinkTargetSummary("", null));
+
+    expect(result.current).toBeNull();
+    expect(mockGet).not.toHaveBeenCalled();
+  });
 });

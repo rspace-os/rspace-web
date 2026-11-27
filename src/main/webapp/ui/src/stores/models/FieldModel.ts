@@ -8,6 +8,7 @@ import { UnparsableString } from "../../util/error";
 import type { URL as URLType } from "../../util/types";
 import type { Attachment } from "../definitions/Attachment";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
+import type { ApiLink } from "../definitions/ExtraField";
 import type { Field, FieldLink, FieldType, Option, OptionValue } from "../definitions/Field";
 import type { Sample } from "../definitions/Sample";
 import { type AttachmentJson, newAttachment, newExistingAttachment, newGalleryAttachment } from "./AttachmentModel";
@@ -47,7 +48,7 @@ export type FieldModelAttrs = {
   attachment: AttachmentJson | null;
   mandatory: boolean;
   allowedRelationTypes?: Array<string> | null;
-  link?: FieldLink | null;
+  link?: ApiLink | null;
 };
 
 export default class FieldModel implements Field {
@@ -142,7 +143,7 @@ export default class FieldModel implements Field {
 
     params.initial = params.initial ?? false;
     params.allowedRelationTypes = params.allowedRelationTypes ?? [];
-    params.link = params.link ?? null;
+    params.link = _params.link ? { ..._params.link, targetGlobalId: _params.link.targetGlobalId ?? "" } : null;
 
     if (_params.definition) {
       params = {
@@ -261,7 +262,7 @@ export default class FieldModel implements Field {
   get hasContent(): boolean {
     if (hasOptions(this.type)) return Boolean(this.selectedOptions?.length);
     if (this.type === "number") return this.content !== "";
-    if (this.type === "link") return Boolean(this.link?.targetGlobalId);
+    if (this.type === "link") return Boolean(this.link?.targetGlobalId || this.link?.filestoreTarget);
     return Boolean(this.content);
   }
 

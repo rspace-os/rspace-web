@@ -2,6 +2,7 @@ import type { ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import type { Attachment } from "./Attachment";
 import type { BaseRecord } from "./BaseRecord";
+import type { FilestoreLinkTarget } from "./ExtraField";
 
 export type FieldType =
   | "choice"
@@ -24,8 +25,10 @@ export type OptionValue = string;
  */
 export type FieldLink = {
   relationType: string;
+  /** "" when the link targets a filestore item. */
   targetGlobalId: string;
   versionPin: number | null;
+  filestoreTarget?: FilestoreLinkTarget | null;
 };
 
 export type Option = {

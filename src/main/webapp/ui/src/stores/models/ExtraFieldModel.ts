@@ -65,7 +65,7 @@ export default class ExtraFieldModel implements ExtraField {
       ...attrs,
       owner,
       type: typeNameFromApi(attrs.type),
-      link: attrs.link ?? null,
+      link: attrs.link ? { ...attrs.link, targetGlobalId: attrs.link.targetGlobalId ?? "" } : null,
     });
     this.invalidInput = false;
   }
@@ -120,7 +120,7 @@ export default class ExtraFieldModel implements ExtraField {
       // backend allows payload-less Link extra-fields), so it must not block
       // record-level Save; only a half-set payload is invalid
       if (!this.link) return IsValid();
-      if (!this.link.relationType || !this.link.targetGlobalId) {
+      if (!this.link.relationType || !(this.link.targetGlobalId || this.link.filestoreTarget)) {
         return IsInvalid(i18n.t("inventory:fields.extraFields.validation.linkRelationAndTargetRequired"));
       }
       return IsValid();
@@ -130,7 +130,7 @@ export default class ExtraFieldModel implements ExtraField {
 
   get hasContent(): boolean {
     if (this.type === "Link") {
-      return Boolean(this.link?.targetGlobalId);
+      return Boolean(this.link?.targetGlobalId || this.link?.filestoreTarget);
     }
     return Boolean(this.content);
   }

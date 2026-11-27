@@ -8,7 +8,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import FormField from "../../../../components/Inputs/FormField";
-import type { ExtraField, ExtraFieldType } from "../../../../stores/definitions/ExtraField";
+import type { ExtraField, ExtraFieldType, FilestoreLinkTarget } from "../../../../stores/definitions/ExtraField";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { match } from "../../../../util/Util";
 import { DATACITE_RELATION_TYPES, isValidDataCiteRelationType } from "../Link/dataciteRelationTypes";
@@ -29,6 +29,8 @@ type LinkState = {
   targetGlobalId: string;
   targetName: string;
   versionPin: number | null;
+  filestoreTarget: FilestoreLinkTarget | null;
+  filestoreName: string;
 };
 
 function emptyLinkState(): LinkState {
@@ -37,6 +39,8 @@ function emptyLinkState(): LinkState {
     targetGlobalId: "",
     targetName: "",
     versionPin: null,
+    filestoreTarget: null,
+    filestoreName: "",
   };
 }
 
@@ -48,6 +52,8 @@ function linkStateFromExtraField(extraField: ExtraField): LinkState {
         targetGlobalId: link.targetGlobalId,
         targetName: "",
         versionPin: link.versionPin ?? null,
+        filestoreTarget: link.filestoreTarget ?? null,
+        filestoreName: "",
       }
     : emptyLinkState();
 }
@@ -85,11 +91,16 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
   const sourceGlobalId = record.globalId ?? "";
   const isLink = fieldState.type === "Link";
   const relationValid = !isLink || isValidDataCiteRelationType(linkState.relationType);
-  const targetValidity = isLink ? validateTarget(linkState.targetGlobalId, sourceGlobalId) : { ok: true, reason: "" };
+  const targetValidity =
+    !isLink || linkState.filestoreTarget
+      ? { ok: true, reason: "" }
+      : validateTarget(linkState.targetGlobalId, sourceGlobalId);
   const linkValid = relationValid && targetValidity.ok;
   // surface the relation error on the relation field once the user has begun entering the link
   const showRelationError =
-    isLink && !relationValid && (linkState.relationType !== "" || linkState.targetGlobalId !== "");
+    isLink &&
+    !relationValid &&
+    (linkState.relationType !== "" || linkState.targetGlobalId !== "" || linkState.filestoreTarget !== null);
   const showTargetError = isLink && !targetValidity.ok && (linkState.targetGlobalId !== "" || !extraField.initial);
 
   const initialLink = linkStateFromExtraField(extraField);
@@ -97,7 +108,9 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
     extraField.type === "Link" &&
     (linkState.relationType !== initialLink.relationType ||
       linkState.targetGlobalId !== initialLink.targetGlobalId ||
-      linkState.versionPin !== initialLink.versionPin);
+      linkState.versionPin !== initialLink.versionPin ||
+      linkState.filestoreTarget?.filestoreId !== initialLink.filestoreTarget?.filestoreId ||
+      linkState.filestoreTarget?.remotePath !== initialLink.filestoreTarget?.remotePath);
 
   // Surface an invalid in-progress edit of an existing link (e.g. a removed
   // target) on the model, so the record-level Save is blocked with an error
@@ -154,7 +167,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
       ...fieldState,
       type: value as ExtraFieldType,
     });
-    if (value === "Link" && !linkState.targetGlobalId) {
+    if (value === "Link" && !linkState.targetGlobalId && !linkState.filestoreTarget) {
       setLinkState(emptyLinkState());
     }
   };
@@ -171,14 +184,29 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
       targetGlobalId: globalId,
       targetName: name,
       versionPin: versionPinFor(globalId),
+      filestoreTarget: null,
+      filestoreName: "",
+    });
+  };
+
+  const handleFilestoreTargetChange = (filestoreTarget: FilestoreLinkTarget | null, filestoreName: string) => {
+    setTargetExistenceError(null);
+    setLinkState({
+      ...linkState,
+      targetGlobalId: "",
+      targetName: "",
+      versionPin: null,
+      filestoreTarget,
+      filestoreName,
     });
   };
 
   const update = async () => {
     if (fieldState.type === "Link") {
       // a structurally-valid Global ID must also resolve to a real, readable
-      // record; check (re)targeted links against the server before committing
-      if (linkState.targetGlobalId !== initialLink.targetGlobalId) {
+      // record; check (re)targeted links against the server before committing.
+      // A filestore item was picked from the user's own listing, so it is not checked.
+      if (!linkState.filestoreTarget && linkState.targetGlobalId !== initialLink.targetGlobalId) {
         setCheckingTarget(true);
         const exists = await checkLinkTargetExists(linkState.targetGlobalId);
         setCheckingTarget(false);
@@ -191,11 +219,18 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
       record.updateExtraField(extraField.name, {
         name: fieldState.name,
         type: fieldState.type,
-        link: {
-          relationType: linkState.relationType,
-          targetGlobalId: linkState.targetGlobalId,
-          versionPin: linkState.versionPin,
-        },
+        link: linkState.filestoreTarget
+          ? {
+              relationType: linkState.relationType,
+              targetGlobalId: "",
+              versionPin: null,
+              filestoreTarget: linkState.filestoreTarget,
+            }
+          : {
+              relationType: linkState.relationType,
+              targetGlobalId: linkState.targetGlobalId,
+              versionPin: linkState.versionPin,
+            },
       });
     } else {
       record.updateExtraField(extraField.name, {
@@ -285,6 +320,9 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
               supportsVersionPin(linkState.targetGlobalId) &&
               !committedNoAccess
             }
+            filestoreTarget={linkState.filestoreTarget}
+            filestoreName={linkState.filestoreName}
+            onFilestoreTargetChange={handleFilestoreTargetChange}
           />
         </Grid>
       )}

@@ -3228,8 +3228,10 @@ export default interface Resources {
         "download": "Download",
         "editor": {
           "browseEln": "Browse ELN",
+          "browseFilestores": "Browse filestores",
           "browseInventory": "Browse Inventory",
           "latest": "Latest",
+          "onlyFilestoreItems": "Choose a file or folder inside a filestore.",
           "pinVersion": "Pin version",
           "pinVersionFor": "Pin version for {globalId}",
           "pinnedVersion": "Pinned to v{version}",
@@ -3255,6 +3257,7 @@ export default interface Resources {
           "workspaceTreeLabel": "Workspace tree"
         },
         "field": {
+          "filestoreTarget": "Filestore item {target}",
           "label": "Link field",
           "namedLabel": "Link field {name}"
         },

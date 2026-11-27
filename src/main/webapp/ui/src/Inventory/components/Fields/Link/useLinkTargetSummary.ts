@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { FilestoreLinkTarget } from "@/stores/definitions/ExtraField";
 import ApiService from "../../../../common/InvApiService";
 
 /**
@@ -32,19 +33,31 @@ export type LinkTargetSummary = {
  * the summary existed. Missing and unreadable targets are not failures: the
  * server resolves them to a redacted summary with readable false.
  */
-export default function useLinkTargetSummary(globalId: string): LinkTargetSummary | null {
+export default function useLinkTargetSummary(
+  globalId: string,
+  filestoreTarget?: FilestoreLinkTarget | null,
+): LinkTargetSummary | null {
   const [summary, setSummary] = useState<LinkTargetSummary | null>(null);
+  // primitives, not the object, which a caller may rebuild on every render
+  const filestoreId = filestoreTarget?.filestoreId;
+  const remotePath = filestoreTarget?.remotePath;
 
   useEffect(() => {
     let cancelled = false;
     setSummary(null);
+    const url =
+      filestoreId !== undefined && remotePath !== undefined
+        ? `linkTargets/filestores/${filestoreId}/summary?remotePath=${encodeURIComponent(remotePath)}`
+        : globalId
+          ? `linkTargets/${encodeURIComponent(globalId)}/summary`
+          : null;
     // No target (empty field, or callers that only want a summary while editing)
     // has nothing to resolve; skip the request rather than hitting the endpoint
     // with a blank id.
-    if (!globalId) {
+    if (!url) {
       return;
     }
-    ApiService.get<LinkTargetSummary>(`linkTargets/${encodeURIComponent(globalId)}/summary`).then(
+    ApiService.get<LinkTargetSummary>(url).then(
       ({ data }) => {
         if (!cancelled) setSummary(data);
       },
@@ -55,7 +68,7 @@ export default function useLinkTargetSummary(globalId: string): LinkTargetSummar
     return () => {
       cancelled = true;
     };
-  }, [globalId]);
+  }, [globalId, filestoreId, remotePath]);
 
   return summary;
 }

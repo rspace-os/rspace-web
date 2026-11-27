@@ -1,5 +1,6 @@
 import { isAction } from "mobx";
 import { describe, expect, it, vi } from "vitest";
+import type { ExtraFieldAttrs } from "../../definitions/ExtraField";
 import ExtraFieldModel from "../ExtraFieldModel";
 // SampleModel must load before the ExtraFieldModel -> RootStore import chain,
 // otherwise the TemplateModel/SampleModel module cycle hits an uninitialised
@@ -15,13 +16,7 @@ vi.mock("../../stores/getRootStore", () => ({
   }),
 }));
 
-function makeLinkField(
-  link: {
-    relationType: string;
-    targetGlobalId: string;
-    versionPin: number | null;
-  } | null,
-): ExtraFieldModel {
+function makeLinkField(link: ExtraFieldAttrs["link"]): ExtraFieldModel {
   return new ExtraFieldModel(
     {
       id: 7,
@@ -80,6 +75,30 @@ describe("ExtraFieldModel link validation", () => {
       versionPin: null,
     });
     expect(field.isValid.isOk).toBe(false);
+  });
+
+  it("is valid and has content for a link to a filestore item", () => {
+    const field = makeLinkField({
+      relationType: "IsSourceOf",
+      targetGlobalId: null,
+      versionPin: null,
+      filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+    });
+
+    expect(field.isValid.isOk).toBe(true);
+    expect(field.hasContent).toBe(true);
+  });
+
+  it("holds an empty Global ID, not null, for a link to a filestore item", () => {
+    // every reader of targetGlobalId treats it as a string
+    const field = makeLinkField({
+      relationType: "IsSourceOf",
+      targetGlobalId: null,
+      versionPin: null,
+      filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+    });
+
+    expect(field.link?.targetGlobalId).toBe("");
   });
 });
 

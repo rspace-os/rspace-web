@@ -150,4 +150,36 @@ describe("paramsForBackend with a Link extra-field", () => {
     });
     expect(linkField.content).toBe("");
   });
+
+  test("emits link.filestoreTarget for a link to a filestore item", () => {
+    const sample = makeMockSample();
+    sample.currentlyEditableFields.add("extraFields");
+    sample.addExtraField({
+      id: 6,
+      globalId: null,
+      name: "Raw data",
+      lastModified: null,
+      type: "link",
+      content: "",
+      parentGlobalId: sample.globalId,
+      editing: false,
+      initial: false,
+      link: {
+        relationType: "IsSourceOf",
+        targetGlobalId: null,
+        versionPin: null,
+        filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+      },
+    });
+    const params = sample.paramsForBackend as {
+      extraFields?: Array<Record<string, unknown>>;
+    };
+
+    expect(params.extraFields?.[0].link).toEqual({
+      relationType: "IsSourceOf",
+      targetGlobalId: "",
+      versionPin: null,
+      filestoreTarget: { filestoreId: 12, remotePath: "/XRD/run.dat" },
+    });
+  });
 });

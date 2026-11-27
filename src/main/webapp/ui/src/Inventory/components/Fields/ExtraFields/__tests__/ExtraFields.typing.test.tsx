@@ -18,6 +18,10 @@ vi.mock("../../Link/ElnRecordPicker", () => ({ default: () => null }));
 vi.mock("../../Link/linkTargetExists", () => ({
   checkLinkTargetExists: vi.fn(() => Promise.resolve(true)),
 }));
+vi.mock("@/hooks/api/useDeploymentProperty", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/api/useDeploymentProperty")>()),
+  useDeploymentProperty: () => ({ tag: "loading" }),
+}));
 
 // SampleModel must load before the model -> RootStore import chain, otherwise
 // the TemplateModel/SampleModel module cycle hits an uninitialised

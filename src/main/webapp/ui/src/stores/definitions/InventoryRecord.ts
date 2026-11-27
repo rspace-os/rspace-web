@@ -6,7 +6,7 @@ import type { BarcodeRecord } from "./Barcode";
 import type { GlobalId, Id } from "./BaseRecord";
 import type { Container } from "./Container";
 import type { Editable } from "./Editable";
-import type { ExtraField, ExtraFieldAttrs } from "./ExtraField";
+import type { ExtraField, ExtraFieldAttrs, ExtraInventoryLink } from "./ExtraField";
 import type { Factory } from "./Factory";
 import type { HasChildren } from "./HasChildren";
 import type { Identifier } from "./Identifier";
@@ -358,11 +358,7 @@ export interface InventoryRecord extends Record, Editable, HasChildren, CreateFr
     updatedField: {
       name: string;
       type: string;
-      link?: {
-        relationType: string;
-        targetGlobalId: string;
-        versionPin: number | null;
-      };
+      link?: ExtraInventoryLink;
     },
   ): void;
   removeExtraField(id: number | null, index: number): void;

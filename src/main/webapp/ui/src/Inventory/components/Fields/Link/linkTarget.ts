@@ -1,4 +1,6 @@
+import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
 import i18n from "@/modules/common/i18n";
+import type { FilestoreLinkTarget } from "@/stores/definitions/ExtraField";
 
 /**
  * Shared client-side validation for link targets, used by both the extra-field
@@ -65,4 +67,19 @@ export function validateTarget(targetGlobalId: string, sourceGlobalId: string): 
   if (isSelfLink(sourceGlobalId, targetGlobalId))
     return { ok: false, reason: i18n.t("inventory:fields.link.targetValidation.selfLink") };
   return { ok: true, reason: "" };
+}
+
+/**
+ * The link target for a file or folder picked inside a filestore, or null for anything else (the
+ * filestore itself, an item of another Gallery section). The path is given in the form the server
+ * stores, so a re-picked item compares equal to the saved link.
+ */
+export function filestoreTargetOf(file: GalleryFile): { target: FilestoreLinkTarget; filestoreName: string } | null {
+  // tested by property, not by class, to keep the Gallery listing module out of the Inventory bundle
+  const filestore = file.path[0];
+  if (!("remotePath" in file) || typeof file.remotePath !== "string" || typeof filestore?.id !== "number") return null;
+  return {
+    target: { filestoreId: filestore.id, remotePath: `/${file.remotePath.replace(/^\/+|\/+$/g, "")}` },
+    filestoreName: filestore.name,
+  };
 }
