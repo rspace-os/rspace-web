@@ -52,6 +52,7 @@
       "legend": "Quick filters",
       "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
       "loading": "Finding bookable items…",
+      "myItems": "Owned Items",
       "retry": "Retry",
       "scope": "Availability uses the selected display date and timezone."
     },
@@ -380,10 +381,7 @@
       "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
     },
     "ownerHealth": {
-      "error": "Could not find bookable items needing an owner.",
       "filter": "Owner attention needed",
-      "filters": "Owner health filters",
-      "loading": "Finding bookable items needing an owner…",
       "needsOwner": "Owner needed"
     },
     "permanentDeleteDialog": {
@@ -790,6 +788,11 @@
     "unsaved": "Unsaved changes",
     "whoCanBook": "Who can book",
     "yourAccess": "You are an Owner. You can edit rules and manage access."
+  },
+  "filters": {
+    "dropped": "Some saved filter rules are no longer supported and were removed: {fields}.",
+    "me": "Me",
+    "owner": "Owner"
   },
   "myBookings": {
     "actions": {
