@@ -1,7 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { HTMLInputTypeAttribute } from "react";
 import type * as v from "valibot";
-import type { ResolvedFieldConfig, SelectOption } from "@/modules/common/collection/config";
+import type { ResolvedFieldConfig, SelectOption, StructuredFieldType } from "@/modules/common/collection/config";
 import type { FieldType } from "@/modules/common/collection/fieldTypes";
 import type { RuntimeFieldValueType } from "@/modules/common/collection/runtimeFields";
 import { parseInstant, truncateToMilliseconds } from "@/modules/common/time/instant";
@@ -9,7 +9,7 @@ import { booleanScalar, dateTimeScalar, numberScalar } from "./schema";
 import type { FilterScalar } from "./types";
 import type { DisplayFormat } from "./utils/displayValue";
 
-type ScalarFieldType = "text" | "number" | "boolean" | "dateTime" | "select" | "relationship";
+type ScalarFieldType = Exclude<FieldType, StructuredFieldType>;
 
 export type ValueBehaviour = {
   /** Schema for a typed URL `where` scalar; absent keeps the string. */
@@ -109,7 +109,6 @@ export type ResolvedValueBehaviour = {
   behaviour: ValueBehaviour;
   inputType: HTMLInputTypeAttribute;
   displayFormat: DisplayFormat | undefined;
-  /** A select field's configured options. */
   selectOptions: readonly SelectOption[] | undefined;
 };
 

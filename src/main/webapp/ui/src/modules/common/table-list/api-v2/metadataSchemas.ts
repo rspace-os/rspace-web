@@ -11,6 +11,22 @@ import { filterOperatorSchema, objectInput } from "./schemaPrimitives.ts";
 const positiveInteger = v.pipe(v.number(), v.integer(), v.minValue(1));
 const nonNegativeInteger = v.pipe(v.number(), v.integer(), v.minValue(0));
 const strings = v.array(v.string());
+const jsonType = v.picklist(["string", "integer", "number", "boolean", "object", "array"]);
+const declaredTypes = v.union([
+  jsonType,
+  v.strictTuple([jsonType]),
+  v.strictTuple([jsonType, v.literal("null")]),
+  v.strictTuple([v.literal("null"), jsonType]),
+]);
+
+function nonNullType(type: v.InferOutput<typeof declaredTypes>): v.InferOutput<typeof jsonType> {
+  if (typeof type === "string") return type;
+  if (type[0] === "null") return type[1];
+  return type[0];
+}
+
+/** A declared JSON type, with an optional `null` alternative removed. */
+const declaredType = v.pipe(declaredTypes, v.transform(nonNullType));
 
 /** The table-list field type of each value kind `scripts/api-v2-valibot/filters.ts` classifies a selector as. */
 const fieldTypes = {
@@ -123,4 +139,70 @@ export const metadataOperationSchema = v.object({
 });
 export const metadataReadSchema = v.object({
   properties: v.pipe(objectInput, v.record(v.string(), objectInput)),
+});
+
+const rowBoundEntries = { minItems: v.optional(nonNegativeInteger), maxItems: v.optional(nonNegativeInteger) };
+export const metadataRowBoundsSchema = v.pipe(
+  v.object(rowBoundEntries),
+  v.forward(
+    v.check(
+      ({ minItems, maxItems }) => minItems === undefined || maxItems === undefined || minItems <= maxItems,
+      "Invalid row bounds",
+    ),
+    ["maxItems"],
+  ),
+  v.transform(({ minItems, maxItems }) => ({
+    ...(minItems === undefined ? {} : { minRows: minItems }),
+    ...(maxItems === undefined ? {} : { maxRows: maxItems }),
+  })),
+);
+const enumValues = v.pipe(strings, v.nonEmpty());
+const writeConstraints = v.pipe(
+  objectInput,
+  v.looseObject({
+    ...rowBoundEntries,
+    maxLength: v.optional(nonNegativeInteger),
+    enum: v.optional(enumValues),
+  }),
+);
+const childEntries = {
+  name: v.pipe(v.string(), v.regex(/\S/, "Child name must not be empty")),
+  type: v.object({
+    jsonType,
+    format: v.nullish(v.string()),
+    maxLength: v.nullish(nonNegativeInteger),
+    structure: v.pipe(objectInput, v.looseObject({ enum: v.optional(enumValues) })),
+  }),
+  writeConstraints,
+  requiredOnCreate: v.boolean(),
+  nullable: v.boolean(),
+  readOnly: v.boolean(),
+  defaultValue: v.optional(v.unknown()),
+  openApi: v.pipe(
+    objectInput,
+    v.object({
+      title: v.nullish(v.string()),
+      format: v.nullish(v.string()),
+    }),
+  ),
+};
+export type ApiV2MetadataChild = v.InferOutput<v.ObjectSchema<typeof childEntries, undefined>> & {
+  fields: ApiV2MetadataChild[];
+};
+const metadataChildSchema: v.GenericSchema<unknown, ApiV2MetadataChild> = v.object({
+  ...childEntries,
+  fields: v.lazy(() => metadataChildListSchema),
+});
+// Names identify children, so a list may not repeat one.
+const metadataChildListSchema = v.pipe(
+  v.array(metadataChildSchema),
+  v.checkItems(
+    (item, index, items) => items.findIndex((other) => other.name === item.name) === index,
+    (issue) => `duplicate child field ${issue.input.name}`,
+  ),
+);
+export const metadataStructuredPropertySchema = v.object({
+  type: declaredType,
+  readOnly: v.optional(v.boolean(), false),
+  "x-rspace-fields": v.pipe(metadataChildListSchema, v.nonEmpty()),
 });

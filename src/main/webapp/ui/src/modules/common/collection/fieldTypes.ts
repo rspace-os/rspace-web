@@ -58,6 +58,8 @@ export const fieldTypeRules: Readonly<Record<FieldType, FieldTypeRules>> = {
     },
     textual: true,
   },
+  array: { capabilities: { sortable: false, filterOperators: [], supportsWildcards: false }, textual: false },
+  object: { capabilities: { sortable: false, filterOperators: [], supportsWildcards: false }, textual: false },
   relationship: {
     capabilities: { sortable: false, filterOperators: commonOperators, supportsWildcards: false },
     textual: false,
