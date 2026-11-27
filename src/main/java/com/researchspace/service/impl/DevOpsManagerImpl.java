@@ -244,18 +244,20 @@ public class DevOpsManagerImpl implements DevOpsManager {
   }
 
   /*
-   * An ACL entry names a user, or a group optionally restricted to roles ("group[PI]"). Every
-   * member of a group counts as a reader, whatever the role restriction.
+   * An ACL entry names a user, or a group optionally restricted to roles ("group[PI]").
+   * RecordSharingACL#isPermitted matches groups by prefix, so members of every group whose unique
+   * name starts the entry can read the document, whatever the role restriction.
    */
   private Optional<Set<User>> resolveReaders(String userOrGroupName) {
-    Optional<User> user = userDao.getOptionalUserByUsername(userOrGroupName);
-    if (user.isPresent()) {
-      return Optional.of(Set.of(user.get()));
+    Set<User> readers = new LinkedHashSet<>();
+    userDao.getOptionalUserByUsername(userOrGroupName).ifPresent(readers::add);
+    for (int end = 1; end <= userOrGroupName.length(); end++) {
+      Group group = groupDao.getByUniqueName(userOrGroupName.substring(0, end));
+      if (group != null) {
+        readers.addAll(group.getMembers());
+      }
     }
-    int roles = userOrGroupName.indexOf('[');
-    Group group =
-        groupDao.getByUniqueName(roles < 0 ? userOrGroupName : userOrGroupName.substring(0, roles));
-    return Optional.ofNullable(group).map(found -> new LinkedHashSet<>(found.getMembers()));
+    return readers.isEmpty() ? Optional.empty() : Optional.of(readers);
   }
 
   /*

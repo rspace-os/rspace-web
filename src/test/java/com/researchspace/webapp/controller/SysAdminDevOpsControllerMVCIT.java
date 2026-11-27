@@ -18,6 +18,7 @@ import com.researchspace.dao.FieldDao;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatImageAnnotation;
 import com.researchspace.model.FieldAttachment;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
@@ -243,7 +244,7 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
 
   @Test
   public void skipsLinkThatWouldLetADocumentReaderDownloadTheImage() throws Exception {
-    groupWithOwnerAndOther();
+    groupOf(owner, other);
     EcatImage image = newImage(owner);
     Field field = fieldWithAnnotatedImage(image);
     StructuredDocument doc = field.getStructuredDocument();
@@ -270,7 +271,7 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
 
   @Test
   public void repairsSharedDocumentWhenEveryReaderCanAlreadyReadTheImage() throws Exception {
-    groupWithOwnerAndOther();
+    groupOf(owner, other);
     EcatImage image = newImage(owner);
     Field field = fieldWithAnnotatedImage(image);
     shareRecordWithUser(owner, field.getStructuredDocument(), other);
@@ -286,8 +287,39 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void skipsLinkThatWouldLetMembersOfAGroupMatchedByPrefixDownloadTheImage()
+      throws Exception {
+    // RecordSharingACL matches group entries by prefix, so sharing with "<group>x" also lets the
+    // members of <group> read the document
+    Group prefixGroup = groupOf(other);
+    User sharee = createAndSaveUser(prefixGroup.getUniqueName() + "x");
+    initUsers(sharee);
+    groupOf(owner, sharee);
+    EcatImage image = newImage(owner);
+    Field field = fieldWithAnnotatedImage(image);
+    shareRecordWithUser(owner, field.getStructuredDocument(), sharee);
+    // the sharee itself can already read the image
+    Field alreadyShared = newField();
+    addLink(alreadyShared, image, false);
+    shareRecordWithUser(owner, alreadyShared.getStructuredDocument(), sharee);
+    logoutAndLoginAsSysAdmin();
+
+    AnnotatedImageRelink result =
+        single(devOpsManager.relinkAnnotatedImagesInField(field.getId()), field);
+
+    assertEquals(Outcome.SKIPPED, result.outcome());
+    assertThat(result.skipReason())
+        .startsWith("the link would let a document reader who cannot read the Gallery image");
+    assertThat(links(field, image)).isEmpty();
+    // the access the repair withheld
+    addLink(field, image, false);
+    logoutAndLoginAs(other);
+    assertEquals(image.getId(), baseRecordMgr.retrieveMediaFile(other, image.getId()).getId());
+  }
+
+  @Test
   public void skipsAnotherUsersImageNotLinkedFromAnotherRecordOfTheOwner() throws Exception {
-    groupWithOwnerAndOther();
+    groupOf(owner, other);
     EcatImage othersImage = newImage(other);
     Field field = fieldWithAnnotatedImage(othersImage);
     // the owner reads the image only through a document of the other user
@@ -420,12 +452,14 @@ public class SysAdminDevOpsControllerMVCIT extends MVCTestBase {
         .getContentAsString();
   }
 
-  /* Sharing needs a group in common. */
-  private void groupWithOwnerAndOther() throws Exception {
+  /* Sharing needs a group in common; each group gets its own PI. */
+  private Group groupOf(User... members) throws Exception {
     User pi = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
     initUsers(pi);
     logoutAndLoginAs(pi);
-    createGroupForUsers(pi, pi.getUsername(), "", pi, owner, other);
+    User[] users = Arrays.copyOf(members, members.length + 1);
+    users[members.length] = pi;
+    return createGroupForUsers(pi, pi.getUsername(), "", users);
   }
 
   private EcatImage newImage(User imageOwner) throws Exception {
