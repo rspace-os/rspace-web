@@ -12,8 +12,14 @@ const spec = parseOpenApiDocument(
 // Binary successes select apiV2BlobFetch from the spec; operations whose response headers (ETag, Location) callers
 // read are listed here. Every operation declaring an ETag is either listed or excluded explicitly.
 const mutatorOverrides = deriveMutatorOverrides(spec, {
-  headers: [],
-  etagExclusions: ["getApiV2OpenApiDocument"],
+  headers: ["getAdminBookingSettings", "patchAdminBookingSettings"],
+  // These take If-Match from the body `version` instead of the ETag header.
+  etagExclusions: [
+    "getApiV2OpenApiDocument",
+    "getBookingConfigurationAccess",
+    "replaceBookingConfigurationAccess",
+    "getBookingSettings",
+  ],
 });
 // Collection operations whose `where` carries filter metadata also accept a typed where object.
 const whereObjectOperations = filteredWhereOperations(spec);

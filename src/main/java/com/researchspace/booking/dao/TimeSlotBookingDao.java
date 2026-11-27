@@ -1,0 +1,63 @@
+package com.researchspace.booking.dao;
+
+import com.researchspace.dao.CollectionDao;
+import com.researchspace.dao.query.RsqlCollectionQuery;
+import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+/** Persistence operations for one-off time-slot bookings. */
+public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long> {
+
+  /** Finds an original create identity, including later cancelled or lifecycle-hidden rows. */
+  Optional<TimeSlotBooking> findByCreatorAndKey(Long creatorId, String key);
+
+  /** Applies Calendar text scope before event paging and counts. */
+  ResourcePage<TimeSlotBooking> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess access,
+      RsqlCollectionQuery.Predicate restriction);
+
+  /** Returns a page after target read rules and soft deletion are applied in SQL. */
+  ResourcePage<TimeSlotBooking> getReadableResources(
+      ResourceRequest request, RelationshipReadAccess targetAccess);
+
+  /** Counts rows after target read rules and soft deletion are applied in SQL. */
+  long countReadableResources(ResourceRequest request, RelationshipReadAccess targetAccess);
+
+  /** Returns one readable, non-deleted booking. */
+  Optional<TimeSlotBooking> findReadableById(Long id, RelationshipReadAccess targetAccess);
+
+  /**
+   * Returns the earliest current confirmed, non-deleted row that overlaps a half-open interval,
+   * using a locking read, not an earlier transaction snapshot. Callers must hold the configuration
+   * lock first.
+   */
+  Optional<TimeSlotBooking> findFirstOverlap(
+      Long configurationId,
+      Date start,
+      Date end,
+      Long excludedBookingId,
+      Set<BookingEventKind> includedKinds);
+
+  /** Returns the ordered, fetch-complete rows used to build one calendar feed. */
+  List<TimeSlotBooking> findCalendarBookings(Long configurationId, Date cutoff, int maximumRows);
+
+  /** Returns the ordered, fetch-complete rows used to build one user's calendar feed. */
+  List<TimeSlotBooking> findUserCalendarBookings(Long userId, Date cutoff, int maximumRows);
+
+  /** Future confirmed rows exposed by an authorised archived summary. */
+  List<TimeSlotBooking> findFutureConfirmedByConfiguration(Long configurationId, Date now);
+
+  /** Saves and flushes one booking inside its configuration lock transaction. */
+  TimeSlotBooking saveAndFlush(TimeSlotBooking booking);
+
+  /** Removes every live booking for a configuration in bounded audited entity batches. */
+  int removeAllByConfigurationId(Long configurationId);
+}

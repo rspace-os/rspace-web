@@ -15,19 +15,18 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.featureflags.ApiV2FeatureFlagResource;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionFieldTypes;
-import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.collection.Sort;
 import com.researchspace.service.ResourceMutationManager;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
@@ -71,9 +70,9 @@ class ResourceMutationScopeTest {
 
   private static Named<Target<?, ?>> versionedTarget() {
     return Named.of(
-        "versioned collection",
+        "booking configurations (versioned)",
         new Target<>(
-            scopeDescription(),
+            ApiV2BookingConfigurationResource.DESCRIPTION,
             Long::valueOf,
             7L,
             "enabled",
@@ -89,32 +88,14 @@ class ResourceMutationScopeTest {
 
   private static Named<Target<?, ?>> unversionedTarget() {
     return Named.of(
-        "unversioned collection",
-        new Target<>(scopeDescription(), Long::valueOf, 7L, "enabled", MutationPolicy.DEFAULT));
+        "feature flags (unversioned)",
+        new Target<>(
+            ApiV2FeatureFlagResource.DESCRIPTION,
+            Function.identity(),
+            "BOOKING",
+            "overrideValue",
+            MutationPolicy.DEFAULT));
   }
-
-  private static CollectionDescription<ScopeFixture> scopeDescription() {
-    return new CollectionDescription<>(
-        "scopes",
-        ScopeFixture.class,
-        List.of(
-            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), ScopeFixture::id),
-            Field.readOnly(
-                "configurationVersion",
-                "configurationVersion",
-                CollectionFieldTypes.longNumber(),
-                ScopeFixture::version),
-            Field.writable(
-                "enabled",
-                "enabled",
-                CollectionFieldTypes.bool(),
-                ScopeFixture::enabled,
-                (resource, value) -> {})),
-        "id",
-        List.of(new Sort("id", true)));
-  }
-
-  private record ScopeFixture(Long id, Long version, Boolean enabled) {}
 
   private <T, ID> void check(Target<T, ID> target, boolean delete, boolean visible) {
     CollectionDescription<T> source = target.source();

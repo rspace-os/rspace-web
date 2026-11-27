@@ -79,6 +79,8 @@ export const relationshipLabelKeys: Readonly<Record<string, CollectionTranslatio
   updatedBy: "common:tableList.fields.updatedBy",
   location: "common:tableList.fields.location",
   parentContainer: "common:tableList.fields.parentContainer",
+  requester: "common:tableList.fields.requester",
+  target: "common:tableList.fields.target",
 };
 
 type TargetFieldOf<Selector> = Selector extends `${string}.${infer Field}`
@@ -106,10 +108,15 @@ type PublishedTargetField = {
  */
 export const targetFieldLabelKeys = {
   containerType: "common:tableList.targetFields.containerType",
+  createdAt: "common:tableList.targetFields.createdAt",
   deleted: "common:tableList.targetFields.deleted",
+  email: "common:tableList.targetFields.email",
+  firstName: "common:tableList.targetFields.firstName",
   globalId: "common:tableList.targetFields.globalId",
   id: "common:tableList.targetFields.id",
+  lastName: "common:tableList.targetFields.lastName",
   name: "common:tableList.targetFields.name",
+  username: "common:tableList.targetFields.username",
 } satisfies Readonly<Record<PublishedTargetField, CollectionTranslationKey>>;
 
 /** A name missing from the catalog falls back to the name itself. */
