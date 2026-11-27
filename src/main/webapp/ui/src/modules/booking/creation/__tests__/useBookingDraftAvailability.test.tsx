@@ -5,11 +5,10 @@ import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
-import type { ListBookings200 as DecodedListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { ListBookingsResponse } from "@/modules/common/api/v2/generated/valibot/native";
 import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import type { BookingFormState } from "../BookingForm";
 import type { BookableItemOption } from "../bookableItemOption";
@@ -32,7 +31,7 @@ const target: BookableItemOption = {
 
 /** Response bodies as JSON carries them, before the transport decodes their date-times. */
 type BookingsRead = v.InferInput<typeof BookingsReadSchema>;
-type ListBookings200 = ApiV2Wire<DecodedListBookings200>;
+type ListBookings200 = v.InferInput<typeof ListBookingsResponse>;
 
 const draft: BookingWindowDraft = {
   startDate: "2026-10-19",

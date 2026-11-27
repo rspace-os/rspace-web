@@ -2,10 +2,9 @@ import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
-import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { ListBookingsResponse } from "@/modules/common/api/v2/generated/valibot/native";
 import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { fetchDayBookings } from "../fetchDayBookings";
 
@@ -33,7 +32,7 @@ const pageEnvelope = (
   docs: readonly v.InferInput<typeof BookingsReadSchema>[],
   page = 1,
   hasNextPage = false,
-): ApiV2Wire<ListBookings200> => ({
+): v.InferInput<typeof ListBookingsResponse> => ({
   docs: [...docs],
   page,
   hasNextPage,
