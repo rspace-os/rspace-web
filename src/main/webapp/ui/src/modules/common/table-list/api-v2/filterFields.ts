@@ -1,3 +1,4 @@
+import type { apiV2CollectionMetadata } from "@/modules/common/api/v2/generated/tableListMetadata";
 import type {
   CollectionConfig,
   CollectionTranslationKey,
@@ -81,20 +82,36 @@ export const relationshipLabelKeys: Readonly<Record<string, CollectionTranslatio
   parentContainer: "common:tableList.fields.parentContainer",
 };
 
-/** Catalog labels for every relationship target field an API v2 resource publishes. */
-export const targetFieldLabelKeys: Readonly<Record<string, CollectionTranslationKey>> = {
+type TargetFieldOf<Selector> = Selector extends `${string}.${infer Field}`
+  ? Field extends "value" | "relationTo"
+    ? never
+    : Field
+  : never;
+
+type PublishedCollections = typeof apiV2CollectionMetadata;
+
+/**
+ * The target field of every `<relationship>.<field>` selector the generated table metadata publishes, including
+ * display-only ones such as `globalId` that take no filter operator.
+ */
+type PublishedTargetField = {
+  [Collection in keyof PublishedCollections]: TargetFieldOf<
+    keyof PublishedCollections[Collection]["filtering"]["selectors"]
+  >;
+}[keyof PublishedCollections];
+
+/**
+ * Catalog labels for every relationship target field an API v2 resource publishes. `satisfies` keeps the map equal
+ * to the published set: a newly published field without a label, or a label for a field no longer published, fails
+ * `tsc`.
+ */
+export const targetFieldLabelKeys = {
   containerType: "common:tableList.targetFields.containerType",
-  createdAt: "common:tableList.targetFields.createdAt",
   deleted: "common:tableList.targetFields.deleted",
-  email: "common:tableList.targetFields.email",
-  firstName: "common:tableList.targetFields.firstName",
   globalId: "common:tableList.targetFields.globalId",
   id: "common:tableList.targetFields.id",
-  lastName: "common:tableList.targetFields.lastName",
   name: "common:tableList.targetFields.name",
-  username: "common:tableList.targetFields.username",
-  updatedAt: "common:tableList.targetFields.updatedAt",
-};
+} satisfies Readonly<Record<PublishedTargetField, CollectionTranslationKey>>;
 
 /** A name missing from the catalog falls back to the name itself. */
 function catalogLabel(keys: Readonly<Record<string, CollectionTranslationKey>>, name: string): LabelText {
