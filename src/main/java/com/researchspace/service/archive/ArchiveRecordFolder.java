@@ -37,6 +37,11 @@ final class ArchiveRecordFolder {
     }
   }
 
+  /** The real path of this document folder. */
+  Path path() {
+    return recordFolder;
+  }
+
   /**
    * Finds a file that the document XML names relative to this document folder, such as an
    * attachment's {@code linkFile}.
