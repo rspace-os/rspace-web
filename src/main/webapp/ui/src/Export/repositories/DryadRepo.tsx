@@ -22,7 +22,9 @@ type DryadRepoArgs = {
       value: string;
     };
   }) => void;
-  handleCrossrefFunderChange: (_unused: unknown, event: { name: string }) => void;
+  handleCrossrefFunderChange: (_unused: unknown, event: { name: string } | null) => void;
+  /** The funder in the saved request, shown when the step is reopened. */
+  savedFunder?: { name: string } | null;
   handleFetchCrossrefFunder: (
     event: React.SyntheticEvent<Element, Event>,
     value: string,
@@ -44,6 +46,7 @@ export default function DryadRepo({
   repo,
   handleChange,
   handleCrossrefFunderChange,
+  savedFunder = null,
   handleFetchCrossrefFunder,
   inputValidations,
   submitAttempt,
@@ -128,11 +131,10 @@ export default function DryadRepo({
         {/* Granting Org */}
         <Autocomplete
           id="dryad-crossref-funders-autocomplete"
-          label={t("export.repositories.dryad.grantingOrg")}
           options={crossrefFunders}
+          defaultValue={savedFunder}
           getOptionLabel={(option) => option.name}
           isOptionEqualToValue={(option, value) => option.name === value.name}
-          // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleCrossrefFunderChange}
           onInputChange={handleFetchCrossrefFunder}
           sx={{ width: 300 }}

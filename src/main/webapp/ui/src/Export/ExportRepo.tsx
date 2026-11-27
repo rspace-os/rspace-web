@@ -57,6 +57,18 @@ const listedPlans = (
 ): Array<DMPUserInternalId> =>
   selectedPlans.filter((id) => (linkedDMPs ?? []).some((plan) => plan.dmpUserInternalId === id));
 
+const parseFunder = (funder: unknown): { name: string } | null => {
+  if (typeof funder !== "string") return null;
+  try {
+    const parsed: unknown = JSON.parse(funder);
+    return parsed && typeof parsed === "object" && "name" in parsed && typeof parsed.name === "string"
+      ? { name: parsed.name }
+      : null;
+  } catch {
+    return null;
+  }
+};
+
 const DmpSelector = observer(
   ({
     state,
@@ -141,6 +153,7 @@ function ExportRepo({
   const savedLicense = (repoList[repoDetails.repoChoice]?.license.licenses ?? []).findIndex(
     (license) => license.licenseDefinition.name === repoDetails.meta.licenseName,
   );
+  const savedFunder = parseFunder(savedOtherProperties.funder);
   // the saved request carries the deposit tags once the form has been saved, an empty list included
   const savedTags = (repoDetails.meta as { tags?: Array<Tag> }).tags;
   const [state] = useState(
@@ -168,6 +181,13 @@ function ExportRepo({
   );
   const [fetchingTags, setFetchingTags] = useState(false);
   const savedSinceMount = useRef(false);
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
   const plansToSend = (): Array<DMPUserInternalId> =>
     state.linkDMP ? listedPlans(state.selectedPlans, repoList[state.repoChoice].linkedDMPs) : [];
 
@@ -180,8 +200,9 @@ function ExportRepo({
         state.tags = tags;
       });
       setFetchingTags(false);
-      // a save made while the tags loaded holds an empty list, which would read as cleared on return
-      if (savedSinceMount.current) updateRemoteConfig();
+      // a save made while the tags loaded holds an empty list, which would read as cleared on return;
+      // once the step is left, the dialog's request is no longer this form's to change
+      if (savedSinceMount.current && mounted.current) updateRemoteConfig();
     })();
   }, []);
 
@@ -285,11 +306,9 @@ function ExportRepo({
     updateRemoteConfig();
   };
 
-  const handleCrossrefFunderChange = (_: unknown, values: { name: string }) => {
+  const handleCrossrefFunderChange = (_: unknown, values: { name: string } | null) => {
     runInAction(() => {
-      state.otherProperties = {
-        funder: JSON.stringify(values),
-      };
+      state.otherProperties = values ? { funder: JSON.stringify(values) } : {};
     });
     updateRemoteConfig();
   };
@@ -372,6 +391,7 @@ function ExportRepo({
               handleChange={handleChange}
               updatePeople={updatePeople}
               handleCrossrefFunderChange={handleCrossrefFunderChange}
+              savedFunder={savedFunder}
               handleFetchCrossrefFunder={handleFetchCrossrefFunder}
               crossrefFunders={state.crossrefFunders}
               inputValidations={state.inputValidations as typeof DRYAD_VALIDATIONS}

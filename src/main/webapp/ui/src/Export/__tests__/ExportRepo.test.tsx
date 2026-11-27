@@ -18,7 +18,7 @@ import type { Plan } from "@/eln-dmp-integration/linkedPlan";
 import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
-import { DEFAULT_REPO_CONFIG, type RepoDetails } from "../repositories/common";
+import { DEFAULT_REPO_CONFIG, type Repo, type RepoDetails } from "../repositories/common";
 import type { Tag } from "../repositories/Tags";
 
 window.fetch = vi.fn(() =>
@@ -318,13 +318,17 @@ describe("ExportRepo", () => {
       linkedDMPs: plans,
       repoCfg: -1,
     };
-    const renderDataverse = async (repoDetails: RepoDetails, fetchTags: () => Promise<Array<Tag>>) => {
+    const renderDataverse = async (
+      repoDetails: RepoDetails,
+      fetchTags: () => Promise<Array<Tag>>,
+      repo: Repo = dataverseWithTwoLicences,
+    ) => {
       const user = userEvent.setup();
       const updateRepoConfig = vi.fn<(config: RepoDetails) => void>();
-      await renderWithRealI18n(
+      const { unmount } = await renderWithRealI18n(
         <ExportRepo
           repoDetails={repoDetails}
-          repoList={[dataverseWithTwoLicences]}
+          repoList={[repo]}
           state={DEFAULT_STATE}
           updateRepoConfig={updateRepoConfig}
           validator={mkValidator()}
@@ -338,7 +342,7 @@ describe("ExportRepo", () => {
       // the request also carries the record tags, which RepoDetails does not declare
       const sentMeta = () =>
         updateRepoConfig.mock.lastCall?.[0].meta as (RepoDetails["meta"] & { tags?: Array<Tag> }) | undefined;
-      return { user, sentMeta };
+      return { user, sentMeta, updateRepoConfig, unmount };
     };
 
     test("shows and keeps the saved licence after going back, whether a plan or the title changes", async () => {
@@ -396,6 +400,43 @@ describe("ExportRepo", () => {
       loadTags(tags);
 
       await waitFor(() => expect(sentMeta()?.tags).toEqual(tags));
+    });
+
+    test("does not save record tags that load after the repository step was left", async () => {
+      let loadTags: (loaded: Array<Tag>) => void = () => {};
+      const { user, updateRepoConfig, unmount } = await renderDataverse(
+        props.repoDetails,
+        () =>
+          new Promise<Array<Tag>>((resolve) => {
+            loadTags = resolve;
+          }),
+      );
+      await user.type(screen.getByRole("textbox", { name: /Title/ }), "Survey data");
+      const savesBeforeLeaving = updateRepoConfig.mock.calls.length;
+      unmount();
+
+      loadTags([{ value: "soil", vocabulary: "RSpace", uri: "", version: "" }]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(updateRepoConfig).toHaveBeenCalledTimes(savesBeforeLeaving);
+    });
+
+    test("shows the saved Dryad funder after going back and stops sending it once cleared", async () => {
+      const { user, sentMeta } = await renderDataverse(
+        {
+          ...props.repoDetails,
+          meta: { ...props.repoDetails.meta, otherProperties: { funder: JSON.stringify({ name: "Wellcome Trust" }) } },
+        },
+        props.fetchTags,
+        { ...dataverseWithTwoLicences, repoName: "app.dryad", displayName: "Dryad" },
+      );
+      const funder = screen.getByRole("combobox", { name: /Granting Organization/ });
+      expect(funder).toHaveValue("Wellcome Trust");
+
+      await user.click(funder);
+      await user.click(screen.getByRole("button", { name: "Clear" }));
+
+      expect(sentMeta()?.otherProperties).toEqual({});
     });
 
     test("switches to a repository with fewer licences after the saved licence was restored", async () => {
