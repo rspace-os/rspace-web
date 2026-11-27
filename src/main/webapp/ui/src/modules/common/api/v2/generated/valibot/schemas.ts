@@ -44,6 +44,13 @@ export const BookingDisplayPreferencesSchema = native.BookingDisplayPreferences;
 export const BookingDisplayPreferencesReplacementSchema = native.BookingDisplayPreferencesReplacement;
 export const BookingEventKindSchema = native.BookingEventKind;
 export const BookingIncrementUnitSchema = native.BookingIncrementUnit;
+export const BookingNotificationPreferenceReplacementSchema = native.BookingNotificationPreferenceReplacement;
+export const BookingNotificationPreferencesSchema = native.BookingNotificationPreferences;
+export const BookingNotificationSubscriptionLookupSchema = native.BookingNotificationSubscriptionLookup;
+export const BookingNotificationSubscriptionReplacementSchema = native.BookingNotificationSubscriptionReplacement;
+export const BookingNotificationSubscriptionStatusSchema = native.BookingNotificationSubscriptionStatus;
+export const BookingNotificationSubscriptionStatusListSchema = native.BookingNotificationSubscriptionStatusList;
+export const BookingNotificationUnsubscribeResultSchema = native.BookingNotificationUnsubscribeResult;
 export const BookingOpeningHoursEntrySchema = native.BookingOpeningHoursEntry;
 export const BookingOwnerHealthSchema = native.BookingOwnerHealth;
 export const BookingSettingsDocumentSchema = native.BookingSettingsDocument;
@@ -313,6 +320,94 @@ export type SchemaModelTypeChecks = {
   BookingIncrementUnit: [
     Assert<Extends<v.InferOutput<typeof BookingIncrementUnitSchema>, Models.BookingIncrementUnit>>,
     Assert<Extends<Models.BookingIncrementUnit, v.InferOutput<typeof BookingIncrementUnitSchema>>>,
+  ];
+  BookingNotificationPreferenceReplacement: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationPreferenceReplacementSchema>,
+        Models.BookingNotificationPreferenceReplacement
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationPreferenceReplacement,
+        v.InferOutput<typeof BookingNotificationPreferenceReplacementSchema>
+      >
+    >,
+  ];
+  BookingNotificationPreferences: [
+    Assert<Extends<v.InferOutput<typeof BookingNotificationPreferencesSchema>, Models.BookingNotificationPreferences>>,
+    Assert<Extends<Models.BookingNotificationPreferences, v.InferOutput<typeof BookingNotificationPreferencesSchema>>>,
+  ];
+  BookingNotificationSubscriptionLookup: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationSubscriptionLookupSchema>,
+        Models.BookingNotificationSubscriptionLookup
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationSubscriptionLookup,
+        v.InferOutput<typeof BookingNotificationSubscriptionLookupSchema>
+      >
+    >,
+  ];
+  BookingNotificationSubscriptionReplacement: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationSubscriptionReplacementSchema>,
+        Models.BookingNotificationSubscriptionReplacement
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationSubscriptionReplacement,
+        v.InferOutput<typeof BookingNotificationSubscriptionReplacementSchema>
+      >
+    >,
+  ];
+  BookingNotificationSubscriptionStatus: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusSchema>,
+        Models.BookingNotificationSubscriptionStatus
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationSubscriptionStatus,
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusSchema>
+      >
+    >,
+  ];
+  BookingNotificationSubscriptionStatusList: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusListSchema>,
+        Models.BookingNotificationSubscriptionStatusList
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationSubscriptionStatusList,
+        v.InferOutput<typeof BookingNotificationSubscriptionStatusListSchema>
+      >
+    >,
+  ];
+  BookingNotificationUnsubscribeResult: [
+    Assert<
+      Extends<
+        v.InferOutput<typeof BookingNotificationUnsubscribeResultSchema>,
+        Models.BookingNotificationUnsubscribeResult
+      >
+    >,
+    Assert<
+      Extends<
+        Models.BookingNotificationUnsubscribeResult,
+        v.InferOutput<typeof BookingNotificationUnsubscribeResultSchema>
+      >
+    >,
   ];
   BookingOpeningHoursEntry: [
     Assert<Extends<v.InferOutput<typeof BookingOpeningHoursEntrySchema>, Models.BookingOpeningHoursEntry>>,

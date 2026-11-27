@@ -15,6 +15,7 @@ const bookerCapabilities = {
   canManageAllEvents: false,
   canCreateBlockout: false,
   canSubscribeCalendar: true,
+  canManageNotificationSubscription: false,
   canLeaveConfiguration: false,
 };
 

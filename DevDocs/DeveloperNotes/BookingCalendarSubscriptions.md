@@ -62,3 +62,9 @@ use "Unknown item" for these events and omit item details and links. Item feeds
 and one-time downloads still require current item read permission.
 
 A personal feed contains the user's requested bookings and the blockouts they created.
+
+With `innodb_snapshot_isolation=ON`, a personal notification subscription PUT
+joining an older snapshot can briefly return 409 when its current access read
+is rejected with MariaDB error 1020. It fails closed: the subscription is not
+changed. Retrying in a fresh transaction rechecks current permissions and
+returns 404 if access has been revoked.

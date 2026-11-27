@@ -45,6 +45,10 @@ public class EmailContentGenerator {
     return userLocaleService.getLocale();
   }
 
+  MessageSourceUtils getMessages() {
+    return messages;
+  }
+
   EmailContent fromHtmlFragment(String subject, String htmlFragment, Locale locale) {
     String html =
         "<html lang=\"%s\">\n<body>\n%s\n</body>\n</html>"
