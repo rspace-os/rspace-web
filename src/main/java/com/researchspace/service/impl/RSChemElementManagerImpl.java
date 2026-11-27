@@ -514,12 +514,7 @@ public class RSChemElementManagerImpl extends GenericManagerImpl<RSChemElement, 
       EcatChemistryFile chemistryFile, long fieldId, User user) throws IOException {
     ChemElementDataDto dto =
         ChemElementDataDto.builder()
-            .chemString(
-                chemistryProvider.convertToDefaultFormat(
-                    chemistryFile.getChemString(), chemistryFile.getFileName()))
-            .chemElementsFormat(chemistryProvider.defaultFormat().getLabel())
             .ecatChemFileId(chemistryFile.getId())
-            .fileName(chemistryFile.getName())
             .fieldId(fieldId)
             .fullWidth(1000)
             .fullHeight(1000)
