@@ -13,19 +13,19 @@ import {
 import { render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
+import type * as v from "valibot";
 import { vi } from "vitest";
-import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
-import type { BookingConfigurationsRead as DecodedBookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
+import type { BookingConfigurationsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { bookableItemFixtures } from "../mocks/bookableItemsMocks";
 
 /** Response bodies as JSON carries them, before the transport decodes their date-times. */
-type BookingConfigurationsRead = ApiV2Wire<DecodedBookingConfigurationsRead>;
+type BookingConfigurationsRead = v.InferInput<typeof BookingConfigurationsReadSchema>;
 
 export const configuration = {
   ...bookableItemFixtures[0],
