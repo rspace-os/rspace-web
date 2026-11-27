@@ -35,6 +35,7 @@
     <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
     <jsp:include page="/scripts/templates/blockUI.html"/>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
+    <jsp:include page="/common/otelConfig.jsp" />
 
     <sitemesh:write property='head'/>
 

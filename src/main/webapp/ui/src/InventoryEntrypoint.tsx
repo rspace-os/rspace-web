@@ -1,9 +1,10 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { onPageLoadWithOtel } from "./common/otel";
 import LoaderCircular from "./components/LoadingCircular";
 import I18nRoot from "./modules/common/i18n/I18nRoot";
 
-window.addEventListener("load", () => {
+onPageLoadWithOtel({ page: "inventory" }, () => {
   const domContainer = document.getElementById("app");
   window.scrollTo(0, 1);
 
