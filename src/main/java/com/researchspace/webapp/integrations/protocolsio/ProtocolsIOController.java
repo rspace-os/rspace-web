@@ -7,6 +7,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordInformation;
+import com.researchspace.model.record.RecordNames;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.protocolsio.PIOStepComponent;
 import com.researchspace.protocolsio.Protocol;
@@ -38,6 +39,9 @@ public class ProtocolsIOController extends BaseController {
   public static class PIOResponse {
     private List<RecordInformation> results;
     private Long importFolderId;
+
+    /** How many imported names had invalid characters replaced, so the UI can say so. */
+    private int renamedCount;
   }
 
   private @Autowired ProtocolsIOToDocumentConverter converter;
@@ -78,9 +82,13 @@ public class ProtocolsIOController extends BaseController {
 
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     Folder targetFolder = getTargetFolder(parentFolderId, subject);
+    int renamedCount = 0;
     for (Protocol protocol : protocols) {
       if (protocol.getSteps() != null) {
         protocol.orderComponents(PIOStepComponent.DisplayOrder);
+      }
+      if (RecordNames.hasInvalidCharacters(protocol.getTitle())) {
+        renamedCount++;
       }
       StructuredDocument importedProtocol =
           converter.generateFromProtocol(protocol, subject, targetFolder.getId());
@@ -88,7 +96,7 @@ public class ProtocolsIOController extends BaseController {
 
       shareIfParentFolderIdInSharedFolder(importedProtocol, parentFolderId, grandParentId, subject);
     }
-    PIOResponse response = new PIOResponse(results, targetFolder.getId());
+    PIOResponse response = new PIOResponse(results, targetFolder.getId(), renamedCount);
     return new AjaxReturnObject<>(response, null);
   }
 

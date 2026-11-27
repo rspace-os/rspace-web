@@ -60,6 +60,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    rejectInvalidRecordName(toCreate.getName(), errors);
     throwBindExceptionIfErrors(errors);
     Folder targetFolder = null;
     Folder originalParentFolder = null;

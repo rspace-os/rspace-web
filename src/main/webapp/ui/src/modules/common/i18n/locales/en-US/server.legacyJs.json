@@ -626,6 +626,7 @@
       "protocols": {
         "changeHandlerCalled": "Handler for .change() called.",
         "importFailed": "{0, plural, one {Couldn''t import selected protocol.} other {Couldn''t import selected protocols.}}",
+        "namesChanged": "{0, plural, one {RSpace names can''t contain \"/\", so it was replaced with \"-\" in the imported protocol name.} other {RSpace names can''t contain \"/\", so it was replaced with \"-\" in # imported protocol names.}}",
         "noResults": "No results found",
         "retrieveListFailed": "Could not retrieve the list of protocols.",
         "retrieveProtocolFailed": "Could not retrieve protocol {0} from Protocols.io",

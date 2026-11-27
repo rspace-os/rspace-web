@@ -546,6 +546,7 @@ $(document).ready(function () {
   }
 
   init();
+  showProtocolsIoRenamedNotice(workspaceSettings.parentFolderId);
   initFormListDlg();
   initWordChooserDlg();
   initCreateCalendarEntryDlg();

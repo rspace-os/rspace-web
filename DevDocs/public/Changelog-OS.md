@@ -6,6 +6,7 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 # Unreleased
 
+- RSDEV-1385 the API rejects names containing "/" with HTTP 400 when creating or renaming documents and creating folders or notebooks; protocols.io imports replace "/" with "-" in the document name and tell the user
 - RSDEV-1734 removes the ELN String field password option. Existing fields and older archive imports retain their values and defaults and display them as ordinary text.
 
 ## 2.28.1 2026-11-24

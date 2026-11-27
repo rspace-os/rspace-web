@@ -69,7 +69,11 @@ $(document).ready(function () {
 					type: "POST", contentType: "application/json;"
 				})
 					.done(function (response) {
+						var renamedCount = response.data.renamedCount;
 						if (isTinyMCEPlugin) {
+							if (renamedCount > 0) {
+								parent.RS.confirm(RS.msg("legacyjs.tinymce.protocols.namesChanged", renamedCount), 'notice', 8000);
+							}
 							//get list of recordInformation back and importFolder Id.
 							$.each(response.data.results, function (i, doc) {
 								//RA  would be better if this returned a Promise?
@@ -85,6 +89,9 @@ $(document).ready(function () {
 						} else {
 						  parent.RS.trackEvent("user:import:from_protocols_io:workspace");
 							var importFolderId = response.data.importFolderId;
+							if (renamedCount > 0) {
+								window.parent.rememberProtocolsIoRenamedNotice(importFolderId, renamedCount);
+							}
 							window.parent.RS.confirmAndNavigateTo(RS.msg("legacyjs.core.word.allImported"),
 								'success', 3000, window.parent.createURL('/workspace/' + importFolderId));
 						}

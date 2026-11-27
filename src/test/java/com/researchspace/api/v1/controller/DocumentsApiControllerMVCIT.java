@@ -874,6 +874,60 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  public void nameWithSlashIsRejectedOnCreateAndRename() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "text");
+    long initialDocCount = getCountOfEntityTable("StructuredDocument");
+    String slashNameJSON = "{ \"name\": \"a/b\" }";
+
+    MvcResult result =
+        this.mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/documents", anyUser, slashNameJSON))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+    assertNameWithSlashRejected(result);
+    assertEquals(initialDocCount, getCountOfEntityTable("StructuredDocument").longValue());
+
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForPut(
+                        API_VERSION.ONE, apiKey, "/documents/{id}", anyUser, doc.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(slashNameJSON))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+    assertNameWithSlashRejected(result);
+    assertEquals(doc.getName(), recordMgr.get(doc.getId()).getName());
+  }
+
+  @Test
+  public void unchangedOlderNameWithSlashCanBeSentBack() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(anyUser, "text");
+    // names with "/" stored before the API check existed
+    recordMgr.renameRecord("older/name", doc.getId(), anyUser);
+    String json =
+        "{ \"name\": \"older/name\", \"fields\": [ { \"content\": \"updatedContent\" } ] }";
+
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPut(
+                        API_VERSION.ONE, apiKey, "/documents/{id}", anyUser, doc.getId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiDocument updated = getFromJsonResponseBody(result, ApiDocument.class);
+    assertEquals("older/name", updated.getName());
+    assertEquals("updatedContent", updated.getFields().get(0).getContent());
+  }
+
+  @Test
   public void editDocumentErrorMessages() throws Exception {
 
     User anyUser = createInitAndLoginAnyUser();
