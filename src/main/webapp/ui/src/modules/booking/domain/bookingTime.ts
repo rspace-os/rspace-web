@@ -139,7 +139,7 @@ export function currentWallClock(
   };
 }
 
-export function instantToWallClockMinute(instant: string, date: string, timezone: string): number {
+export function instantToWallClockMinute(instant: Temporal.Instant | string, date: string, timezone: string): number {
   const wallClock = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).toPlainDateTime();
   const midnight = parsePlainDate(date).toPlainDateTime("00:00");
   return Number(wallClock.since(midnight, { largestUnit: "day" }).total("minutes"));
@@ -312,13 +312,18 @@ export function formatDurationMinutes(
  * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
  * as the cancel confirmation. Words follow the app language; the clock follows the browser region.
  */
-export function formatBookingPeriod(start: string, end: string, timezone: string, locale = bookingLocale()): string {
+export function formatBookingPeriod(
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
+  timezone: string,
+  locale = bookingLocale(),
+): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
     hourCycle: bookingHourCycle(),
     timeZone: timezone,
-  }).formatRange(new Date(start), new Date(end));
+  }).formatRange(Temporal.Instant.from(start).epochMilliseconds, Temporal.Instant.from(end).epochMilliseconds);
 }
 
 export function formatAgendaPeriod(

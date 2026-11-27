@@ -6,12 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { bookableItemsHandlers } from "../../bookable-items/mocks/bookableItemsMocks";
 import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
-import {
-  renderCalendar,
-  restoreCalendarScrollTo,
-  setupCalendarBookableItems,
-  setupCalendarScrollTo,
-} from "./calendarPageTestUtils";
+import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
+import { renderCalendar } from "./calendarTestHarness";
 
 beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());

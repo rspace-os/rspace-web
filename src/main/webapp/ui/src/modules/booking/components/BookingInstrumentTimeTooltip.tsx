@@ -2,11 +2,14 @@ import { Temporal } from "@js-temporal/polyfill";
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
   start?: Temporal.Instant | string;
   end?: Temporal.Instant | string;
+  /** Already formatted instrument-local text, for values that are not instants, such as weekly opening hours. */
+  time?: string;
   displayTimeZone: string;
   instrumentTimeZone: string | null | undefined;
   trigger?: ReactElement;
@@ -16,6 +19,7 @@ export type BookingInstrumentTimeTooltipProps = {
 export function BookingInstrumentTimeTooltip({
   start,
   end,
+  time,
   displayTimeZone,
   instrumentTimeZone,
   trigger,
@@ -25,7 +29,7 @@ export function BookingInstrumentTimeTooltip({
   const browserZone = browserTimeZone();
 
   const showTooltip =
-    !!start &&
+    (!!start || !!time) &&
     !!instrumentTimeZone &&
     (instrumentTimeZone !== displayTimeZone || (browserZone !== null && instrumentTimeZone !== browserZone));
 
@@ -37,15 +41,17 @@ export function BookingInstrumentTimeTooltip({
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    hourCycle: bookingHourCycle(),
     timeZoneName: "shortOffset",
     timeZone: instrumentTimeZone ?? "UTC",
   });
   const dateTime =
-    start && end
+    time ??
+    (start && end
       ? `${formatter.format(Temporal.Instant.from(start).epochMilliseconds)} – ${formatter.format(Temporal.Instant.from(end).epochMilliseconds)}`
       : start
         ? formatter.format(Temporal.Instant.from(start).epochMilliseconds)
-        : "";
+        : "");
   const tooltipTrigger = trigger ?? (
     <button
       type="button"
