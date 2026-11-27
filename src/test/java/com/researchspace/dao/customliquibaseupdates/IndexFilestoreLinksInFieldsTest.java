@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,6 +78,22 @@ class IndexFilestoreLinksInFieldsTest {
     task.fieldTransaction = new TransactionTemplate(txManager);
 
     assertThrows(IllegalStateException.class, () -> task.doExecute(null));
+
+    verify(fieldManager, never()).get(2L, null);
+  }
+
+  @Test
+  void aCommitWhoseRollbackAlsoFailsFailsTheUpdateSoItRunsAgain() {
+    // a connection killed at commit: Spring reports only the failed rollback, without the cause
+    Field field = TestFactory.createAnySDWithText("text").getFields().get(0);
+    when(fieldManager.get(1L, null)).thenReturn(Optional.of(field));
+    doThrow(new TransactionSystemException("Could not roll back Hibernate transaction"))
+        .when(txManager)
+        .commit(any());
+    IndexFilestoreLinksInFields task = taskOverFields(1L, 2L);
+    task.fieldTransaction = new TransactionTemplate(txManager);
+
+    assertThrows(TransactionSystemException.class, () -> task.doExecute(null));
 
     verify(fieldManager, never()).get(2L, null);
   }

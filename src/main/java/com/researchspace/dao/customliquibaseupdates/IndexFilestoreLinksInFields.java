@@ -13,6 +13,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.hibernate.exception.JDBCConnectionException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Indexes, once, the filestore links that documents already held before the link index. */
@@ -74,9 +75,14 @@ public class IndexFilestoreLinksInFields extends AbstractCustomLiquibaseUpdater 
     logger.info(getConfirmationMessage());
   }
 
+  /**
+   * A field transaction that cannot start or end. A commit lost with its connection reaches here
+   * only as the failed rollback that followed it, without the connection error as its cause.
+   */
   private static boolean databaseUnreachable(Throwable e) {
     return Stream.of(
             CannotCreateTransactionException.class,
+            TransactionSystemException.class,
             JDBCConnectionException.class,
             SQLTransientConnectionException.class,
             SQLNonTransientConnectionException.class,
