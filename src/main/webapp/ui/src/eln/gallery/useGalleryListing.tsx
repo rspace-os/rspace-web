@@ -1631,14 +1631,14 @@ export function useGalleryListing({
 
   async function getGalleryFiles(p: ReadonlyArray<GalleryFile>, s: GallerySection): Promise<void> {
     setErrorState(false);
+    setListingVersion((version) => version + 1);
+    setPageRequest(null);
     if (s === "NetworkFiles" && p.length === 0) {
       return getFilestores();
     }
     if (s === "NetworkFiles") {
       return getRemoteFiles(p);
     }
-    setListingVersion((version) => version + 1);
-    setPageRequest(null);
     selection.clear();
     clearAndSetGalleryListing([]);
     setLoading(true);
@@ -1728,6 +1728,8 @@ export function useGalleryListing({
         const files = parseGalleryFiles(data, token, p);
         setGalleryListing((listing) => [...listing, ...files]);
         setPage(pageRequest.page);
+        /* satisfied, so a later drop in page (a refresh after deletions) cannot fetch it again */
+        setPageRequest(null);
       } catch (e) {
         console.error(e);
         if (!superseded) setPageRequest(null);

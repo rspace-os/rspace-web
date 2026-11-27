@@ -147,6 +147,31 @@ describe("useGalleryListing", () => {
     expect(secondPageParams.get("pageNumber")).toBe("1");
   });
 
+  test("a refresh that leaves fewer pages does not fetch the dropped page again", async () => {
+    const user = userEvent.setup();
+    let totalPages = 2;
+    mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
+      const fixture = (params as URLSearchParams).get("pageNumber") === "0" ? page1 : page2;
+      return [200, { ...fixture, data: { ...fixture.data, items: { ...fixture.data.items, totalPages } } }];
+    });
+    const uploadedFilesCalls = () => mockAxios.history.get.filter(({ url }) => /getUploadedFiles/.test(url ?? ""));
+
+    render(<WrapperComponent />);
+    await user.click(await screen.findByRole("button", { name: "Load more" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+    });
+
+    // files were deleted, so the folder now fits on one page
+    totalPages = 1;
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    await waitFor(() => {
+      expect(uploadedFilesCalls()).toHaveLength(4);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(uploadedFilesCalls()).toHaveLength(4);
+  });
+
   test("null and missing owner fields should fall back safely", async () => {
     mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
       data: {
