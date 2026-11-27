@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
+import { textContents } from "@/__tests__/e2e/locatorTexts";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type MoveDialogSortField = "name" | "creationdate" | "modificationdate";
@@ -75,7 +76,7 @@ export class MoveDialog {
   }
 
   async visibleItemNames(): Promise<string[]> {
-    return this.tree.getByRole("list").last().getByRole("link").allTextContents();
+    return textContents(this.tree.getByRole("list").last().getByRole("link"));
   }
 
   async cancel(): Promise<void> {

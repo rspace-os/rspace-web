@@ -47,6 +47,8 @@ test.describe("Sharing workflows and permissions", () => {
     clientSysadmin,
     flowDocumentSession,
   }) => {
+    // Three actors log in and edit, then reload a shared document, which takes more than the default minute in Firefox.
+    test.setTimeout(120_000);
     const ownerUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eAdminOwner");
     const adminUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eSharingAdmin");
     const groupName = uniqueName("AdminSharingGroup");
@@ -111,6 +113,8 @@ test.describe("Sharing workflows and permissions", () => {
     clientSysadmin,
     flowDocumentSession,
   }) => {
+    // Four actors log in, which takes more than the default minute in Firefox.
+    test.setTimeout(120_000);
     const ownerUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eRemovedOwner");
     const adminUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eRemovingAdmin");
     const recipient = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eRemainingRecipient");
@@ -260,6 +264,8 @@ test.describe("Sharing workflows and permissions", () => {
     clientDocuments,
     flowDocumentSession,
   }) => {
+    // Three actors type into several TinyMCE fields, which takes more than the default minute in Firefox.
+    test.setTimeout(120_000);
     const recipient = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eTemplateRecipient");
     const reader = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eTemplateDocumentReader");
     const groupName = uniqueName("TemplateSharingGroup");

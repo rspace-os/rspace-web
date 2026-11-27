@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 
 export type MessageTypeLabel =
   | "Basic message"
@@ -58,7 +59,7 @@ export class SendMessageDialogComponent {
     if ((await res.text()).includes("error")) {
       const reasons = this.root.locator(".error");
       await reasons.first().waitFor({ state: "visible" });
-      throw new Error(`Sending message was rejected: ${(await reasons.allInnerTexts()).join("; ")}`);
+      throw new Error(`Sending message was rejected: ${(await innerTexts(reasons)).join("; ")}`);
     }
     await this.root.waitFor({ state: "hidden" });
   }

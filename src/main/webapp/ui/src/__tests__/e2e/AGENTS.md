@@ -225,6 +225,15 @@ return this.page.locator(`#div_rtf_${fieldId}`);
 XPath expressions are opaque to Playwright's retry mechanism and fail silently
 when the surrounding markup is refactored.
 
+## Pitfall: page-world locator methods crash Firefox
+
+`allInnerTexts()`, `allTextContents()`, `evaluate()`, `evaluateAll()` and
+`dispatchEvent()` resolve the locator in the page's own JavaScript world. A
+role or label locator read there and in Playwright's isolated world crashes
+Firefox 159 (microsoft/playwright#43967). Read texts with `innerTexts()` and
+`textContents()` from `locatorTexts.ts`, click with `click()`, and keep
+`evaluate()` to locators without a role or label name.
+
 ## Pitfall: don't grow god-class page objects
 
 A page object gets navigation + user-level actions for its own screen only.

@@ -1,5 +1,6 @@
 import type { Buffer } from "node:buffer";
 import { type Download, expect, type Locator, type Page } from "@playwright/test";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { assertOk } from "@/__tests__/e2e/responses";
 import { ToastsComponent } from "./ToastsComponent";
 
@@ -51,7 +52,7 @@ export class NotificationsDialogComponent {
   }
 
   async getNotificationTexts(): Promise<Array<string>> {
-    return this.root.locator("tr.notificationRow").allInnerTexts();
+    return innerTexts(this.root.locator("tr.notificationRow"));
   }
 
   async downloadExportArchive(rowText: string): Promise<Buffer> {
@@ -105,7 +106,7 @@ export class NotificationsDialogComponent {
     const originalUrl = this.page.url();
     await this.headerLink.click();
     await this.page.waitForURL((url) => url.pathname === "/dashboard");
-    const texts = await this.page.getByRole("row").allInnerTexts();
+    const texts = await innerTexts(this.page.getByRole("row"));
     await this.page.goto(originalUrl);
     return texts;
   }

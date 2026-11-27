@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
 // useOauthToken: needed by the static read-only table and the editable hook.
@@ -341,10 +342,16 @@ describe("StoichiometryTable", () => {
       routeNetwork();
     });
 
-    it("has no accessibility violations", async () => {
-      const { baseElement } = await renderLoadedTable();
+    describe("in English", () => {
+      // Check the real copy: in cimode the Delete button's aria-label and visible text are different keys,
+      // so axe's label-content-name-mismatch rule could never pass.
+      setupRealAppI18n();
 
-      await expectAccessible(baseElement);
+      it("has no accessibility violations", async () => {
+        const { baseElement } = await renderLoadedTable();
+
+        await expectAccessible(baseElement);
+      });
     });
 
     it("renders the table and displays molecule data", async () => {

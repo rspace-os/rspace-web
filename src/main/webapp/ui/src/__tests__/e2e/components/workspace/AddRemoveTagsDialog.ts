@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 
 export class AddRemoveTagsDialog {
   readonly root: Locator;
@@ -25,7 +26,7 @@ export class AddRemoveTagsDialog {
 
   /** Existing tag chips currently applied — excludes the "Add Tag" control itself. */
   async getTags(): Promise<string[]> {
-    const chips = await this.root.getByRole("button").allInnerTexts();
+    const chips = await innerTexts(this.root.getByRole("button"));
     const controlLabels = new Set(["add tag", "cancel", "save"]);
     return chips.filter((text) => !controlLabels.has(text.trim().toLowerCase()));
   }

@@ -45,6 +45,9 @@ export async function performLogin(page: Page, username: string, password: strin
   await loginPage.login(username, password);
   await page.waitForURL((url) => url.pathname === "/workspace");
   await new WorkspacePage(page).waitUntilLoaded();
+  // The toolbar renders before the workspace document finishes loading. In Firefox, a goto()
+  // started before then can fail with NS_BINDING_ABORTED.
+  await page.waitForLoadState("load");
 }
 
 export async function loginInNewContext(

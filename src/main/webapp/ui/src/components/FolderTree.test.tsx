@@ -215,7 +215,7 @@ describe("FolderTree", () => {
     await user.click(getTreeItemContent("Research Projects"));
 
     // the folder should be selected
-    expect(researchProjects).toHaveAttribute("aria-checked", "true");
+    expect(researchProjects).toHaveAttribute("aria-selected", "true");
 
     // the selected folder details should be displayed
     expect(await screen.findByTestId("selected-folder")).toBeVisible();
@@ -239,6 +239,32 @@ describe("FolderTree", () => {
     });
     // subfolders loaded and rendered
     expect(await screen.findByText("Subfolder 1")).toBeVisible();
+  });
+
+  test("A folder clicked before its subfolders load still expands", async () => {
+    let releaseSubfolders = (): void => {};
+    mockAxios.reset();
+    // Registered before setupApiMocks so this pending response wins for folder 100.
+    mockAxios.onGet(/\/api\/v1\/folders\/tree\/100$/).reply(
+      () =>
+        new Promise((resolve) => {
+          releaseSubfolders = () =>
+            resolve([200, { totalHits: 1, pageNumber: 0, records: [subFolderRecord(200, "Subfolder 1")] }]);
+        }),
+    );
+    setupApiMocks();
+    render(<TestFolderTreeExample />);
+
+    await screen.findByRole("treeitem", { name: "Research Projects" });
+    const researchProjects = getTreeItem("Research Projects");
+    await userEvent.setup().click(getTreeItemContent("Research Projects"));
+
+    expect(researchProjects).toHaveAttribute("aria-expanded", "true");
+    expect(within(researchProjects).getByText("common:folderTree.loading")).toBeVisible();
+
+    releaseSubfolders();
+    expect(await within(researchProjects).findByText("Subfolder 1")).toBeVisible();
+    expect(within(researchProjects).queryByText("common:folderTree.loading")).not.toBeInTheDocument();
   });
 
   test("Shows Load More button for folders with more than 20 items", async () => {
@@ -337,7 +363,7 @@ describe("FolderTree", () => {
     const matches = await screen.findAllByRole("treeitem", {
       name: /New Test Folder/,
     });
-    const newFolder = matches.find((item) => item.getAttribute("aria-checked") === "true");
+    const newFolder = matches.find((item) => item.getAttribute("aria-selected") === "true");
     expect(newFolder).toBeDefined();
     expect(newFolder).toBeVisible();
   });

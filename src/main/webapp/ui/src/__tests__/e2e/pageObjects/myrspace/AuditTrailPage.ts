@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import { innerTexts } from "@/__tests__/e2e/locatorTexts";
 import { BasePage } from "../BasePage";
 
 export type AuditDomain = "ELN" | "Inventory" | "Requests" | "Other";
@@ -103,35 +104,29 @@ export class AuditTrailPage extends BasePage {
   }
 
   async downloadReport(): Promise<string> {
-    // Every engine hides the payload somewhere different: Chromium/Firefox hand it over as a
-    // "download" then shred the response body, WebKit keeps the body but never says "download".
+    // The button opens /audit/download in a new tab. Engines differ in whether that response keeps
+    // its body or becomes a download, and WebKit 26.6 (Playwright 1.65) never finishes the
+    // download's stream. Fetch the routed request instead, then pass the response on unchanged.
     const context = this.page.context();
-    const settleTimeout = 15_000;
-    const downloadPromise = context.waitForEvent("download", { timeout: settleTimeout }).catch(() => null);
-    const responsePromise = context
-      .waitForEvent("response", {
-        predicate: (res) => res.url().includes("/audit/download"),
-        timeout: settleTimeout,
-      })
-      .catch(() => null);
-
-    await this.page.getByRole("button", { name: "Download Audit Report" }).click();
-
-    const response = await responsePromise;
-    if (response) {
+    const url = (target: URL) => target.pathname === "/audit/download";
+    const { promise: report, resolve, reject } = Promise.withResolvers<string>();
+    await context.route(url, async (route) => {
       try {
-        return await response.text();
-      } catch {
-        // Fall through to the download event below.
+        const response = await route.fetch();
+        const body = await response.text();
+        resolve(body);
+        await route.fulfill({ response, body });
+      } catch (error) {
+        reject(error);
+        throw error;
       }
+    });
+    try {
+      await this.page.getByRole("button", { name: "Download Audit Report" }).click();
+      return await report;
+    } finally {
+      await context.unroute(url);
     }
-    const download = await downloadPromise;
-    if (!download) throw new Error("downloadReport: neither a response body nor a download event was available.");
-    const stream = await download.createReadStream();
-    if (!stream) throw new Error("downloadReport: download had no read stream.");
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk as Buffer);
-    return Buffer.concat(chunks).toString("utf-8");
   }
 
   async hitCount(): Promise<number> {
@@ -152,7 +147,7 @@ export class AuditTrailPage extends BasePage {
   }
 
   private async columnIndex(headerName: string): Promise<number> {
-    const headers = await this.page.locator("#renderedTable").getByRole("columnheader").allInnerTexts();
+    const headers = await innerTexts(this.page.locator("#renderedTable").getByRole("columnheader"));
     const index = headers.findIndex((header) => header.trim() === headerName);
     if (index === -1) throw new Error(`columnIndex: no "${headerName}" column header found`);
     return index;

@@ -17,9 +17,10 @@ export class RecordInfoDialog {
   }
 
   async field(name: string): Promise<string> {
-    const labelCell = this.root.getByRole("cell", { name: `${name}:`, exact: true });
-    const value = await labelCell.evaluate((el) => el.nextElementSibling?.textContent?.trim() ?? "");
-    return value;
+    // Not evaluate(): see locatorTexts.ts. A filter's `has` locator is matched inside each row, so it starts from the page.
+    const labelCell = this.root.page().getByRole("cell", { name: `${name}:`, exact: true });
+    const value = await this.root.getByRole("row").filter({ has: labelCell }).getByRole("cell").nth(1).textContent();
+    return value?.trim() ?? "";
   }
 
   async getTags(): Promise<string[]> {
