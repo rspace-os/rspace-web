@@ -94,8 +94,20 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     Map<Long, Long> oldParent2NewParent = new HashMap<>();
     Map<Long, Long> oldAnnoId2NewAnnoId = new HashMap<>();
     Map<Long, Long> oldSketchId2NewSketchId = new HashMap<>();
+    // a legacy link resolves to the oldest annotation of its field and image, which the parser
+    // found for it, so the lowest ID listed for that field and image
+    Map<String, Long> legacyLink2OldAnnoId = new HashMap<>();
 
     for (EcatImageAnnotation origAnn : imageAnns) {
+      if (!origAnn.isSketch()) {
+        legacyLink2OldAnnoId.merge(
+            origAnn.getParentId() + "-" + origAnn.getImageId(), origAnn.getId(), Math::min);
+      }
+      // several links can share one annotation; copy it once
+      if (oldAnnoId2NewAnnoId.containsKey(origAnn.getId())
+          || oldSketchId2NewSketchId.containsKey(origAnn.getId())) {
+        continue;
+      }
       boolean permitted = canUserCopyElement(origAnn, user);
       if (permitted) {
         EcatImageAnnotation copyAnn = origAnn.shallowCopy();
@@ -115,7 +127,7 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     if (!oldParent2NewParent.isEmpty()) {
       updatedContent =
           updater.updateImageIdsAndAnnoIdsInCopy(
-              oldParent2NewParent, oldAnnoId2NewAnnoId, updatedContent);
+              oldParent2NewParent, oldAnnoId2NewAnnoId, legacyLink2OldAnnoId, updatedContent);
     }
     if (!oldSketchId2NewSketchId.isEmpty()) {
       updatedContent = updater.updateSketchIdsInCopy(oldSketchId2NewSketchId, updatedContent);

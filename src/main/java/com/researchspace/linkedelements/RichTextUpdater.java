@@ -32,6 +32,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -459,6 +460,26 @@ public class RichTextUpdater {
    */
   public String updateImageIdsAndAnnoIdsInCopy(
       Map<Long, Long> oldParent2NewParent, Map<Long, Long> oldAnnoId2NewAnnoId, String fieldData) {
+    return updateImageIdsAndAnnoIdsInCopy(
+        oldParent2NewParent, oldAnnoId2NewAnnoId, Collections.emptyMap(), fieldData);
+  }
+
+  /**
+   * Updates image and annotation links in copied field content.
+   *
+   * @param oldParent2NewParent source field ID to copied field ID
+   * @param oldAnnoId2NewAnnoId source annotation ID to copied annotation ID
+   * @param legacyLink2OldAnnoId source "fieldId-imageId" to the source annotation that a legacy
+   *     <code>/image/getImage/</code> link with that ID resolves to. Such links become explicit
+   *     links to the copied annotation, as the copy's own oldest annotation may be a different one.
+   * @param fieldData the copied content
+   * @return the updated content
+   */
+  public String updateImageIdsAndAnnoIdsInCopy(
+      Map<Long, Long> oldParent2NewParent,
+      Map<Long, Long> oldAnnoId2NewAnnoId,
+      Map<String, Long> legacyLink2OldAnnoId,
+      String fieldData) {
 
     if (StringUtils.isBlank(fieldData)) {
       return fieldData;
@@ -477,8 +498,18 @@ public class RichTextUpdater {
         if (newFld != null) {
           el.attr("id", newFld + "-" + oldImg);
           String src = el.attr("src");
+          Long legacyOldAnnoId =
+              el.hasAttr(DATA_ID) || !isLegacyImageURL(src)
+                  ? null
+                  : legacyLink2OldAnnoId.get(oldId);
+          Long legacyAnnoId =
+              legacyOldAnnoId == null ? null : oldAnnoId2NewAnnoId.get(legacyOldAnnoId);
           if (src.startsWith("/thumbnail/data")) {
             el.attr("src", withThumbnailParentId(src, newFld));
+          } else if (legacyAnnoId != null) {
+            el.attr(DATA_ID, "" + legacyAnnoId);
+            el.attr(DATA_TYPE, DATA_TYPE_ANNOTATION);
+            el.attr("src", GET_ANNOTATION_URL + legacyAnnoId + "/" + randomGenerator.nextLong());
           } else {
             el.attr(
                 "src", GET_IMAGE_URL + newFld + "-" + oldImg + "/" + randomGenerator.nextLong());

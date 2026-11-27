@@ -18,6 +18,7 @@ import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatImageAnnotation;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
@@ -99,6 +100,51 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
         .startsWith("/thumbnail/data")
         .contains("sourceId=" + original.getImageId() + "&")
         .contains("sourceParentId=" + copiedField.getId() + "&");
+  }
+
+  @Test
+  public void copyKeepsTheAnnotationALegacyLinkResolvedTo() throws Exception {
+    StructuredDocument document = createBasicDocumentInRootFolderWithText(user, "any");
+    Field field = document.getFields().get(0);
+    EcatImage image = addImageToGallery(user);
+    EcatImageAnnotation older = saveNewAnnotation(field, image, "older");
+    EcatImageAnnotation newer = saveNewAnnotation(field, image, "newer");
+    String compositeId = field.getId() + "-" + image.getId();
+    // the newer annotation's explicit link comes first, so it is copied first
+    field.setFieldData(
+        updater.generateAnnotatedImageElement(newer, field.getId() + "")
+            + "<img id=\""
+            + compositeId
+            + "\" class=\"imageDropped\" src=\"/image/getImage/"
+            + compositeId
+            + "/1\" alt=\"image\" />");
+    recordMgr.save(document, user);
+
+    StructuredDocument copy =
+        (StructuredDocument) documentCopyManager.copy(document, "copy", user, null).getUniqueCopy();
+
+    Field copiedField = copy.getFields().get(0);
+    Elements images = Jsoup.parse(copiedField.getFieldData()).select("img.imageDropped");
+    assertThat(images).hasSize(2);
+    assertEquals(
+        newer.getAnnotations(),
+        imageAnnotationDao.get(Long.valueOf(images.get(0).attr("data-id"))).getAnnotations());
+    assertEquals(
+        older.getAnnotations(),
+        imageAnnotationDao.get(Long.valueOf(images.get(1).attr("data-id"))).getAnnotations());
+    assertThat(images.get(1).attr("src")).startsWith("/image/getAnnotation/");
+  }
+
+  private EcatImageAnnotation saveNewAnnotation(Field field, EcatImage image, String strokes)
+      throws IOException {
+    return mediaMgr.saveImageAnnotation(
+        getTestZwibblerAnnotationString(strokes),
+        getImageBytes(),
+        field.getId(),
+        field.getStructuredDocument(),
+        image.getId(),
+        null,
+        user);
   }
 
   @Test
