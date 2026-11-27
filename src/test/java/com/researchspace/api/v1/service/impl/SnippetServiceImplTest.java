@@ -40,6 +40,7 @@ class SnippetServiceImplTest {
 
   @InjectMocks private SnippetServiceImpl service;
 
+  private final Folder galleryRoot = mock(Folder.class);
   private User user;
 
   @BeforeEach
@@ -104,13 +105,7 @@ class SnippetServiceImplTest {
     assertEquals(Optional.of(readable), service.getGalleryParentFolder(snippet, user));
   }
 
-  private Folder galleryRoot;
-
   private Folder sharedFolderInGallery(boolean readable) {
-    if (galleryRoot == null) {
-      galleryRoot = mock(Folder.class);
-      when(folderManager.getGalleryRootFolderForUser(user)).thenReturn(galleryRoot);
-    }
     Folder folder = mock(Folder.class);
     RSPath pathToGalleryRoot = mock(RSPath.class);
     when(pathToGalleryRoot.isEmpty()).thenReturn(false);
@@ -120,11 +115,12 @@ class SnippetServiceImplTest {
   }
 
   private Snippet snippetSharedInto(Folder... folders) {
+    when(folderManager.getGalleryRootFolderForUser(user)).thenReturn(galleryRoot);
     Snippet snippet = mock(Snippet.class);
     User owner = new User();
     owner.setUsername("bob");
     when(snippet.getOwner()).thenReturn(owner);
-    when(snippet.getOwnerParent()).thenReturn(Optional.of(mock(Folder.class)));
+    when(snippet.getOwnerParent()).thenReturn(Optional.empty());
     Set<RecordToFolder> parents = new LinkedHashSet<>();
     for (Folder folder : folders) {
       RecordToFolder relation = mock(RecordToFolder.class);

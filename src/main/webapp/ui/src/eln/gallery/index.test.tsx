@@ -107,6 +107,52 @@ function folderDetails({
   };
 }
 
+function snippetListing({
+  id,
+  globalId,
+  name,
+  parentId,
+}: {
+  id: number;
+  globalId: string;
+  name: string;
+  parentId: number;
+}) {
+  return {
+    data: {
+      parentId,
+      items: {
+        totalHits: 1,
+        totalPages: 1,
+        results: [
+          {
+            id,
+            oid: { idString: globalId },
+            name,
+            ownerId: 1,
+            ownerFullName: "Test User",
+            ownerUsername: "testuser",
+            description: null,
+            creationDate: 1672531200,
+            modificationDate: 1672531200,
+            type: "Snippet",
+            systemFolder: false,
+            sharedFolder: false,
+            extension: "txt",
+            thumbnailId: null,
+            size: 512,
+            version: 1,
+            originalImageOid: { idString: globalId },
+          },
+        ],
+      },
+    },
+    error: null,
+    success: true,
+    errorMsg: null,
+  };
+}
+
 /**
  * Mirror the network stubs the Playwright spec installed via `router.route`,
  * for the endpoints the Gallery (and its providers) hit on mount. All of these
@@ -328,39 +374,9 @@ describe("Gallery", () => {
         name: "shared snippet",
         parentFolderId: 123,
       });
-      mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
-        data: {
-          parentId: 123,
-          items: {
-            totalHits: 1,
-            totalPages: 1,
-            results: [
-              {
-                id: 634,
-                oid: { idString: "ST634" },
-                name: "shared snippet",
-                ownerId: 1,
-                ownerFullName: "Test User",
-                ownerUsername: "testuser",
-                description: null,
-                creationDate: 1672531200,
-                modificationDate: 1672531200,
-                type: "Snippet",
-                systemFolder: false,
-                sharedFolder: false,
-                extension: "txt",
-                thumbnailId: null,
-                size: 512,
-                version: 1,
-                originalImageOid: { idString: "ST634" },
-              },
-            ],
-          },
-        },
-        error: null,
-        success: true,
-        errorMsg: null,
-      });
+      mockAxios
+        .onGet("/gallery/getUploadedFiles")
+        .reply(200, snippetListing({ id: 634, globalId: "ST634", name: "shared snippet", parentId: 123 }));
       server.use(
         http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
           HttpResponse.json({ data: [], error: null, success: true }),
@@ -372,8 +388,9 @@ describe("Gallery", () => {
       await waitFor(() => {
         expect(screen.getByRole("gridcell", { name: /shared snippet/ })).toHaveAttribute("aria-selected", "true");
       });
-      expect(mockAxios.history.get.map(({ url }) => url)).toContain("/api/v1/snippets/634");
-      expect(mockAxios.history.get.map(({ url }) => url)).not.toContain("/api/v1/files/634");
+      const requestedUrls = mockAxios.history.get.map(({ url }) => url);
+      expect(requestedUrls).toContain("/api/v1/snippets/634");
+      expect(requestedUrls).not.toContain("/api/v1/files/634");
     });
 
     test("A snippet with no Gallery folder the user can open says so", async () => {
@@ -796,40 +813,9 @@ describe("Gallery", () => {
     test("Saving a snippet share from Gallery should surface the success alert", async () => {
       const user = userEvent.setup();
 
-      // A single snippet in the listing.
-      mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
-        data: {
-          parentId: 1,
-          items: {
-            totalHits: 1,
-            totalPages: 1,
-            results: [
-              {
-                id: 3,
-                oid: { idString: "SD3" },
-                name: "My Snippet",
-                ownerId: 1,
-                ownerFullName: "Test User",
-                ownerUsername: "testuser",
-                description: null,
-                creationDate: 1672531200,
-                modificationDate: 1672531200,
-                type: "Snippet",
-                systemFolder: false,
-                sharedFolder: false,
-                extension: "txt",
-                thumbnailId: null,
-                size: 512,
-                version: 1,
-                originalImageOid: { idString: "SD3" },
-              },
-            ],
-          },
-        },
-        error: null,
-        success: true,
-        errorMsg: null,
-      });
+      mockAxios
+        .onGet("/gallery/getUploadedFiles")
+        .reply(200, snippetListing({ id: 3, globalId: "SD3", name: "My Snippet", parentId: 1 }));
       server.use(
         http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
           HttpResponse.json({ data: [], error: null, success: true }),

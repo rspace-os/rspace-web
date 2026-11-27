@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.record.Snippet;
 import lombok.Data;
@@ -17,7 +16,6 @@ public class ApiSnippet extends IdentifiableNameableApiObject {
   private String content;
 
   /** The folder through which the requesting user reaches this snippet in their Gallery. */
-  @JsonProperty("parentFolderId")
   private Long parentFolderId;
 
   public ApiSnippet(Snippet snippet) {
