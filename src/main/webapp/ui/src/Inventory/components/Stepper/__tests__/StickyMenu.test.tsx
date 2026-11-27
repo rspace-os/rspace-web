@@ -7,7 +7,6 @@ import { observer } from "mobx-react-lite";
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import { makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
@@ -70,11 +69,9 @@ describe("StickyMenu selection scope", () => {
     ));
     const view = (
       <ThemeProvider theme={materialTheme}>
-        <DeploymentPropertyContext.Provider value={new Map()}>
-          <storesContext.Provider value={rootStore}>
-            <Menus />
-          </storesContext.Provider>
-        </DeploymentPropertyContext.Provider>
+        <storesContext.Provider value={rootStore}>
+          <Menus />
+        </storesContext.Provider>
       </ThemeProvider>
     );
     render(view);
