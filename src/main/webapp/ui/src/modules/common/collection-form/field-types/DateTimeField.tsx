@@ -6,11 +6,16 @@ import { FormField } from "../FormField";
 import { emptyNullableValue } from "../fieldValues";
 import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
 
+function localInputValue(instant: Temporal.Instant): string {
+  return instant.toZonedDateTimeISO(Temporal.Now.timeZoneId()).toPlainDateTime().toString({ smallestUnit: "minute" });
+}
+
+/** A decoded REST API v2 instant or wire text, as the browser-local `datetime-local` value. */
 function toInputValue(value: unknown): string {
+  if (value instanceof Temporal.Instant) return localInputValue(value);
   if (typeof value !== "string" || value === "") return "";
   const instant = parseInstant(value);
-  if (instant === null) return value.slice(0, 16);
-  return instant.toZonedDateTimeISO(Temporal.Now.timeZoneId()).toPlainDateTime().toString({ smallestUnit: "minute" });
+  return instant === null ? value.slice(0, 16) : localInputValue(instant);
 }
 
 function fromInputValue(value: string, nullable: boolean | undefined): string | null | undefined {
