@@ -6,13 +6,7 @@ import type { FilterOperator } from "@/modules/common/collection/filterOperators
 import { useFieldLabels } from "@/modules/common/collection/useFieldLabels";
 import { Button } from "@/modules/common/ui/button";
 import type { TableListRuntimeFields } from "../types";
-import {
-  type DraftRule,
-  defaultOperator,
-  namespaceForSentinel,
-  sentinelFor,
-  valueForOperator,
-} from "../utils/filterDrafts";
+import { type DraftRule, defaultOperator, valueForOperator } from "../utils/filterDrafts";
 import { CustomFieldPicker, type RuntimeFieldSourceGroup, runtimeFieldGroupKey } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
 import { FilterValueInput } from "./FilterValueInput";
@@ -31,6 +25,18 @@ const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${Filter
   matches: "tableList.filters.operators.matches",
   exists: "tableList.filters.operators.exists",
 };
+
+// Selector names match [A-Za-z][A-Za-z0-9_-]* (dotted for related fields), so a value with ":" is never a field.
+const CUSTOM_FIELD_OPTION_PREFIX = "customField:";
+
+/** The field select's value for a runtime-field group's "Custom field…" option. */
+export function customFieldOptionValue(groupKey: string): string {
+  return `${CUSTOM_FIELD_OPTION_PREFIX}${groupKey}`;
+}
+
+function customFieldOptionGroup(value: string): string | null {
+  return value.startsWith(CUSTOM_FIELD_OPTION_PREFIX) ? value.slice(CUSTOM_FIELD_OPTION_PREFIX.length) : null;
+}
 
 export function FilterRuleRow<TDocument>({
   rule,
@@ -61,11 +67,11 @@ export function FilterRuleRow<TDocument>({
   const { t } = useTranslation<Namespace>("common");
   const { text, fieldOptionLabel } = useFieldLabels();
   const chosen = fields.find((candidate) => candidate.name === rule.field);
-  const sentinelNamespace = namespaceForSentinel(String(rule.field));
-  const pickingGroup = runtimeFieldGroupKey(runtimeSourceGroups, String(rule.field), chosen?.origin?.namespace ?? null);
+  const pickingGroup =
+    rule.pickingGroup ?? runtimeFieldGroupKey(runtimeSourceGroups, chosen?.origin?.namespace ?? null);
   const sourceGroup = runtimeSourceGroups.find((candidate) => candidate.key === pickingGroup) ?? null;
   const field = chosen ?? fields[0];
-  const awaitingDefinition = sentinelNamespace !== null;
+  const awaitingDefinition = rule.pickingGroup !== undefined;
   if (!field) return null;
   const operatorControl = awaitingDefinition ? null : (
     <FilterSelect
@@ -120,7 +126,7 @@ export function FilterRuleRow<TDocument>({
       onSelect={(namespace, definition) => {
         runtimeFields.onSelect(namespace, definition);
         const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
-        onChange({ field: selector, operator: "equals", value: "" });
+        onChange({ field: selector, operator: "equals", value: "", pickingGroup: undefined });
       }}
     />
   );
@@ -139,15 +145,21 @@ export function FilterRuleRow<TDocument>({
           clear: t("tableList.filters.fieldSearch.clear"),
           trigger: t("tableList.filters.fieldSearch.trigger"),
         }}
-        value={pickingGroup === null ? String(rule.field) : sentinelFor(pickingGroup)}
+        value={pickingGroup === null ? String(rule.field) : customFieldOptionValue(pickingGroup)}
         onChange={(next) => {
-          const namespace = namespaceForSentinel(next);
-          if (namespace !== null) {
-            onChange({ field: sentinelFor(namespace) as SearchSelector<TDocument>, value: "" });
+          const group = customFieldOptionGroup(next);
+          if (group !== null) {
+            onChange({ pickingGroup: group, value: "" });
             return;
           }
           const nextField = fields.find((candidate) => String(candidate.name) === next);
-          if (nextField) onChange({ field: nextField.name, operator: defaultOperator(nextField), value: "" });
+          if (nextField)
+            onChange({
+              field: nextField.name,
+              operator: defaultOperator(nextField),
+              value: "",
+              pickingGroup: undefined,
+            });
         }}
       />
       {sourceGroup === null ? operatorControl : <div className="sm:col-span-2">{runtimeFieldPicker}</div>}

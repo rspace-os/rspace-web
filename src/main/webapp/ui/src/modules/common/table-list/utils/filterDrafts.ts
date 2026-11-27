@@ -11,6 +11,8 @@ export type DraftRule<TDocument> = {
   operator: FilterOperator;
   value: DraftValue;
   original?: { field: SearchSelector<TDocument>; value: FilterValue };
+  /** The runtime-field group the user is choosing a definition from; the rule has no field until they pick one. */
+  pickingGroup?: string;
 };
 
 export function comparisonNodes<TDocument>(
@@ -80,17 +82,8 @@ export function parsedValue<TDocument>(rule: DraftRule<TDocument>, field: Resolv
   return parse(scalarValue(rule.value).trim());
 }
 
-const CUSTOM_FIELD_SENTINEL = "\u0000customField";
-
-export function sentinelFor(namespace: string): string {
-  return `${CUSTOM_FIELD_SENTINEL}:${namespace}`;
-}
-
-export function namespaceForSentinel(value: string): string | null {
-  return value.startsWith(`${CUSTOM_FIELD_SENTINEL}:`) ? value.slice(CUSTOM_FIELD_SENTINEL.length + 1) : null;
-}
-
 export function isActive<TDocument>(rule: DraftRule<TDocument>): boolean {
+  if (rule.pickingGroup !== undefined) return false;
   if (rule.operator === "in" || rule.operator === "notIn") {
     return listValue(rule.value).length > 0;
   }

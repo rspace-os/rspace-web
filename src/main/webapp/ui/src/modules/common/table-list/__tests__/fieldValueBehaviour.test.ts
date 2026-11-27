@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { valueBehaviourOf } from "../fieldValueBehaviour";
 import type { FilterValue } from "../types";
-import { comparisonNodes, parsedValue } from "../utils/filterDrafts";
+import { comparisonNodes, isActive, parsedValue } from "../utils/filterDrafts";
 
 type Row = { value: unknown };
 const capabilities = { sortable: true, filterOperators: [], supportsWildcards: false };
@@ -79,6 +79,12 @@ describe("filter drafts", () => {
     const parsed = parsedValue(rule, dateTime);
     expect(parsed).toBeInstanceOf(Temporal.Instant);
     expect(String(parsed)).toBe("2026-03-01T10:00:00Z");
+  });
+
+  it("does not apply a rule that is still picking a custom field", () => {
+    const rule = { id: 1, field: "value", operator: "exists", value: "" } as const;
+    expect(isActive<Row>(rule)).toBe(true);
+    expect(isActive<Row>({ ...rule, pickingGroup: "" })).toBe(false);
   });
 
   describe("in Europe/Berlin", () => {
