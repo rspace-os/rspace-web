@@ -21,6 +21,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,6 +49,7 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   private @Autowired InventoryBulkOperationHandler bulkOperationHandler;
   private @Autowired InstrumentTemplatePostValidator postValidator;
   private @Autowired InstrumentTemplatePutValidator putValidator;
+  private @Autowired UserManager userManager;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   @Override
@@ -254,12 +256,27 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeInstrumentTemplateOwner(
+        id, incomingTemplate, errors, user, userManager.getOriginalUserForOperateAs(user));
+  }
+
+  /**
+   * Transfers the template with the permissions of {@code subject} and records {@code actor}, the
+   * original sysadmin when operating as another user, as the transferring user.
+   */
+  public ApiInstrumentTemplate changeInstrumentTemplateOwner(
+      Long id,
+      ApiInstrumentTemplate incomingTemplate,
+      BindingResult errors,
+      User subject,
+      User actor)
+      throws BindException {
     throwBindExceptionIfErrors(errors);
     incomingTemplate.setIdIfNotSet(id);
-    instrumentApiMgr.assertUserCanTransferInstrumentTemplate(id, user);
+    instrumentApiMgr.assertUserCanTransferInstrumentTemplate(id, subject);
 
     ApiInstrumentTemplate updated =
-        instrumentApiMgr.changeApiInstrumentTemplateOwner(incomingTemplate, user);
+        instrumentApiMgr.changeApiInstrumentTemplateOwner(incomingTemplate, subject, actor);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }

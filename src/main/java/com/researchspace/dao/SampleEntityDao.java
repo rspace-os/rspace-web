@@ -27,4 +27,10 @@ public interface SampleEntityDao<T extends SampleEntity> extends GenericDao<T, L
    * @return the saved entity
    */
   T saveAndReindexSubSamples(T sample);
+
+  /**
+   * Reloads the record's current state under its row lock, keeping the session's instance; see
+   * {@code InventoryDaoHibernate#refreshForUpdate}.
+   */
+  void refreshForUpdate(T record);
 }

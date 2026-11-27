@@ -17,6 +17,7 @@ import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.GroupDao;
+import com.researchspace.dao.UserGroupDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -87,6 +88,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   private @Autowired InventoryLinkManager inventoryLinkManager;
   private @Autowired InventoryEditLockTracker tracker;
   private @Autowired GroupDao groupDao;
+  private @Autowired UserGroupDao userGroupDao;
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
   @Autowired @Lazy private DocumentTagManager documentTagManager;
   private @Autowired FileStoreMetaManager fileMetaManagerImpl;
@@ -738,6 +740,17 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
 
     return ApiInventoryEditLockStatus.LOCKED_OK.equals(apiLock.getStatus());
+  }
+
+  /**
+   * Checks that {@code subject} may still transfer {@code record}, which the caller has just
+   * refreshed under its row lock, reading group authority under shared locks. Call after {@link
+   * #lockItemForEdit}.
+   */
+  protected void assertStillTransferable(InventoryRecord record, User subject) {
+    boolean hasCurrentGroupAuthority =
+        userGroupDao.hasLockedTransferAuthority(subject, record.getOwner());
+    invPermissions.assertUserCanTransferInventoryRecord(record, subject, hasCurrentGroupAuthority);
   }
 
   /** Unlocks the locked item so other users can edit again. */

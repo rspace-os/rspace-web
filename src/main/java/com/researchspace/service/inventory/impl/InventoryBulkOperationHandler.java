@@ -30,8 +30,11 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -108,7 +111,9 @@ public class InventoryBulkOperationHandler {
         return runOperationForWholeBulkList(bulkOpConfig, this::moveAllRecordsFromList);
       case CHANGE_OWNER:
         return runOperationForEachRecordFromBulkList(
-            bulkOpConfig, this::changeInventoryRecordOwner);
+            bulkOpConfig,
+            (record, user) -> changeInventoryRecordOwner(record, user, bulkOpConfig.getActor()),
+            recordsInLockOrder(bulkOpConfig.getRecords()));
       default:
         throw new IllegalStateException("unhandled operation for type: " + operationType);
     }
@@ -117,6 +122,44 @@ public class InventoryBulkOperationHandler {
   private ApiInventoryBulkOperationResult runOperationForEachRecordFromBulkList(
       InventoryBulkOperationConfig bulkOpConfig,
       BiFunction<ApiInventoryRecordInfo, User, ApiInventoryRecordInfo> operation) {
+    return runOperationForEachRecordFromBulkList(bulkOpConfig, operation, null);
+  }
+
+  /**
+   * Request order, except that records with an id are visited in (type, id) order across the
+   * positions they occupy. Each transfer takes its record's row lock until the batch commits, so
+   * two overlapping batches take those row locks in the same order. Workbench rows that transfers
+   * move items between are not ordered.
+   */
+  private static List<Integer> recordsInLockOrder(List<ApiInventoryRecordInfo> records) {
+    if (records == null) {
+      return null;
+    }
+    List<Integer> order = new ArrayList<>(IntStream.range(0, records.size()).boxed().toList());
+    List<Integer> lockedPositions =
+        order.stream()
+            .filter(i -> records.get(i).getType() != null && records.get(i).getId() != null)
+            .toList();
+    List<Integer> lockedInOrder =
+        lockedPositions.stream()
+            .sorted(
+                Comparator.comparing((Integer i) -> records.get(i).getType())
+                    .thenComparing(i -> records.get(i).getId()))
+            .toList();
+    for (int k = 0; k < lockedPositions.size(); k++) {
+      order.set(lockedPositions.get(k), lockedInOrder.get(k));
+    }
+    return order;
+  }
+
+  /**
+   * @param processingOrder request indices in the order to process them, or null for request order;
+   *     results are always reported in request order
+   */
+  private ApiInventoryBulkOperationResult runOperationForEachRecordFromBulkList(
+      InventoryBulkOperationConfig bulkOpConfig,
+      BiFunction<ApiInventoryRecordInfo, User, ApiInventoryRecordInfo> operation,
+      List<Integer> processingOrder) {
     ApiInventoryBulkOperationResult result = new ApiInventoryBulkOperationResult();
     List<ApiInventoryRecordInfo> records = bulkOpConfig.getRecords();
     User user = bulkOpConfig.getUser();
@@ -127,7 +170,14 @@ public class InventoryBulkOperationHandler {
     // succeeded, so it is scoped to DELETE.
     boolean isDeleteOperation = bulkOpConfig.getOperationType() == BulkApiOperationType.DELETE;
     if (records != null) {
-      for (ApiInventoryRecordInfo recInfo : records) {
+      List<Integer> order =
+          processingOrder != null
+              ? processingOrder
+              : IntStream.range(0, records.size()).boxed().toList();
+      List<Integer> processedIndices = new ArrayList<>();
+      for (int index : order) {
+        ApiInventoryRecordInfo recInfo = records.get(index);
+        processedIndices.add(index);
         try {
           if (!onErrorStopWithException) {
             validateRecordWithMvcValidator(recInfo);
@@ -153,10 +203,12 @@ public class InventoryBulkOperationHandler {
           ApiError error = convertExceptionToApiError(e);
           result.addError(error);
           if (onErrorStopWithException) {
+            result.sortResultsByRequestIndex(processedIndices);
             throw new InventoryBulkOperationException(error, result);
           }
         }
       }
+      result.sortResultsByRequestIndex(processedIndices);
     }
     return result;
   }
@@ -328,7 +380,7 @@ public class InventoryBulkOperationHandler {
   }
 
   private ApiInventoryRecordInfo changeInventoryRecordOwner(
-      ApiInventoryRecordInfo recInfo, User user) {
+      ApiInventoryRecordInfo recInfo, User user, User actor) {
     ApiInventoryRecordType recInfoType = recInfo.getType();
     BindException errors = new BindException(recInfo, "record");
 
@@ -336,19 +388,19 @@ public class InventoryBulkOperationHandler {
       switch (recInfoType) {
         case SAMPLE:
           return samplesApiController.changeSampleOwner(
-              recInfo.getId(), (ApiSampleWithFullSubSamples) recInfo, errors, user);
+              recInfo.getId(), (ApiSampleWithFullSubSamples) recInfo, errors, user, actor);
         case SAMPLE_TEMPLATE:
           return templatesApiController.changeSampleTemplateOwner(
-              recInfo.getId(), (ApiSampleTemplate) recInfo, errors, user);
+              recInfo.getId(), (ApiSampleTemplate) recInfo, errors, user, actor);
         case CONTAINER:
           return containersApiController.changeContainerOwner(
-              recInfo.getId(), (ApiContainer) recInfo, errors, user);
+              recInfo.getId(), (ApiContainer) recInfo, errors, user, actor);
         case INSTRUMENT:
           return instrumentsApiController.changeInstrumentOwner(
-              recInfo.getId(), (ApiInstrument) recInfo, errors, user);
+              recInfo.getId(), (ApiInstrument) recInfo, errors, user, actor);
         case INSTRUMENT_TEMPLATE:
           return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
-              recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);
+              recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user, actor);
         default:
           throw new LocalizedIllegalArgumentException(
               "errors.inventory.bulk.ownerChangeUnsupportedType", recInfo.getType());

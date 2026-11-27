@@ -377,16 +377,22 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
   @Override
   public ApiContainer changeApiContainerOwner(ApiContainer apiContainer, User user) {
+    return changeApiContainerOwner(apiContainer, user, user);
+  }
+
+  @Override
+  public ApiContainer changeApiContainerOwner(ApiContainer apiContainer, User subject, User actor) {
     Validate.notNull(apiContainer.getOwner(), "'owner' field not present");
     Validate.notNull(apiContainer.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferContainer(apiContainer.getId(), user);
+    assertUserCanTransferContainer(apiContainer.getId(), subject);
 
     Container dbContainer = getIfExists(apiContainer.getId());
-    boolean temporaryLock = lockItemForEdit(dbContainer, user);
+    boolean temporaryLock = lockItemForEdit(dbContainer, subject);
 
     try {
-      dbContainer = getIfExists(dbContainer.getId());
+      containerDao.refreshForUpdate(dbContainer);
+      assertStillTransferable(dbContainer, subject);
       User originalOwner = dbContainer.getOwner();
       String newOwnerUsername = apiContainer.getOwner().getUsername();
 
@@ -399,18 +405,18 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
         moveItemBetweenWorkbenches(dbContainer, originalOwner, newOwner);
 
         publisher.publishEvent(
-            new InventoryTransferEvent(dbContainer, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbContainer, actor, originalOwner, newOwner));
         containerDao.save(dbContainer);
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbContainer, user);
+        unlockItemAfterEdit(dbContainer, subject);
       }
     }
 
     ApiContainer changedOwnerContainer =
-        getPopulatedApiContainer(getIfExists(apiContainer.getId()), true, user);
-    updateOntologyOnRecordChanges(changedOwnerContainer, user);
+        getPopulatedApiContainer(getIfExists(apiContainer.getId()), true, subject);
+    updateOntologyOnRecordChanges(changedOwnerContainer, subject);
     return changedOwnerContainer;
   }
 

@@ -10,6 +10,7 @@ import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.SampleRequestApiManager;
 import jakarta.validation.Valid;
 import org.springframework.validation.BindException;
@@ -23,9 +24,12 @@ public class SampleRequestsApiController extends BaseApiInventoryController
     implements SampleRequestsApi {
 
   private final SampleRequestApiManager sampleRequestMgr;
+  private final UserManager userManager;
 
-  public SampleRequestsApiController(SampleRequestApiManager sampleRequestMgr) {
+  public SampleRequestsApiController(
+      SampleRequestApiManager sampleRequestMgr, UserManager userManager) {
     this.sampleRequestMgr = sampleRequestMgr;
+    this.userManager = userManager;
   }
 
   @Override
@@ -97,7 +101,8 @@ public class SampleRequestsApiController extends BaseApiInventoryController
     String sampleToTransferGlobalId =
         transfer == null ? null : transfer.getSampleToTransferGlobalId();
     ApiSampleRequest updated =
-        sampleRequestMgr.fulfilByTransfer(id, sampleToTransferGlobalId, user);
+        sampleRequestMgr.fulfilByTransfer(
+            id, sampleToTransferGlobalId, user, userManager.getOriginalUserForOperateAs(user));
     buildAndAddSelfLink(updated);
     return updated;
   }

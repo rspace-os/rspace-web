@@ -556,14 +556,21 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user) {
+    return changeApiInstrumentOwner(apiInstrument, user, user);
+  }
+
+  @Override
+  public ApiInstrument changeApiInstrumentOwner(
+      ApiInstrument apiInstrument, User subject, User actor) {
     Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
     Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferInstrument(apiInstrument.getId(), user);
+    assertUserCanTransferInstrument(apiInstrument.getId(), subject);
     Instrument dbInstrument = (Instrument) getIfExists(apiInstrument.getId());
-    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, subject);
     try {
-      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      instrumentDao.refreshForUpdate(dbInstrument);
+      assertStillTransferable(dbInstrument, subject);
       User originalOwner = dbInstrument.getOwner();
       String newOwnerUsername = apiInstrument.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
@@ -575,14 +582,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         moveItemBetweenWorkbenches(dbInstrument, originalOwner, newOwner);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(
-            new InventoryTransferEvent(dbInstrument, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbInstrument, actor, originalOwner, newOwner));
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbInstrument, user);
+        unlockItemAfterEdit(dbInstrument, subject);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+    return getInstrumentById(dbInstrument.getId(), subject);
   }
 
   @Override
@@ -854,14 +861,21 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   @Override
   public ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
       ApiInstrumentTemplate apiTemplate, User user) {
+    return changeApiInstrumentTemplateOwner(apiTemplate, user, user);
+  }
+
+  @Override
+  public ApiInstrumentTemplate changeApiInstrumentTemplateOwner(
+      ApiInstrumentTemplate apiTemplate, User subject, User actor) {
     Validate.notNull(apiTemplate.getOwner(), "'owner' field not present");
     Validate.notNull(apiTemplate.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferInstrumentTemplate(apiTemplate.getId(), user);
+    assertUserCanTransferInstrumentTemplate(apiTemplate.getId(), subject);
     InstrumentTemplate dbTemplate = (InstrumentTemplate) getIfExists(apiTemplate.getId());
-    boolean temporaryLock = lockItemForEdit(dbTemplate, user);
+    boolean temporaryLock = lockItemForEdit(dbTemplate, subject);
     try {
-      dbTemplate = (InstrumentTemplate) getIfExists(dbTemplate.getId());
+      instrumentTemplateDao.refreshForUpdate(dbTemplate);
+      assertStillTransferable(dbTemplate, subject);
       User originalOwner = dbTemplate.getOwner();
       String newOwnerUsername = apiTemplate.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
@@ -872,14 +886,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         dbTemplate.setOwner(newOwner);
         instrumentTemplateDao.save(dbTemplate);
         publisher.publishEvent(
-            new InventoryTransferEvent(dbTemplate, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbTemplate, actor, originalOwner, newOwner));
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbTemplate, user);
+        unlockItemAfterEdit(dbTemplate, subject);
       }
     }
-    return getApiInstrumentTemplateById(dbTemplate.getId(), user);
+    return getApiInstrumentTemplateById(dbTemplate.getId(), subject);
   }
 
   @Override

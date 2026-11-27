@@ -1213,4 +1213,25 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   private static void assertRefusedWith(String messageKey, Executable call) {
     assertEquals(messageKey, assertThrows(ApiRuntimeException.class, call).getMessage());
   }
+
+  @Test
+  public void fulfilByTransfer_underOperateAs_transfersWithTheOriginalUserAsActor() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User sysadmin = createAndSaveUserIfNotExists(getRandomAlphabeticString("sysadmin"));
+    SampleApiManager transfers = Mockito.mock(SampleApiManager.class);
+
+    new SampleRequestApiManagerImpl(
+            sampleRequestDao,
+            sampleDao,
+            transfers,
+            invPermissions,
+            messages,
+            systemPropertyPermissions,
+            userDao,
+            Mockito.mock(ApplicationEventPublisher.class))
+        .fulfilByTransfer(raised.getId(), null, owner, sysadmin);
+
+    Mockito.verify(transfers)
+        .changeApiSampleOwner(Mockito.any(), Mockito.eq(owner), Mockito.eq(sysadmin));
+  }
 }

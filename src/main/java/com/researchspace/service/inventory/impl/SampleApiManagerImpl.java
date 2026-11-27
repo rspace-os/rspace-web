@@ -780,19 +780,27 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public ApiSample changeApiSampleOwner(ApiSampleInfo apiSample, User user) {
+    return changeApiSampleOwner(apiSample, user, user);
+  }
+
+  @Override
+  public ApiSample changeApiSampleOwner(ApiSampleInfo apiSample, User subject, User actor) {
     Validate.notNull(apiSample.getOwner(), "'owner' field not present");
     Validate.notNull(apiSample.getOwner().getUsername(), "'owner.username' field not present");
 
     SampleEntity dbSample = getIfExists(apiSample.getId());
     // checked again under the lock; this one keeps a caller who may not transfer from locking
-    invPermissions.assertUserCanTransferInventoryRecord(dbSample, user);
-    boolean temporaryLock = lockItemForEdit(dbSample, user);
+    invPermissions.assertUserCanTransferInventoryRecord(dbSample, subject);
+    boolean temporaryLock = lockItemForEdit(dbSample, subject);
 
     try {
       // a transfer committed since the sample was read must be seen, and none may overtake this one
-      sampleDao.refreshForUpdate(dbSample);
-      invPermissions.assertUserCanTransferInventoryRecord(dbSample, user);
-      dbSample = getIfExists(dbSample.getId());
+      if (dbSample.isSampleTemplate()) {
+        sampleTemplateDao.refreshForUpdate((SampleTemplate) dbSample);
+      } else {
+        sampleDao.refreshForUpdate((Sample) dbSample);
+      }
+      assertStillTransferable(dbSample, subject);
       User originalOwner = dbSample.getOwner();
       String newOwnerUsername = apiSample.getOwner().getUsername();
 
@@ -810,20 +818,21 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         } else {
           dbSample = sampleDao.saveAndReindexSubSamples((Sample) dbSample);
         }
-        publisher.publishEvent(new InventoryTransferEvent(dbSample, user, originalOwner, newOwner));
+        publisher.publishEvent(
+            new InventoryTransferEvent(dbSample, actor, originalOwner, newOwner));
         if (!dbSample.isSampleTemplate()) {
           sampleRequestApiManager.closeActiveRequestsForTransferredSample(
-              dbSample.getId(), user, newOwner);
+              dbSample.getId(), subject, newOwner);
         }
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbSample, user);
+        unlockItemAfterEdit(dbSample, subject);
       }
     }
 
-    ApiSample changedOwnerSample = getOutgoingApiSample(dbSample, user);
-    updateOntologyOnRecordChanges(changedOwnerSample, user);
+    ApiSample changedOwnerSample = getOutgoingApiSample(dbSample, subject);
+    updateOntologyOnRecordChanges(changedOwnerSample, subject);
     return changedOwnerSample;
   }
 
