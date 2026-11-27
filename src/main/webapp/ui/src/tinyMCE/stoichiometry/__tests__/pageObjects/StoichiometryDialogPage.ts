@@ -7,6 +7,10 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * interactions; assertions live in the tests themselves.
  */
 export class StoichiometryDialogPage {
+  get dialog(): Locator {
+    return page.getByRole("dialog", { name: "Reaction Table" });
+  }
+
   get calculateButton(): Locator {
     return page.getByRole("button", { name: "Calculate Stoichiometry" });
   }
@@ -33,6 +37,12 @@ export class StoichiometryDialogPage {
 
   async clickCalculate(): Promise<void> {
     await this.calculateButton.click();
+  }
+
+  async calculateWithKeyboard(): Promise<void> {
+    await expect.element(this.calculateButton).toBeVisible();
+    this.calculateButton.element().focus();
+    await userEvent.keyboard("{Enter}");
   }
 
   async editFirstMassCell(): Promise<void> {

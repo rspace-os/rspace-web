@@ -33,6 +33,27 @@ export type StandaloneDialogInnerProps = {
   onDelete?: () => void;
 };
 
+/*
+ * The editor callbacks write into TinyMCE, which focuses its iframe even with
+ * skip_focus. MUI's focus trap only recovers focus left on <body>, so without
+ * this, focus stays in the iframe and Escape no longer closes the dialog.
+ * The control that had focus is restored when possible; it is disabled while
+ * a request runs, so the dialog itself is the fallback.
+ */
+function keepFocusInDialog(dialog: HTMLElement | null, updateEditor: () => void) {
+  const focusedElement = document.activeElement;
+  updateEditor();
+  if (!dialog) {
+    return;
+  }
+  if (focusedElement instanceof HTMLElement && dialog.contains(focusedElement)) {
+    focusedElement.focus({ preventScroll: true });
+  }
+  if (!dialog.contains(document.activeElement)) {
+    dialog.focus({ preventScroll: true });
+  }
+}
+
 function areSameStoichiometry(left: CurrentStoichiometry | null, right: CurrentStoichiometry | null) {
   return left?.id === right?.id && left?.revision === right?.revision;
 }
@@ -66,6 +87,7 @@ export default function StoichiometryDialog({
   );
   const [actuallyOpen, setActuallyOpen] = React.useState(false);
   const tableCloseHandlerRef = React.useRef<(() => Promise<void>) | null>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
   const syncedStoichiometry =
     stoichiometryId !== undefined ? { id: stoichiometryId, revision: stoichiometryRevision } : null;
@@ -144,7 +166,7 @@ export default function StoichiometryDialog({
       {
         onSuccess: ({ id, revision }) => {
           setCurrentStoichiometry({ id, revision });
-          onTableCreated?.(id, revision);
+          keepFocusInDialog(dialogRef.current, () => onTableCreated?.(id, revision));
         },
       },
     );
@@ -169,6 +191,10 @@ export default function StoichiometryDialog({
     handleCalculate,
   ]);
 
+  const handleSave = (id: number, revision: number) => {
+    keepFocusInDialog(dialogRef.current, () => onSave?.(id, revision));
+  };
+
   const handleCloseWithoutTable = () => {
     if (isRequestInFlight) {
       return;
@@ -192,6 +218,7 @@ export default function StoichiometryDialog({
       aria-labelledby={titleId}
       maxWidth="xl"
       fullWidth
+      slotProps={{ paper: { ref: dialogRef } }}
       /*
        * The dialog opens from the editor's iframe, so MUI cannot record where
        * focus came from and would restore it to a node inside the closing
@@ -286,7 +313,7 @@ export default function StoichiometryDialog({
             currentStoichiometry={currentStoichiometry}
             chemId={chemId}
             onClose={onClose}
-            onSave={onSave}
+            onSave={handleSave}
             onDelete={onDelete}
             setCurrentStoichiometry={setCurrentStoichiometry}
             registerCloseHandler={registerCloseHandler}
