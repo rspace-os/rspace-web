@@ -4,7 +4,7 @@ import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router"
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { type Locator, page, userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
@@ -13,12 +13,6 @@ import { bookingHandlers, roleLostBooking, upcomingBooking } from "./mocks/booki
 import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
 
 const pageObj = new MyBookingsPageObject();
-
-function clickWithoutDriverWait(locator: Locator) {
-  const element = locator.element();
-  if (!(element instanceof HTMLElement)) throw new TypeError("Expected an HTML element");
-  element.click();
-}
 
 function registerHandlers() {
   worker.use(
@@ -186,7 +180,7 @@ describe("the My Bookings page", () => {
     render(<MyBookingsPageStory history={history} />);
 
     await expect.element(pageObj.confocalItemCalendar).toBeVisible();
-    clickWithoutDriverWait(pageObj.confocalItemCalendar);
+    await userEvent.click(pageObj.confocalItemCalendar);
 
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
     await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
@@ -197,7 +191,7 @@ describe("the My Bookings page", () => {
     render(<MyBookingsPageStory history={history} />);
 
     await expect.element(pageObj.confocalDetails).toBeVisible();
-    clickWithoutDriverWait(pageObj.confocalDetails);
+    await userEvent.click(pageObj.confocalDetails);
 
     await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/41");
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();

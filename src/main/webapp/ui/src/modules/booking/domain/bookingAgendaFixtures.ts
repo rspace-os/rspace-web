@@ -1,0 +1,28 @@
+import { Temporal } from "@js-temporal/polyfill";
+import type { BookingListDocument } from "./booking";
+
+export function bookingListDocument(overrides: Partial<BookingListDocument> = {}): BookingListDocument {
+  const start = overrides.start ?? Temporal.Instant.from("2026-09-24T08:00:00.000Z");
+  const privacy = overrides.privacy ?? "full";
+  return {
+    id: 1,
+    version: 1,
+    target: null,
+    timezone: "Europe/Berlin",
+    start,
+    end: Temporal.Instant.from("2026-09-24T09:00:00.000Z"),
+    state: "CONFIRMED",
+    kind: "BOOKING",
+    privacy,
+    purpose: null,
+    bookedBy: null,
+    createdBy: null,
+    canViewConfiguration: privacy === "full",
+    requester: { relationTo: "users", value: 7 },
+    canEdit: false,
+    canCancel: false,
+    createdAt: start,
+    updatedAt: start,
+    ...overrides,
+  };
+}

@@ -5,6 +5,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
+import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -26,7 +27,6 @@ import {
   resourceLocation,
   scrollCalendarWithArrowKeys,
   timelineEditorPositions,
-  toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
 import { BookingEditorsContext } from "./InlineBookingEditor";

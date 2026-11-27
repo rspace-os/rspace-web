@@ -1,8 +1,8 @@
 import { DayTimelineEventCard } from "@/modules/booking/components/DayTimeline";
+import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingActions } from "./BookingEventActions";
-import { toTimelineEvent } from "./calendarLayoutUtils";
 
 export function CalendarEventCard({
   event,

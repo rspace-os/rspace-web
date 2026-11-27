@@ -18,7 +18,28 @@ export class BookingDashboardPageObject {
   }
 
   upcomingInstrument(name: string): Locator {
-    return this.upcoming.getByText(name, { exact: true });
+    // Vitest Browser does not expose native <summary> as a role locator in Chromium.
+    return this.upcoming.getByCSS("summary").filter({ hasText: name });
+  }
+
+  upcomingDetailsLink(name: string): Locator {
+    return this.upcoming.getByRole("link", { name, exact: false });
+  }
+
+  upcomingPurpose(text: string): Locator {
+    return this.upcoming.getByText(text, { exact: true });
+  }
+
+  get upcomingLoading(): Locator {
+    return this.upcoming.getByRole("status");
+  }
+
+  get upcomingRetry(): Locator {
+    return this.upcoming.getByRole("button", { name: "Retry", exact: true });
+  }
+
+  get upcomingViewAll(): Locator {
+    return this.upcoming.getByRole("link", { name: "View all", exact: true });
   }
 
   get upcomingError(): Locator {
