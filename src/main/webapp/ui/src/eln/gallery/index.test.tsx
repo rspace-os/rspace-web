@@ -9,6 +9,7 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { HttpResponse, http } from "msw/http";
 import { MemoryRouter } from "react-router";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
@@ -731,8 +732,11 @@ describe("Gallery", () => {
       };
     }
 
-    /** A folder listed one entry per page, with each page's entries given in order. */
-    function mockPagedFolder(pages: ReadonlyArray<ReadonlyArray<ReturnType<typeof listingEntry>>>) {
+    /** A folder listed with each page's entries given in order; `failingPage` answers 500. */
+    function mockPagedFolder(
+      pages: ReadonlyArray<ReadonlyArray<ReturnType<typeof listingEntry>>>,
+      { failingPage }: { failingPage?: number } = {},
+    ) {
       mockAxios.onGet(`/api/v1/files/${LINKED_ITEM_ID}`).reply(200, {
         id: LINKED_ITEM_ID,
         globalId: `GL${LINKED_ITEM_ID}`,
@@ -745,6 +749,7 @@ describe("Gallery", () => {
       });
       mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
         const pageNumber = Number((params as URLSearchParams).get("pageNumber"));
+        if (pageNumber === failingPage) return [500, {}];
         return [
           200,
           {
@@ -760,10 +765,12 @@ describe("Gallery", () => {
       });
     }
 
-    function requestedPages(): Array<string | null> {
+    function requestedPages(searchTerm = ""): Array<string | null> {
       return mockAxios.history.get
         .filter(({ url }) => /getUploadedFiles/.test(url ?? ""))
-        .map(({ params }) => (params as URLSearchParams).get("pageNumber"));
+        .map(({ params }) => params as URLSearchParams)
+        .filter((params) => params.get("name") === searchTerm)
+        .map((params) => params.get("pageNumber"));
     }
 
     test("loads pages until the linked item is found, then selects it", async () => {
@@ -788,6 +795,33 @@ describe("Gallery", () => {
 
       expect(await screen.findByRole("gridcell", { name: /oldest\.png/ })).toBeInTheDocument();
       expect(requestedPages()).toEqual(["0", "1"]);
+    });
+
+    test("a failed page is not retried on its own, and a search afterwards pages only on request", async () => {
+      const user = userEvent.setup();
+      const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
+      mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
+        failingPage: 1,
+      });
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      await waitFor(() => {
+        expect(requestedPages()).toEqual(["0", "1"]);
+      });
+      // the failed page can still be requested by hand
+      expect(screen.getByRole("button", { name: "gallery:loadMore" })).toBeVisible();
+
+      await user.type(screen.getByPlaceholderText("gallery:mainPanel.searchPlaceholder"), "newest{Enter}");
+      expect(await screen.findByRole("gridcell", { name: /newest\.png/ })).toBeInTheDocument();
+      await waitFor(() => {
+        expect(requestedPages("newest")).toEqual(["0"]);
+      });
+      // give a wrongly resumed auto-paging the chance to request page 1
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(requestedPages("newest")).toEqual(["0"]);
+      expect(requestedPages()).toEqual(["0", "1"]);
+      restoreConsole();
     });
   });
 

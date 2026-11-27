@@ -1186,6 +1186,7 @@ export function useGalleryListing({
   const path = listingOf.tag === "section" ? { tag: "success" as const, value: listingOf.path } : directFolderPath;
 
   const [page, setPage] = React.useState<number>(0);
+  const listingGeneration = React.useRef(0);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([new Error("Parent Id is not yet known")]));
@@ -1631,6 +1632,7 @@ export function useGalleryListing({
     if (s === "NetworkFiles") {
       return getRemoteFiles(p);
     }
+    listingGeneration.current += 1;
     selection.clear();
     clearAndSetGalleryListing([]);
     setLoading(true);
@@ -1681,8 +1683,14 @@ export function useGalleryListing({
     }
   }
 
+  /*
+   * A page requested before the listing was reloaded (a new search, sort or
+   * folder) belongs to the old listing, so its response is dropped. The page
+   * only advances once its response is accepted, so a failed one can be
+   * requested again.
+   */
   async function loadMore(): Promise<void> {
-    setPage(page + 1);
+    const generation = listingGeneration.current;
     try {
       const token = await getToken();
       const s = FetchingData.getSuccessValue(section).elseThrow();
@@ -1699,7 +1707,9 @@ export function useGalleryListing({
         }),
       });
 
+      if (generation !== listingGeneration.current) return;
       setGalleryListing([...galleryListing, ...parseGalleryFiles(data, token, p)]);
+      setPage(page + 1);
     } catch (e) {
       console.error(e);
     }

@@ -157,15 +157,24 @@ const WholePage = ({
   /*
    * A linked item need not be on the first page of its folder, so pages are
    * loaded until it turns up or the folder runs out. This happens once per
-   * link, so later sorting or searching pages only on request. The effect runs
-   * every render, as the listing's wrapper is rebuilt each time, so the
-   * array a page was requested for guards against requesting it twice.
+   * link, and stops once the user sorts or searches, so their own listing
+   * pages only on request. The effect runs every render, as the listing's
+   * wrapper is rebuilt each time, so the array a page was requested for guards
+   * against requesting it twice; a failed page leaves that array in place, so
+   * it is not retried.
    */
   const autoSelectSettledFor = React.useRef<ReadonlyArray<number> | null>(null);
   const pageRequestedFor = React.useRef<ReadonlyArray<GalleryFile> | null>(null);
+  const stopAutoPaging = () => {
+    autoSelectSettledFor.current = autoSelect ?? null;
+  };
   React.useEffect(() => {
     if (!autoSelect?.length || autoSelectSettledFor.current === autoSelect) return;
-    if (liveListing.tag !== "success" || liveListing.value.tag === "empty" || !liveList) return;
+    if (liveListing.tag !== "success") return;
+    if (liveListing.value.tag === "empty" || !liveList) {
+      autoSelectSettledFor.current = autoSelect;
+      return;
+    }
     if (pageRequestedFor.current === liveList) return;
     const wanted = new Set(autoSelect.map((id) => `${id}`));
     const found = liveList.some(({ id }) => wanted.has(idToString(id).orElse("")));
@@ -311,10 +320,17 @@ const WholePage = ({
                           key={null}
                           sortOrder={sortOrder}
                           orderBy={orderBy}
-                          setSortOrder={setSortOrder}
-                          setOrderBy={setOrderBy}
+                          setSortOrder={(newSortOrder) => {
+                            stopAutoPaging();
+                            setSortOrder(newSortOrder);
+                          }}
+                          setOrderBy={(newOrderBy) => {
+                            stopAutoPaging();
+                            setOrderBy(newOrderBy);
+                          }}
                           appliedSearchTerm={appliedSearchTerm}
                           setAppliedSearchTerm={(newTerm) => {
+                            stopAutoPaging();
                             FetchingData.getSuccessValue(path).do((p) => {
                               if (p.length > 0) {
                                 trackEvent("user:search:folder:gallery");
