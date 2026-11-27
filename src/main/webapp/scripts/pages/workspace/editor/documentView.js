@@ -400,6 +400,15 @@ function setQueryParam(uri, key, value) {
   return uri;
 }
 
+/*
+ * Applies the server's input type for a refreshed Choice field before its values
+ * are ticked, so a radio group never collapses several stored values to one.
+ */
+function syncChoiceInputType(fieldId, shownAsCheckboxes) {
+  $("input[name='fieldSelectedChoicesFinal_" + fieldId + "']").prop("type", shownAsCheckboxes ? "checkbox" : "radio");
+  $("#field_" + fieldId + " .choiceClearButton").toggle(!shownAsCheckboxes);
+}
+
 function disableLastCheckboxField() {
   if (lastCheckboxEdited != -1) {
     var inputName = "fieldSelectedChoicesFinal_" + lastCheckboxEdited;
@@ -524,6 +533,7 @@ function _updateAutosavedFields(data) {
       return;
     }
     if (attr == "choice") {
+      syncChoiceInputType(value.id, value.shownAsCheckboxes);
       var selectedValues = $field.find(
         "input[name='fieldSelectedChoicesFinal_" + value.id + "']:checked");
       $(selectedValues).prop('checked', false);

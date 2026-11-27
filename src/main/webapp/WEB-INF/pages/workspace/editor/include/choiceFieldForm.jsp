@@ -15,18 +15,20 @@
 				</td> 
 			<tr>
 				<td class="field-value-inner">
+					<c:set var="choiceInputType" value="${field.shownAsCheckboxes ? 'checkbox' : 'radio'}" />
 					<ul id="choiceFieldsFinal">
-				<c:forEach var="fieldChoice" items="${field.choiceOptionAsList}">
+				<c:forEach var="fieldChoice" items="${field.choiceOptionAsList}" varStatus="choiceStatus">
 					<c:set var="isSelected" value="false" scope="page" />
 						<c:forEach var="defaultChoiceOption" items="${field.defaultChoiceOptionAsList}">
 							<c:if test="${fieldChoice eq defaultChoiceOption}" >
 								<c:set var="isSelected" value="true" scope="page" />
 							</c:if>
 						</c:forEach>
-					<li><input type="checkbox" id="${field.id}" 
+					<li><label for="choice_${field.id}_${choiceStatus.index}" style="font-weight: normal;">
+					<input type="${choiceInputType}" id="choice_${field.id}_${choiceStatus.index}"
 					    name="fieldSelectedChoicesFinal_${field.id}" value="${fieldChoice}" 
 					<c:if test="${isSelected eq 'true'}">checked</c:if>> 
-					${fieldChoice}</li>
+					${fieldChoice}</label></li>
 					
 				</c:forEach>
 				<input type="hidden" name="wasChanged" value="false"/>

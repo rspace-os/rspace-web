@@ -33,8 +33,9 @@ export class CustomDocumentFields {
     const selectedValues = optionValues.filter((value) => values.includes(value));
     expect(selectedValues.toSorted(), "Every requested option must exist in the field").toEqual(values.toSorted());
 
+    // Choice fields save "fieldChoices=" pairs whether they render as checkboxes or radios.
     const expectedData =
-      (await choices.count()) > 0
+      (await field.getAttribute("name")) === "choice"
         ? selectedValues.map((value) => `fieldChoices=${value}`).join("&")
         : selectedValues[0];
     await this.waitForAutosave(
@@ -48,6 +49,21 @@ export class CustomDocumentFields {
       },
       expectedData,
     );
+  }
+
+  /** Clears a single-selection Choice field, whose radios cannot be unticked one by one. */
+  async clearChoice(name: string): Promise<void> {
+    const id = await resolveFieldId(this.page, name, 0, "clearChoice");
+    await this.page.locator(`#edit_${id}`).click();
+    const clear = this.page.locator(`#field_${id}`).getByRole("button", { name: "Clear selection" });
+    await this.waitForAutosave(id, () => clear.click(), "");
+  }
+
+  /** A Choice field's option inputs of one role, or one named option, including those hidden outside edit mode. */
+  async choiceOptions(name: string, role: "checkbox" | "radio", option?: string): Promise<Locator> {
+    const id = await resolveFieldId(this.page, name, 0, "choiceOptions");
+    const optionName = option === undefined ? {} : { name: option, exact: true };
+    return this.page.locator(`#field_${id}`).getByRole(role, { includeHidden: true, ...optionName });
   }
 
   async value(name: string): Promise<Locator> {

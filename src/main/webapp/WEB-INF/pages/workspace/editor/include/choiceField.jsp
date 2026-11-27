@@ -24,8 +24,9 @@
         </tr>
         <tr>
           <td class="field-value-inner">
+            <c:set var="choiceInputType" value="${field.shownAsCheckboxes ? 'checkbox' : 'radio'}" />
             <ul id="choiceFieldsFinal" class="hideBulletPoint">
-              <c:forEach var="fieldChoice" items="${field.choiceOptionAsList}">
+              <c:forEach var="fieldChoice" items="${field.choiceOptionAsList}" varStatus="choiceStatus">
                 <c:set var="isSelected" value="false" scope="page" />
                 <c:forEach var="fieldSelected" items="${field.choiceOptionSelectedAsList}">
                   <c:if test="${fieldChoice eq fieldSelected}">
@@ -33,16 +34,25 @@
                   </c:if>
                 </c:forEach>
                 <li class='choiceLi ${field.id}'>
-                  <input type="checkbox" class="${field.id}" id="${field.id}"
+                  <label for="choice_${field.id}_${choiceStatus.index}" style="font-weight: normal;">
+                  <input type="${choiceInputType}" class="${field.id}" id="choice_${field.id}_${choiceStatus.index}"
                     name="fieldSelectedChoicesFinal_${field.id}"
-                    value="${fieldChoice}" onchange="checkAndMarkField(this)"
+                    value="${fieldChoice}" onchange="checkAndMarkField(this, ${field.id})"
                     <c:if test="${isSelected eq 'true'}">checked</c:if>>
                   <input
                     type="hidden" name="fieldChoicesFinal_${field.id}"
                     value="${fieldChoice}">
                   ${fieldChoice}
+                  </label>
                 </li>
               </c:forEach>
+              <%-- Radios cannot be unticked, so a single-selection field offers a way back to no value --%>
+              <li class='choiceLi ${field.id} bootstrap-custom-flat'>
+                <button type="button" class="btn btn-link btn-xs choiceClearButton" onclick="clearChoiceField(${field.id})"
+                  <c:if test="${field.shownAsCheckboxes}">style="display: none"</c:if>>
+                  <spring:message code="form.field.clearSelection"/>
+                </button>
+              </li>
               <input type="hidden" name="wasChanged" value="false" />
               <input type="hidden" name="fieldId" value="${field.id}" />
               <p class="checkboxText singleLineFieldInDocViewMode" id="choiceText_${field.id}">

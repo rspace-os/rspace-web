@@ -84,3 +84,109 @@ test.describe
       await expect(forms.formRow(formName)).toHaveCount(2);
     });
   });
+
+test.describe("My RSpace Choice fields", () => {
+  test("As a form author, a single-selection Choice field offers radio buttons and keeps exactly one default", async ({
+    clientForms,
+    pageCreateForm,
+  }) => {
+    const options = ["a", "b", "c"];
+    const form = await clientForms.create({
+      name: uniqueName("ChoiceEditorForm"),
+      fields: [
+        { name: "SingleChoice", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
+        { name: "MultiChoice", type: "Choice", options, defaultOptions: ["a"], multipleChoice: true },
+      ],
+    });
+    await pageCreateForm.openExisting(form.id);
+    await expect(pageCreateForm.fieldPreview("SingleChoice").getByRole("radio")).toHaveCount(3);
+    await expect(pageCreateForm.fieldPreview("MultiChoice").getByRole("checkbox")).toHaveCount(3);
+
+    const editor = await pageCreateForm.openFieldForEditing("SingleChoice");
+    await expect(editor.choiceDefaultOption("radio", "a")).toBeChecked();
+    await editor.setMultipleChoice(true);
+    await editor.choiceDefaultOption("checkbox", "b").check();
+    // Switching back to single with two defaults keeps both ticked until the author picks one.
+    await editor.setMultipleChoice(false);
+    await expect(editor.choiceDefaultOption("checkbox", "a")).toBeChecked();
+    await expect(editor.choiceDefaultOption("checkbox", "b")).toBeChecked();
+    await expect(editor.clearChoiceDefaultButton()).toBeHidden();
+    await editor.saveExpectingValidationError();
+    await expect(editor.root).toContainText("A single-selection field can have only one default option.");
+
+    await editor.choiceDefaultOption("checkbox", "c").check();
+    await editor.choiceDefaultOption("checkbox", "a").uncheck();
+    await expect(editor.choiceDefaultOption("checkbox", "b")).toBeChecked();
+    await expect(editor.choiceDefaultOption("checkbox", "c")).toBeChecked();
+    // Deleting one of the two ticked defaults leaves one, so the selectors become radios.
+    await editor.deleteChoiceOption("c");
+    await expect(editor.choiceDefaultOption("radio", "a")).not.toBeChecked();
+    await expect(editor.choiceDefaultOption("radio", "b")).toBeChecked();
+    await editor.save();
+    const singlePreview = pageCreateForm.fieldPreview("SingleChoice");
+    await expect(singlePreview.getByRole("radio")).toHaveCount(2);
+    await expect(singlePreview.getByRole("radio", { name: "b", exact: true })).toBeChecked();
+
+    // An option added through "Add New" takes the current input type, and radios can be cleared back to no default.
+    const reopened = await pageCreateForm.openFieldForEditing("SingleChoice");
+    await reopened.addOption("d");
+    await expect(reopened.choiceDefaultOption("radio", "d")).not.toBeChecked();
+    await reopened.clearChoiceDefaultButton().click();
+    await expect(reopened.choiceDefaultOption("radio", "b")).not.toBeChecked();
+    await reopened.save();
+    await expect(singlePreview.getByRole("radio")).toHaveCount(3);
+    await expect(singlePreview.getByRole("radio", { checked: true })).toHaveCount(0);
+  });
+
+  test("As a form author, a multiple-selection Choice field offers checkboxes for any number of defaults", async ({
+    clientForms,
+    pageCreateForm,
+  }) => {
+    const options = ["a", "b", "c"];
+    const form = await clientForms.create({
+      name: uniqueName("MultiChoiceEditorForm"),
+      fields: [
+        { name: "NoDefault", type: "Choice", options, multipleChoice: true },
+        { name: "OneDefault", type: "Choice", options, defaultOptions: ["a"], multipleChoice: true },
+        { name: "BecomesMulti", type: "Choice", options, defaultOptions: ["a"], multipleChoice: false },
+      ],
+    });
+    await pageCreateForm.openExisting(form.id);
+    const expectPreview = async (name: string, checked: string[]) => {
+      const preview = pageCreateForm.fieldPreview(name);
+      await expect(preview.getByRole("radio")).toHaveCount(0);
+      await expect(preview.getByRole("checkbox")).toHaveCount(3);
+      for (const option of options) {
+        const input = preview.getByRole("checkbox", { name: option, exact: true });
+        if (checked.includes(option)) await expect(input).toBeChecked();
+        else await expect(input).not.toBeChecked();
+      }
+    };
+    await expectPreview("NoDefault", []);
+    await expectPreview("OneDefault", ["a"]);
+
+    let editor = await pageCreateForm.openFieldForEditing("OneDefault");
+    await expect(editor.choiceDefaultOption("checkbox", "a")).toBeChecked();
+    await expect(editor.choiceDefaultOption("radio", "a")).toHaveCount(0);
+    await editor.cancel();
+
+    editor = await pageCreateForm.openFieldForEditing("NoDefault");
+    for (const option of options) {
+      await expect(editor.choiceDefaultOption("checkbox", option)).not.toBeChecked();
+    }
+    await editor.choiceDefaultOption("checkbox", "a").check();
+    await editor.choiceDefaultOption("checkbox", "c").check();
+    await editor.save();
+    await expectPreview("NoDefault", ["a", "c"]);
+
+    // A single field with one default shows radios; switching to multiple keeps that default as a ticked checkbox.
+    editor = await pageCreateForm.openFieldForEditing("BecomesMulti");
+    await expect(editor.choiceDefaultOption("radio", "a")).toBeChecked();
+    await editor.setMultipleChoice(true);
+    await expect(editor.choiceDefaultOption("checkbox", "a")).toBeChecked();
+    await expect(editor.choiceDefaultOption("radio", "b")).toHaveCount(0);
+    await expect(editor.clearChoiceDefaultButton()).toBeHidden();
+    await editor.save();
+    await expectPreview("BecomesMulti", ["a"]);
+  });
+});

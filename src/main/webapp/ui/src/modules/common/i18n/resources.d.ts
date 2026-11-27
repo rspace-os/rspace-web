@@ -8693,6 +8693,7 @@ export default interface Resources {
           "savingFormAction": "Saving form",
           "savingFormBlock": "Saving form...",
           "savingFormTagsAction": "Saving form tags",
+          "singleChoiceMultipleDefaults": "A single-selection field can have only one default option. Untick the options you do not want as defaults.",
           "submitButton": "Submit",
           "unpublishingFormAction": "Unpublishing form",
           "updatingFormAction": "Updating form",
@@ -10254,6 +10255,7 @@ export default interface Resources {
         "resultsFieldValue": ""
       },
       "field": {
+        "clearSelection": "Clear selection",
         "lastModifiedLabel": "Last modified:",
         "picklistSuffix": "(Picklist)",
         "saveAndViewTitle": "Save and View"
@@ -10262,6 +10264,7 @@ export default interface Resources {
         "addNew": "Add New",
         "checked": "Checked",
         "checkedValue": "checked",
+        "clearDefault": "Clear default",
         "dateFormat": "Date Format",
         "decimalPlaces": "Decimal Places",
         "defaultDate": "Default Date",

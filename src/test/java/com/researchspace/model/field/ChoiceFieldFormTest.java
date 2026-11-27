@@ -59,6 +59,17 @@ public class ChoiceFieldFormTest {
   }
 
   @Test
+  public void singleFieldShowsCheckboxesOnlyWithSeveralDefaults() {
+    cft.setDefaultChoiceOption("a=b");
+    assertFalse(cft.isShownAsCheckboxes());
+    cft.setDefaultChoiceOption("a=b&a=d");
+    assertTrue(cft.isShownAsCheckboxes());
+    cft.setDefaultChoiceOption("");
+    cft.setMultipleChoice(true);
+    assertTrue(cft.isShownAsCheckboxes());
+  }
+
+  @Test
   public void testValidateData() {
     assertFalse(cft.validate("").hasErrorMessages());
     assertFalse(cft.validate("a=b").hasErrorMessages());

@@ -352,6 +352,7 @@ function _updateFields(fields) {
     }
 
     if (field.type == "CHOICE") {
+      syncChoiceInputType(field.id, field.shownAsCheckboxes);
       $("[name=fieldSelectedChoicesFinal_" + field.id + "]").prop(
         "checked",
         false
@@ -796,10 +797,16 @@ function checkNumber(element) {
 }
 
 // marks it as modified for autosaving
-function checkAndMarkField(element) {
-  var currentId = $(element).attr("id");
+function checkAndMarkField(element, fieldId) {
+  var currentId = fieldId !== undefined ? fieldId : $(element).attr("id");
   var $field = $("#field_" + currentId);
   _setWasChangedFlagOnField($field, true);
+}
+
+// radios cannot be unticked one by one, so a single-selection Choice field is cleared here
+function clearChoiceField(fieldId) {
+  $("input[name='fieldSelectedChoicesFinal_" + fieldId + "']").prop("checked", false);
+  checkAndMarkField(null, fieldId);
 }
 
 // checks if it has any error and marks it as modified for autosaving

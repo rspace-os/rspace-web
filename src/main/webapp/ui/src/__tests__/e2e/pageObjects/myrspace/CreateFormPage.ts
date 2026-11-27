@@ -15,6 +15,23 @@ export class CreateFormPage extends BasePage {
     await this.page.getByRole("button", { name: "Save and Close" }).waitFor({ state: "visible" });
   }
 
+  async openExisting(formId: number): Promise<void> {
+    await this.page.goto(`/workspace/editor/form/edit/${formId}`);
+    await this.waitUntilLoaded();
+  }
+
+  /**
+   * The preview row of one field. Legacy JSP rows have no accessible name, so match the whole name cell:
+   * the name, then the "(Type)" suffix and required asterisk where shown.
+   */
+  fieldPreview(name: string): Locator {
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const nameCell = this.page
+      .locator("td.field-name")
+      .filter({ hasText: new RegExp(`^\\s*${escapedName}(\\s+\\(\\w+\\))?(\\s*\\*)?\\s*$`) });
+    return this.page.locator("tr.field").filter({ has: nameCell });
+  }
+
   get statusNew(): Locator {
     return this.page.getByText("Status - NEW", { exact: true });
   }
@@ -58,7 +75,7 @@ export class CreateFormPage extends BasePage {
   }
 
   async openFieldForEditing(name: string): Promise<FieldEditorDialogComponent> {
-    await this.fieldRow(name).getByRole("button", { name: "Edit" }).click();
+    await this.fieldPreview(name).getByRole("button", { name: "Edit" }).click();
     const editor = new FieldEditorDialogComponent(this.page);
     await editor.waitUntilVisible();
     return editor;

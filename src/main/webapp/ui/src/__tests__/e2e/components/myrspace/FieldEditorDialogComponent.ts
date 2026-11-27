@@ -52,9 +52,32 @@ export class FieldEditorDialogComponent {
   }
 
   async selectDefaultOption(type: "Radio" | "Choice", option: string): Promise<void> {
-    const role = type === "Radio" ? "radio" : "checkbox";
     const optionRow = this.fieldGroup.locator("li").filter({ hasText: option });
-    await optionRow.getByRole(role).check();
+    const radio = optionRow.getByRole("radio");
+    const input = type === "Radio" ? radio : optionRow.getByRole("checkbox").or(radio);
+    await input.check();
+  }
+
+  /** Choice default selectors: radios for a single-selection field, checkboxes otherwise. */
+  choiceDefaultOption(role: "checkbox" | "radio", option: string): Locator {
+    return this.fieldGroup.getByRole(role, { name: option, exact: true });
+  }
+
+  async deleteChoiceOption(option: string): Promise<void> {
+    const optionInput = this.root.page().getByLabel(option, { exact: true });
+    await this.fieldGroup
+      .locator("#choiceFields li")
+      .filter({ has: optionInput })
+      .getByRole("link", { name: "(Delete)" })
+      .click();
+  }
+
+  clearChoiceDefaultButton(): Locator {
+    return this.fieldGroup.getByRole("button", { name: "Clear default" });
+  }
+
+  async setMultipleChoice(multiple: boolean): Promise<void> {
+    await this.fieldGroup.getByRole("radio", { name: multiple ? "yes" : "no", exact: true }).check();
   }
 
   async setSortAlphabetically(checked: boolean): Promise<void> {

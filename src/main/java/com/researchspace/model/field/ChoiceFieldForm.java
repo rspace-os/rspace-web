@@ -116,6 +116,16 @@ public class ChoiceFieldForm extends FieldForm {
     return result;
   }
 
+  /**
+   * Whether the options show as checkboxes rather than radio buttons, given the default values.
+   *
+   * @see ChoiceBehaviour#showsCheckboxes(boolean, int)
+   */
+  @Transient
+  public boolean isShownAsCheckboxes() {
+    return ChoiceBehaviour.showsCheckboxes(multipleChoice, getDefaultChoiceOptionAsList().size());
+  }
+
   @Override
   public ErrorList validate(String data) {
     ErrorList el = new ErrorList();
