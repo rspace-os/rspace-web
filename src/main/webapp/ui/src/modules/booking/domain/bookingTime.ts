@@ -196,8 +196,12 @@ export function resolveWallClock(date: string, time: string, timezone: string): 
   };
 }
 
-export function wallClockDraftFromInstants(start: string, end: string, timezone: string): BookingWindowDraft {
-  const endpoint = (instant: string) => {
+export function wallClockDraftFromInstants(
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
+  timezone: string,
+): BookingWindowDraft {
+  const endpoint = (instant: Temporal.Instant | string) => {
     const zoned = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone);
     const date = zoned.toPlainDate().toString();
     const time = `${String(zoned.hour).padStart(2, "0")}:${String(zoned.minute).padStart(2, "0")}`;
@@ -247,8 +251,21 @@ export function bookingLocale(): string {
   }
 }
 
+/**
+ * The browser's regional format, for numeric dates and times. Native date and time inputs always use it, so
+ * following it (rather than the app language) keeps "14:00" or "2:00 PM" consistent between inputs and cards.
+ */
+export function bookingDateTimeLocale(): string {
+  return new Intl.DateTimeFormat().resolvedOptions().locale;
+}
+
+/** The browser region's 12- or 24-hour clock, so times written in the app language still match native inputs. */
+export function bookingHourCycle(): Intl.DateTimeFormatOptions["hourCycle"] {
+  return new Intl.DateTimeFormat(bookingDateTimeLocale(), { hour: "numeric" }).resolvedOptions().hourCycle;
+}
+
 /** A wall-clock `HH:mm` time as the locale writes it, which is also how native time inputs display it. */
-export function formatWallClockTime(time: string, locale = bookingLocale()): string {
+export function formatWallClockTime(time: string, locale = bookingDateTimeLocale()): string {
   return Temporal.PlainTime.from(time === "24:00" ? "00:00" : time).toLocaleString(locale, {
     hour: "2-digit",
     minute: "2-digit",
@@ -256,7 +273,7 @@ export function formatWallClockTime(time: string, locale = bookingLocale()): str
 }
 
 /** A plain `YYYY-MM-DD` date as the locale writes it, which is also how native date inputs display it. */
-export function formatPlainDate(date: string, locale = bookingLocale()): string {
+export function formatPlainDate(date: string, locale = bookingDateTimeLocale()): string {
   return Temporal.PlainDate.from(date).toLocaleString(locale, {
     year: "numeric",
     month: "2-digit",
@@ -291,7 +308,25 @@ export function formatDurationMinutes(
   );
 }
 
-export function formatAgendaPeriod(start: string, end: string, timezone: string, locale = "en-US"): string {
+/**
+ * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
+ * as the cancel confirmation. Words follow the app language; the clock follows the browser region.
+ */
+export function formatBookingPeriod(start: string, end: string, timezone: string, locale = bookingLocale()): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    hourCycle: bookingHourCycle(),
+    timeZone: timezone,
+  }).formatRange(new Date(start), new Date(end));
+}
+
+export function formatAgendaPeriod(
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
+  timezone: string,
+  locale = bookingDateTimeLocale(),
+): string {
   const timeFormatter = new Intl.DateTimeFormat(locale, {
     timeZone: timezone,
     hour: "2-digit",
@@ -302,8 +337,8 @@ export function formatAgendaPeriod(start: string, end: string, timezone: string,
     hour: "2-digit",
     timeZoneName: "shortOffset",
   });
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+  const startDate = new Date(Temporal.Instant.from(start).epochMilliseconds);
+  const endDate = new Date(Temporal.Instant.from(end).epochMilliseconds);
   const offset = (date: Date) =>
     offsetFormatter.formatToParts(date).find((part) => part.type === "timeZoneName")?.value;
   const startOffset = offset(startDate);

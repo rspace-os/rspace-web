@@ -1,6 +1,7 @@
 import { type FormStore, getInput, useField } from "@formisch/react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { OpeningHoursEditor } from "@/modules/booking/configuration/OpeningHoursEditor";
 import { MAX_BUFFER_MINUTES, type SchedulingSettings } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import {
@@ -13,6 +14,7 @@ import {
   validMaximumForIncrement,
 } from "@/modules/booking/domain/bookingIncrement";
 import { MAX_BOOKING_DURATION_MINUTES, type OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
+import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import { formData } from "@/modules/common/collection-form/formData";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
@@ -95,7 +97,11 @@ function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: strin
         aria-invalid={problem ? true : undefined}
         aria-describedby={problem ? `${id}-error` : undefined}
       />
-      {problem ? <FieldError id={`${id}-error`}>{t(INCREMENT_PROBLEM_KEYS[problem])}</FieldError> : null}
+      {problem ? (
+        <FieldError id={`${id}-error`}>
+          {t(INCREMENT_PROBLEM_KEYS[problem], { max: MAX_BOOKING_DURATION_MINUTES })}
+        </FieldError>
+      ) : null}
     </Field>
   );
 }
@@ -143,7 +149,11 @@ function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: str
                 days: increment / INCREMENT_UNIT_MINUTES.DAYS,
               })
             : t("settings.errors.maximumDuration", {
-                increment: `${increment === undefined ? "" : increment / INCREMENT_UNIT_MINUTES[unit]} ${t(unit === "HOURS" ? "settings.fields.incrementHours" : "settings.fields.incrementMinutes")}`,
+                increment:
+                  increment === undefined
+                    ? ""
+                    : formatIncrement({ slotGranularityMinutes: increment, incrementUnit: unit }, t),
+                limit: formatDurationMinutes(MAX_BOOKING_DURATION_MINUTES),
               })}
         </FieldError>
       ) : null}
@@ -187,7 +197,9 @@ export function SchedulingSettingsFields({
           aria-describedby={buffer.errors?.length ? errorId : undefined}
           onChange={(event) => buffer.onChange(event.currentTarget.valueAsNumber)}
         />
-        {buffer.errors?.length ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
+        {buffer.errors?.length ? (
+          <FieldError id={errorId}>{t("settings.errors.buffer", { max: MAX_BUFFER_MINUTES })}</FieldError>
+        ) : null}
       </div>
     );
   };
