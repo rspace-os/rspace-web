@@ -1,14 +1,16 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
+import { useRef } from "react";
 import * as v from "valibot";
-import type { BookingMutation } from "@/modules/booking/domain/booking";
-import { createBooking } from "@/modules/booking/domain/booking";
+import type { BookingConflict } from "@/modules/booking/domain/availability";
+import { type BookingMutation, createBooking } from "@/modules/booking/domain/booking";
 import { invalidateBookingListOperation } from "@/modules/booking/domain/bookingInvalidation";
 import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import { ApiV2ProblemError, ApiV2SessionEndedError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ErrorType } from "@/modules/common/api/v2/apiV2Fetch";
+
 import {
   invalidateCountBookingConfigurations,
   invalidateGetBookingConfiguration,
@@ -21,6 +23,7 @@ import {
   invalidateCountBookings,
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
+import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import { BookingEventKindSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import type { BookingFormSubmission } from "./BookingForm";
 import type { BookableItemOption } from "./bookableItemOption";
@@ -50,6 +53,35 @@ export function bookingProblemDetails(error: unknown): v.InferOutput<typeof Book
 /** The server rejected the window because it overlaps, or is within the buffer of, another event. */
 export function isBookingConflictError(error: unknown): boolean {
   return error instanceof ApiV2ProblemError && (error.code === OVERLAP_CODE || error.code === BUFFER_CODE);
+}
+
+/** The event a conflict rejection names, shaped like a client-side conflict so the form can list it. */
+export function bookingProblemConflict(
+  error: unknown,
+  displayTimezone: string,
+  instrumentTimeZone?: string | null,
+): BookingConflict | undefined {
+  if (!(error instanceof ApiV2ProblemError) || !isBookingConflictError(error)) return undefined;
+  const { conflict } = bookingProblemDetails(error);
+  if (!conflict) return undefined;
+  return {
+    ...conflict,
+    // The problem never includes purpose or requester, so the list labels it "Booking #id".
+    privacy: "full",
+    purpose: null,
+    bookedBy: null,
+    timezone: displayTimezone,
+    instrumentTimeZone: instrumentTimeZone ?? null,
+    bufferOnly: error.code === BUFFER_CODE,
+  };
+}
+
+/** Add a server-named conflict unless the client-side list already shows that event. */
+export function withBookingProblemConflict(
+  conflicts: readonly BookingConflict[],
+  conflict: BookingConflict | undefined,
+): readonly BookingConflict[] {
+  return conflict && !conflicts.some(({ id }) => id === conflict.id) ? [...conflicts, conflict] : conflicts;
 }
 
 const BOOKING_PROBLEM_KEYS = {
@@ -138,24 +170,28 @@ export function maximumDurationMessage(maxBookingDurationMinutes: number, t: TFu
   });
 }
 
-/** What a form shows for a failed save: a sentence. */
+/** What a form shows for a failed save: a sentence, and the server-named conflict for the conflict list. */
 export function bookingProblemFeedback(
   error: unknown,
   t: TFunction<"booking">,
   {
+    displayTimezone,
     target,
     creation = false,
   }: {
-    target?: Pick<BookableItemOption, "maxBookingDurationMinutes">;
+    displayTimezone: string;
+    target?: Pick<BookableItemOption, "timezone" | "maxBookingDurationMinutes">;
     creation?: boolean;
   },
-): { message?: string } {
+): { message?: string; conflict?: BookingConflict } {
   if (!error) return {};
+  const conflict = bookingProblemConflict(error, displayTimezone, target?.timezone);
   const message =
     creation && isBookingOutcomeUncertain(error)
       ? t("bookings.errors.outcomeUncertain")
       : bookingProblemMessage(error, t, target?.maxBookingDurationMinutes);
-  return { message };
+  // A listed overlap explains itself; a buffer conflict still needs the sentence naming the buffer.
+  return { conflict, message: conflict && !conflict.bufferOnly ? undefined : message };
 }
 
 /**
@@ -167,34 +203,32 @@ export function isBookingOutcomeUncertain(error: unknown): boolean {
   return !(error instanceof ApiV2ProblemError) || error.status < 400 || error.status >= 500;
 }
 
+function createInput(submission: BookingFormSubmission): BookingsCreate {
+  return {
+    target: { relationTo: "instruments", value: submission.target.targetId },
+    start: Temporal.Instant.from(submission.window.start),
+    end: Temporal.Instant.from(submission.window.end),
+    purpose: submission.purpose,
+    kind: submission.eventKind,
+  };
+}
+
 export function useCreateBooking() {
   const queryClient = useQueryClient();
   const generated = getCreateBookingMutationOptions(queryClient);
+  const intent = useRef<{ fingerprint: string; key: string } | null>(null);
   return useMutation<BookingMutation, ErrorType<unknown>, BookingFormSubmission>({
     retry: false,
-    mutationFn: (submission: BookingFormSubmission) =>
-      createBooking({
-        target: { relationTo: "instruments", value: submission.target.targetId },
-        start: Temporal.Instant.from(submission.window.start),
-        end: Temporal.Instant.from(submission.window.end),
-        purpose: submission.purpose,
-        kind: submission.eventKind,
-      }),
-    onSuccess: (data, submission, result, context) =>
-      generated.onSuccess?.(
-        data,
-        {
-          data: {
-            target: { relationTo: "instruments", value: submission.target.targetId },
-            start: Temporal.Instant.from(submission.window.start),
-            end: Temporal.Instant.from(submission.window.end),
-            purpose: submission.purpose,
-            kind: submission.eventKind,
-          },
-        },
-        result,
-        context,
-      ),
+    mutationFn: (submission) => {
+      const input = createInput(submission);
+      const fingerprint = JSON.stringify(input);
+      if (intent.current?.fingerprint !== fingerprint) intent.current = { fingerprint, key: crypto.randomUUID() };
+      return createBooking(input, intent.current.key);
+    },
+    onSuccess: (data, submission, result, context) => {
+      intent.current = null;
+      return generated.onSuccess?.(data, { data: createInput(submission) }, result, context);
+    },
     onError: (error, submission) => {
       if (
         isBookingOutcomeUncertain(error) ||
@@ -211,12 +245,13 @@ export function useCreateBooking() {
         ]);
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
+        const id = submission.target.configurationId;
         void Promise.all([
           invalidateListBookingConfigurations(queryClient),
           invalidateCountBookingConfigurations(queryClient),
-          invalidateGetBookingConfiguration(queryClient, submission.target.configurationId),
-          invalidateGetBookingConfigurationAccess(queryClient, submission.target.configurationId),
-          invalidateListBookingConfigurationAuditEvents(queryClient, submission.target.configurationId),
+          invalidateGetBookingConfiguration(queryClient, id),
+          invalidateGetBookingConfigurationAccess(queryClient, id),
+          invalidateListBookingConfigurationAuditEvents(queryClient, id),
           invalidateBookingListOperation(queryClient, "catalogue"),
           invalidateBookingListOperation(queryClient, "calendarCatalogue"),
         ]);

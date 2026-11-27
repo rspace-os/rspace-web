@@ -891,11 +891,13 @@ export default interface Resources {
       "archived": "Archived",
       "audit": {
         "actions": {
+          "archivedOrDeleted": "Archived or deleted",
           "cancelled": "Cancelled",
           "changed": "Changed",
           "changedOrCancelled": "Changed or cancelled",
           "created": "Created",
-          "deleted": "Deleted",
+          "deleted": "Archived",
+          "permanentlyDeleted": "Permanently deleted",
           "restored": "Restored"
         },
         "allActions": "All actions",
@@ -970,11 +972,7 @@ export default interface Resources {
           "increment": "Time increment (minutes)",
           "kind": "Event type",
           "maximumDuration": "Maximum duration (minutes)",
-          "openDays": "Open days",
-          "openingEnd": "Closing time",
-          "openingExceptions": "Different hours by day",
           "openingHours": "Opening hours",
-          "openingStart": "Opening time",
           "purpose": "Purpose / notes",
           "removedBookings": "Removed bookings",
           "removedSubscriptions": "Removed subscriptions",
@@ -1321,10 +1319,10 @@ export default interface Resources {
         "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
         "openAllDay": "Open all day",
+        "openAllDayOnDate": "Open all day on this date",
         "openItem": "Open {globalId}",
         "openingHours": "Open: {start} - {end}",
-        "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
-        "openingHoursOnDate": "Open on this date: {hours}",
+        "openingWindowsOnDate": "Open on this date: {hours}",
         "policyMismatchNotes": "This booking does not meet the current booking rules. You can update its maintenance notes without changing its reserved times. Changing those times requires following the current rules.",
         "policyMismatchPurpose": "This booking does not meet the current booking rules. You can update its purpose without changing its reserved times. Changing those times requires following the current rules.",
         "previousItems": "Previous",
@@ -1341,7 +1339,6 @@ export default interface Resources {
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
         "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
-        "timezone": "Times shown in {timezone}.",
         "type": "Booking type",
         "typeBlockout": "Maintenance",
         "typeBooking": "Booking"
@@ -1349,13 +1346,14 @@ export default interface Resources {
       "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
       "itemInformation": {
         "buffer": "Buffer",
-        "bufferAfter": "{count}m after",
-        "bufferBefore": "{count}m before",
+        "bufferAfter": "{count, number}m after",
+        "bufferBefore": "{count, number}m before",
         "closedDay": "{day}: closed",
-        "day": "{day}:",
+        "day": "{day}: {hours}",
         "doubleBookingAllowed": "Double booking allowed",
         "everyDay": "Every day: {hours}",
         "open": "Open",
+        "timeWithInstrumentTime": "{time}, Instrument time: {itemTime} ({timezone})",
         "title": "Item information"
       },
       "loading": "Loading booking.",
@@ -1676,10 +1674,9 @@ export default interface Resources {
         "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
         "error": "The upcoming booking count could not be loaded.",
         "loading": "Loading upcoming count",
-        "lowerBound": "99+",
-        "lowerBoundAccessible": "More than 99 upcoming bookings"
+        "lowerBound": "{max, number}+",
+        "lowerBoundAccessible": "More than {max, plural, one {# upcoming booking} other {# upcoming bookings}}"
       },
-      "description": "View and manage bookings requested by this user.",
       "empty": {
         "cancelled": "No cancelled bookings found.",
         "past": "No past bookings found.",
@@ -1700,7 +1697,8 @@ export default interface Resources {
         "legend": "Booking period",
         "past": "Past",
         "upcoming": "Upcoming",
-        "withCount": "{label} {count}"
+        "upcomingOverLimit": "Upcoming {max, number}+",
+        "upcomingWithCount": "Upcoming {count, number}"
       },
       "plural": "Bookings",
       "roleLoss": {

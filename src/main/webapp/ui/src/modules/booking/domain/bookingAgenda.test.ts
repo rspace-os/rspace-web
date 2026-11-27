@@ -95,6 +95,7 @@ describe("booking agenda date helpers", () => {
       "en-US",
     );
     expect(sameOffsetRange.split("GMT+2")).toHaveLength(3);
+    // The 12- or 24-hour clock follows the browser region (en-US here), not the app language, to match native inputs.
     expect(
       formatBookingAgendaTimeRange(
         Temporal.Instant.from("2026-09-24T12:00:00.000Z"),
@@ -102,7 +103,7 @@ describe("booking agenda date helpers", () => {
         "Europe/Berlin",
         "de-DE",
       ).replace(/\s/g, ""),
-    ).not.toEqual(
+    ).toEqual(
       formatBookingAgendaTimeRange(
         Temporal.Instant.from("2026-09-24T12:00:00.000Z"),
         Temporal.Instant.from("2026-09-24T14:00:00.000Z"),

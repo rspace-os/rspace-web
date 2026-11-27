@@ -5,13 +5,17 @@ import {
   validIncrementForSchedule,
   validMaximumForIncrement,
 } from "@/modules/booking/domain/bookingIncrement";
-import { ALL_ISO_WEEKDAYS, mapOpeningHours, validOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  ALL_ISO_WEEKDAYS,
+  MAX_BOOKING_DURATION_MINUTES,
+  mapOpeningHours,
+  validOpeningHours,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingAdminSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingAdminSettingsDocument";
 import type { BookingSettingsDocument } from "@/modules/common/api/v2/generated/models/bookingSettingsDocument";
 import { BookingOpeningHoursEntrySchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 
 export const MAX_BUFFER_MINUTES = 10_080;
-export const MAX_BOOKING_DURATION_MINUTES = 527_040;
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "incrementUnit",
