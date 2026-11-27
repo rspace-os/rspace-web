@@ -1,4 +1,4 @@
-package com.researchspace.dao;
+package com.researchspace.dao.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,6 +31,9 @@ import org.springframework.web.util.UriComponentsBuilder;
  *
  * Options are read from both the URL and <code>jdbc.connectionProperties</code>; URL options win in
  * the driver, so legacy options in the URL are rewritten in the URL.
+ *
+ * <p>Kept out of {@code com.researchspace.dao} itself, whose public methods {@code
+ * ServiceLoggerAspct} advises: the pool would be replaced by a JDK proxy.
  */
 @Slf4j
 public class MariaDbDataSource extends BasicDataSource {

@@ -1,4 +1,4 @@
-package com.researchspace.dao;
+package com.researchspace.dao.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -72,11 +72,11 @@ class MariaDbDataSourceTlsIT {
   void localInfileIsRefusedByDefault() throws Exception {
     Path file = Files.createTempFile("local-infile", ".txt");
     Files.writeString(file, "host file\n");
-    String load = "LOAD DATA LOCAL INFILE '" + file + "' INTO TABLE infile";
+    String load = "LOAD DATA LOCAL INFILE '" + file + "' INTO TABLE local_file_load";
     try (MariaDbDataSource ds = dataSource(url(withTls, "jdbc:mariadb:"), "");
         Connection connection = ds.getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute("CREATE TABLE IF NOT EXISTS infile (line TEXT)");
+      statement.execute("CREATE TABLE IF NOT EXISTS local_file_load (line TEXT)");
       assertThrows(SQLException.class, () -> statement.execute(load));
     }
     // control: the server accepts it when the setting is opted into
