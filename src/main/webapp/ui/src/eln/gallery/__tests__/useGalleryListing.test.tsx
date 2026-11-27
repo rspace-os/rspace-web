@@ -4,6 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import React from "react";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import * as FetchingData from "../../../util/fetchingData";
 import {
@@ -69,6 +70,34 @@ function WrapperComponent() {
       );
     },
   });
+}
+
+/**
+ * Like the Gallery's automatic paging for a linked item: asks for the next
+ * page in the same commit as a search reloads the listing.
+ */
+function LoadMoreDuringReloadWrapper() {
+  const listingOf = React.useMemo(() => ({ tag: "section" as const, section: "Images" as const, path: [] }), []);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const { galleryListing, refreshListing } = useGalleryListing({
+    listingOf,
+    searchTerm,
+    sortOrder: "DESC",
+    orderBy: "modificationDate",
+  });
+  const listing = FetchingData.getSuccessValue(galleryListing).orElse(null);
+  React.useEffect(() => {
+    if (searchTerm !== "new" || listing === null || listing.tag === "empty") return;
+    listing.loadMore.do((loadMore) => void loadMore());
+  }, [searchTerm]);
+  return (
+    <>
+      {/** biome-ignore lint/a11y/useButtonType: matches the wrappers above */}
+      <button onClick={() => setSearchTerm("new")}>{listing === null ? "loading" : "Search"}</button>
+      {/** biome-ignore lint/a11y/useButtonType: matches the wrappers above */}
+      <button onClick={() => void refreshListing()}>{"Refresh"}</button>
+    </>
+  );
 }
 
 function OwnerFieldsWrapper() {
@@ -145,6 +174,109 @@ describe("useGalleryListing", () => {
     expect(getUploadedFilesCalls.length).toBe(2);
     expect(firstPageParams.get("pageNumber")).toBe("0");
     expect(secondPageParams.get("pageNumber")).toBe("1");
+  });
+
+  test("a refresh that leaves fewer pages does not fetch the dropped page again", async () => {
+    const user = userEvent.setup();
+    let totalPages = 2;
+    mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
+      const fixture = (params as URLSearchParams).get("pageNumber") === "0" ? page1 : page2;
+      return [200, { ...fixture, data: { ...fixture.data, items: { ...fixture.data.items, totalPages } } }];
+    });
+    const uploadedFilesCalls = () => mockAxios.history.get.filter(({ url }) => /getUploadedFiles/.test(url ?? ""));
+
+    render(<WrapperComponent />);
+    await user.click(await screen.findByRole("button", { name: "Load more" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+    });
+
+    // files were deleted, so the folder now fits on one page
+    totalPages = 1;
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    await waitFor(() => {
+      expect(uploadedFilesCalls()).toHaveLength(4);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(uploadedFilesCalls()).toHaveLength(4);
+  });
+
+  test("a next page asked for during a reload waits for the new first page", async () => {
+    const user = userEvent.setup();
+    const { promise: newFirstPage, resolve: releaseNewFirstPage } = Promise.withResolvers<void>();
+    mockAxios.onGet("/gallery/getUploadedFiles").reply(async ({ params }) => {
+      const search = params as URLSearchParams;
+      const isFirstPage = search.get("pageNumber") === "0";
+      if (isFirstPage && search.get("name") === "new") await newFirstPage;
+      return [200, isFirstPage ? page1 : page2];
+    });
+    const requestedPages = (name: string) =>
+      mockAxios.history.get
+        .map(({ params }) => params as URLSearchParams)
+        .filter((params) => params.get("name") === name)
+        .map((params) => params.get("pageNumber"));
+
+    render(<LoadMoreDuringReloadWrapper />);
+    await user.click(await screen.findByRole("button", { name: "Search" }));
+
+    await waitFor(() => {
+      expect(requestedPages("new")).toEqual(["0"]);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // fetched alongside page 0, page 1 could land first and then be replaced by it
+    expect(requestedPages("new")).toEqual(["0"]);
+
+    releaseNewFirstPage();
+    await waitFor(() => {
+      expect(requestedPages("new")).toEqual(["0", "1"]);
+    });
+  });
+
+  test.each([
+    { newListing: "fails to load", firstPage: (): [number, unknown] => [500, {}] },
+    {
+      newListing: "has only one page",
+      firstPage: (): [number, unknown] => [
+        200,
+        { ...page1, data: { ...page1.data, items: { ...page1.data.items, totalPages: 1 } } },
+      ],
+    },
+  ])("a next page asked for during a reload is dropped when the new listing $newListing", async ({ firstPage }) => {
+    const user = userEvent.setup();
+    const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
+    try {
+      let newFirstPage = firstPage;
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(({ params }) => {
+        const search = params as URLSearchParams;
+        if (search.get("name") === "new" && search.get("pageNumber") === "0") return newFirstPage();
+        return [200, search.get("pageNumber") === "0" ? page1 : page2];
+      });
+      const requestedPages = (name: string) =>
+        mockAxios.history.get
+          .map(({ params }) => params as URLSearchParams)
+          .filter((params) => params.get("name") === name)
+          .map((params) => params.get("pageNumber"));
+
+      render(<LoadMoreDuringReloadWrapper />);
+      await user.click(await screen.findByRole("button", { name: "Search" }));
+
+      await waitFor(() => {
+        expect(requestedPages("new")).toEqual(["0"]);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(requestedPages("new")).toEqual(["0"]);
+
+      // files were added, so a refresh now finds a second page; it still waits for Load more
+      newFirstPage = () => [200, page1];
+      await user.click(screen.getByRole("button", { name: "Refresh" }));
+      await waitFor(() => {
+        expect(requestedPages("new")).toEqual(["0", "0"]);
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(requestedPages("new")).toEqual(["0", "0"]);
+    } finally {
+      restoreConsole();
+    }
   });
 
   test("null and missing owner fields should fall back safely", async () => {

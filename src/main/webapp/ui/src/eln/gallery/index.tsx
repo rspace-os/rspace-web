@@ -154,6 +154,39 @@ const WholePage = ({
     }
   }, [autoSelect, galleryListing]);
 
+  /*
+   * A linked item need not be on the first page of its folder, so pages are
+   * loaded until it turns up or the folder runs out. This happens once per
+   * link, and stops once the user sorts or searches, so their own listing
+   * pages only on request. A page is asked for once per listing it would
+   * extend, so a failed page, which leaves the listing as it was, is not asked
+   * for again.
+   */
+  const [autoPagingStoppedFor, setAutoPagingStoppedFor] = React.useState<ReadonlyArray<number> | null>(null);
+  const [pageRequestedFor, setPageRequestedFor] = React.useState<ReadonlyArray<GalleryFile> | null>(null);
+  const stopAutoPaging = () => {
+    setAutoPagingStoppedFor(autoSelect ?? null);
+  };
+  React.useEffect(() => {
+    if (!autoSelect?.length || autoPagingStoppedFor === autoSelect) return;
+    if (liveListing.tag !== "success") return;
+    if (liveListing.value.tag === "empty" || !liveList) {
+      setAutoPagingStoppedFor(autoSelect);
+      return;
+    }
+    if (pageRequestedFor === liveList) return;
+    const wanted = new Set(autoSelect.map((id) => `${id}`));
+    const found = liveList.some(({ id }) => wanted.has(idToString(id).orElse("")));
+    if (found || liveListing.value.loadMore.isEmpty()) {
+      setAutoPagingStoppedFor(autoSelect);
+      return;
+    }
+    liveListing.value.loadMore.do((loadMore) => {
+      setPageRequestedFor(liveList);
+      void loadMore();
+    });
+  }, [autoSelect, autoPagingStoppedFor, pageRequestedFor, liveListing, liveList]);
+
   const [largerViewportSidebarOpenState, setLargerViewportSidebarOpenState] = useUiPreference<boolean>(
     PREFERENCES.GALLERY_SIDEBAR_OPEN,
     {
@@ -286,10 +319,17 @@ const WholePage = ({
                           key={null}
                           sortOrder={sortOrder}
                           orderBy={orderBy}
-                          setSortOrder={setSortOrder}
-                          setOrderBy={setOrderBy}
+                          setSortOrder={(newSortOrder) => {
+                            stopAutoPaging();
+                            setSortOrder(newSortOrder);
+                          }}
+                          setOrderBy={(newOrderBy) => {
+                            stopAutoPaging();
+                            setOrderBy(newOrderBy);
+                          }}
                           appliedSearchTerm={appliedSearchTerm}
                           setAppliedSearchTerm={(newTerm) => {
+                            stopAutoPaging();
                             FetchingData.getSuccessValue(path).do((p) => {
                               if (p.length > 0) {
                                 trackEvent("user:search:folder:gallery");

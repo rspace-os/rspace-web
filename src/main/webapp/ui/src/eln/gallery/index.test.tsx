@@ -9,6 +9,7 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { HttpResponse, http } from "msw/http";
 import { MemoryRouter } from "react-router";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
@@ -703,6 +704,180 @@ describe("Gallery", () => {
         expect(document.title).toBe("gallery:pageTitleWithContext");
       });
       expect(screen.queryByText("gallery:pinnedVersion.notice")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Linked item beyond the first page of its folder", () => {
+    const LINKED_ITEM_ID = 77;
+
+    function listingEntry(id: number, name: string) {
+      return {
+        id,
+        oid: { idString: `GL${id}` },
+        name,
+        ownerId: 1,
+        ownerFullName: "Test User",
+        ownerUsername: "testuser",
+        description: "",
+        creationDate: 1672531200,
+        modificationDate: 1672531200,
+        type: "Image",
+        systemFolder: false,
+        sharedFolder: false,
+        extension: "png",
+        thumbnailId: null,
+        size: 100,
+        version: 1,
+        originalImageOid: null,
+      };
+    }
+
+    /** A folder listed with each page's entries given in order; `failingPage` answers 500. */
+    function mockPagedFolder(
+      pages: ReadonlyArray<ReadonlyArray<ReturnType<typeof listingEntry>>>,
+      { failingPage, slowPage }: { failingPage?: number; slowPage?: Promise<void> } = {},
+    ) {
+      mockAxios.onGet(`/api/v1/files/${LINKED_ITEM_ID}`).reply(200, {
+        id: LINKED_ITEM_ID,
+        globalId: `GL${LINKED_ITEM_ID}`,
+        name: "linked.png",
+        contentType: "image/png",
+        created: "2025-07-07T11:09:18.312Z",
+        size: 100,
+        version: 1,
+        parentFolderId: 123,
+      });
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(async ({ params }) => {
+        const pageNumber = Number((params as URLSearchParams).get("pageNumber"));
+        if (pageNumber === failingPage) return [500, {}];
+        if (pageNumber > 0) await slowPage;
+        return [
+          200,
+          {
+            data: {
+              parentId: 123,
+              items: { totalHits: pages.flat().length, totalPages: pages.length, results: pages[pageNumber] ?? [] },
+            },
+            error: null,
+            success: true,
+            errorMsg: null,
+          },
+        ];
+      });
+    }
+
+    function requestedPages(searchTerm = ""): Array<string | null> {
+      return mockAxios.history.get
+        .filter(({ url }) => /getUploadedFiles/.test(url ?? ""))
+        .map(({ params }) => params as URLSearchParams)
+        .filter((params) => params.get("name") === searchTerm)
+        .map((params) => params.get("pageNumber"));
+    }
+
+    test("loads pages until the linked item is found, then selects it", async () => {
+      mockPagedFolder([
+        [listingEntry(1, "newest.png")],
+        [listingEntry(LINKED_ITEM_ID, "linked.png")],
+        [listingEntry(2, "oldest.png")],
+      ]);
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("gridcell", { name: /linked\.png/ })).toHaveAttribute("aria-selected", "true");
+      });
+      expect(requestedPages()).toEqual(["0", "1"]);
+    });
+
+    test("stops at the last page when the linked item is not in the folder", async () => {
+      mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(2, "oldest.png")]]);
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      expect(await screen.findByRole("gridcell", { name: /oldest\.png/ })).toBeInTheDocument();
+      expect(requestedPages()).toEqual(["0", "1"]);
+    });
+
+    test("pressing Load more while the linked item's page is loading does not request it twice", async () => {
+      const user = userEvent.setup();
+      const { promise: slowPage, resolve: releasePages } = Promise.withResolvers<void>();
+      mockPagedFolder(
+        [
+          [listingEntry(1, "newest.png")],
+          [listingEntry(2, "middle.png")],
+          [listingEntry(LINKED_ITEM_ID, "linked.png")],
+        ],
+        { slowPage },
+      );
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      await waitFor(() => {
+        expect(requestedPages()).toEqual(["0", "1"]);
+      });
+      await user.click(screen.getByRole("button", { name: "gallery:loadMore" }));
+      releasePages();
+
+      await waitFor(() => {
+        expect(screen.getByRole("gridcell", { name: /linked\.png/ })).toHaveAttribute("aria-selected", "true");
+      });
+      expect(requestedPages()).toEqual(["0", "1", "2"]);
+      expect(screen.getByRole("gridcell", { name: /middle\.png/ })).toBeInTheDocument();
+    });
+
+    test("a page still loading for the old listing does not hold up Load more after a search", async () => {
+      const user = userEvent.setup();
+      const { promise: slowPage, resolve: releasePages } = Promise.withResolvers<void>();
+      mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
+        slowPage,
+      });
+
+      render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+      await waitFor(() => {
+        expect(requestedPages()).toEqual(["0", "1"]);
+      });
+      await user.type(screen.getByPlaceholderText("gallery:mainPanel.searchPlaceholder"), "newest{Enter}");
+      await waitFor(() => {
+        expect(requestedPages("newest")).toEqual(["0"]);
+      });
+      await user.click(await screen.findByRole("button", { name: "gallery:loadMore" }));
+
+      // the old listing's page 1 is still pending
+      await waitFor(() => {
+        expect(requestedPages("newest")).toEqual(["0", "1"]);
+      });
+      releasePages();
+    });
+
+    test("a failed page is not retried on its own, and a search afterwards pages only on request", async () => {
+      const user = userEvent.setup();
+      const restoreConsole = silenceConsole(["error"], ["Request failed with status code 500"]);
+      try {
+        mockPagedFolder([[listingEntry(1, "newest.png")], [listingEntry(LINKED_ITEM_ID, "linked.png")]], {
+          failingPage: 1,
+        });
+
+        render(<GalleryStory urlSuffix={`/item/${LINKED_ITEM_ID}`} />);
+
+        await waitFor(() => {
+          expect(requestedPages()).toEqual(["0", "1"]);
+        });
+        // the failed page can still be requested by hand
+        expect(screen.getByRole("button", { name: "gallery:loadMore" })).toBeVisible();
+
+        await user.type(screen.getByPlaceholderText("gallery:mainPanel.searchPlaceholder"), "newest{Enter}");
+        expect(await screen.findByRole("gridcell", { name: /newest\.png/ })).toBeInTheDocument();
+        await waitFor(() => {
+          expect(requestedPages("newest")).toEqual(["0"]);
+        });
+        // give a wrongly resumed auto-paging the chance to request page 1
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        expect(requestedPages("newest")).toEqual(["0"]);
+        expect(requestedPages()).toEqual(["0", "1"]);
+      } finally {
+        restoreConsole();
+      }
     });
   });
 

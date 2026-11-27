@@ -1186,6 +1186,13 @@ export function useGalleryListing({
   const path = listingOf.tag === "section" ? { tag: "success" as const, value: listingOf.path } : directFolderPath;
 
   const [page, setPage] = React.useState<number>(0);
+  /*
+   * The next page asked for. Nothing beyond the first page is fetched while
+   * the listing (re)loads: starting a reload drops any page still on its way,
+   * and a request made around the reload waits for the new first page, then
+   * goes ahead only if the new listing has that page.
+   */
+  const [requestedPage, setRequestedPage] = React.useState<number | null>(null);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
   const [parentId, setParentId] = React.useState<Result<Id>>(Result.Error([new Error("Parent Id is not yet known")]));
@@ -1614,8 +1621,30 @@ export function useGalleryListing({
     }
   }
 
+  /*
+   * A listing of a specific folder at the root of a section has an empty path,
+   * so the folder's own id is needed; "0" would list the user's own section root.
+   */
+  function listingFolderId(p: ReadonlyArray<GalleryFile>): string {
+    if (p.length > 0) return idToString(p[p.length - 1].id).elseThrow();
+    return listingOf.tag === "folder" ? `${listingOf.folderId}` : "0";
+  }
+
+  function listingParams(p: ReadonlyArray<GalleryFile>, s: GallerySection, pageNumber: number): URLSearchParams {
+    return new URLSearchParams({
+      mediatype: s,
+      currentFolderId: listingFolderId(p),
+      name: searchTerm,
+      pageNumber: `${pageNumber}`,
+      sortOrder,
+      orderBy,
+      foldersOnly: foldersOnly ? "true" : "false",
+    });
+  }
+
   async function getGalleryFiles(p: ReadonlyArray<GalleryFile>, s: GallerySection): Promise<void> {
     setErrorState(false);
+    setRequestedPage(null);
     if (s === "NetworkFiles" && p.length === 0) {
       return getFilestores();
     }
@@ -1628,23 +1657,8 @@ export function useGalleryListing({
     try {
       const token = await getToken();
 
-      let currentFolderId = "0";
-      if (p.length > 0) {
-        currentFolderId = idToString(p[p.length - 1].id).elseThrow();
-      } else if (listingOf.tag === "folder") {
-        currentFolderId = `${listingOf.folderId}`;
-      }
-
       const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
-        params: new URLSearchParams({
-          mediatype: s,
-          currentFolderId,
-          name: searchTerm,
-          pageNumber: "0",
-          sortOrder,
-          orderBy,
-          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-        }),
+        params: listingParams(p, s, 0),
       });
 
       setParentId(
@@ -1679,29 +1693,50 @@ export function useGalleryListing({
     }
   }
 
-  async function loadMore(): Promise<void> {
-    setPage(page + 1);
-    try {
-      const token = await getToken();
-      const s = FetchingData.getSuccessValue(section).elseThrow();
-      const p = FetchingData.getSuccessValue(path).elseThrow();
-      const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
-        params: new URLSearchParams({
-          mediatype: s,
-          currentFolderId: p.length > 0 ? idToString(p[p.length - 1].id).elseThrow() : "0",
-          name: searchTerm,
-          pageNumber: `${page + 1}`,
-          sortOrder,
-          orderBy,
-          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-        }),
-      });
-
-      setGalleryListing([...galleryListing, ...parseGalleryFiles(data, token, p)]);
-    } catch (e) {
-      console.error(e);
-    }
+  /*
+   * Load more only asks for the next page; the effect below fetches it, so
+   * asking again for a page on its way changes nothing. A request is cleared
+   * once its page is added, when it fails, so Load more can ask again, and
+   * when the settled listing no longer has that page next, so no later refresh
+   * can fetch it unasked. The effect follows whether the page is in range
+   * rather than the page count, so a refresh that changes the count does not
+   * restart a page already on its way.
+   */
+  function loadMore(): Promise<void> {
+    setRequestedPage(page + 1);
+    return Promise.resolve();
   }
+
+  const requestedPageInRange = requestedPage !== null && requestedPage < totalPages;
+  React.useEffect(() => {
+    if (loading || requestedPage === null) return;
+    if (requestedPage !== page + 1 || !requestedPageInRange) {
+      setRequestedPage(null);
+      return;
+    }
+    let superseded = false;
+    void (async () => {
+      try {
+        const token = await getToken();
+        const s = FetchingData.getSuccessValue(section).elseThrow();
+        const p = FetchingData.getSuccessValue(path).elseThrow();
+        const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
+          params: listingParams(p, s, requestedPage),
+        });
+        if (superseded) return;
+        const files = parseGalleryFiles(data, token, p);
+        setGalleryListing((listing) => [...listing, ...files]);
+        setPage(requestedPage);
+        setRequestedPage(null);
+      } catch (e) {
+        console.error(e);
+        if (!superseded) setRequestedPage(null);
+      }
+    })();
+    return () => {
+      superseded = true;
+    };
+  }, [requestedPage, page, loading, requestedPageInRange]);
 
   React.useEffect(() => {
     Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
@@ -1758,15 +1793,7 @@ export function useGalleryListing({
             [...take(incrementForever(), page + 1)].map((p) =>
               axios
                 .get<unknown>(`/gallery/getUploadedFiles`, {
-                  params: new URLSearchParams({
-                    mediatype: s,
-                    currentFolderId: pa.length > 0 ? idToString(pa[pa.length - 1].id).elseThrow() : "0",
-                    name: searchTerm,
-                    pageNumber: `${p}`,
-                    sortOrder,
-                    orderBy,
-                    foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-                  }),
+                  params: listingParams(pa, s, p),
                 })
                 .then(({ data }) => {
                   Parsers.objectPath(["exceptionMessage"], data)
