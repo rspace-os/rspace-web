@@ -14,6 +14,8 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.sort.CommunicationSort;
 import java.util.*;
 import java.util.function.Consumer;
+import org.apache.commons.collections4.ListUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -29,6 +31,12 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   // COMMUNICATION_TARGET table not aliased by client code, the CT alias will be prepended to any
   // order-by criteria passed in by client code
   private static final String COMMUNICATION_TARGET_ALIAS = "ct";
+
+  /**
+   * Messages per recipient fetch. The fetch join repeats each message row once per recipient, so
+   * listings that request every result (archive export) fetch recipients in batches of this size.
+   */
+  public static final int RECIPIENT_FETCH_BATCH_SIZE = 50;
 
   static final Set<CommunicationStatus> TERMINATED_STATES =
       EnumSet.of(
@@ -371,16 +379,43 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return new UnanimousVotingRequestCompletionUpdatePolicy(); // default
   }
 
+  /**
+   * Initialises the recipients and previous message of already loaded messages with one query each
+   * (recipients in batches of {@link #RECIPIENT_FETCH_BATCH_SIZE} messages), relying on the
+   * first-level cache to attach the fetched state to the loaded instances.
+   */
   private void initMessageOrRequestProperties(List<MessageOrRequest> mors) {
-    for (MessageOrRequest mor : mors) {
-      if (mor.getPrevious() != null) {
-        mor.getPrevious().getPriority(); // initialize
-      }
-      // RSPAC-1455. global messages have all users as recipients; initializing this collection
-      // loads all users, to be avoided!
-      if (!MessageType.GLOBAL_MESSAGE.equals(mor.getMessageType())) {
-        mor.getRecipients().size(); // initialize
-      }
+    // RSPAC-1455. global messages have all users as recipients; initializing this collection
+    // loads all users, to be avoided!
+    List<Long> nonGlobalIds =
+        mors.stream()
+            .filter(mor -> !MessageType.GLOBAL_MESSAGE.equals(mor.getMessageType()))
+            .map(MessageOrRequest::getId)
+            .toList();
+    for (List<Long> batch : ListUtils.partition(nonGlobalIds, RECIPIENT_FETCH_BATCH_SIZE)) {
+      getSession()
+          .createQuery(
+              "select mor from MessageOrRequest mor"
+                  + " left join fetch mor.recipients ct left join fetch ct.recipient"
+                  + " where mor.id in :ids",
+              MessageOrRequest.class)
+          .setParameterList("ids", batch)
+          .list();
+    }
+
+    // reading the id of an uninitialised proxy does not initialise it
+    List<Long> previousIds =
+        mors.stream()
+            .map(MessageOrRequest::getPrevious)
+            .filter(previous -> previous != null && !Hibernate.isInitialized(previous))
+            .map(MessageOrRequest::getId)
+            .distinct()
+            .toList();
+    if (!previousIds.isEmpty()) {
+      getSession()
+          .createQuery("from MessageOrRequest where id in :previousIds", MessageOrRequest.class)
+          .setParameterList("previousIds", previousIds)
+          .list();
     }
   }
 

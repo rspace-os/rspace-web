@@ -6,6 +6,7 @@ import static com.researchspace.testutils.CommsTestUtils.createARequest;
 import static com.researchspace.testutils.CommsTestUtils.createAnyNotification;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,6 +18,7 @@ import com.researchspace.Constants;
 import com.researchspace.core.util.IPagination;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.hibernate.CommunicationDaoHibernateImpl;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -41,11 +43,14 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
@@ -660,6 +665,140 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
   }
 
   @Test
+  public void listingMessagesDoesNotLoadGlobalMessageRecipients() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    MessageOrRequest global =
+        saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, sender, recipient, null);
+    MessageOrRequest original =
+        saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, recipient, sender, null);
+    MessageOrRequest reply =
+        saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, original);
+    flushAndClear();
+
+    Map<Long, MessageOrRequest> listed =
+        listMessagesFor(recipient, 10).stream()
+            .collect(Collectors.toMap(MessageOrRequest::getId, Function.identity()));
+
+    assertTrue(Hibernate.isInitialized(listed.get(reply.getId()).getRecipients()));
+    assertTrue(Hibernate.isInitialized(listed.get(reply.getId()).getPrevious()));
+    assertFalse(Hibernate.isInitialized(listed.get(global.getId()).getRecipients()));
+  }
+
+  @Test
+  public void listingResolvesAGlobalPreviousMessageWithoutItsRecipients() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    // sent by the listing user, so the global message itself is not listed
+    MessageOrRequest global =
+        saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, recipient, sender, null);
+    MessageOrRequest reply =
+        saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, global);
+    flushAndClear();
+
+    List<MessageOrRequest> listed = listMessagesFor(recipient, 10);
+
+    assertEquals(List.of(reply.getId()), listed.stream().map(MessageOrRequest::getId).toList());
+    MessageOrRequest previous = listed.get(0).getPrevious();
+    assertTrue(Hibernate.isInitialized(previous));
+    assertFalse(Hibernate.isInitialized(previous.getRecipients()));
+  }
+
+  @Test
+  public void listingsDoNotQueryPerMessage() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    User bystander = createAndSaveRandomUser();
+    // each listed message has a previous message outside every listing, left as a proxy
+    Supplier<MessageOrRequest> unlisted =
+        () -> saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, bystander, bystander, null);
+    saveMessageWithPrevious(MessageType.GLOBAL_MESSAGE, sender, recipient, unlisted.get());
+    for (int i = 0; i < 7; i++) {
+      saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, unlisted.get());
+      saveMessageWithPrevious(MessageType.REQUEST_RECORD_REVIEW, sender, recipient, unlisted.get());
+    }
+    flushAndClear();
+
+    assertAll(
+        () ->
+            assertStatementCountIndependentOfPageSize(
+                this::getDefaultPgCrit,
+                pc ->
+                    dao.getActiveRequestsAndMessagesForUser(
+                        recipient, pc, MessageTypeFilter.ALL_TYPES)),
+        () ->
+            assertStatementCountIndependentOfPageSize(
+                this::getDefaultPgCrit,
+                pc -> dao.getAllSentAndReceivedSimpleMessagesForUser(recipient, pc)),
+        () ->
+            assertStatementCountIndependentOfPageSize(
+                () -> PaginationCriteria.createDefaultForClass(MessageOrRequest.class),
+                pc -> dao.getSentRequests(sender, pc)));
+  }
+
+  @Test
+  public void allResultsListingFetchesRecipientsInBatches() {
+    User sender = createAndSaveRandomUser();
+    User recipient = createAndSaveRandomUser();
+    int messageCount = CommunicationDaoHibernateImpl.RECIPIENT_FETCH_BATCH_SIZE + 1;
+    for (int i = 0; i < messageCount; i++) {
+      saveMessageWithPrevious(MessageType.SIMPLE_MESSAGE, sender, recipient, null);
+    }
+    flushAndClear();
+    // as requested by MessageArchiveDataHandler when exporting a user's messages
+    PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
+    pc.setGetAllResults();
+
+    Statistics stats = sessionFactory.getStatistics();
+    boolean wasEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    try {
+      List<MessageOrRequest> listed =
+          dao.getAllSentAndReceivedSimpleMessagesForUser(recipient, pc).getResults();
+      assertThat(listed)
+          .hasSize(messageCount)
+          .allMatch(mor -> Hibernate.isInitialized(mor.getRecipients()));
+      String recipientFetch =
+          List.of(stats.getQueries()).stream()
+              .filter(hql -> hql.contains("join fetch mor.recipients"))
+              .findFirst()
+              .orElseThrow();
+      assertEquals(2, stats.getQueryStatistics(recipientFetch).getExecutionCount());
+    } finally {
+      stats.clear();
+      stats.setStatisticsEnabled(wasEnabled);
+    }
+  }
+
+  private <P> void assertStatementCountIndependentOfPageSize(
+      Supplier<PaginationCriteria<P>> pgCritFactory,
+      Function<PaginationCriteria<P>, ISearchResults<MessageOrRequest>> listing) {
+    long twoPerPage = countStatementsListing(2, pgCritFactory, listing);
+    long sevenPerPage = countStatementsListing(7, pgCritFactory, listing);
+    assertEquals(twoPerPage, sevenPerPage, "statement count must not grow with page size");
+  }
+
+  private <P> long countStatementsListing(
+      int pageSize,
+      Supplier<PaginationCriteria<P>> pgCritFactory,
+      Function<PaginationCriteria<P>, ISearchResults<MessageOrRequest>> listing) {
+    PaginationCriteria<P> pc = pgCritFactory.get();
+    pc.setResultsPerPage(pageSize);
+    Statistics stats = sessionFactory.getStatistics();
+    boolean wasEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    try {
+      sessionFactory.getCurrentSession().clear();
+      stats.clear();
+      assertThat(listing.apply(pc).getResults()).hasSize(pageSize);
+      return stats.getPrepareStatementCount();
+    } finally {
+      stats.setStatisticsEnabled(wasEnabled);
+    }
+  }
+
+  @Test
   public void listingPagesAreSlicesOfTheFullListingForEverySort() throws InterruptedException {
     ListingFixture fx = saveListingFixture();
     EnumSet<CommunicationSort> allSorts = EnumSet.allOf(CommunicationSort.class);
@@ -862,6 +1001,26 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
       stats.clear();
       stats.setStatisticsEnabled(wasEnabled);
     }
+  }
+
+  private List<MessageOrRequest> listMessagesFor(User user, int pageSize) {
+    PaginationCriteria<CommunicationTarget> pgCrit = getDefaultPgCrit();
+    pgCrit.setResultsPerPage(pageSize);
+    return dao.getActiveRequestsAndMessagesForUser(user, pgCrit, MessageTypeFilter.ALL_TYPES)
+        .getResults();
+  }
+
+  private MessageOrRequest saveMessageWithPrevious(
+      MessageType type, User sender, User recipient, MessageOrRequest previous) {
+    MessageOrRequest message = createRequestOfType(sender, type);
+    message.setPreviousMessage(previous);
+    message.setRecipients(toSet(createCommTarget(recipient, message)));
+    return (MessageOrRequest) dao.save(message);
+  }
+
+  private void flushAndClear() {
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
   }
 
   private static List<Long> idsOf(ISearchResults<? extends Communication> results) {
