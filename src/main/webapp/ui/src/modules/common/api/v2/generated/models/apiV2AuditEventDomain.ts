@@ -23,5 +23,6 @@ export type ApiV2AuditEventDomain =
   | "INV_CONTAINER"
   | "INV_INSTRUMENT"
   | "REQUEST"
+  | "BOOKING"
   | "WORKSPACE"
   | "UNKNOWN";

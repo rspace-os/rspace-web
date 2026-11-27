@@ -81,7 +81,25 @@
       "top": "Top"
     },
     "audit": {
+      "booking": {
+        "emptyValue": "—",
+        "entry": "{0}: {1}",
+        "onBehalfOf": "On behalf of {0}",
+        "separator": "; ",
+        "targetUnavailable": "Unavailable bookable item",
+        "timeFormatAutomatic": "Automatic",
+        "timeFormatTwelveHour": "12-hour",
+        "timeFormatTwentyFourHour": "24-hour",
+        "timezoneModeBrowser": "Browser time zone",
+        "timezoneModeCustom": "Custom time zone",
+        "timezoneModeInstitution": "Institution time zone",
+        "weekdayHours": "{0} {1}–{2}"
+      },
       "csv": {
+        "bookingActionArchived": "Archived",
+        "bookingActionCancelled": "Cancelled",
+        "bookingActionPermanentlyDeleted": "Permanently deleted",
+        "bookingType": "Booking",
         "commentGeneratedAt": "# audit trail download generated at {0}.",
         "exportedItemCount": "{0, plural, one {1 item} other {# items}} exported: {1}",
         "headerDescription": "Description",
