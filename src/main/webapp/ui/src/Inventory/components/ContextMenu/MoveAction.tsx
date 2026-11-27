@@ -3,8 +3,10 @@ import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
+import { mkAlert } from "../../../stores/contexts/Alert";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
+import { getErrorMessage } from "../../../util/error";
 import { match } from "../../../util/Util";
 import ContextMenuAction, { type ContextMenuRenderOptions } from "./ContextMenuAction";
 
@@ -18,11 +20,21 @@ type MoveActionArgs = {
 const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveActionArgs>(
   ({ as, selectedResults, disabled, closeMenu }, ref) => {
     const { t } = useTranslation(["inventory", "common"]);
-    const { moveStore } = useStores();
+    const { moveStore, uiStore } = useStores();
 
     const handleOpen = () => {
       void moveStore.setIsMoving(true);
-      moveStore.setSelectedResults(selectedResults);
+      void moveStore.setSelectedResults(selectedResults).catch((error) => {
+        console.error("Could not load items to move", error);
+        uiStore.addAlert(
+          mkAlert({
+            title: t("moveToTarget.errors.moveFailed"),
+            message: getErrorMessage(error, t("errors.unknownReason")),
+            variant: "error",
+          }),
+        );
+        void moveStore.setIsMoving(false);
+      });
       closeMenu();
     };
 

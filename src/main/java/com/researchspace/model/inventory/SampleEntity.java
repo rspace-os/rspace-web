@@ -272,8 +272,14 @@ public abstract class SampleEntity extends InventoryRecord
     return subSamples;
   }
 
-  public void setSubSamples(List<SubSample> subSamples) {
+  protected void setSubSamples(List<SubSample> subSamples) {
     this.subSamples = subSamples;
+    activeSubSamples = null;
+  }
+
+  /** Replaces the subsamples on an application write and updates the stored active count. */
+  public void replaceSubSamples(List<SubSample> subSamples) {
+    setSubSamples(subSamples);
     refreshActiveSubSamples();
   }
 
@@ -520,7 +526,7 @@ public abstract class SampleEntity extends InventoryRecord
 
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
-    refreshActiveExtraFields();
+    invalidateActiveExtraFields();
   }
 
   /**
@@ -535,7 +541,7 @@ public abstract class SampleEntity extends InventoryRecord
 
   protected void setBarcodes(List<Barcode> barcodes) {
     this.barcodes = barcodes;
-    refreshActiveBarcodes();
+    invalidateActiveBarcodes();
   }
 
   @OneToMany(mappedBy = "sample", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -547,7 +553,7 @@ public abstract class SampleEntity extends InventoryRecord
 
   protected void setIdentifiers(List<DigitalObjectIdentifier> identifiers) {
     this.identifiers = identifiers;
-    refreshActiveIdentifiers();
+    invalidateActiveIdentifiers();
   }
 
   /**
@@ -561,7 +567,7 @@ public abstract class SampleEntity extends InventoryRecord
 
   protected void setFiles(List<InventoryFile> files) {
     this.files = files;
-    refreshActiveAttachedFiles();
+    invalidateActiveAttachedFiles();
   }
 
   /**

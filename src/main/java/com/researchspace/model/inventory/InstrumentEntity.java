@@ -120,12 +120,12 @@ public abstract class InstrumentEntity extends MovableInventoryRecord
 
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
-    refreshActiveExtraFields();
+    invalidateActiveExtraFields();
   }
 
   protected void setBarcodes(List<Barcode> barcodes) {
     this.barcodes = barcodes;
-    refreshActiveBarcodes();
+    invalidateActiveBarcodes();
   }
 
   @OneToMany(mappedBy = "instrumentEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -164,12 +164,12 @@ public abstract class InstrumentEntity extends MovableInventoryRecord
 
   protected void setIdentifiers(List<DigitalObjectIdentifier> identifiers) {
     this.identifiers = identifiers;
-    refreshActiveIdentifiers();
+    invalidateActiveIdentifiers();
   }
 
   protected void setFiles(List<InventoryFile> files) {
     this.files = files;
-    refreshActiveAttachedFiles();
+    invalidateActiveAttachedFiles();
   }
 
   @Transient

@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordT
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Container.BulkMoveChanges;
 import com.researchspace.model.inventory.ContainerLocation;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
@@ -49,6 +50,15 @@ public class InventoryMoveHelper {
       ApiContainerInfo targetParent,
       ApiContainerLocation targetLocation,
       User user) {
+    return moveRecordToTargetParentAndLocation(dbRecord, targetParent, targetLocation, user, null);
+  }
+
+  private boolean moveRecordToTargetParentAndLocation(
+      MovableInventoryRecord dbRecord,
+      ApiContainerInfo targetParent,
+      ApiContainerLocation targetLocation,
+      User user,
+      BulkMoveChanges changes) {
 
     Container targetParentContainer =
         isValidMoveRequest(dbRecord, targetParent, targetLocation, user);
@@ -58,7 +68,7 @@ public class InventoryMoveHelper {
 
     /* for list container no need to use target location */
     if (targetParentContainer.isListLayoutContainer() || targetParentContainer.isWorkbench()) {
-      dbRecord.moveToNewParent(targetParentContainer);
+      dbRecord.moveToNewParent(targetParentContainer, changes);
       return true;
     }
 
@@ -67,10 +77,11 @@ public class InventoryMoveHelper {
         targetParentContainer.findSavedLocationByIdOrCoordinates(
             targetLocation.getId(), targetLocation.getCoordX(), targetLocation.getCoordY());
     if (targetDbLocationOpt.isPresent()) {
-      dbRecord.moveToNewParentAndLocation(targetParentContainer, targetDbLocationOpt.get());
+      dbRecord.moveToNewParentAndLocation(
+          targetParentContainer, targetDbLocationOpt.get(), changes);
     } else {
       dbRecord.moveToNewParentWithCoords(
-          targetParentContainer, targetLocation.getCoordX(), targetLocation.getCoordY());
+          targetParentContainer, targetLocation.getCoordX(), targetLocation.getCoordY(), changes);
     }
     return true;
   }
@@ -158,8 +169,13 @@ public class InventoryMoveHelper {
   }
 
   public boolean removeRecordFromCurrentParent(MovableInventoryRecord dbRecord) {
+    return removeRecordFromCurrentParent(dbRecord, null);
+  }
+
+  private boolean removeRecordFromCurrentParent(
+      MovableInventoryRecord dbRecord, BulkMoveChanges changes) {
     if (dbRecord.getParentContainer() != null) {
-      dbRecord.removeFromCurrentParent();
+      dbRecord.removeFromCurrentParent(changes);
       dbRecord.setLastMoveDate(Instant.now());
       return true;
     }
@@ -189,6 +205,7 @@ public class InventoryMoveHelper {
         }
       }
 
+      BulkMoveChanges changes = new BulkMoveChanges();
       // find all records that are going to change location and initially move them to workbench
       Container workbench = invRecRetriever.getWorkbenchForUser(user);
       List<ContainerLocation> dbRecordsOrgLocation = new ArrayList<>();
@@ -201,7 +218,7 @@ public class InventoryMoveHelper {
             isValidMoveRequest(
                 dbRecord, recInfo.getParentContainer(), recInfo.getParentLocation(), user);
         if (targetParent != null) {
-          dbRecord.moveToNewParent(workbench);
+          dbRecord.moveToNewParent(workbench, changes);
         }
       }
       // move each record to new parent and location
@@ -210,12 +227,13 @@ public class InventoryMoveHelper {
         ApiInventoryRecordInfo recInfo = incomingRecords.get(i);
 
         if (recInfo.isRemoveFromParentContainerRequest()) {
-          removeRecordFromCurrentParent(dbRecord);
+          removeRecordFromCurrentParent(dbRecord, changes);
         } else if (recInfo.getParentContainer() != null || recInfo.getParentLocation() != null) {
           moveRecordToTargetParentAndLocation(
-              dbRecord, recInfo.getParentContainer(), recInfo.getParentLocation(), user);
+              dbRecord, recInfo.getParentContainer(), recInfo.getParentLocation(), user, changes);
         }
 
+        changes.renumberBeforeSnapshot();
         // add audit event if item has a new location
         ContainerLocation orgLocation = dbRecordsOrgLocation.get(i);
         if (dbRecord.getParentLocation() != orgLocation) {
@@ -227,6 +245,7 @@ public class InventoryMoveHelper {
 
         result.add(ApiInventoryRecordInfo.fromInventoryRecord(dbRecord));
       }
+      changes.finish();
     }
     return result;
   }

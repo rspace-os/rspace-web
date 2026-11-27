@@ -7,6 +7,10 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
+import com.researchspace.model.inventory.InventorySortFields;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 /** For DAO operations on Inventory Container. */
@@ -63,6 +67,49 @@ public interface ContainerDao extends GenericDao<Container, Long> {
    * @return
    */
   Long getWorkbenchIdForUser(User user);
+
+  /** Returns occupied locations as scalar rows in location order. */
+  List<ContainerOccupant> getOccupants(Long containerId);
+
+  record ContainerOccupant(
+      Long id,
+      String type,
+      String name,
+      Timestamp creationDate,
+      Timestamp modificationDate,
+      Long modificationDateMillis,
+      Integer coordY,
+      Integer coordX,
+      Long locationId,
+      String ownerUsername)
+      implements InventorySortFields {
+
+    @Override
+    public Long getId() {
+      return id;
+    }
+
+    @Override
+    public InventoryRecordType getType() {
+      return InventoryRecordType.valueOf(type);
+    }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public Date getCreationDate() {
+      return new Date(creationDate.getTime());
+    }
+
+    @Override
+    public Date getModificationDate() {
+      return new Date(
+          modificationDateMillis == null ? modificationDate.getTime() : modificationDateMillis);
+    }
+  }
 
   List<Container> getAllUsingImage(FileProperty fileProperty);
 }

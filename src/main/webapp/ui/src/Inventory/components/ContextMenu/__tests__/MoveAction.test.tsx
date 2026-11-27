@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { action, observable } from "mobx";
 import type React from "react";
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, onTestFinished, test, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
 import Search from "../../../../stores/models/Search";
@@ -27,6 +28,34 @@ vi.mock("../../../Search/Search", () => ({
   default: vi.fn(() => <></>),
 }));
 describe("MoveAction", () => {
+  test("reports a failure to load children for a move", async () => {
+    onTestFinished(silenceConsole(["error"], ["Could not load items to move"]));
+    const user = userEvent.setup();
+    const addAlert = vi.fn();
+    const setIsMoving = vi.fn();
+    const rootStore = makeMockRootStore({
+      moveStore: {
+        setIsMoving,
+        setSelectedResults: vi.fn().mockRejectedValue(new Error("Children unavailable")),
+      },
+      uiStore: { addAlert },
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider value={rootStore}>
+          <MoveAction as="button" selectedResults={[makeMockContainer()]} disabled="" closeMenu={() => {}} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "common:actions.move" }));
+
+    expect(addAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "inventory:moveToTarget.errors.moveFailed", variant: "error" }),
+    );
+    expect(setIsMoving).toHaveBeenLastCalledWith(false);
+  });
+
   test("After the dialog is closed, the overflow context menu should have been closed.", async () => {
     const user = userEvent.setup();
     const rootStore: StoreContainer = makeMockRootStore(
@@ -41,7 +70,7 @@ describe("MoveAction", () => {
             factory: mockFactory(),
           }),
           submitting: "NO",
-          setSelectedResults: () => {},
+          setSelectedResults: async () => {},
         },
         uiStore: {
           setDialogVisiblePanel: () => {},

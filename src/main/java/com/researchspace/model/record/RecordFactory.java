@@ -408,7 +408,7 @@ public class RecordFactory implements IRecordFactory {
     sample.setSubSampleAliases(SubSampleName.ALIQUOT);
     List<SubSample> defaultSubSampleList = new ArrayList<>();
     defaultSubSampleList.add(createSubSample(sample.getName(), createdBy, sample));
-    sample.setSubSamples(defaultSubSampleList);
+    sample.replaceSubSamples(defaultSubSampleList);
     sample.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     return sample;
@@ -426,7 +426,7 @@ public class RecordFactory implements IRecordFactory {
     template.setSubSampleAliases(SubSampleName.ALIQUOT);
     List<SubSample> defaultSubSampleList = new ArrayList<>();
     defaultSubSampleList.add(createSubSample(template.getName(), createdBy, template));
-    template.setSubSamples(defaultSubSampleList);
+    template.replaceSubSamples(defaultSubSampleList);
     template.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
 
     return template;
@@ -470,7 +470,7 @@ public class RecordFactory implements IRecordFactory {
       defaultSubSample.getQuantity().setUnitId(sampleTemplate.getDefaultUnitId());
     }
     defaultSubSampleList.add(defaultSubSample);
-    sample.setSubSamples(defaultSubSampleList);
+    sample.replaceSubSamples(defaultSubSampleList);
 
     return sample;
   }

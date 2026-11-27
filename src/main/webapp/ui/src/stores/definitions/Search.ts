@@ -346,7 +346,9 @@ export interface DynamicFetcher extends CoreFetcher {
  * designed for search views that require all of the data be fetched initially;
  * where pagination cannot be supported.
  */
-export interface CacheFetcher extends CoreFetcher {}
+export interface CacheFetcher extends CoreFetcher {
+  setContent(results: Array<InventoryRecord>): void;
+}
 
 export type ExportMode = "FULL" | "COMPACT";
 export type OptionalContent = "INCLUDE" | "EXCLUDE";

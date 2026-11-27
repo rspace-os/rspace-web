@@ -96,11 +96,12 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
   }
 
   private ApiSubSample retrieveSubSampleIfExists(Long id, User user) {
-    boolean exists = subSampleApiMgr.exists(id);
-    if (!exists) {
-      throw new NotFoundException(createNotFoundMessage("Inventory record", id));
+    try {
+      return subSampleApiMgr.getApiSubSampleById(id, user);
+    } catch (NotFoundException e) {
+      log.warn("Inventory record {} was not found", id, e);
+      throw new NotFoundException(createNotFoundMessage("Inventory record", id), e);
     }
-    return subSampleApiMgr.getApiSubSampleById(id, user);
   }
 
   @Override

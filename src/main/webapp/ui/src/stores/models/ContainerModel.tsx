@@ -1,5 +1,5 @@
 import { clamp, isNotNil, pick } from "es-toolkit";
-import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
+import { action, computed, makeObservable, observable, override } from "mobx";
 import type React from "react";
 import i18n from "@/modules/common/i18n";
 import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
@@ -286,7 +286,12 @@ export default class ContainerModel
     if (!this.contentSearch) this.contentSearch = new Search(searchParams);
     void this.contentSearch.setSearchView(cTypeToDefaultSearchView(this.cType));
 
-    const locations: Array<Location> = ((params.locations ?? []) as Array<LocationAttrs>).map((l) => {
+    const passedLocations = (passedParams as { locations?: ContainerAttrs["locations"] | null }).locations;
+    // a restricted view has no readable contents, so it clears any loaded ones, as on main
+    const receivedLocations = passedLocations === null && !this.canRead ? [] : passedLocations;
+    if (!Array.isArray(receivedLocations)) return;
+
+    const locations: Array<Location> = receivedLocations.map((l: LocationAttrs) => {
       const content = l.content
         ? factory.newRecord(
             l.content as unknown as Record<string, string> & {
@@ -301,8 +306,7 @@ export default class ContainerModel
         parentContainer: this,
       });
     });
-    this.contentSearch.cacheFetcher.setResults(locations.map((l) => l.content).filter(isNotNil));
-    this.initializedLocations = false;
+    this.contentSearch.cacheFetcher.setContent(locations.map((l) => l.content).filter(isNotNil));
     if (this.cType === "LIST") this.locations = locations;
     if (this.cType === "IMAGE") this.locations = locations;
     if (this.cType === "GRID")
@@ -584,35 +588,19 @@ export default class ContainerModel
     this.setEditable(FIELDS, false);
   }
 
-  async fetchAdditionalInfo(
-    silent: boolean = false,
-    queryParameters: URLSearchParams = new URLSearchParams({
-      includeContent: "true",
-    }),
-  ) {
+  async fetchAdditionalInfo(silent: boolean = false, queryParameters: URLSearchParams = new URLSearchParams()) {
     if (this.isWorkbench) {
       this.setLoading(false);
       throw new Error("Can't fetch details of bench");
     }
-    if (this.fetchingAdditionalInfo) {
-      await this.fetchingAdditionalInfo;
-    } else {
-      runInAction(() => {
-        this.initializedLocations = false;
-      });
-      await super.fetchAdditionalInfo(silent, queryParameters);
+    const params = new URLSearchParams(queryParameters);
+    if (!params.has("includeContent")) {
+      params.set("includeContent", String(this.cType !== "LIST" || this.initializedLocations));
     }
-    this.setLoading(true);
-
+    await super.fetchAdditionalInfo(silent, params);
     if (this.cType === "IMAGE") {
-      runInAction(() => {
-        this.locationsImage = null;
-      });
       await this.fetchImage("locationsImage");
     }
-
-    this.setLoading(false);
-    return;
   }
 
   findLocation(col: number, row: number): Location | undefined {
@@ -915,8 +903,10 @@ export default class ContainerModel
     return this.contentSearch.cacheFetcher.results;
   }
 
-  loadChildren(): void {
-    void this.fetchAdditionalInfo();
+  loadChildren(): Promise<void> | void {
+    if (!this.initializedLocations && !this.isWorkbench) {
+      return this.fetchAdditionalInfo(false, new URLSearchParams({ includeContent: "true" }));
+    }
   }
 
   get canNavigateToChildren(): boolean {

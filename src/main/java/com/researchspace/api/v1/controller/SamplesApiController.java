@@ -236,19 +236,22 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
   @Override
   public ApiSample getSampleById(
-      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+      @PathVariable Long id,
+      @RequestParam(name = "includeSubSamples", defaultValue = "true") boolean includeSubSamples,
+      @RequestAttribute(name = "user") User user) {
 
-    ApiSample sample = retrieveApiSampleIfExists(id, user);
+    ApiSample sample = retrieveApiSampleIfExists(id, user, includeSubSamples);
     buildAndAddInventoryRecordLinks(sample);
     return sample;
   }
 
-  private ApiSample retrieveApiSampleIfExists(Long id, User user) {
-    boolean exists = sampleApiMgr.exists(id);
-    if (!exists) {
-      throw new NotFoundException(createNotFoundMessage("Inventory record", id));
+  private ApiSample retrieveApiSampleIfExists(Long id, User user, boolean includeSubSamples) {
+    try {
+      return sampleApiMgr.getApiSampleById(id, user, includeSubSamples);
+    } catch (NotFoundException e) {
+      log.warn("Inventory record {} was not found", id, e);
+      throw new NotFoundException(createNotFoundMessage("Inventory record", id), e);
     }
-    return sampleApiMgr.getApiSampleById(id, user);
   }
 
   @Override

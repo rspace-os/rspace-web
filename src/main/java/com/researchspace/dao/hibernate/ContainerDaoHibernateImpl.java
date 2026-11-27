@@ -129,6 +129,39 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
   }
 
   @Override
+  public List<ContainerOccupant> getOccupants(Long containerId) {
+    return getSession()
+        .createQuery(
+            """
+            select coalesce(c.id, s.id, i.id),
+              case when c.id is not null then 'CONTAINER'
+                   when s.id is not null then 'SUBSAMPLE' else 'INSTRUMENT' end,
+              coalesce(c.editInfo.name, s.editInfo.name, i.editInfo.name),
+              coalesce(c.editInfo.creationDate, s.editInfo.creationDate, i.editInfo.creationDate),
+              coalesce(c.editInfo.modificationDate, s.editInfo.modificationDate, i.editInfo.modificationDate),
+              case when c.id is not null then c.editInfo.modificationDateMillis
+                   when s.id is not null then s.editInfo.modificationDateMillis
+                   else i.editInfo.modificationDateMillis end,
+              location.coordY, location.coordX, location.id,
+              coalesce(containerOwner.username, sampleOwner.username, instrumentOwner.username)
+            from ContainerLocation location
+            left join location.storedContainer c
+            left join c.owner containerOwner
+            left join location.storedSubSample s
+            left join s.sample sp
+            left join sp.owner sampleOwner
+            left join location.storedInstrument i
+            left join i.owner instrumentOwner
+            where location.container.id = :containerId
+              and coalesce(c.id, s.id, i.id) is not null
+            order by location.coordY, location.coordX, location.id
+            """,
+            ContainerOccupant.class)
+        .setParameter("containerId", containerId)
+        .list();
+  }
+
+  @Override
   public Container getContainerByLocationId(Long id) {
     return (Container)
         sessionFactory

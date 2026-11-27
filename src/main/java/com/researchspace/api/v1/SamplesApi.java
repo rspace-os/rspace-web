@@ -42,8 +42,13 @@ public interface SamplesApi {
       @RequestBody @Valid ApiSampleWithFullSubSamples sample, BindingResult errors, User user)
       throws BindException;
 
+  default ApiSample getSampleById(Long id, User user) {
+    return getSampleById(id, true, user);
+  }
+
+  /** Returns a live sample with a null child list when includeSubSamples is false. */
   @GetMapping(value = "/{id}")
-  ApiSample getSampleById(Long id, User user);
+  ApiSample getSampleById(Long id, boolean includeSubSamples, User user);
 
   @GetMapping("/validateNameForNewSample")
   String validateNameForNewSample(String name, User user) throws BindException;

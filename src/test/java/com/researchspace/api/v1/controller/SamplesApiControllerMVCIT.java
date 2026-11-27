@@ -619,11 +619,11 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     // field with incorrect id
     String incorrectFieldIdJson =
-        "{\"name\": \"sample1\", \"fields\" : [ { \"id\":\"123\", \"content\" : \"updated\"} ] }";
+        "{\"name\": \"sample1\", \"fields\" : [ { \"id\":\"-1\", \"content\" : \"updated\"} ] }";
     editResult = putSampleExpect400(anyUser, apiKey, complexSample.getId(), incorrectFieldIdJson);
     error = getErrorFromJsonResponseBody(editResult, ApiError.class);
     assertApiErrorContainsMessage(
-        error, "Field id: 123 doesn't match any of the field ids of current sample");
+        error, "Field id: -1 doesn't match any of the field ids of current sample");
 
     // incorrect new value for a field (trying update date field with text)
     String incorrectFieldContentJson =

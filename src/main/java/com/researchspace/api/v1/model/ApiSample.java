@@ -1,6 +1,7 @@
 /** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.SampleEntity;
@@ -62,6 +63,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class ApiSample extends ApiSampleWithoutSubSamples {
 
   @JsonProperty("subSamples")
+  @JsonInclude(JsonInclude.Include.ALWAYS)
   private List<ApiSubSampleInfo> subSamples = new ArrayList<>();
 
   @JsonProperty(value = "canBeDeleted")
@@ -75,6 +77,14 @@ public class ApiSample extends ApiSampleWithoutSubSamples {
       subSamples.add(subSampInfo);
     }
     canBeDeleted = subSamples.stream().noneMatch(ApiSubSampleInfo::isStoredInContainer);
+  }
+
+  /** Constructs a live sample response using the counts without fetching its children. */
+  public ApiSample(SampleEntity sample, int subSamplesCount, boolean canBeDeleted) {
+    super(sample);
+    this.subSamples = null;
+    setSubSamplesCount(subSamplesCount);
+    this.canBeDeleted = canBeDeleted;
   }
 
   @Override

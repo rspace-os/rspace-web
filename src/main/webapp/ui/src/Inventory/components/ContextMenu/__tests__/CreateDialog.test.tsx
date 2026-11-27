@@ -119,6 +119,7 @@ describe("CreateDialog", () => {
     });
     test("Samples, when there are multiple subsamples", async () => {
       const sample = makeMockSample({
+        subSamplesCount: 2,
         subSamples: [subsampleAttrs(), subsampleAttrs()],
       });
       vi.spyOn(sample, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());

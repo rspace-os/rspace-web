@@ -51,7 +51,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyVa
 @Setter
 @EqualsAndHashCode(of = {"id", "editInfo"})
 @Audited
-public abstract class InventoryRecord {
+public abstract class InventoryRecord implements InventorySortFields {
 
   private Long id;
   private EditInfo editInfo;
@@ -125,39 +125,17 @@ public abstract class InventoryRecord {
   static final Set<String> RESERVED_FIELD_NAMES =
       Set.of("name", "description", "tags", "preview image", "attachments");
 
-  /** Comparator used to order inventory record list by name (asc/desc). */
   public static final Comparator<InventoryRecord> NAME_COMPARATOR =
-      new Comparator<>() {
-        @Override
-        public int compare(InventoryRecord invRec1, InventoryRecord invRec2) {
-          return invRec1.getName().toLowerCase().compareTo(invRec2.getName().toLowerCase());
-        }
-      };
-
+      InventorySortFields.BY_NAME::compare;
   public static final Comparator<InventoryRecord> TYPE_COMPARATOR =
-      new Comparator<>() {
-        @Override
-        public int compare(InventoryRecord invRec1, InventoryRecord invRec2) {
-          return invRec1.getType().toString().compareTo(invRec2.getType().toString());
-        }
-      };
-
-  public static final Comparator<InventoryRecord> GLOBAL_ID_PREFIX_COMPARATOR =
-      new Comparator<>() {
-        @Override
-        public int compare(InventoryRecord invRec1, InventoryRecord invRec2) {
-          return invRec1.getType().toString().compareTo(invRec2.getType().toString());
-        }
-      };
-
+      InventorySortFields.BY_TYPE::compare;
+  public static final Comparator<InventoryRecord> GLOBAL_ID_PREFIX_COMPARATOR = TYPE_COMPARATOR;
   public static final Comparator<InventoryRecord> ID_COMPARATOR =
-      Comparator.comparing(InventoryRecord::getId);
-
+      InventorySortFields.BY_ID::compare;
   public static final Comparator<InventoryRecord> CREATION_DATE_COMPARATOR =
-      Comparator.comparing(InventoryRecord::getCreationDate);
-
+      InventorySortFields.BY_CREATED::compare;
   public static final Comparator<InventoryRecord> MODIFICATION_DATE_COMPARATOR =
-      Comparator.comparing(InventoryRecord::getModificationDate);
+      InventorySortFields.BY_MODIFIED::compare;
 
   public InventoryRecord() {
     editInfo = new EditInfo();
@@ -375,8 +353,12 @@ public abstract class InventoryRecord {
     return activeExtraFields;
   }
 
-  public void refreshActiveExtraFields() {
+  protected void invalidateActiveExtraFields() {
     activeExtraFields = null;
+  }
+
+  public void refreshActiveExtraFields() {
+    invalidateActiveExtraFields();
     getActiveExtraFields();
   }
 
@@ -424,8 +406,12 @@ public abstract class InventoryRecord {
     return attachedFiles;
   }
 
-  public void refreshActiveAttachedFiles() {
+  protected void invalidateActiveAttachedFiles() {
     attachedFiles = null;
+  }
+
+  public void refreshActiveAttachedFiles() {
+    invalidateActiveAttachedFiles();
     getAttachedFiles();
   }
 
@@ -455,8 +441,12 @@ public abstract class InventoryRecord {
     return activeBarcodes;
   }
 
-  public void refreshActiveBarcodes() {
+  protected void invalidateActiveBarcodes() {
     activeBarcodes = null;
+  }
+
+  public void refreshActiveBarcodes() {
+    invalidateActiveBarcodes();
     getActiveBarcodes();
   }
 
@@ -486,8 +476,12 @@ public abstract class InventoryRecord {
     return activeIdentifiers;
   }
 
-  public void refreshActiveIdentifiers() {
+  protected void invalidateActiveIdentifiers() {
     activeIdentifiers = null;
+  }
+
+  public void refreshActiveIdentifiers() {
+    invalidateActiveIdentifiers();
     getActiveIdentifiers();
   }
 

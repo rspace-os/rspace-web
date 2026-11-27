@@ -190,9 +190,9 @@ function Form(): React.ReactNode {
             <StepperPanel
               icon="subsample"
               title={t("sample.subsamplesSection.title", {
-                count: activeResult.subSamples.length,
+                count: activeResult.subSamplesCount,
                 alias: capitaliseJustFirstChar(
-                  activeResult.subSamples.length === 1
+                  activeResult.subSamplesCount === 1
                     ? activeResult.subSampleAlias.alias
                     : activeResult.subSampleAlias.plural,
                 ),
