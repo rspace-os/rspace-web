@@ -75,14 +75,13 @@ export function TableListColumns<TDocument>({
     shown,
     hidden: availableFields.map((field) => field.name).filter((name) => !shown.includes(name)),
   };
-  const [dragLayout, setDraft] = useState(propsLayout);
   const [drag, setDrag] = useState<{
-    activeField: FieldName<TDocument> | null;
+    field: FieldName<TDocument>;
+    /** The layout when the drag started, to tell a real change from a drop back in place. */
     origin: Layout<TDocument>;
-  }>(() => ({ activeField: null, origin: propsLayout }));
-  const activeField = drag.activeField;
-  const draft = activeField === null ? propsLayout : dragLayout;
-  const endDrag = () => setDrag((current) => ({ ...current, activeField: null }));
+    layout: Layout<TDocument>;
+  } | null>(null);
+  const draft = drag?.layout ?? propsLayout;
   const sensors = useTableListDragSensors();
   const dragAccessibility = useTableListDragAccessibility((id) => {
     if (id === columnDropZoneIds.shown) return t("tableList.columns.shown");
@@ -93,27 +92,27 @@ export function TableListColumns<TDocument>({
 
   const transfer = ({ active, over }: DragOverEvent) => {
     if (!over) return;
-    setDraft((current) => {
-      const source = sectionOf(current, active.id);
-      const target = dropSection(current, over);
+    setDrag((current) => {
+      if (!current) return current;
+      const { layout } = current;
+      const source = sectionOf(layout, active.id);
+      const target = dropSection(layout, over);
       if (!source || !target || source === target) return current;
       const field = active.id as FieldName<TDocument>;
-      const sourceFields = current[source].filter((candidate) => candidate !== field);
-      const targetFields = [...current[target]];
+      const sourceFields = layout[source].filter((candidate) => candidate !== field);
+      const targetFields = [...layout[target]];
       const targetIndex = targetFields.indexOf(over.id as FieldName<TDocument>);
       targetFields.splice(targetIndex < 0 ? targetFields.length : targetIndex, 0, field);
-      return { ...current, [source]: sourceFields, [target]: targetFields };
+      return { ...current, layout: { ...layout, [source]: sourceFields, [target]: targetFields } };
     });
   };
 
   const finishDrag = (event: DragEndEvent) => {
+    if (!drag) return;
+    setDrag(null);
     const section = sectionOf(draft, event.active.id);
     const target = dropSection(draft, event.over);
-    if (!event.over || !section || !target) {
-      setDraft(drag.origin);
-      endDrag();
-      return;
-    }
+    if (!event.over || !section || !target) return;
     let next = draft;
     if (section === target && event.active.id !== event.over.id) {
       const sourceIndex = draft[section].indexOf(event.active.id as FieldName<TDocument>);
@@ -125,12 +124,7 @@ export function TableListColumns<TDocument>({
         };
       }
     }
-    endDrag();
-    if (isEqual(next.shown, drag.origin.shown)) setDraft(drag.origin);
-    else {
-      setDraft(next);
-      onChange(next.shown);
-    }
+    if (!isEqual(next.shown, drag.origin.shown)) onChange(next.shown);
   };
 
   const column = (fieldName: FieldName<TDocument>, section: ColumnPlacement) => {
@@ -171,19 +165,12 @@ export function TableListColumns<TDocument>({
         sensors={sensors}
         collisionDetection={closestCenter}
         autoScroll
-        onDragStart={(event: DragStartEvent) => {
-          setDraft(propsLayout);
-          setDrag({
-            activeField: event.active.id as FieldName<TDocument>,
-            origin: propsLayout,
-          });
-        }}
+        onDragStart={(event: DragStartEvent) =>
+          setDrag({ field: event.active.id as FieldName<TDocument>, origin: propsLayout, layout: propsLayout })
+        }
         onDragOver={transfer}
         onDragEnd={finishDrag}
-        onDragCancel={() => {
-          setDraft(drag.origin);
-          endDrag();
-        }}
+        onDragCancel={() => setDrag(null)}
       >
         <div className="mt-4 space-y-4">
           <ColumnDropZone
@@ -204,10 +191,10 @@ export function TableListColumns<TDocument>({
           </ColumnDropZone>
         </div>
         <DragOverlay dropAnimation={null}>
-          {activeField ? (
+          {drag ? (
             <Badge aria-hidden="true" variant="outline" className="h-6 gap-1.5 rounded-sm bg-background px-1.5 py-0">
               <GripVerticalIcon aria-hidden="true" className="size-3" />
-              <span>{activeFieldLabel(availableFields, activeField, fieldLabel)}</span>
+              <span>{activeFieldLabel(availableFields, drag.field, fieldLabel)}</span>
             </Badge>
           ) : null}
         </DragOverlay>
