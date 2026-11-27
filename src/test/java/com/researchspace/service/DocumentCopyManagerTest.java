@@ -5,17 +5,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.files.service.FileStore;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
+import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -28,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +52,7 @@ class DocumentCopyManagerTest {
   @Mock private FolderDao folderDao;
   @Mock private IPermissionUtils permissionUtils;
   @Mock private FileStore fileStore;
+  @Mock private RSChemElementManager rsChemElementManager;
 
   private User user;
 
@@ -106,6 +112,47 @@ class DocumentCopyManagerTest {
       assertTrue(name.getValue().startsWith(FilenameUtils.getBaseName(storedName) + "_"));
       assertEquals(
           FilenameUtils.getExtension(storedName), FilenameUtils.getExtension(name.getValue()));
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void copiesGalleryChemElementOfChemistryFile(boolean originalHasElement) throws IOException {
+    EcatChemistryFile chemFile = new EcatChemistryFile();
+    chemFile.setEditInfo(getNewEditInfo());
+    chemFile.setFileName("caffeine.smiles");
+    chemFile.setId(1L);
+    chemFile.setFileProperty(getNewFileProperty());
+    when(recordDao.get(anyLong())).thenReturn(chemFile);
+    when(recordDao.save(any(Record.class)))
+        .thenAnswer(
+            invocation -> {
+              Record saved = invocation.getArgument(0);
+              if (saved.getId() == null) {
+                saved.setId(2L);
+              }
+              return saved;
+            });
+    RSChemElement originalElement =
+        RSChemElement.builder().ecatChemFileId(1L).smilesString("C").build();
+    when(rsChemElementManager.getRSChemElementsLinkedToFile(1L, user))
+        .thenReturn(originalHasElement ? List.of(originalElement) : List.of());
+    try (FileInputStream input = new FileInputStream(RSpaceTestUtils.getAnyAttachment())) {
+      when(fileStore.retrieve(any())).thenReturn(Optional.of(input));
+      when(fileStore.save(any(), any(), any(), any())).thenReturn(URI.create("file:/copy"));
+      documentCopyManager.copy(chemFile, "copy", user, null);
+    }
+    if (originalHasElement) {
+      verify(rsChemElementManager)
+          .save(
+              argThat(
+                  c ->
+                      Long.valueOf(2L).equals(c.getEcatChemFileId())
+                          && "C".equals(c.getSmilesString())),
+              eq(user));
+      assertEquals(1L, originalElement.getEcatChemFileId());
+    } else {
+      verify(rsChemElementManager, never()).save(any(), any());
     }
   }
 
