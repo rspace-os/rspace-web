@@ -119,7 +119,7 @@ $(document).ready(function() {
 	// deletes all records from page
 	$('body').on("click", '#deleteAllOnPageLink', function(event) {
 		var contentDiv$=$(this).closest('.notificationList');
-		var rows$ = $("tr.notificationRow");
+		var rows$ = contentDiv$.find('tr.notificationRow[id^="notificnID_"]');
 
 		var notificnIds= getNotificnIDArrayFromRows(rows$);
 		var data ={id:notificnIds, refresh:true};
