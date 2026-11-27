@@ -1,7 +1,8 @@
 import Card from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
+import { useStore } from "@tanstack/react-form";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -11,8 +12,8 @@ import { sum } from "../util/iterators";
 import { Optional } from "../util/optional";
 import RsSet, { flattenWithUnion } from "../util/set";
 import type { UseState } from "../util/types";
-import type { Validator } from "../util/Validator";
-import type { ExportSelection, FileLink, FileSystem, FolderLink, MixedLink } from "./common";
+import type { FileLink, FileSystem, FolderLink, MixedLink } from "./common";
+import { DEFAULT_FILE_STORE_SCAN, type ExportForm, type FileStoreScan } from "./exportForm";
 import FileFilters from "./fileStoreComponents/FileFilters";
 import FoundLinksListing from "./fileStoreComponents/FoundLinksListing";
 import LinkAvailabilityScan from "./fileStoreComponents/LinkAvailabilityScan";
@@ -44,20 +45,6 @@ import LoginStatus from "./fileStoreComponents/LoginStatus";
  *
  */
 
-type ExportConfig = {
-  archiveType: string;
-  repository: boolean;
-  fileStores: boolean;
-  allVersions: boolean;
-  repoData: Array<unknown>;
-};
-
-type NfsConfig = {
-  excludedFileExtensions: string; // comma-separated
-  includeNfsFiles: boolean;
-  maxFileSizeInMB: number | string;
-};
-
 type ExportPlanId = number;
 
 type FullExportPlan = {
@@ -67,24 +54,72 @@ type FullExportPlan = {
   currentlyAllowedArchiveSizeMB: number;
 };
 
-type ExportFileStoreArgs = {
-  exportConfig: ExportConfig;
-  exportSelection: ExportSelection;
-  nfsConfig: NfsConfig;
-  updateFilters: {
-    (key: "maxFileSizeInMB", value: number | string): void;
-    (key: "excludedFileExtensions", value: string): void;
+/**
+ * Why the user did not go ahead with an export that includes filestore links.
+ */
+type FileStoreExportRejection = "loggedOut" | "scanNotPerformed" | "archiveTooLarge";
+
+/**
+ * Asks the user to confirm an export whose filestore links might not all be
+ * included, or tells them that the export is too large to proceed.
+ *
+ * @return A function that resolves to the reason the export should not go
+ *         ahead, or to undefined when it can.
+ */
+export function useFileStoreExportConfirmation(): (
+  scan: FileStoreScan,
+) => Promise<FileStoreExportRejection | undefined> {
+  const { t } = useTranslation(["workspace", "common"]);
+  const confirm = useConfirm();
+
+  return async (scan) => {
+    if (scan.totalFilesFound > 0 && scan.loggedOutFileSystems > 0) {
+      if (
+        !(await confirm("", t("export.fileStore.validation.loggedOut"), t("export.fileStore.validation.proceedButton")))
+      )
+        return "loggedOut";
+    }
+
+    if (!scan.scanResultsPresent) {
+      if (
+        !(await confirm(
+          "",
+          t("export.fileStore.validation.scanNotPerformed"),
+          t("export.fileStore.validation.proceedButton"),
+        ))
+      )
+        return "scanNotPerformed";
+    }
+
+    if (
+      scan.scanResultsPresent &&
+      scan.maxArchiveSizeBytes !== 0 &&
+      scan.scanResultsTotalFileSize >= scan.currentlyAllowedArchiveSizeBytes
+    ) {
+      await confirm(
+        "",
+        scan.scanResultsTotalFileSize > scan.maxArchiveSizeBytes
+          ? t("export.fileStore.validation.exceedsGlobalLimit", {
+              size: formatFileSize(scan.scanResultsTotalFileSize),
+            })
+          : t("export.fileStore.validation.exceedsDiskSpace", {
+              size: formatFileSize(scan.scanResultsTotalFileSize),
+            }),
+        t("common:actions.ok"),
+        "",
+      );
+      return "archiveTooLarge";
+    }
+
+    return undefined;
   };
-  validator: Validator;
+}
+
+type ExportFileStoreArgs = {
+  form: ExportForm;
 };
 
-export default function ExportFileStore({
-  exportConfig,
-  exportSelection,
-  nfsConfig,
-  updateFilters,
-  validator,
-}: ExportFileStoreArgs): React.ReactNode {
+function ExportFileStore({ form }: ExportFileStoreArgs): React.ReactNode {
   const { t } = useTranslation(["workspace", "common"]);
   const [loadingQuickPlan, setLoadingQuickPlan]: UseState<boolean> = useState(false);
   const [loadingFullPlan, setLoadingFullPlan]: UseState<boolean> = useState(false);
@@ -93,10 +128,7 @@ export default function ExportFileStore({
   const [fileSystems, setFileSystems] = useState<Array<FileSystem>>([]);
   const [checkedFileSystems, setCheckedFileSystems] = useState<Array<FileSystem>>([]);
   const [planId, setPlanId]: UseState<ExportPlanId> = useState(0);
-  const [maxFileSizeInMB, setMaxFileSizeInMB]: UseState<number | string> = useState(nfsConfig.maxFileSizeInMB);
-  const [excludedFileExtensions, setExcludedFileExtensions]: UseState<string> = useState(
-    nfsConfig.excludedFileExtensions,
-  );
+  const { maxFileSizeInMB, excludedFileExtensions } = useStore(form.store, (state) => state.values.nfsConfig);
 
   // extracted and computed data from full export plan scan
   const [scanResultsPresent, setScanResultsPresent] = useState(false);
@@ -104,66 +136,14 @@ export default function ExportFileStore({
   const [scanResultsAvailableCount, setScanResultsAvailableCount] = useState(0);
   const [scanResultsTotalFileSize, setScanResultsTotalFileSize] = useState(0);
 
-  // read only by the validation function, so changes need not trigger a re-render
-  const validationData = useRef({
-    totalFilesFound: 0,
-    loggedOut: [] as Array<FileSystem>,
-    scanResultsPresent: false,
-    maxArchiveSizeBytes: 0,
-    scanResultsTotalFileSize: 0,
-    currentlyAllowedArchiveSizeBytes: 0,
-  });
+  const planRequest = () => {
+    const { exportDetails, exportSelection, nfsConfig } = form.state.values;
+    return { exportConfig: exportDetails, exportSelection, nfsConfig };
+  };
 
-  const confirm = useConfirm();
-
-  useEffect(() => {
-    validator.setValidFunc(async () => {
-      const data = validationData.current;
-      if (data.totalFilesFound > 0 && data.loggedOut.length > 0) {
-        if (
-          !(await confirm(
-            "",
-            t("export.fileStore.validation.loggedOut"),
-            t("export.fileStore.validation.proceedButton"),
-          ))
-        )
-          return false;
-      }
-
-      if (!data.scanResultsPresent) {
-        if (
-          !(await confirm(
-            "",
-            t("export.fileStore.validation.scanNotPerformed"),
-            t("export.fileStore.validation.proceedButton"),
-          ))
-        )
-          return false;
-      }
-
-      if (
-        data.scanResultsPresent &&
-        data.maxArchiveSizeBytes !== 0 &&
-        data.scanResultsTotalFileSize >= data.currentlyAllowedArchiveSizeBytes
-      ) {
-        await confirm(
-          "",
-          data.scanResultsTotalFileSize > data.maxArchiveSizeBytes
-            ? t("export.fileStore.validation.exceedsGlobalLimit", {
-                size: formatFileSize(data.scanResultsTotalFileSize),
-              })
-            : t("export.fileStore.validation.exceedsDiskSpace", {
-                size: formatFileSize(data.scanResultsTotalFileSize),
-              }),
-          t("common:actions.ok"),
-          "",
-        );
-        return false;
-      }
-
-      return true;
-    });
-  }, [confirm, t, validator]);
+  const updateScan = (update: Partial<FileStoreScan>) => {
+    form.setFieldValue("fileStoreScan", (scan) => ({ ...scan, ...update }));
+  };
 
   const fileStoreCheck = async () => {
     const url = "/nfsExport/ajax/createQuickExportPlan";
@@ -173,7 +153,7 @@ export default function ExportFileStore({
       const response = await axios.post<{
         foundFileSystems: Array<FileSystem>;
         planId: ExportPlanId;
-      }>(url, { exportConfig, exportSelection, nfsConfig });
+      }>(url, planRequest());
 
       const fileSystems = response.data.foundFileSystems;
       setFileSystems(fileSystems);
@@ -181,8 +161,10 @@ export default function ExportFileStore({
       const newTotalFilesFound = sum(fileSystems.map((fs) => fs.foundNfsLinks.length));
       setTotalFilesFound(newTotalFilesFound);
 
-      validationData.current.loggedOut = fileSystems.filter((fs) => !fs.loggedAs);
-      validationData.current.totalFilesFound = newTotalFilesFound;
+      updateScan({
+        loggedOutFileSystems: fileSystems.filter((fs) => !fs.loggedAs).length,
+        totalFilesFound: newTotalFilesFound,
+      });
 
       setPlanId(response.data.planId);
     } catch (error) {
@@ -239,7 +221,7 @@ export default function ExportFileStore({
     setScanResultsAvailableCount(fileLinks.size);
     const totalFileSize = sum(fileLinks.map((link) => link.size));
     setScanResultsTotalFileSize(totalFileSize);
-    validationData.current.scanResultsTotalFileSize = totalFileSize;
+    updateScan({ scanResultsTotalFileSize: totalFileSize });
   };
 
   const fileStoreScan = async () => {
@@ -247,18 +229,15 @@ export default function ExportFileStore({
     setLoadingFullPlan(true);
     setCheckedFileSystems([]);
     try {
-      const response = await axios.post<FullExportPlan>(url, {
-        exportConfig,
-        exportSelection,
-        nfsConfig,
-      });
+      const response = await axios.post<FullExportPlan>(url, planRequest());
       calculateFullScanSummary(response.data);
       setCheckedFileSystems(response.data.foundFileSystems);
       setScanResultsPresent(true);
-      validationData.current.scanResultsPresent = true;
-      validationData.current.maxArchiveSizeBytes = response.data.maxArchiveSizeMBProp * 1024 * 1024;
-      validationData.current.currentlyAllowedArchiveSizeBytes =
-        response.data.currentlyAllowedArchiveSizeMB * 1024 * 1024;
+      updateScan({
+        scanResultsPresent: true,
+        maxArchiveSizeBytes: response.data.maxArchiveSizeMBProp * 1024 * 1024,
+        currentlyAllowedArchiveSizeBytes: response.data.currentlyAllowedArchiveSizeMB * 1024 * 1024,
+      });
     } catch (error) {
       console.error(error);
     } finally {
@@ -267,6 +246,8 @@ export default function ExportFileStore({
   };
 
   useEffect(() => {
+    // the scan results shown by this pane start afresh each time it is opened
+    form.setFieldValue("fileStoreScan", DEFAULT_FILE_STORE_SCAN);
     void fileStoreCheck();
   }, []);
 
@@ -298,15 +279,9 @@ export default function ExportFileStore({
 
           <FileFilters
             maxFileSizeInMB={maxFileSizeInMB}
-            setMaxFileSizeInMB={(max) => {
-              setMaxFileSizeInMB(max);
-              updateFilters("maxFileSizeInMB", max);
-            }}
+            setMaxFileSizeInMB={(max) => form.setFieldValue("nfsConfig.maxFileSizeInMB", max)}
             excludedFileExtensions={excludedFileExtensions}
-            setExcludedFileExtensions={(ext) => {
-              setExcludedFileExtensions(ext);
-              updateFilters("excludedFileExtensions", ext);
-            }}
+            setExcludedFileExtensions={(ext) => form.setFieldValue("nfsConfig.excludedFileExtensions", ext)}
           />
 
           <LinkAvailabilityScan
@@ -323,3 +298,5 @@ export default function ExportFileStore({
     </Stack>
   );
 }
+
+export default ExportFileStore;

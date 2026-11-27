@@ -9,48 +9,64 @@ import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Switch from "@mui/material/Switch";
+import { useStore } from "@tanstack/react-form";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import axios from "@/common/axios";
-import type { DEFAULT_STATE } from "@/Export/constants";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
 import { mapNullable } from "../util/Util";
-import type { Validator } from "../util/Validator";
-import {
-  type DMPUserInternalId,
-  type Person,
-  REPOS_WITHOUT_PEOPLE_OR_SUBJECT,
-  type Repo,
-  type RepoDetails,
-} from "./repositories/common";
+import { type ExportForm, type RepositoryForm, validateWith } from "./exportForm";
+import { type DMPUserInternalId, type Person, REPOS_WITHOUT_PEOPLE_OR_SUBJECT, type Repo } from "./repositories/common";
 import DataverseRepo from "./repositories/DataverseRepo";
 import DigitalCommonsDataRepo from "./repositories/DigitalCommonsDataRepo";
 import DryadRepo from "./repositories/DryadRepo";
 import FigshareRepo from "./repositories/FigshareRepo";
 import type { Tag } from "./repositories/Tags";
 import ZenodoRepo from "./repositories/ZenodoRepo";
-import useLatestState from "./useLatestState";
 
-const STANDARD_VALIDATIONS = {
-  description: false,
-  title: false,
-  author: false,
-  contact: false,
-  subject: false,
+const atLeastThreeCharacters = v.pipe(v.string(), v.minLength(3));
+
+/**
+ * The rules for the metadata of a deposit to the given repository.
+ */
+const repositoryFormSchema = (repo: Repo) => {
+  const needsPeopleAndSubject = !REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(repo.repoName);
+  const people = needsPeopleAndSubject ? v.pipe(v.array(v.unknown()), v.nonEmpty()) : v.array(v.unknown());
+  return v.looseObject({
+    title: atLeastThreeCharacters,
+    description: atLeastThreeCharacters,
+    subject: needsPeopleAndSubject ? v.pipe(v.string(), v.nonEmpty()) : v.string(),
+    authors: people,
+    contacts: people,
+    otherProperties:
+      repo.repoName === "app.dryad" ? v.looseObject({ funder: v.pipe(v.string(), v.nonEmpty()) }) : v.unknown(),
+    // Zenodo deposits can be associated with at most one DMP
+    selectedPlans: repo.repoName === "app.zenodo" ? v.pipe(v.array(v.unknown()), v.maxLength(1)) : v.unknown(),
+  });
 };
 
-const DRYAD_VALIDATIONS = {
-  ...STANDARD_VALIDATIONS,
-  crossrefFunder: false,
-};
+export type RepositoryFormErrors = v.FlatErrors<ReturnType<typeof repositoryFormSchema>>;
+
+/**
+ * Validates the metadata of a deposit against the rules of the chosen
+ * repository.
+ *
+ * @param repoList The repositories that the user can choose from.
+ */
+export const repositoryFormValidator =
+  (repoList: ReadonlyArray<Repo>) =>
+  ({ value }: { value: RepositoryForm }): RepositoryFormErrors | undefined =>
+    // plans selected while association is off are not sent, so they cannot break Zenodo's one-plan limit
+    validateWith(repositoryFormSchema(repoList[Number(value.repoChoice)]))({
+      value: value.linkDMP ? value : { ...value, selectedPlans: [] },
+    });
 
 type ExportRepoArgs = {
-  state: typeof DEFAULT_STATE;
-  validator: Validator;
-  repoList: Array<Repo>;
-  repoDetails: RepoDetails;
-  updateRepoConfig: (repoDetails: RepoDetails) => void;
+  form: ExportForm;
+  // the issues found when the user last tapped Next on this pane, if any
+  errors: RepositoryFormErrors | undefined;
   fetchTags: () => Promise<Array<Tag>>;
 };
 
@@ -113,158 +129,95 @@ const DmpSelector = ({
   );
 };
 
-function ExportRepo({
-  state: upstreamState,
-  validator,
-  repoList,
-  repoDetails,
-  updateRepoConfig,
-  fetchTags,
-}: ExportRepoArgs): React.ReactNode {
+function ExportRepo({ form, errors, fetchTags }: ExportRepoArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
-  /*
-   * Event handlers push this state up through updateRemoteConfig straight
-   * after changing it, and the validation function is registered only once,
-   * so both read it through getState() rather than the rendered value.
-   */
-  const [state, updateState, getState] = useLatestState(() => ({
-    inputValidations: STANDARD_VALIDATIONS,
-    submitAttempt: false,
-    repoChoice: repoDetails.repoChoice,
-    title: repoDetails.meta.title,
-    description: repoDetails.meta.description,
-    subject: repoDetails.meta.subject,
-    license: 0,
-    publish: repoDetails.meta.publish,
-    authors: repoDetails.meta.authors,
-    contacts: repoDetails.meta.contacts,
-    otherProperties: {},
-    linkDMP: false,
-    selectedPlans: [] as Array<DMPUserInternalId>,
-    crossrefFunders: [] as Array<{ name: string }>,
-    selectedFunder: {},
-    tags: [] as Array<Tag>,
-    metadataLanguage: "",
-    exportToRaid: upstreamState.repositoryConfig.exportToRaid,
-  }));
+  const state = useStore(form.store, (formState) => formState.values.repositoryForm);
+  const repoList = useStore(form.store, (formState) => formState.values.exportConfig.repoData);
+  const [crossrefFunders, setCrossrefFunders] = useState<Array<{ name: string }>>([]);
   const [fetchingTags, setFetchingTags] = useState(false);
 
   useEffect(() => {
+    const { archiveType } = form.state.values.exportConfig;
+    if (form.state.values.repositoryForm.tagsLoadedFor === archiveType) return;
+    let unmounted = false;
     void (async () => {
       setFetchingTags(true);
-      const tags = await fetchTags();
-      updateState((s) => ({ ...s, tags }));
-      setFetchingTags(false);
-    })();
-  }, []);
-
-  useEffect(() => {
-    validator.setValidFunc(() => {
-      const current = getState();
-      const repo = repoList[current.repoChoice];
-      let validations: Record<string, boolean> = { ...STANDARD_VALIDATIONS };
-
-      if (repo.repoName === "app.dryad") {
-        validations = { ...DRYAD_VALIDATIONS };
-        if (
-          "funder" in current.otherProperties &&
-          typeof current.otherProperties.funder === "string" &&
-          current.otherProperties.funder.length !== 0
-        )
-          validations.crossrefFunder = true;
+      try {
+        const tags = await fetchTags();
+        if (unmounted) return;
+        form.setFieldValue("repositoryForm", (s) => ({ ...s, tags, tagsLoadedFor: archiveType }));
+      } catch (e) {
+        console.error(e);
+        // Tags loaded for another format do not describe this export, so drop them and forget which format they were
+        // for: the next visit, for either format, then tries again.
+        if (!unmounted)
+          form.setFieldValue("repositoryForm", (s) =>
+            s.tagsLoadedFor !== null && s.tagsLoadedFor !== archiveType ? { ...s, tags: [], tagsLoadedFor: null } : s,
+          );
+      } finally {
+        if (!unmounted) setFetchingTags(false);
       }
-
-      const needsPeopleAndSubject = !REPOS_WITHOUT_PEOPLE_OR_SUBJECT.has(repo.repoName);
-      if (current.description.length > 2) validations.description = true;
-      if (!needsPeopleAndSubject || current.subject !== "") validations.subject = true;
-      if (current.title.length > 2) validations.title = true;
-      if (!needsPeopleAndSubject || current.authors.length) validations.author = true;
-      if (!needsPeopleAndSubject || current.contacts.length) validations.contact = true;
-
-      updateState((s) => ({
-        ...s,
-        inputValidations: validations as typeof STANDARD_VALIDATIONS | typeof DRYAD_VALIDATIONS,
-        submitAttempt: true,
-      }));
-
-      return Promise.resolve(
-        [...Object.values(validations), !(repo.repoName === "app.zenodo" && current.selectedPlans.length > 1)].every(
-          (b) => b,
-        ),
-      );
-    });
+    })();
+    return () => {
+      unmounted = true;
+    };
   }, []);
 
-  const getParams = () => {
-    const current = getState();
-    const repo = repoList[current.repoChoice];
-
-    return {
-      repoChoice: current.repoChoice,
-      appName: repo.repoName,
-      depositToRepository: true,
-      repoCfg: repo.repoCfg,
-      selectedDMPs: current.selectedPlans,
-      meta: {
-        title: current.title,
-        description: current.description,
-        subject: current.subject,
-        licenseName: repo.license.licenses[current.license].licenseDefinition.name,
-        licenseUrl: repo.license.licenses[current.license].licenseDefinition.url,
-        authors: current.authors,
-        contacts: current.contacts,
-        publish: current.publish,
-        otherProperties: current.otherProperties,
-        tags: current.tags,
-      },
-      exportToRaid: current.exportToRaid,
-    };
+  const fieldErrors = errors?.nested ?? {};
+  const submitAttempt = errors !== undefined;
+  const inputValidations = {
+    title: !fieldErrors.title,
+    description: !fieldErrors.description,
+    subject: !fieldErrors.subject,
+    author: !fieldErrors.authors,
+    contact: !fieldErrors.contacts,
+    crossrefFunder: !fieldErrors["otherProperties.funder"],
   };
 
-  const updateRemoteConfig = () => {
-    const params = getParams();
-    updateRepoConfig(params);
-  };
-
-  const handleChange = <Key extends keyof typeof state>(event: {
-    target: { name: Key; value: (typeof state)[Key] };
+  const handleChange = ({
+    target: { name, value },
+  }: {
+    target: { name: "repoChoice" | "title" | "description" | "subject" | "license" | "publish"; value: string };
   }) => {
-    const { name, value } = event.target;
-    updateState((s) => ({ ...s, [name]: value }));
-    updateRemoteConfig();
+    if (name === "repoChoice") {
+      // licences are listed per repository, so an index chosen for another repository may not exist in this one
+      form.setFieldValue("repositoryForm", (s) => ({ ...s, repoChoice: value, license: 0 }));
+      return;
+    }
+    form.setFieldValue(`repositoryForm.${name}`, value);
   };
 
   const handleMetadataLanguageChange = (event: { target: { name: string; value: string } }) => {
     const { value } = event.target;
-    updateState((s) => ({ ...s, otherProperties: { metadataLanguage: value }, metadataLanguage: value }));
-    updateRemoteConfig();
+    form.setFieldValue("repositoryForm", (s) => ({
+      ...s,
+      otherProperties: { metadataLanguage: value },
+      metadataLanguage: value,
+    }));
   };
 
   const setLinkDMP = (linkDMP: boolean) => {
-    updateState((s) => ({ ...s, linkDMP }));
+    form.setFieldValue("repositoryForm.linkDMP", linkDMP);
   };
 
   const setSelectedPlans = (update: (selectedPlans: Array<DMPUserInternalId>) => Array<DMPUserInternalId>) => {
-    updateState((s) => ({ ...s, selectedPlans: update(s.selectedPlans) }));
+    form.setFieldValue("repositoryForm.selectedPlans", update);
   };
 
   const updatePeople = (people: Array<Person>) => {
-    updateState((s) => ({
+    form.setFieldValue("repositoryForm", (s) => ({
       ...s,
       authors: people.filter((person) => person.type === "Author"),
       contacts: people.filter((person) => person.type === "Contact"),
     }));
-    updateRemoteConfig();
   };
 
   const handleCrossrefFunderChange = (_: unknown, values: { name: string }) => {
-    updateState((s) => ({ ...s, otherProperties: { funder: JSON.stringify(values) } }));
-    updateRemoteConfig();
+    form.setFieldValue("repositoryForm.otherProperties", { funder: JSON.stringify(values) });
   };
 
   const onTagsChange = ({ target: { value } }: { target: { value: Array<Tag> } }) => {
-    updateState((s) => ({ ...s, tags: value }));
-    updateRemoteConfig();
+    form.setFieldValue("repositoryForm.tags", value);
   };
 
   const fetchCrossrefFunders = async (query: string) => {
@@ -278,9 +231,8 @@ function ExportRepo({
       }>("https://api.crossref.org/funders", {
         params: searchParams,
       });
-      // Only the local suggestion list changes, so there is nothing to send to the dialog. Not sending also stops a
-      // late response from writing this form's settings into an export opened after it was closed.
-      updateState((s) => ({ ...s, crossrefFunders: data.message.items }));
+      // Only the local suggestion list changes, so a late response cannot write into an export opened after this one.
+      setCrossrefFunders(data.message.items);
     } catch (error) {
       console.error("Error retrieving funders from crossref API:", error);
     }
@@ -296,7 +248,7 @@ function ExportRepo({
     }
   };
 
-  const repo: Repo = repoList[state.repoChoice];
+  const repo: Repo = repoList[Number(state.repoChoice)];
 
   return (
     <Grid container sx={{ flexDirection: "column", width: "100%" }} spacing={1}>
@@ -351,9 +303,9 @@ function ExportRepo({
               updatePeople={updatePeople}
               handleCrossrefFunderChange={handleCrossrefFunderChange}
               handleFetchCrossrefFunder={handleFetchCrossrefFunder}
-              crossrefFunders={state.crossrefFunders}
-              inputValidations={state.inputValidations as typeof DRYAD_VALIDATIONS}
-              submitAttempt={state.submitAttempt}
+              crossrefFunders={crossrefFunders}
+              inputValidations={inputValidations}
+              submitAttempt={submitAttempt}
               contacts={state.contacts}
               authors={state.authors}
             />
@@ -372,8 +324,8 @@ function ExportRepo({
               repo={repo}
               handleChange={handleChange}
               updatePeople={updatePeople}
-              inputValidations={state.inputValidations}
-              submitAttempt={state.submitAttempt}
+              inputValidations={inputValidations}
+              submitAttempt={submitAttempt}
               contacts={state.contacts}
               authors={state.authors}
               title={state.title}
@@ -401,8 +353,8 @@ function ExportRepo({
               repo={repo}
               handleChange={handleChange}
               updatePeople={updatePeople}
-              inputValidations={state.inputValidations}
-              submitAttempt={state.submitAttempt}
+              inputValidations={inputValidations}
+              submitAttempt={submitAttempt}
               contacts={state.contacts}
               authors={state.authors}
               title={state.title}
@@ -424,8 +376,8 @@ function ExportRepo({
             />
             <ZenodoRepo
               handleChange={handleChange}
-              inputValidations={state.inputValidations}
-              submitAttempt={state.submitAttempt}
+              inputValidations={inputValidations}
+              submitAttempt={submitAttempt}
               title={state.title}
               description={state.description}
               tags={state.tags}
@@ -437,8 +389,8 @@ function ExportRepo({
         {repo.repoName === "app.digitalCommonsData" && (
           <DigitalCommonsDataRepo
             handleChange={handleChange}
-            inputValidations={state.inputValidations}
-            submitAttempt={state.submitAttempt}
+            inputValidations={inputValidations}
+            submitAttempt={submitAttempt}
             title={state.title}
             description={state.description}
             tags={state.tags}

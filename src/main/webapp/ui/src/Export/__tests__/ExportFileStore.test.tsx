@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { describe, expect, test } from "vitest";
 import axios from "@/common/axios";
-import { mkValidator } from "../../util/Validator";
 import ExportFileStore from "../ExportFileStore";
 import CREATE_QUICK_EXPORT_PLAN from "./createQuickExportPlan.json";
+import WithExportForm from "./WithExportForm";
 
 const mockAxios = new MockAdapter(axios);
 describe("ExportFileStore", () => {
@@ -17,28 +17,24 @@ describe("ExportFileStore", () => {
     await act(
       () =>
         void render(
-          <ExportFileStore
-            nfsConfig={{
-              maxFileSizeInMB: 1,
-              excludedFileExtensions: "",
-              includeNfsFiles: false,
+          <WithExportForm
+            values={{
+              nfsConfig: {
+                maxFileSizeInMB: 1,
+                excludedFileExtensions: "",
+                includeNfsFiles: false,
+              },
+              exportSelection: {
+                type: "selection",
+                exportTypes: [],
+                exportNames: [],
+                exportIds: [],
+              },
+              exportDetails: { maxLinkLevel: 1, archiveType: "html", description: "", allVersions: false },
             }}
-            exportSelection={{
-              type: "selection",
-              exportTypes: [],
-              exportNames: [],
-              exportIds: [],
-            }}
-            exportConfig={{
-              archiveType: "pdf",
-              repository: false,
-              fileStores: true,
-              allVersions: false,
-              repoData: [],
-            }}
-            updateFilters={() => {}}
-            validator={mkValidator()}
-          />,
+          >
+            {(form) => <ExportFileStore form={form} />}
+          </WithExportForm>,
         ),
     );
     expect(screen.getByText("workspace:export.fileStore.noLinks.message")).toBeVisible();
@@ -52,28 +48,24 @@ describe("ExportFileStore", () => {
     await act(
       () =>
         void render(
-          <ExportFileStore
-            nfsConfig={{
-              maxFileSizeInMB: 1,
-              excludedFileExtensions: "",
-              includeNfsFiles: false,
+          <WithExportForm
+            values={{
+              nfsConfig: {
+                maxFileSizeInMB: 1,
+                excludedFileExtensions: "",
+                includeNfsFiles: false,
+              },
+              exportSelection: {
+                type: "selection",
+                exportTypes: [],
+                exportNames: [],
+                exportIds: [],
+              },
+              exportDetails: { maxLinkLevel: 1, archiveType: "html", description: "", allVersions: false },
             }}
-            exportSelection={{
-              type: "selection",
-              exportTypes: [],
-              exportNames: [],
-              exportIds: [],
-            }}
-            exportConfig={{
-              archiveType: "pdf",
-              repository: false,
-              fileStores: true,
-              allVersions: false,
-              repoData: [],
-            }}
-            updateFilters={() => {}}
-            validator={mkValidator()}
-          />,
+          >
+            {(form) => <ExportFileStore form={form} />}
+          </WithExportForm>,
         ),
     );
     void (await waitFor(async () => {
@@ -103,28 +95,24 @@ describe("ExportFileStore", () => {
     await act(
       () =>
         void render(
-          <ExportFileStore
-            nfsConfig={{
-              maxFileSizeInMB: 1,
-              excludedFileExtensions: "",
-              includeNfsFiles: false,
+          <WithExportForm
+            values={{
+              nfsConfig: {
+                maxFileSizeInMB: 1,
+                excludedFileExtensions: "",
+                includeNfsFiles: false,
+              },
+              exportSelection: {
+                type: "selection",
+                exportTypes: [],
+                exportNames: [],
+                exportIds: [],
+              },
+              exportDetails: { maxLinkLevel: 1, archiveType: "html", description: "", allVersions: false },
             }}
-            exportSelection={{
-              type: "selection",
-              exportTypes: [],
-              exportNames: [],
-              exportIds: [],
-            }}
-            exportConfig={{
-              archiveType: "pdf",
-              repository: false,
-              fileStores: true,
-              allVersions: false,
-              repoData: [],
-            }}
-            updateFilters={() => {}}
-            validator={mkValidator()}
-          />,
+          >
+            {(form) => <ExportFileStore form={form} />}
+          </WithExportForm>,
         ),
     );
     void (await waitFor(async () => {

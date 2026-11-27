@@ -531,6 +531,142 @@ describe("ExportDialog", () => {
         });
       },
     );
+    test("A DMP selected after the other metadata is sent with the export.", async () => {
+      mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
+        {
+          repoName: "app.zenodo",
+          displayName: "Zenodo",
+          subjects: [],
+          license: {
+            licenseRequired: true,
+            otherLicensePermitted: false,
+            licenses: [
+              {
+                licenseDefinition: { url: "https://creativecommons.org/publicdomain/zero/1.0/", name: "CC-0" },
+                defaultLicense: null,
+              },
+            ],
+          },
+          otherProperties: [],
+          linkedDMPs: [{ dmpUserInternalId: 7, dmpTitle: "Data management plan", dmpId: "dmp-7" }],
+        },
+      ]);
+      mockAxios.onPost("/export/ajax/exportRecordTagsArchive").reply(200, { data: [] });
+      // A failed export skips the success handler's state reset, which would otherwise race the closing transition
+      // of a dialog this test wrapper keeps open. Only the request body matters here.
+      mockAxios.onPost("/export/ajax/exportArchive").reply(500, "Export failed");
+      onTestFinished(silenceConsole(["log"], ["Request failed with status code 500"]));
+      mockAxios.resetHistory();
+      const user = userEvent.setup();
+      const { setProps } = renderExportDialog();
+      act(() => {
+        setProps({
+          open: true,
+          selection: { type: "selection", exportTypes: ["NORMAL"], exportNames: ["foo"], exportIds: ["1"] },
+        });
+      });
+      await user.click(
+        screen.getByRole("radio", {
+          name: (name) => name.startsWith("workspace:export.format.chooser.formats.xmlHeading"),
+        }),
+      );
+      const repositorySwitch = screen.getByRole("checkbox", {
+        name: "workspace:export.format.chooser.exportToRepository",
+      });
+      // the switch stays disabled until the list of repositories has loaded
+      await waitFor(() => expect(repositorySwitch).toBeEnabled());
+      await user.click(repositorySwitch);
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.next" }));
+      await screen.findByRole("radio", { name: "Zenodo" });
+      await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "Title");
+      await user.type(
+        screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }),
+        "Description",
+      );
+      await user.click(screen.getByRole("checkbox", { name: "workspace:export.repositories.dmp.associateLabel" }));
+      await user.click(
+        within(screen.getByRole("table")).getByRole("checkbox", {
+          name: "apps:dmpIntegrations.dialog.selectPlanLabel",
+        }),
+      );
+      await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+
+      await waitFor(() => {
+        expect(mockAxios.history.post.some(({ url }) => url === "/export/ajax/exportArchive")).toBe(true);
+      });
+      const exportRequest = mockAxios.history.post.find(({ url }) => url === "/export/ajax/exportArchive");
+      expect(JSON.parse(exportRequest?.data as string).repositoryConfig.selectedDMPs).toEqual([7]);
+    });
+
+    test("A DMP selected and then unassociated is not sent with the export.", async () => {
+      mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, [
+        {
+          repoName: "app.zenodo",
+          displayName: "Zenodo",
+          subjects: [],
+          license: {
+            licenseRequired: true,
+            otherLicensePermitted: false,
+            licenses: [
+              {
+                licenseDefinition: { url: "https://creativecommons.org/publicdomain/zero/1.0/", name: "CC-0" },
+                defaultLicense: null,
+              },
+            ],
+          },
+          otherProperties: [],
+          linkedDMPs: [{ dmpUserInternalId: 7, dmpTitle: "Data management plan", dmpId: "dmp-7" }],
+        },
+      ]);
+      mockAxios.onPost("/export/ajax/exportRecordTagsArchive").reply(200, { data: [] });
+      // A failed export skips the success handler's state reset, which would otherwise race the closing transition
+      // of a dialog this test wrapper keeps open. Only the request body matters here.
+      mockAxios.onPost("/export/ajax/exportArchive").reply(500, "Export failed");
+      onTestFinished(silenceConsole(["log"], ["Request failed with status code 500"]));
+      mockAxios.resetHistory();
+      const user = userEvent.setup();
+      const { setProps } = renderExportDialog();
+      act(() => {
+        setProps({
+          open: true,
+          selection: { type: "selection", exportTypes: ["NORMAL"], exportNames: ["foo"], exportIds: ["1"] },
+        });
+      });
+      await user.click(
+        screen.getByRole("radio", {
+          name: (name) => name.startsWith("workspace:export.format.chooser.formats.xmlHeading"),
+        }),
+      );
+      const repositorySwitch = screen.getByRole("checkbox", {
+        name: "workspace:export.format.chooser.exportToRepository",
+      });
+      // the switch stays disabled until the list of repositories has loaded
+      await waitFor(() => expect(repositorySwitch).toBeEnabled());
+      await user.click(repositorySwitch);
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.next" }));
+      await screen.findByRole("radio", { name: "Zenodo" });
+      await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "Title");
+      await user.type(
+        screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }),
+        "Description",
+      );
+      await user.click(screen.getByRole("checkbox", { name: "workspace:export.repositories.dmp.associateLabel" }));
+      await user.click(
+        within(screen.getByRole("table")).getByRole("checkbox", {
+          name: "apps:dmpIntegrations.dialog.selectPlanLabel",
+        }),
+      );
+      await user.click(screen.getByRole("checkbox", { name: "workspace:export.repositories.dmp.associateLabel" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+
+      await waitFor(() => {
+        expect(mockAxios.history.post.some(({ url }) => url === "/export/ajax/exportArchive")).toBe(true);
+      });
+      const exportRequest = mockAxios.history.post.find(({ url }) => url === "/export/ajax/exportArchive");
+      expect(JSON.parse(exportRequest?.data as string).repositoryConfig.selectedDMPs).toEqual([]);
+    });
   });
   describe("When the dialog is rendered it is passed a selection.", () => {
     mockAxios.onGet("/repository/ajax/repo/uiConfig").reply(200, []);

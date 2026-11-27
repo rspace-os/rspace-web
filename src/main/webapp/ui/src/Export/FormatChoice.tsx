@@ -5,6 +5,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import { useStore } from "@tanstack/react-form";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,8 +15,8 @@ import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../util/fetchingData";
 import { Optional } from "../util/optional";
 import * as Parsers from "../util/parsers";
-import type { Validator } from "../util/Validator";
-import type { ExportSelection } from "./common";
+import type { PageSize } from "./common";
+import { DEFAULT_REPOSITORY_FORM, type ExportDetails, type ExportForm } from "./exportForm";
 import type { Repo } from "./repositories/common";
 
 export type ArchiveType = "pdf" | "doc" | "xml" | "html" | "eln";
@@ -30,34 +31,54 @@ type RepoUiConfig = Omit<Repo, "repoCfg"> & {
 };
 
 type FormatChoiceArgs = {
-  exportConfigUpdate: {
-    (key: "repoData", repos: ReadonlyArray<Repo>): void;
-    (key: "archiveType", archiveType: ArchiveType): void;
-    (key: "fileStores", includeFilesInFilestores: boolean): void;
-    (key: "allVersions", allVersions: boolean): void;
-    (key: "repository", exportToRepository: boolean): void;
-  };
-  exportSelection: ExportSelection;
-  validator: Validator;
-  archiveType: ArchiveType | "";
+  form: ExportForm;
   allowFileStores: boolean;
-  repoSelected: boolean;
-  allVersions: boolean;
-  fileStoresSelected: boolean;
-  updateFileStores: (key: "includeNfsFiles", incluedNfsFiles: boolean) => void;
+  // the page size that new PDF and Word options start with
+  defaultPageSize: PageSize;
 };
 
-function FormatChoice({
-  exportConfigUpdate,
-  exportSelection,
-  validator,
-  archiveType,
-  allowFileStores,
-  repoSelected,
-  allVersions,
-  fileStoresSelected,
-  updateFileStores,
-}: FormatChoiceArgs): React.ReactNode {
+/**
+ * The options that a newly chosen format starts with.
+ */
+const initialExportDetails = (
+  archiveType: ArchiveType,
+  exportName: string,
+  pageSize: PageSize,
+): NonNullable<ExportDetails> => {
+  switch (archiveType) {
+    case "html":
+    case "eln":
+    case "xml":
+      return { maxLinkLevel: 1, archiveType, description: "", allVersions: false };
+    case "pdf":
+      return {
+        exportFormat: "PDF",
+        exportName,
+        provenance: true,
+        comments: true,
+        annotations: true,
+        restartPageNumberPerDoc: true,
+        pageSize,
+        defaultPageSize: pageSize,
+        dateType: "EXP",
+        includeFooterAtEndOnly: true,
+        setPageSizeAsDefault: false,
+        includeFieldLastModifiedDate: true,
+        allVersions: false,
+      };
+    case "doc":
+      return {
+        exportFormat: "WORD",
+        exportName,
+        pageSize,
+        defaultPageSize: pageSize,
+        setPageSizeAsDefault: false,
+        allVersions: false,
+      };
+  }
+};
+
+function FormatChoice({ form, allowFileStores, defaultPageSize }: FormatChoiceArgs): React.ReactNode {
   const { t } = useTranslation(["workspace", "common"]);
   const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState<Optional<string>>(
     Optional.present(t("common:loading")),
@@ -66,6 +87,13 @@ function FormatChoice({
   const [wordAvailable, setWordAvailable] = useState(false);
   const [wordAvailabilityMessage, setWordAvailabilityMessage] = useState("");
   const asposeEnabled = useDeploymentProperty("aspose.enabled");
+  const exportSelection = useStore(form.store, (state) => state.values.exportSelection);
+  const {
+    archiveType,
+    repository: repoSelected,
+    fileStores: fileStoresSelected,
+    allVersions,
+  } = useStore(form.store, (state) => state.values.exportConfig);
 
   const repoCheck = () => {
     const url = "/repository/ajax/repo/uiConfig";
@@ -125,7 +153,7 @@ function FormatChoice({
           ];
         });
 
-        exportConfigUpdate("repoData", normalizedRepos);
+        form.setFieldValue("exportConfig.repoData", normalizedRepos);
       })
       .catch(() => {
         setMsgBlockingRepoChoice(Optional.present(t("export.format.chooser.repoFetchError")));
@@ -191,14 +219,27 @@ function FormatChoice({
     wordCheck();
   }, []);
 
-  useEffect(() => {
-    validator.setValidFunc(() => Promise.resolve(true));
-  }, [validator]);
+  // PDF and Word exports are named after the selection
+  const defaultExportName = () => {
+    if (exportSelection.type === "selection" && exportSelection.exportNames.length > 0)
+      return exportSelection.exportNames[0].trimStart();
+    if (exportSelection.type === "user")
+      return t("export.dialog.defaultExportName.userAllWork", { username: exportSelection.username });
+    if (exportSelection.type === "group")
+      return t("export.dialog.defaultExportName.groupAllWork", { groupName: exportSelection.groupName });
+    return t("export.dialog.defaultExportName.exportData");
+  };
+
+  const setAllVersions = (checked: boolean) => {
+    form.setFieldValue("exportConfig.allVersions", checked);
+    form.setFieldValue("exportDetails", (details) => details && { ...details, allVersions: checked });
+  };
 
   const handleChange = ({ target: { value } }: { target: { value: ArchiveType } }) => {
-    exportConfigUpdate("archiveType", value);
-    if (value === "pdf" || value === "doc") exportConfigUpdate("fileStores", false);
-    if (value !== "xml") exportConfigUpdate("allVersions", false);
+    form.setFieldValue("exportConfig.archiveType", value);
+    form.setFieldValue("exportDetails", initialExportDetails(value, defaultExportName(), defaultPageSize));
+    if (value === "pdf" || value === "doc") form.setFieldValue("exportConfig.fileStores", false);
+    if (value !== "xml") setAllVersions(false);
   };
 
   return (
@@ -282,7 +323,10 @@ function FormatChoice({
           control={
             <Switch
               checked={repoSelected}
-              onChange={({ target: { checked } }) => exportConfigUpdate("repository", checked)}
+              onChange={({ target: { checked } }) => {
+                form.setFieldValue("exportConfig.repository", checked);
+                form.setFieldValue("repositoryForm", DEFAULT_REPOSITORY_FORM);
+              }}
               value="repository"
               color="primary"
               disabled={msgBlockingRepoChoice.isPresent()}
@@ -301,8 +345,8 @@ function FormatChoice({
               <Switch
                 checked={fileStoresSelected}
                 onChange={({ target: { checked } }) => {
-                  exportConfigUpdate("fileStores", checked);
-                  updateFileStores("includeNfsFiles", checked);
+                  form.setFieldValue("exportConfig.fileStores", checked);
+                  form.setFieldValue("nfsConfig.includeNfsFiles", checked);
                 }}
                 value="fileStores"
                 color="primary"
@@ -321,9 +365,7 @@ function FormatChoice({
             control={
               <Switch
                 checked={allVersions}
-                onChange={({ target: { checked } }) => {
-                  exportConfigUpdate("allVersions", checked);
-                }}
+                onChange={({ target: { checked } }) => setAllVersions(checked)}
                 value="allVersions"
                 color="primary"
                 data-test-id="allVersions"

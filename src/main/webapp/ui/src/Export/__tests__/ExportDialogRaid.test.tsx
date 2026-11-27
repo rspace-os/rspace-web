@@ -7,8 +7,9 @@ import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 import materialTheme from "../../theme";
-import { DEFAULT_STATE } from "../constants";
 import ExportDialogRaid from "../ExportDialogRaid";
+import type { ExportForm } from "../exportForm";
+import WithExportForm from "./WithExportForm";
 
 type CommonGroupsQueryArgs = Parameters<typeof useCommonGroupsShareListingQuery>;
 type CommonGroupsQueryResult = ReturnType<typeof useCommonGroupsShareListingQuery>;
@@ -30,35 +31,24 @@ vi.mock("@/modules/share/queries", () => ({
   useCommonGroupsShareListingQuery: (...args: CommonGroupsQueryArgs) => mockedUseCommonGroupsShareListingQuery(...args),
 }));
 
-const makeState = (overrides: Partial<typeof DEFAULT_STATE> = {}) => ({
-  ...DEFAULT_STATE,
-  exportSelection: {
-    ...DEFAULT_STATE.exportSelection,
-    exportIds: ["1", "2"],
-  },
-  repositoryConfig: {
-    ...DEFAULT_STATE.repositoryConfig,
-  },
-  ...overrides,
-});
+const exportDialogRaid = (formRef?: { current: ExportForm | null }) => (
+  <ThemeProvider theme={materialTheme}>
+    <WithExportForm
+      values={{ exportSelection: { type: "selection", exportTypes: [], exportNames: [], exportIds: ["1", "2"] } }}
+      formRef={formRef}
+    >
+      {(form) => <ExportDialogRaid form={form} />}
+    </WithExportForm>
+  </ThemeProvider>
+);
 
-const renderExportDialogRaid = (stateOverrides: Partial<typeof DEFAULT_STATE> = {}, updateRepoConfig = vi.fn()) =>
-  render(
-    <ThemeProvider theme={materialTheme}>
-      <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
-    </ThemeProvider>,
-  );
+const renderExportDialogRaid = () => render(exportDialogRaid());
 
-const renderExportDialogRaidWithRealI18n = async (
-  stateOverrides: Partial<typeof DEFAULT_STATE> = {},
-  updateRepoConfig = vi.fn(),
-) => {
-  return renderWithRealI18n(
-    <ThemeProvider theme={materialTheme}>
-      <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
-    </ThemeProvider>,
-    { resources: { workspace: workspaceEn }, defaultNS: "workspace" },
-  );
+const renderExportDialogRaidWithRealI18n = async (formRef?: { current: ExportForm | null }) => {
+  return renderWithRealI18n(exportDialogRaid(formRef), {
+    resources: { workspace: workspaceEn },
+    defaultNS: "workspace",
+  });
 };
 
 const makeGroup = (id: number, overrides: Partial<GroupInfo> = {}): GroupInfo => ({
@@ -180,9 +170,9 @@ describe("ExportDialogRaid", () => {
       }),
     );
 
-    const updateRepoConfig = vi.fn();
+    const formRef: { current: ExportForm | null } = { current: null };
 
-    await renderExportDialogRaidWithRealI18n({}, updateRepoConfig);
+    await renderExportDialogRaidWithRealI18n(formRef);
 
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
@@ -196,6 +186,7 @@ describe("ExportDialogRaid", () => {
     const toggle = screen.getByRole("checkbox", { name: "Report to RAiD" });
     await user.click(toggle);
 
-    expect(updateRepoConfig).toHaveBeenCalledWith(expect.objectContaining({ exportToRaid: true }));
+    expect(toggle).toBeChecked();
+    expect(formRef.current?.state.values.repositoryForm.exportToRaid).toBe(true);
   });
 });
