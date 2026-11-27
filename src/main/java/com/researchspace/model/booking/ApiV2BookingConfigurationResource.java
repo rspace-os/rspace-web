@@ -34,11 +34,13 @@ import java.util.function.Function;
     name = "booking-configurations",
     entity = BookingConfiguration.class,
     id = "id",
-    auditFields = true)
+    auditFields = true,
+    readGuaranteedAuditFields = {"createdAt", "updatedAt"})
 public record ApiV2BookingConfigurationResource(
     @ApiV2ResourceField(description = "Stable booking-configuration identifier.", example = "7")
         Long id,
     @ApiV2ResourceRelationship(
+            readGuaranteed = true,
             relationTo =
                 @ApiV2RelationshipTarget(
                     resource = ApiV2InstrumentResource.RESOURCE_NAME,
@@ -52,16 +54,19 @@ public record ApiV2BookingConfigurationResource(
             description = "Instrument to which this booking configuration applies.")
         ResourceReference<BookableTargetType, Long> target,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description = "Whether bookings are enabled for the target.")
         boolean enabled,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = NEVER,
             updateAccess = INHERITED,
             description = "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.")
         BookingConfigurationState state,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             property = "timeZone",
             createAccess = NEVER,
             updateAccess = NEVER,
@@ -71,6 +76,7 @@ public record ApiV2BookingConfigurationResource(
             example = "Europe/Berlin")
         String timezone,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description =
@@ -80,6 +86,7 @@ public record ApiV2BookingConfigurationResource(
             example = "15")
         long slotGranularityMinutes,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description =
@@ -91,18 +98,21 @@ public record ApiV2BookingConfigurationResource(
         BookingIncrementUnit incrementUnit,
     @ApiV2ResourceMember(factory = "openingHoursField") List<BookingOpeningHoursEntry> openingHours,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description = "Unavailable minutes before a booking.",
             example = "15")
         long bufferBeforeMinutes,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description = "Unavailable minutes after a booking.",
             example = "15")
         long bufferAfterMinutes,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description =
@@ -110,11 +120,13 @@ public record ApiV2BookingConfigurationResource(
             example = "120")
         long maxBookingDurationMinutes,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = INHERITED,
             updateAccess = INHERITED,
             description = "Whether overlapping bookings are permitted.")
         boolean allowDoubleBooking,
     @ApiV2ResourceField(
+            readGuaranteed = true,
             createAccess = NEVER,
             updateAccess = NEVER,
             description = "Optimistic configuration revision.")
@@ -226,6 +238,7 @@ public record ApiV2BookingConfigurationResource(
             BookingOpeningHoursCodec.TYPE,
             BookingConfiguration::getOpeningHours,
             BookingConfiguration::setOpeningHours)
+        .readGuaranteed()
         .documented(
             OpenApiSchemaDocumentation.of(
                 null,
@@ -243,6 +256,7 @@ public record ApiV2BookingConfigurationResource(
             "createdByName",
             CollectionFieldTypes.text(),
             BookingConfiguration::getCreatedByName)
+        .readGuaranteed()
         .allowNull()
         .withQueryCapabilities(false, false);
   }
@@ -253,6 +267,7 @@ public record ApiV2BookingConfigurationResource(
             "effectiveRole",
             CollectionFieldTypes.text(64),
             BookingConfiguration::getEffectiveRole)
+        .readGuaranteed()
         .allowNull()
         .withQueryCapabilities(false, false);
   }
@@ -260,6 +275,7 @@ public record ApiV2BookingConfigurationResource(
   private static Field<BookingConfiguration, ?> roleSourcesField() {
     return Field.readOnly(
             "roleSources", "roleSources", ROLE_SOURCES_TYPE, BookingConfiguration::getRoleSources)
+        .readGuaranteed()
         .withQueryCapabilities(false, false);
   }
 
@@ -269,6 +285,7 @@ public record ApiV2BookingConfigurationResource(
             "capabilities",
             CollectionFieldTypes.readOnlyObject(BookingConfigurationCapabilities.class),
             BookingConfiguration::getCapabilities)
+        .readGuaranteed()
         .withQueryCapabilities(false, false);
   }
 
