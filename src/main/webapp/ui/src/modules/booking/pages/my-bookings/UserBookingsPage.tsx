@@ -50,6 +50,7 @@ const projection = {
     "id",
     "version",
     "target",
+    "requester",
     "canViewConfiguration",
     "timezone",
     "start",
