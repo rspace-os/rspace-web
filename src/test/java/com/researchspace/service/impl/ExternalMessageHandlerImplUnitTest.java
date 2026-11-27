@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.extmessages.base.ExternalMessageSender;
+import com.researchspace.extmessages.base.WebhookUrlNotAllowedException;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -136,6 +137,20 @@ public class ExternalMessageHandlerImplUnitTest {
     setUpConfigForApp(App.APP_MSTEAMS);
     when(sender.sendMessage(any(), any(), eq(user)))
         .thenThrow(new ResourceAccessException("connection refused"));
+    when(messageSource.getMessage(ExternalMessageHandler.SEND_FAILED_MSG_KEY))
+        .thenReturn("could not send message");
+
+    ServiceOperationResult<ResponseEntity<String>> result = sendMessage();
+
+    assertFalse(result.isSucceeded());
+    assertEquals("could not send message", result.getMessage());
+  }
+
+  @Test
+  public void disallowedStoredWebhookReturnsGenericFailureMessage() {
+    setUpConfigForApp(App.APP_MSTEAMS);
+    when(sender.sendMessage(any(), any(), eq(user)))
+        .thenThrow(new WebhookUrlNotAllowedException("origin is not in the allowlist"));
     when(messageSource.getMessage(ExternalMessageHandler.SEND_FAILED_MSG_KEY))
         .thenReturn("could not send message");
 

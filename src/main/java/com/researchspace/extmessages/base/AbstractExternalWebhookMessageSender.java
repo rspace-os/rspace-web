@@ -5,21 +5,27 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.service.MessageSourceUtils;
+import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Optional;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 /**
  * Helper methods for posting external messages. <br>
@@ -30,6 +36,17 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
 
   protected @Autowired MessageSourceUtils messages;
   protected @Autowired AnalyticsManager analyticsMgr;
+
+  /*
+   * The send runs on the servlet thread, so it must be bounded (RSDEV-1340; compare the B2INST
+   * client). The send timeout is a deadline for the whole exchange: on expiry Spring's JDK client
+   * closes the response body, so a slow or endless body cannot hold the thread either. Redirects
+   * are never followed, so an allowed host cannot forward the post elsewhere.
+   */
+  static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
+  static final Duration SEND_TIMEOUT = Duration.ofSeconds(10);
+
+  private RestClient restClient = createRestClient(CONNECT_TIMEOUT, SEND_TIMEOUT);
 
   @Override
   public final ResponseEntity<String> sendMessage(
@@ -44,14 +61,19 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
               "errors.authorization.failure.sendExternalMessage",
               new Object[] {subject.getUsername()}));
     }
+    URI uri = destinationPolicy().check(doGetPostUrl(messageConfig));
     String jsonMessage = createMessage(message);
 
-    URI uri = getPostUrl(messageConfig).get();
     ResponseEntity<String> rc = doSendMessage(jsonMessage, uri);
     postSendMessage(rc, uri, message, subject);
 
     return rc;
   }
+
+  /**
+   * @return the allowed destinations for this sender's webhooks
+   */
+  protected abstract WebhookDestinationPolicy destinationPolicy();
 
   /**
    * Performs any tidy up, notification or analytics actions after the message has been sent
@@ -71,14 +93,21 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    * @param uri
    */
   protected ResponseEntity<String> doSendMessage(String jsonMessage, URI uri) {
-    RestTemplate template = getRestTemplate();
-    HttpEntity<String> requestEntity = new HttpEntity<String>(jsonMessage, createPostHeaders());
     try {
-      ResponseEntity<String> resp = template.postForEntity(uri, requestEntity, String.class);
+      ResponseEntity<Void> resp =
+          getRestClient()
+              .post()
+              .uri(uri)
+              .contentType(MediaType.APPLICATION_JSON)
+              .body(jsonMessage)
+              .retrieve()
+              .onStatus(
+                  HttpStatusCode::isError, AbstractExternalWebhookMessageSender::failWithoutBody)
+              .toBodilessEntity(); // the response body is never read into memory
       if (!resp.getStatusCode().is2xxSuccessful()) {
         log.warn("Status code response was not successful : {}", resp.getStatusCode());
       }
-      return resp;
+      return new ResponseEntity<>(resp.getStatusCode());
     } catch (RestClientException rce) {
       // not the URL: a webhook URL is a credential (RSDEV-1525)
       log.warn("Posting message to {} webhook failed", getClass().getSimpleName());
@@ -89,22 +118,43 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   /*
    * Package scoped for testing
    */
-  RestTemplate getRestTemplate() {
-    return new RestTemplate();
+  RestClient getRestClient() {
+    return restClient;
+  }
+
+  /*
+   * Package scoped so tests can use short timeouts
+   */
+  void setTimeouts(Duration connectTimeout, Duration sendTimeout) {
+    restClient = createRestClient(connectTimeout, sendTimeout);
+  }
+
+  private static RestClient createRestClient(Duration connectTimeout, Duration sendTimeout) {
+    HttpClient client =
+        HttpClient.newBuilder()
+            .connectTimeout(connectTimeout)
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
+    JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(client);
+    factory.setReadTimeout(sendTimeout);
+    return RestClient.builder().requestFactory(factory).build();
   }
 
   /**
-   * Creates the headers for the webhook POST.
-   *
-   * <p>Declares {@code application/json} so the body is sent as UTF-8. Without it, a String body is
-   * sent as ISO-8859-1 and non-Latin-1 characters become {@code ?}.
-   *
-   * @return headers with an {@code application/json} content type
+   * Raises the usual status exceptions without reading the error response body, which RestClient's
+   * default handler buffers. {@code DefaultResponseErrorHandler}, the obvious replacement, would
+   * quote the URL in the message instead, and a webhook URL is a credential (RSDEV-1525).
    */
-  protected HttpHeaders createPostHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
+  private static void failWithoutBody(HttpRequest request, ClientHttpResponse response)
+      throws IOException {
+    HttpStatusCode statusCode = response.getStatusCode();
+    String statusText = response.getStatusText();
+    HttpHeaders headers = response.getHeaders();
+    if (statusCode.is4xxClientError()) {
+      throw HttpClientErrorException.create(statusCode, statusText, headers, null, null);
+    }
+    throw HttpServerErrorException.create(statusCode, statusText, headers, null, null);
   }
 
   /**
@@ -114,23 +164,7 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    */
   protected abstract String createMessage(MessageDetails internalMsg);
 
-  /**
-   * Queries configuration for the name of the URL property saved as a webhook.
-   *
-   * @param messageConfig
-   * @return
-   */
-  protected Optional<URI> getPostUrl(AppConfigElementSet messageConfig) {
-    URI uri = null;
-    String webhookUrl = doGetPostUrl(messageConfig);
-    try {
-      uri = new URI(webhookUrl);
-    } catch (URISyntaxException e) {
-      log.error("Couldn't make a URI from the webhook URL: {}", e.getReason());
-    }
-    return Optional.ofNullable(uri);
-  }
-
+  /** Queries configuration for the webhook URL. The URL is a credential: never log it. */
   protected abstract String doGetPostUrl(AppConfigElementSet messageConfig);
 
   // converts <br/> from form into newlines
