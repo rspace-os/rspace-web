@@ -32,6 +32,15 @@ Successful Save or Reset adopts the returned server values and clears the draft,
 when the server document is unchanged. Failed requests retain the draft. Reverting every field to
 the editing baseline makes the form clean and adopts the latest cached server values.
 
+## Suspense reads
+
+Booking prefers Suspense reads: `useSuspenseQuery` with Suspense query options. `QueryBoundary`
+(`src/modules/common/queries/QueryBoundary.tsx`) pairs the Suspense fallback with an error
+boundary, and its retry resets the failed queries. A read that needs an input starts in a child
+rendered once the input exists. A plain `useQuery` stays only with a one-line comment giving the
+reason: polling, an optional or background read whose fallback would hide the page, inputs that stay
+interactive while their results load, or shown rows that a failed refresh must replace with Retry.
+
 ## Weekly scheduling defaults
 
 The `openingHours` schema and weekday rules are defined in [Booking.md](Booking.md).
@@ -43,6 +52,11 @@ display a `24:00` end as `00:00`. Accepted saves reset this editing history; fai
 Callers that explicitly reset the form must also remount `SchedulingSettingsFields` to start a new
 editing session. Availability-window, timezone, default sharing, granularity and buffer settings
 remain separate from the weekly schedule.
+
+Item creation copies the full institution schedule into its draft. Item edits submit the full
+`openingHours` value, including unchanged weekdays. Cancelling restores all entries from the
+configuration, while a failed or stale save keeps the current draft and its closed-day history.
+Item details show every weekday independently, including closed days, in the scheduling timezone.
 
 Booking clients call generated operations under `modules/common/api/v2/generated/`.
 Their `apiV2Fetch` mutator handles authentication and JSON validation; HTTP failures
