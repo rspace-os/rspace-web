@@ -156,21 +156,21 @@ test.describe(`Workspace operations`, () => {
     });
   });
 
-  test(`As a user, the print button is available in both edit and view mode`, async ({ pageWorkspace }) => {
+  test(`As a user, the print button is hidden while editing and available in view mode`, async ({ pageWorkspace }) => {
     const editor = await test.step("Given I create a document", async () => {
       await pageWorkspace.open();
       return pageWorkspace.createBasicDocument();
     });
 
-    await test.step("Then the print button is present in edit mode", async () => {
-      await expect(editor.toolbar.actions.printButton).toBeVisible();
+    await test.step("Then the print button is hidden while editing", async () => {
+      await expect(editor.toolbar.actions.printButton).toBeHidden();
     });
 
     await test.step("When I save and view it", async () => {
       await editor.saveAndView();
     });
 
-    await test.step("Then the print button is present in view mode too", async () => {
+    await test.step("Then the print button is present in view mode", async () => {
       await expect(editor.toolbar.actions.printButton).toBeVisible();
     });
   });
