@@ -1,6 +1,7 @@
 // PROTOTYPE ONLY. Three Storybook concepts for the proposed recurring-booking flow.
 /* biome-ignore-all lint/style/noJsxLiterals: throwaway Storybook copy is intentionally not entering the translation catalog. */
 
+import { Temporal } from "@js-temporal/polyfill";
 import { InfoIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { BookingSummaryCard } from "@/modules/booking/components/BookingSummaryCard";
@@ -52,8 +53,8 @@ function workspaceDocument(row: WorkspaceRow): BookingListDocument {
     },
     canViewConfiguration: true,
     timezone: "Europe/London",
-    start: row.startInstant,
-    end: row.endInstant,
+    start: Temporal.Instant.from(row.startInstant),
+    end: Temporal.Instant.from(row.endInstant),
     state: row.cancelled ? "CANCELLED" : "CONFIRMED",
     kind: "BOOKING",
     requester: { relationTo: "users", value: { id: 84 } },
@@ -63,8 +64,8 @@ function workspaceDocument(row: WorkspaceRow): BookingListDocument {
     privacy: "full",
     canEdit: !row.isPast && !row.cancelled,
     canCancel: !row.isPast && !row.cancelled,
-    createdAt: "2026-08-01T09:00:00Z",
-    updatedAt: "2026-08-02T10:00:00Z",
+    createdAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+    updatedAt: Temporal.Instant.from("2026-08-02T10:00:00Z"),
   };
 }
 

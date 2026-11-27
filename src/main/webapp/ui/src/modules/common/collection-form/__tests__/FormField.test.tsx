@@ -1,10 +1,12 @@
-import { useForm } from "@formisch/react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { getInput, useForm } from "@formisch/react";
+import { Temporal } from "@js-temporal/polyfill";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { instantToWire } from "@/modules/common/time/instant";
 import { RenderFields } from "../RenderFields";
 import type { FieldLayout } from "../RenderFields.types";
 
@@ -49,5 +51,48 @@ describe("checkbox field help", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
     await expectAccessible(container);
+  });
+});
+
+const dateTimeFields = resolveCollectionConfig<{ at: Temporal.Instant | string }>({
+  slug: "records",
+  idField: "at",
+  useAsTitle: "at",
+  defaultColumns: ["at"],
+  labels: {
+    singularKey: "collectionFormExamples:record",
+    pluralKey: "collectionFormExamples:records",
+  },
+  fields: [{ name: "at", type: "dateTime", labelKey: "collectionFormExamples:fields.title" }],
+}).fields;
+
+function DateTimeForm({ at }: { at: Temporal.Instant }) {
+  const form = useForm({
+    schema: v.object({ at: v.union([v.instance(Temporal.Instant), v.string()]) }),
+    initialInput: { at },
+  });
+  return (
+    <>
+      <RenderFields fields={dateTimeFields} form={form} layout="stacked" />
+      <output aria-label="Form values">{JSON.stringify(getInput(form))}</output>
+    </>
+  );
+}
+
+describe("date-time field", () => {
+  it("shows a decoded instant as local wall-clock time and emits wire text on change", () => {
+    const timeZone = Temporal.Now.timeZoneId();
+    const at = Temporal.Instant.from("2026-08-17T10:30:00Z");
+    render(<DateTimeForm at={at} />);
+    const input = screen.getByLabelText("collectionFormExamples:fields.title");
+
+    expect(input).toHaveValue(at.toZonedDateTimeISO(timeZone).toPlainDateTime().toString({ smallestUnit: "minute" }));
+
+    fireEvent.change(input, { target: { value: "2026-08-18T09:15" } });
+    const emitted = JSON.parse(screen.getByRole("status", { name: "Form values" }).textContent ?? "{}").at;
+    expect(emitted).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(emitted).toBe(
+      instantToWire(Temporal.PlainDateTime.from("2026-08-18T09:15").toZonedDateTime(timeZone).toInstant()),
+    );
   });
 });

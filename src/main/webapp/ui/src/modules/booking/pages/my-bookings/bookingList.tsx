@@ -22,7 +22,7 @@ function dateTime(
   return (
     <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
       {/* On a clock-change day the offset tells the two occurrences of a repeated hour apart. */}
-      <time className="whitespace-normal" dateTime={value}>
+      <time className="whitespace-normal" dateTime={value.toString()}>
         {formatBookingDateTime(value, timeZone, undefined, timeFormat)}
       </time>
     </BookingInstrumentTimeTooltip>

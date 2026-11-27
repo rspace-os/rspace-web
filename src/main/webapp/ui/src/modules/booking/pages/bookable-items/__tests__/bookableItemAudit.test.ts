@@ -155,8 +155,8 @@ describe("fetchBookingConfigurationAudit", () => {
     const result = await fetchBookingConfigurationAudit({
       configurationId: 7,
       q: " PurposeMarker ",
-      start: "2026-08-01T00:00:00.000Z",
-      end: "2026-08-26T00:00:00.000Z",
+      start: Temporal.Instant.from("2026-08-01T00:00:00.000Z"),
+      end: Temporal.Instant.from("2026-08-26T00:00:00.000Z"),
       actions: ["WRITE"],
     });
 
@@ -171,8 +171,8 @@ describe("fetchBookingConfigurationAudit", () => {
     expect(result).toMatchObject({
       limit: 1000,
       truncated: false,
-      start: "2026-08-01T00:00:00Z",
-      endExclusive: "2026-08-26T00:00:00Z",
+      start: Temporal.Instant.from("2026-08-01T00:00:00Z"),
+      endExclusive: Temporal.Instant.from("2026-08-26T00:00:00Z"),
       rows: [expect.objectContaining({ target: "bookings:41" })],
     });
   });
@@ -243,8 +243,8 @@ describe("audit UTC date ranges", () => {
 
   it("converts an inclusive range to exact source-compatible UTC instants", () => {
     expect(auditRangeToQuery({ from: "2024-02-29", to: "2024-03-01" })).toEqual({
-      start: "2024-02-29T00:00:00.000Z",
-      end: "2024-03-02T00:00:00.000Z",
+      start: Temporal.Instant.from("2024-02-29T00:00:00.000Z"),
+      end: Temporal.Instant.from("2024-03-02T00:00:00.000Z"),
     });
   });
 

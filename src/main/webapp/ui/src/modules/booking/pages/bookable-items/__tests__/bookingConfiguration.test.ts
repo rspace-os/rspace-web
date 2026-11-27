@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
@@ -60,6 +61,8 @@ const configuration = {
   createdByName: null,
   ...ownerBookingAccess,
 };
+/** `configuration` as the transport returns it, with its date-time decoded. */
+const decodedConfiguration = { ...configuration, updatedAt: Temporal.Instant.from(configuration.updatedAt) };
 
 describe("booking configuration reads", () => {
   it("resolves exactly one configuration by target global id", async () => {
@@ -71,7 +74,7 @@ describe("booking configuration reads", () => {
       }),
     );
 
-    await expect(fetchBookingConfigurationByTarget("IN123")).resolves.toMatchObject(configuration);
+    await expect(fetchBookingConfigurationByTarget("IN123")).resolves.toMatchObject(decodedConfiguration);
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("where")).toBe("target==IN123");
@@ -175,11 +178,11 @@ describe("booking configuration schedules", () => {
 
   it("validates and canonicalizes the complete schedule on create and replacement update", () => {
     expect(
-      mapBookingConfiguration({ ...configuration, state: "ACTIVE", target: null, openingHours }).openingHours,
+      mapBookingConfiguration({ ...decodedConfiguration, state: "ACTIVE", target: null, openingHours }).openingHours,
     ).toEqual(openingHours.toReversed());
     expect(() =>
       mapBookingConfiguration({
-        ...configuration,
+        ...decodedConfiguration,
         state: "ACTIVE",
         target: null,
         openingHours: [{ dayOfWeek: 1, start: "17:00", end: "08:00" }],

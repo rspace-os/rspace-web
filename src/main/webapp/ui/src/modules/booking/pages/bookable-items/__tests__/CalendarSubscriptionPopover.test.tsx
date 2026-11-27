@@ -3,15 +3,22 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
+import type * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import type { getBookingCalendarSubscription } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getGetBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
-import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
+import type {
+  BookingCalendarSubscriptionCreatedSchema,
+  BookingCalendarSubscriptionStatusSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 import { CalendarSubscriptionPopover } from "../CalendarSubscriptionPopover";
+
+/** Subscription responses as JSON carries them, before the transport decodes `updatedAt`. */
+type BookingCalendarSubscriptionStatus = v.InferInput<typeof BookingCalendarSubscriptionStatusSchema>;
+type BookingCalendarSubscriptionCreated = v.InferInput<typeof BookingCalendarSubscriptionCreatedSchema>;
 
 const path = "/api/v2/booking-configurations/7/calendar-subscription";
 const updatedAt = "2026-08-27T12:00:00.000Z";

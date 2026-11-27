@@ -2,14 +2,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
-import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import type { getUserBookingCalendarSubscription } from "@/modules/common/api/v2/generated/users/users";
 import { getGetUserBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import type {
+  BookingCalendarSubscriptionCreatedSchema,
+  BookingCalendarSubscriptionStatusSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 import { UserCalendarSubscription } from "../UserCalendarSubscription";
+
+/** Subscription responses as JSON carries them, before the transport decodes `updatedAt`. */
+type BookingCalendarSubscriptionStatus = v.InferInput<typeof BookingCalendarSubscriptionStatusSchema>;
+type BookingCalendarSubscriptionCreated = v.InferInput<typeof BookingCalendarSubscriptionCreatedSchema>;
 
 const path = "/api/v2/users/me/booking-calendar-subscription";
 const updatedAt = "2026-08-27T12:00:00.000Z";

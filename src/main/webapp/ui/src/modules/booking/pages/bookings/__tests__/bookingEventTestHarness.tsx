@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient } from "@tanstack/react-query";
 import {
   type AnyRoute,
@@ -90,8 +91,10 @@ export function createBookingEventStoryQueryClient() {
   queryClient.setQueryData(getGetMyBookingPreferencesQueryKey(), inheritedBrowserBookingPreferences);
   queryClient.setQueryData(bookingQueryOptions(bookingEventFixture.id).queryKey, {
     ...bookingEventFixture,
-    start: "2026-10-19T08:00:00Z",
-    end: "2026-10-19T10:00:00Z",
+    start: Temporal.Instant.from("2026-10-19T08:00:00Z"),
+    end: Temporal.Instant.from("2026-10-19T10:00:00Z"),
+    createdAt: Temporal.Instant.from(bookingEventFixture.createdAt),
+    updatedAt: Temporal.Instant.from(bookingEventFixture.updatedAt),
   });
   queryClient.setQueryData(
     getListBookingConfigurationsQueryKey({
@@ -99,7 +102,18 @@ export function createBookingEventStoryQueryClient() {
       depth: 2,
       limit: 2,
     }),
-    { docs: [bookableItemFixtures[0]], limit: 2, page: 1, hasNextPage: false } satisfies ListBookingConfigurations200,
+    {
+      docs: [
+        {
+          ...bookableItemFixtures[0],
+          createdAt: Temporal.Instant.from(bookableItemFixtures[0].createdAt),
+          updatedAt: Temporal.Instant.from(bookableItemFixtures[0].updatedAt),
+        },
+      ],
+      limit: 2,
+      page: 1,
+      hasNextPage: false,
+    } satisfies ListBookingConfigurations200,
   );
   return queryClient;
 }

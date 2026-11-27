@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type AnyRouter, createBrowserHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
@@ -19,8 +20,8 @@ export const noParentBooking: BookingListDocument = {
   id: 44,
   target: bookingTarget(125, "Mass spectrometer"),
   location: null,
-  start: "2026-08-20T08:00:00Z",
-  end: "2026-08-20T09:00:00Z",
+  start: Temporal.Instant.from("2026-08-20T08:00:00Z"),
+  end: Temporal.Instant.from("2026-08-20T09:00:00Z"),
 };
 
 export async function renderBookingTestPage<TRouter extends AnyRouter>(

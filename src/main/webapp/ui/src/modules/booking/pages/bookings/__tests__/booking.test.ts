@@ -1,4 +1,6 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import {
@@ -11,7 +13,10 @@ import {
 } from "@/modules/booking/domain/booking";
 import { ApiV2ProblemError, ApiV2UnexpectedResponseError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
+import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
+type BookingsRead = v.InferInput<typeof BookingsReadSchema>;
 
 const document = {
   id: 41,
@@ -73,11 +78,15 @@ describe("booking API", () => {
     await fetchBooking(41, new AbortController().signal);
     await createBooking({
       target: { relationTo: "instruments", value: 12 },
-      start: document.start,
-      end: document.end,
+      start: Temporal.Instant.from(document.start),
+      end: Temporal.Instant.from(document.end),
       purpose: null,
     });
-    await updateBooking(41, 0, { start: document.start, end: document.end, purpose: "Plate" });
+    await updateBooking(41, 0, {
+      start: Temporal.Instant.from(document.start),
+      end: Temporal.Instant.from(document.end),
+      purpose: "Plate",
+    });
 
     expect(
       requests.map((request) => [request.method, request.url.pathname, request.url.searchParams.get("depth")]),

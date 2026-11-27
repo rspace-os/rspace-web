@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { SaveIcon, XIcon } from "lucide-react";
@@ -64,9 +65,11 @@ export default function BookingInlineEditForm() {
   const updateOptions = getUpdateBookingMutationOptions(queryClient);
   const mutation = useMutation({
     mutationFn: async (submission: BookingFormSubmission) => {
+      const start = Temporal.Instant.from(submission.window.start);
+      const end = Temporal.Instant.from(submission.window.end);
       const patch: BookingsUpdate = {
-        ...(submission.window.start !== base.start ? { start: submission.window.start } : {}),
-        ...(submission.window.end !== base.end ? { end: submission.window.end } : {}),
+        ...(start.equals(base.start) ? {} : { start }),
+        ...(end.equals(base.end) ? {} : { end }),
         ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
       };
       if (Object.keys(patch).length === 0) return null;

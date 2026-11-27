@@ -94,9 +94,9 @@ describe("availability quick filters", () => {
     );
     expect(today).toMatchObject({
       date: "2026-08-17",
-      start: "2026-08-17T06:00:00Z",
-      end: "2026-08-17T16:00:00Z",
-      now: "2026-08-16T23:30:00.000Z",
+      start: Temporal.Instant.from("2026-08-17T06:00:00Z"),
+      end: Temporal.Instant.from("2026-08-17T16:00:00Z"),
+      now: Temporal.Instant.from("2026-08-16T23:30:00.000Z"),
     });
   });
 
@@ -104,19 +104,19 @@ describe("availability quick filters", () => {
     const params = {
       q: "q",
       mine: false,
-      start: "2026-08-17T08:00:00Z",
-      end: "2026-08-17T18:00:00Z",
-      now: "2026-08-17T09:01:00Z",
+      start: Temporal.Instant.from("2026-08-17T08:00:00Z"),
+      end: Temporal.Instant.from("2026-08-17T18:00:00Z"),
+      now: Temporal.Instant.from("2026-08-17T09:01:00Z"),
     };
     const keep = keepAcrossMinutes(getCountBookingCatalogueAvailabilityQueryKey(params));
-    const previous = { ...params, now: "2026-08-17T09:00:00Z" };
+    const previous = { ...params, now: Temporal.Instant.from("2026-08-17T09:00:00Z") };
     expect(keep("previous", { queryKey: getCountBookingCatalogueAvailabilityQueryKey(previous) })).toBe("previous");
     for (const change of [
       { q: "other" },
       { mine: true },
       { where: "target==IN2" },
       { type: ["INSTRUMENT"] },
-      { start: "2026-08-17T07:00:00Z" },
+      { start: Temporal.Instant.from("2026-08-17T07:00:00Z") },
     ]) {
       expect(
         keep("previous", { queryKey: getCountBookingCatalogueAvailabilityQueryKey({ ...previous, ...change }) }),
@@ -158,8 +158,8 @@ describe("availability quick filters", () => {
       where: "target.name=contains=scope",
       mine: "true",
       type: "INSTRUMENT",
-      start: "2026-08-17T08:00:00Z",
-      end: "2026-08-17T18:00:00Z",
+      start: "2026-08-17T08:00:00.000Z",
+      end: "2026-08-17T18:00:00.000Z",
       now: "2026-08-17T09:00:00.000Z",
     });
   });
@@ -207,8 +207,8 @@ describe("the availability oracle", () => {
     version: 0,
     target: { relationTo: "instruments", value: { id: 1, name: "IN1", deleted: false }, globalId: "IN1" },
     timezone: "UTC",
-    start,
-    end,
+    start: Temporal.Instant.from(start),
+    end: Temporal.Instant.from(end),
     state: "CONFIRMED",
     cancellationReason: null,
     kind,
@@ -217,8 +217,8 @@ describe("the availability oracle", () => {
     bookedBy: null,
     canEdit: false,
     canCancel: false,
-    createdAt: start,
-    updatedAt: start,
+    createdAt: Temporal.Instant.from(start),
+    updatedAt: Temporal.Instant.from(start),
   });
   const classify = (candidate: CalendarAvailabilityRow, now: string, bookings: readonly Booking[] = []) => {
     const today = todayAvailabilityWindow(Temporal.Instant.from(now), "UTC", "00:00", "24:00");

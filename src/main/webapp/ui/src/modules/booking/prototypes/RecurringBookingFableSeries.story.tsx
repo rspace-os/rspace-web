@@ -70,7 +70,7 @@ export function SeriesFacts({ booking, action }: { booking: Booking; action?: Re
   const format = useOccurrenceFormat();
   const headingId = React.useId();
   const series = seriesOf(booking);
-  const minutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
+  const minutes = Math.max(0, Math.round((booking.end.epochMilliseconds - booking.start.epochMilliseconds) / 60000));
   const facts: Array<[string, React.ReactNode]> = [
     [
       t("bookings.details.when"),
@@ -82,11 +82,11 @@ export function SeriesFacts({ booking, action }: { booking: Booking; action?: Re
           instrumentTimeZone={booking.timezone}
         >
           <span>
-            <time dateTime={booking.start}>
+            <time dateTime={booking.start.toString()}>
               {formatBookingDateTime(booking.start, DISPLAY_TIMEZONE, i18n.language, timeFormat)}
             </time>
             {" – "}
-            <time dateTime={booking.end}>
+            <time dateTime={booking.end.toString()}>
               {formatBookingDateTime(booking.end, DISPLAY_TIMEZONE, i18n.language, timeFormat)}
             </time>
           </span>

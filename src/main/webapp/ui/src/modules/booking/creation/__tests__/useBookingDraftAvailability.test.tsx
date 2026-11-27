@@ -1,16 +1,23 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
+import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
-import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
-import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { ListBookings200 as DecodedListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import type { BookingFormState } from "../BookingForm";
 import type { BookableItemOption } from "../bookableItemOption";
 import { useBookingDraftAvailability } from "../useBookingDraftAvailability";
 import { confocalBooking, confocalTarget as target } from "./creationTestFixtures";
+
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
+type BookingsRead = v.InferInput<typeof BookingsReadSchema>;
+type ListBookings200 = ApiV2Wire<DecodedListBookings200>;
 
 const draft: BookingWindowDraft = {
   startDate: "2026-10-19",
@@ -60,7 +67,7 @@ function renderAvailability({
   excludedBookingId,
 }: {
   state?: BookingFormState;
-  originalWindow?: { start: string; end: string };
+  originalWindow?: { start: Temporal.Instant; end: Temporal.Instant };
   excludedBookingId?: number;
 } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -165,7 +172,7 @@ describe("useBookingDraftAvailability", () => {
     server.use(http.get("/api/v2/bookings", () => page([current])));
     const { result } = renderAvailability({
       state: formState({ start: "2026-10-19T08:05:00Z", end: "2026-10-19T10:05:00Z" }),
-      originalWindow: { start: current.start, end: current.end },
+      originalWindow: { start: Temporal.Instant.from(current.start), end: Temporal.Instant.from(current.end) },
       excludedBookingId: current.id,
     });
 

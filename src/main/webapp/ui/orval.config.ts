@@ -77,6 +77,20 @@ const generatedFileHeader = ({ title, description, version }: OpenApiInfoObject)
     }),
   ].join("\n");
 
+// REST API v2 date-times are Temporal instants: models type them, the Valibot schemas decode them and generated
+// URLs encode them with the API's three-digit wire form.
+const temporalImport = { name: "Temporal", importPath: "@js-temporal/polyfill" };
+const formatType = {
+  "date-time": {
+    type: "Temporal.Instant",
+    import: temporalImport,
+    decode: "Temporal.Instant.from",
+    decodeImport: temporalImport,
+    encode: "instantToWire",
+    encodeImport: { name: "instantToWire", importPath: "@/modules/common/time/instant" },
+  },
+};
+
 export default defineConfig({
   api: {
     input: { target: "./src/modules/common/api/v2/openapi.generated.json" },
@@ -92,6 +106,7 @@ export default defineConfig({
       override: {
         header: generatedFileHeader,
         enumGenerationType: "union",
+        formatType,
         mutator: { path: "./src/modules/common/api/v2/apiV2Fetch.ts", name: "apiV2Fetch" },
         fetch: { includeHttpResponseReturnType: false, arrayFormat: "repeat" },
         query: {
@@ -112,7 +127,7 @@ export default defineConfig({
       mode: "single",
       target: "./src/modules/common/api/v2/generated/valibot/native.ts",
       formatter: "biome",
-      override: { valibot: { generateReusableSchemas: true } },
+      override: { formatType, valibot: { generateReusableSchemas: true } },
     },
   },
 });

@@ -17,16 +17,12 @@ import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bo
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
 import type { InstrumentsRead } from "@/modules/common/api/v2/generated/models/instrumentsRead";
-import { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
-import { parseInstant } from "@/modules/common/time/instant";
 import { requireBookingValue as required } from "./bookingMapping";
 
 export class BookingUnavailableError extends Error {}
 
-export function checkBookingInterval(booking: { start: string; end: string }): void {
-  const start = parseInstant(booking.start);
-  const end = parseInstant(booking.end);
-  if (start === null || end === null || Temporal.Instant.compare(end, start) <= 0)
+export function checkBookingInterval(booking: { start: Temporal.Instant; end: Temporal.Instant }): void {
+  if (Temporal.Instant.compare(booking.end, booking.start) <= 0)
     throw new BookingUnavailableError("Booking end must follow start");
 }
 
@@ -163,8 +159,8 @@ export function mapBookingSummary(input: MappedBooking) {
 
 function mapListPrivacy(input: MappedBooking) {
   const management: {
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Temporal.Instant;
+    updatedAt: Temporal.Instant;
     createdBy?: string | null;
     canViewConfiguration?: boolean;
   } = {
@@ -282,7 +278,10 @@ export type BookingMutation = ReturnType<typeof mapBookingMutation>;
 export const BookingListDocumentTableValidation = {
   validateRows: (rows: readonly unknown[]) => {
     for (const row of rows) {
-      const interval = v.parse(v.required(v.pick(BookingsReadSchema, ["start", "end"])), row);
+      const interval = v.parse(
+        v.object({ start: v.instance(Temporal.Instant), end: v.instance(Temporal.Instant) }),
+        row,
+      );
       checkBookingInterval(interval);
     }
   },

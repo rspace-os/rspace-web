@@ -1,10 +1,11 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { layoutWeekGridDay, WEEK_GRID_MINIMUM_VISUAL_MINUTES, weekGridEventBox } from "../calendarWeekLayout";
 
 function booking(id: number, start: string, end: string): BookingListDocument {
-  return { ...ownBooking, id, start, end };
+  return { ...ownBooking, id, start: Temporal.Instant.from(start), end: Temporal.Instant.from(end) };
 }
 
 function layoutSummary(events: readonly BookingListDocument[], day: string, timezone = "UTC") {

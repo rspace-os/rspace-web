@@ -3,7 +3,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { createElement, type ReactNode } from "react";
+import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import { calendarAvailabilityRow, closedDayRanges } from "@/modules/booking/domain/availability";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
@@ -12,9 +14,13 @@ import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { loadCalendarAvailability, useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { invalidateListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
-import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
-import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { ListBookings200 as DecodedListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
+
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
+type BookingsRead = v.InferInput<typeof BookingsReadSchema>;
+type ListBookings200 = ApiV2Wire<DecodedListBookings200>;
 
 const bookingResponse = (
   docs: readonly BookingsRead[],

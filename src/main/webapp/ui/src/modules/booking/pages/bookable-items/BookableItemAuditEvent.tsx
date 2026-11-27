@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { Link } from "@tanstack/react-router";
 import { isNil } from "es-toolkit";
 import { ChevronRightIcon } from "lucide-react";
@@ -138,10 +139,10 @@ function AuditTarget({ target }: { target: AuditRow["target"] }) {
   );
 }
 
-function AuditTimestamp({ value }: { value: string }) {
+function AuditTimestamp({ value }: { value: Temporal.Instant }) {
   const timeFormat = useBookingTimeFormat();
   return (
-    <time dateTime={value}>
+    <time dateTime={value.toString()}>
       {formatBookingDateTime(value, "UTC", bookingDisplayLocale(timeFormat), timeFormat, { timeStyle: "long" })}
     </time>
   );

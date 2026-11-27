@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
@@ -29,13 +30,13 @@ const busyBooking = bookingListDocument({
     globalId: "IC23",
     value: { id: 23, globalId: "IC23", name: "Imaging suite" },
   },
-  start: "2026-09-24T08:00:00.000Z",
-  end: "2026-09-24T09:00:00.000Z",
+  start: Temporal.Instant.from("2026-09-24T08:00:00.000Z"),
+  end: Temporal.Instant.from("2026-09-24T09:00:00.000Z"),
   privacy: "busy",
   purpose: privatePurpose,
   canViewConfiguration: true,
-  createdAt: "2026-09-01T08:00:00.000Z",
-  updatedAt: "2026-09-01T08:00:00.000Z",
+  createdAt: Temporal.Instant.from("2026-09-01T08:00:00.000Z"),
+  updatedAt: Temporal.Instant.from("2026-09-01T08:00:00.000Z"),
 });
 
 function renderBookingSummaryCard(booking: BookingListDocument) {

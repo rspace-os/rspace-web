@@ -20,7 +20,7 @@ function parameters() {
 }
 function nextMaintenance(result: ListMaintenances200): NextMaintenance | null {
   const start = result.docs[0]?.startDate;
-  return start ? { startDate: Temporal.Instant.from(start) } : null;
+  return start ? { startDate: start } : null;
 }
 
 export async function getNextMaintenance(): Promise<NextMaintenance | null> {

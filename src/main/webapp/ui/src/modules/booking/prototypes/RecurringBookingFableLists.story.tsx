@@ -79,7 +79,9 @@ function SeriesEventTable() {
                 displayTimeZone={DISPLAY_TIMEZONE}
                 instrumentTimeZone={row.timezone}
               >
-                <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+                <time dateTime={row.start.toString()}>
+                  {formatter.formatRange(row.start.epochMilliseconds, row.end.epochMilliseconds)}
+                </time>
               </BookingInstrumentTimeTooltip>
             ),
           },

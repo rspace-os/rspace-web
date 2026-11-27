@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { createElement } from "react";
 import { useTranslation } from "react-i18next";
 import { BookableItemName } from "@/modules/booking/components/BookableItemName";
@@ -185,7 +186,7 @@ export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" |
 
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
 
-function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
+function ConfigurationUpdatedAt({ value }: { value: Temporal.Instant | null | undefined }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return value

@@ -78,12 +78,12 @@ function fixtureBooking(input: {
     version: 0,
     target,
     timezone: CONFIGURATION_TIMEZONE,
-    start: input.start,
-    end: input.end,
+    start: Temporal.Instant.from(input.start),
+    end: Temporal.Instant.from(input.end),
     state: "CONFIRMED" as const,
     kind: input.kind ?? "BOOKING",
-    createdAt: "2026-09-01T09:00:00Z",
-    updatedAt: "2026-09-01T09:00:00Z",
+    createdAt: Temporal.Instant.from("2026-09-01T09:00:00Z"),
+    updatedAt: Temporal.Instant.from("2026-09-01T09:00:00Z"),
   };
   if (input.privacy === "busy") {
     return {
@@ -288,7 +288,10 @@ function expandRule(rule: RecurrenceRule, draft: BookingWindowDraft): Occurrence
 type OccurrenceStatus = "ok" | "overlap" | "closed";
 export type Occurrence = OccurrenceWindow & { status: OccurrenceStatus; conflictWith?: string };
 
-function overlaps(left: { start: string; end: string }, right: { start: string; end: string }): boolean {
+function overlaps(
+  left: { start: Temporal.Instant | string; end: Temporal.Instant | string },
+  right: { start: Temporal.Instant | string; end: Temporal.Instant | string },
+): boolean {
   return Temporal.Instant.compare(left.start, right.end) < 0 && Temporal.Instant.compare(right.start, left.end) < 0;
 }
 

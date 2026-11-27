@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -136,7 +137,11 @@ describe("BookingForm", () => {
     renderForm(
       <BookingForm
         mode="edit"
-        booking={{ ...editableBooking, start: "2026-10-24T10:00:00Z", end: "2026-10-25T11:00:00Z" }}
+        booking={{
+          ...editableBooking,
+          start: Temporal.Instant.from("2026-10-24T10:00:00Z"),
+          end: Temporal.Instant.from("2026-10-25T11:00:00Z"),
+        }}
         configuration={target}
         pending={false}
         onSubmit={vi.fn()}
@@ -184,7 +189,11 @@ describe("BookingForm", () => {
           </button>
           <BookingForm
             mode="edit"
-            booking={{ ...editableBooking, start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:00:00Z" }}
+            booking={{
+              ...editableBooking,
+              start: Temporal.Instant.from("2026-08-17T07:00:00Z"),
+              end: Temporal.Instant.from("2026-08-17T08:00:00Z"),
+            }}
             configuration={{ ...target, maxBookingDurationMinutes: maximum }}
             pending={false}
             onSubmit={submit}
@@ -292,7 +301,7 @@ describe("BookingForm", () => {
 
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
-        window: { start: editableBooking.start, end: editableBooking.end },
+        window: { start: editableBooking.start.toString(), end: editableBooking.end.toString() },
       }),
     );
   });
@@ -493,8 +502,8 @@ describe("BookingForm", () => {
             mode="edit"
             booking={{
               ...editableBooking,
-              start: "2026-08-17T07:00:00Z",
-              end: "2026-08-17T08:00:00Z",
+              start: Temporal.Instant.from("2026-08-17T07:00:00Z"),
+              end: Temporal.Instant.from("2026-08-17T08:00:00Z"),
             }}
             configuration={{ ...target, slotGranularityMinutes: 10 }}
             pending={false}
@@ -1034,7 +1043,7 @@ describe("BookingForm", () => {
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
         purpose: "Imaging updated",
-        window: { start: editableBooking.start, end: editableBooking.end },
+        window: { start: editableBooking.start.toString(), end: editableBooking.end.toString() },
       }),
     );
   });
@@ -1047,8 +1056,8 @@ describe("BookingForm", () => {
         mode="edit"
         booking={{
           ...editableBooking,
-          start: "2026-08-17T07:02:00Z",
-          end: "2026-08-17T08:02:00Z",
+          start: Temporal.Instant.from("2026-08-17T07:02:00Z"),
+          end: Temporal.Instant.from("2026-08-17T08:02:00Z"),
         }}
         configuration={{ ...target, slotGranularityMinutes: 10 }}
         pending={false}

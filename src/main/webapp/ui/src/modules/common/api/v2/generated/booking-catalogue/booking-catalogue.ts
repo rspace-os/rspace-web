@@ -22,6 +22,7 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 import { queryOptions as queryOptionsBuilder, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { instantToWire } from "@/modules/common/time/instant";
 import type { ErrorType } from "../../apiV2Fetch.ts";
 
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
@@ -58,9 +59,28 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export const getSearchBookingCatalogueUrl = (params: SearchBookingCatalogueParams) => {
+  const encodedParams = { ...params };
+  if (encodedParams.start != null) {
+    encodedParams.start =
+      typeof encodedParams.start === "string"
+        ? encodedParams.start
+        : (instantToWire(encodedParams.start) as unknown as typeof encodedParams.start);
+  }
+  if (encodedParams.end != null) {
+    encodedParams.end =
+      typeof encodedParams.end === "string"
+        ? encodedParams.end
+        : (instantToWire(encodedParams.end) as unknown as typeof encodedParams.end);
+  }
+  if (encodedParams.now != null) {
+    encodedParams.now =
+      typeof encodedParams.now === "string"
+        ? encodedParams.now
+        : (instantToWire(encodedParams.now) as unknown as typeof encodedParams.now);
+  }
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+  Object.entries(encodedParams).forEach(([key, value]) => {
     const explodeParameters = ["type", "location"];
 
     if (Array.isArray(value) && explodeParameters.includes(key)) {
@@ -322,9 +342,28 @@ export function useSearchBookingCatalogueSuspense<
 }
 
 export const getCountBookingCatalogueAvailabilityUrl = (params: CountBookingCatalogueAvailabilityParams) => {
+  const encodedParams = { ...params };
+  if (encodedParams.start != null) {
+    encodedParams.start =
+      typeof encodedParams.start === "string"
+        ? encodedParams.start
+        : (instantToWire(encodedParams.start) as unknown as typeof encodedParams.start);
+  }
+  if (encodedParams.end != null) {
+    encodedParams.end =
+      typeof encodedParams.end === "string"
+        ? encodedParams.end
+        : (instantToWire(encodedParams.end) as unknown as typeof encodedParams.end);
+  }
+  if (encodedParams.now != null) {
+    encodedParams.now =
+      typeof encodedParams.now === "string"
+        ? encodedParams.now
+        : (instantToWire(encodedParams.now) as unknown as typeof encodedParams.now);
+  }
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+  Object.entries(encodedParams).forEach(([key, value]) => {
     const explodeParameters = ["type", "location"];
 
     if (Array.isArray(value) && explodeParameters.includes(key)) {
@@ -578,9 +617,22 @@ export function useCountBookingCatalogueAvailabilitySuspense<
 }
 
 export const getSearchCalendarCatalogueUrl = (params: SearchCalendarCatalogueParams) => {
+  const encodedParams = { ...params };
+  if (encodedParams.start != null) {
+    encodedParams.start =
+      typeof encodedParams.start === "string"
+        ? encodedParams.start
+        : (instantToWire(encodedParams.start) as unknown as typeof encodedParams.start);
+  }
+  if (encodedParams.end != null) {
+    encodedParams.end =
+      typeof encodedParams.end === "string"
+        ? encodedParams.end
+        : (instantToWire(encodedParams.end) as unknown as typeof encodedParams.end);
+  }
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+  Object.entries(encodedParams).forEach(([key, value]) => {
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? "null" : String(value));
     }

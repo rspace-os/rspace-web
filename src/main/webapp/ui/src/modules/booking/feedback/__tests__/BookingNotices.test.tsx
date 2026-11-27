@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -119,7 +120,7 @@ function renderEventNotice(initialEntry: string, sourceSearchStr: string, includ
   const notice = createBookingEventNotice({
     event: {
       id: 41,
-      start: "2026-10-05T09:00:00Z",
+      start: Temporal.Instant.from("2026-10-05T09:00:00Z"),
       target: { relationTo: "instruments", value: 123, globalId: "IN123" },
     },
     message: "Booking saved",

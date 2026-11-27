@@ -1,5 +1,6 @@
 // PROTOTYPE ONLY (Opus 5.5). Throwaway shared code for the vertical day timeline stories; do not import from production.
 /* biome-ignore-all lint/style/noJsxLiterals: throwaway prototype copy is intentionally not entering the translation catalog. */
+import { Temporal } from "@js-temporal/polyfill";
 import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { type BookingWindowDraft, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
@@ -194,8 +195,8 @@ export function editableBookingFor(value: Scenario): EditableBooking {
       value: { id: value.item.targetId, name: value.item.name, deleted: false },
     },
     timezone: value.item.timezone,
-    start: value.draftStart,
-    end: value.draftEnd,
+    start: Temporal.Instant.from(value.draftStart),
+    end: Temporal.Instant.from(value.draftEnd),
     state: "CONFIRMED",
     kind: "BOOKING",
     privacy: "full",
@@ -205,8 +206,8 @@ export function editableBookingFor(value: Scenario): EditableBooking {
     createdBy: "You",
     canEdit: true,
     canCancel: true,
-    createdAt: "2026-08-01T09:00:00Z",
-    updatedAt: "2026-08-01T09:00:00Z",
+    createdAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+    updatedAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
   };
 }
 

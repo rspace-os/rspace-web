@@ -3,12 +3,14 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import type { ComponentProps, ReactNode } from "react";
+import type * as v from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
-import { type BookingDetails, bookingQueryOptions, fetchBooking } from "@/modules/booking/domain/booking";
+import { bookingQueryOptions, fetchBooking } from "@/modules/booking/domain/booking";
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
+import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
 const cancelledBooking = {
@@ -45,14 +47,14 @@ const confirmedBookingDetails = {
   canCancel: true,
   canViewConfiguration: true,
   location: null,
-} satisfies BookingDetails;
+} satisfies v.InferInput<typeof BookingsReadSchema>;
 
 const cancelledBookingDetails = {
   ...cancelledBooking,
   kind: "BOOKING",
   canViewConfiguration: true,
   location: null,
-} satisfies BookingDetails;
+} satisfies v.InferInput<typeof BookingsReadSchema>;
 
 function renderDialog(
   onDeleted = vi.fn(),

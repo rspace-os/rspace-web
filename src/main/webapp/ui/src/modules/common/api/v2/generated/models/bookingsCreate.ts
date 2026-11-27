@@ -6,17 +6,19 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.
  * OpenAPI spec version: 2.0.0
  */
+
+import type { Temporal } from "@js-temporal/polyfill";
 import type { BookingEventKind } from "./bookingEventKind.ts";
 import type { InstrumentsRelationshipInput } from "./instrumentsRelationshipInput.ts";
 
 export interface BookingsCreate {
-  end: string;
+  end: Temporal.Instant;
   kind?: BookingEventKind;
   /**
    * @maxLength 1000
    * @nullable
    */
   purpose?: string | null;
-  start: string;
+  start: Temporal.Instant;
   target: InstrumentsRelationshipInput;
 }

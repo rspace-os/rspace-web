@@ -6,12 +6,13 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.
  * OpenAPI spec version: 2.0.0
  */
+import type { Temporal } from "@js-temporal/polyfill";
 
 export type SearchCalendarEventsParams = {
   /** Inclusive interval start. */
-  start: string;
+  start: Temporal.Instant;
   /** Exclusive interval end. */
-  end: string;
+  end: Temporal.Instant;
   /** RSQL event filters, including requester.value==me and targetOwner==me. Owner equality is allowed only outside OR groups. The effective subject is resolved on every request. */
   where?: string;
   q?: string;

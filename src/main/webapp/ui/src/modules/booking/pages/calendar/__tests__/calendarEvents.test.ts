@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
@@ -12,8 +13,8 @@ import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "
 
 function calendarBounds(firstDate: string, lastDate: string, timezone: string) {
   return {
-    start: zonedDayBounds(firstDate, timezone).start,
-    end: zonedDayBounds(lastDate, timezone).end,
+    start: Temporal.Instant.from(zonedDayBounds(firstDate, timezone).start),
+    end: Temporal.Instant.from(zonedDayBounds(lastDate, timezone).end),
   };
 }
 
@@ -42,7 +43,7 @@ describe("calendar events", () => {
     ).resolves.toEqual([ownBooking]);
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("q")).toBe("purpose-only");
-    expect(requests[0].searchParams.get("start")).toBe("2026-08-17T00:00:00Z");
+    expect(requests[0].searchParams.get("start")).toBe("2026-08-17T00:00:00.000Z");
     expect(requests[0].searchParams.get("where")).not.toContain("state==CONFIRMED");
   });
 
@@ -81,7 +82,9 @@ describe("calendar events", () => {
     ).resolves.toEqual([ownBooking, otherBooking]);
 
     expect(requests).toHaveLength(2);
-    expect(requests[0].searchParams.get("where")).toBe("start=lt=2026-08-23T22:00:00Z;end=gt=2026-08-16T22:00:00Z");
+    expect(requests[0].searchParams.get("where")).toBe(
+      "start=lt=2026-08-23T22:00:00.000Z;end=gt=2026-08-16T22:00:00.000Z",
+    );
     const selectedFields = requests[0].searchParams.get("fields[bookings]");
     expect(selectedFields).toBe(apiV2Fields(CALENDAR_BOOKING_FIELDS));
     expect(selectedFields?.split(",")).toContain("canViewConfiguration");
@@ -196,7 +199,7 @@ describe("calendar events", () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("where")).toBe(
-      "start=lt=2026-08-23T22:00:00Z;end=gt=2026-08-16T22:00:00Z;target=in=(IN123)",
+      "start=lt=2026-08-23T22:00:00.000Z;end=gt=2026-08-16T22:00:00.000Z;target=in=(IN123)",
     );
   });
 

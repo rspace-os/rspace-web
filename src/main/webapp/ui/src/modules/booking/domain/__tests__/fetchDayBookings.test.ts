@@ -1,13 +1,16 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
-import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
+import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { fetchDayBookings } from "../fetchDayBookings";
 
 const bounds = { start: "2026-09-25T00:00:00Z", end: "2026-09-26T00:00:00Z" };
-const busy: BookingsRead = {
+const busy = {
   id: 1,
   version: 0,
   target: { relationTo: "instruments", globalId: "IN1", value: { id: 1, name: "Microscope", deleted: false } },
@@ -27,8 +30,12 @@ const busy: BookingsRead = {
   canViewConfiguration: true,
   location: null,
   createdBy: null,
-};
-const pageEnvelope = (docs: readonly BookingsRead[], page = 1, hasNextPage = false): ListBookings200 => ({
+} satisfies v.InferInput<typeof BookingsReadSchema>;
+const pageEnvelope = (
+  docs: readonly v.InferInput<typeof BookingsReadSchema>[],
+  page = 1,
+  hasNextPage = false,
+): ApiV2Wire<ListBookings200> => ({
   docs: [...docs],
   page,
   hasNextPage,
@@ -65,8 +72,8 @@ describe("day schedule fetch", () => {
       privacy: "busy",
       startMinute: -60,
       endMinute: 60,
-      startInstant: busy.start,
-      endInstant: busy.end,
+      startInstant: Temporal.Instant.from(busy.start),
+      endInstant: Temporal.Instant.from(busy.end),
       instrumentTimeZone: "UTC",
     });
   });
@@ -111,6 +118,19 @@ describe("day schedule fetch", () => {
 
     await expect(load()).rejects.toThrow("changed during pagination");
     expect(pages).toEqual([1, 1]);
+  });
+
+  it("rejects a next page that returns the same cursor again", async () => {
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/bookings", () => {
+        requests += 1;
+        return HttpResponse.json(pageEnvelope([busy], 1, true));
+      }),
+    );
+
+    await expect(load()).rejects.toThrow("Booking schedule changed during pagination");
+    expect(requests).toBe(2);
   });
 
   it("rejects a page echo that differs from the request", async () => {

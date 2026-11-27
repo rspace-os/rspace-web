@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
@@ -53,7 +54,7 @@ describe("CalendarPage", () => {
       const patches: unknown[] = [];
       const booking = {
         ...ownBooking,
-        ...(rule === "increment" ? { start: ownBooking.start.replace(":00:00Z", ":02:00Z") } : {}),
+        ...(rule === "increment" ? { start: ownBooking.start.add({ minutes: 2 }) } : {}),
       };
       const configuration = {
         ...bookableItemFixtures[0],
@@ -157,7 +158,7 @@ describe("CalendarPage", () => {
     await user.tab();
     await waitFor(() => expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: "Save changes" }));
-    await waitFor(() => expect(patches).toEqual([{ start: ownBooking.start, end: "2026-08-17T09:00:00Z" }]));
+    await waitFor(() => expect(patches).toEqual([{ start: ownBooking.start.toString(), end: "2026-08-17T09:00:00Z" }]));
     await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
     expect(refreshes).toBe(1);
   });
@@ -181,8 +182,8 @@ describe("CalendarPage", () => {
       const updated = {
         ...ownBooking,
         version: 1,
-        start: "2026-08-18T09:00:00Z",
-        end: "2026-08-18T11:00:00Z",
+        start: Temporal.Instant.from("2026-08-18T09:00:00Z"),
+        end: Temporal.Instant.from("2026-08-18T11:00:00Z"),
         purpose: "Server value",
       };
       const savedBooking = { ...ownBooking, version: 2, purpose: "Keep my calendar draft" };
@@ -260,7 +261,11 @@ describe("CalendarPage", () => {
       expect(versions).toEqual(['"0"', '"1"']);
       expect(patches[0]).toEqual({ purpose: "Keep my calendar draft" });
       // A confirmed stale save sends the whole interval, so the server's move is replaced only on purpose.
-      expect(patches[1]).toEqual({ start: ownBooking.start, end: ownBooking.end, purpose: "Keep my calendar draft" });
+      expect(patches[1]).toEqual({
+        start: ownBooking.start.toString(),
+        end: ownBooking.end.toString(),
+        purpose: "Keep my calendar draft",
+      });
     },
   );
 
@@ -430,8 +435,8 @@ describe("CalendarPage", () => {
 
     await waitFor(() => expect(saves.map(({ ifMatch }) => ifMatch)).toEqual(['"0"', '"1"']));
     expect(saves[1].payload).toEqual({
-      start: ownBooking.start,
-      end: ownBooking.end,
+      start: ownBooking.start.toString(),
+      end: ownBooking.end.toString(),
       purpose: "Cell imaging updated!",
     });
     await waitFor(() => expect(screen.queryByRole("textbox", { name: "Purpose" })).not.toBeInTheDocument());
@@ -442,8 +447,8 @@ describe("CalendarPage", () => {
     const otherPurpose: BookingListDocument = {
       ...ownBooking,
       id: 46,
-      start: "2026-08-18T08:00:00Z",
-      end: "2026-08-18T09:00:00Z",
+      start: Temporal.Instant.from("2026-08-18T08:00:00Z"),
+      end: Temporal.Instant.from("2026-08-18T09:00:00Z"),
       purpose: "Calibration",
     };
     server.use(

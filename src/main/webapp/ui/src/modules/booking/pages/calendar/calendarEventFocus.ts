@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import type { useLocation, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -305,7 +306,7 @@ export function calendarEventFocusHref({
   searchStr,
 }: {
   id: number;
-  start: string;
+  start: Temporal.Instant;
   targetGlobalId: string;
   timeZone: string;
   searchStr: string;

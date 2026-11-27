@@ -19,9 +19,7 @@ export function groupBookingsByStartDate(
   timeZone: string,
 ): BookingAgendaDay[] {
   const sorted = [...bookings].sort((a, b) => Temporal.Instant.compare(a.start, b.start) || a.id - b.id);
-  const groups = Map.groupBy(sorted, (booking) =>
-    Temporal.Instant.from(booking.start).toZonedDateTimeISO(timeZone).toPlainDate().toString(),
-  );
+  const groups = Map.groupBy(sorted, (booking) => booking.start.toZonedDateTimeISO(timeZone).toPlainDate().toString());
   return [...groups].map(([date, dayBookings]) => ({ date, bookings: dayBookings }));
 }
 
@@ -57,14 +55,14 @@ function needsOffset(startZoned: Temporal.ZonedDateTime, endZoned: Temporal.Zone
 }
 
 export function formatBookingAgendaTimeRange(
-  start: string,
-  end: string,
+  start: Temporal.Instant,
+  end: Temporal.Instant,
   timeZone: string,
   locale: string,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
-  const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
-  const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
+  const startZoned = start.toZonedDateTimeISO(timeZone);
+  const endZoned = end.toZonedDateTimeISO(timeZone);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: timeFormat === "H24" ? "2-digit" : "numeric",
@@ -86,16 +84,16 @@ export function formatBookingAgendaTimeRange(
 }
 
 export function formatBookingAgendaDateTime(
-  value: string,
-  start: string,
-  end: string,
+  value: Temporal.Instant,
+  start: Temporal.Instant,
+  end: Temporal.Instant,
   timeZone: string,
   locale: string,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
-  const epochMilliseconds = Temporal.Instant.from(value).epochMilliseconds;
-  const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
-  const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
+  const epochMilliseconds = value.epochMilliseconds;
+  const startZoned = start.toZonedDateTimeISO(timeZone);
+  const endZoned = end.toZonedDateTimeISO(timeZone);
   if (!needsOffset(startZoned, endZoned, timeZone)) {
     return new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",

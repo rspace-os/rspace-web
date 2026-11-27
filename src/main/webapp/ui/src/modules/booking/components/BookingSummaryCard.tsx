@@ -1,3 +1,4 @@
+import type { Temporal } from "@js-temporal/polyfill";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
@@ -34,7 +35,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
     id: booking.id,
   });
   const detailsLabel = t("dashboard.agenda.bookingDetails");
-  const formatDateTime = (value: string) =>
+  const formatDateTime = (value: Temporal.Instant) =>
     formatBookingAgendaDateTime(
       value,
       booking.start,
@@ -58,7 +59,7 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
       label,
       value: (
         <BookingInstrumentTimeTooltip start={instant} displayTimeZone={timeZone} instrumentTimeZone={booking.timezone}>
-          <time dateTime={instant}>{formatDateTime(instant)}</time>
+          <time dateTime={instant.toString()}>{formatDateTime(instant)}</time>
         </BookingInstrumentTimeTooltip>
       ),
     })),

@@ -2,6 +2,7 @@ import { uniq } from "es-toolkit";
 import * as v from "valibot";
 import { listBookingConfigurations } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { BookingCatalogueLocationDocumentSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { withoutDecoding } from "@/modules/common/api/v2/withDecoded";
 import { databaseIdFromGlobalId, type RelationshipSource } from "@/modules/common/relationship-picker/sources";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { instrumentRelationshipOption } from "@/modules/inventory/instrumentRelationshipSource";
@@ -81,7 +82,7 @@ export const bookingLocationSource: RelationshipSource = {
     );
   },
   toOption: (document, context) => {
-    const location = v.parse(BookingCatalogueLocationDocumentSchema, document);
+    const location = v.parse(withoutDecoding(BookingCatalogueLocationDocumentSchema), document);
     const value = canonicalLocation(location.globalId);
     if (value === null) throw new Error("Booking location has an invalid global ID");
     return {

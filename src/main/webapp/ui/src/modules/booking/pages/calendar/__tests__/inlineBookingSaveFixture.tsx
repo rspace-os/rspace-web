@@ -1,13 +1,15 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { matchQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { delay, HttpResponse, http } from "msw";
 import { Suspense, useState } from "react";
+import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { getListBookingsQueryKey, useListBookings } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import type { BookingsUpdate } from "@/modules/common/api/v2/generated/models/bookingsUpdate";
-import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { ListBookingConfigurations200 as DecodedListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import type { ListBookings200 } from "@/modules/common/api/v2/generated/models/listBookings200";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import { bookableItemFixtures, collectionPage } from "../../bookable-items/mocks/bookableItemsMocks";
@@ -15,14 +17,17 @@ import { bookingTarget, collectionResponse, ownBooking } from "../../mocks/booki
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { InlineBookingEditor } from "../InlineBookingEditor";
 
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
+type ListBookingConfigurations200 = ApiV2Wire<DecodedListBookingConfigurations200>;
+
 export function inlineBookingSaveFixture(EditorComponent = InlineBookingEditor) {
   const event: BookingListDocument & EditableBooking = {
     ...ownBooking,
     target: bookingTarget(123, "Confocal microscope"),
     kind: "BOOKING",
     timezone: "UTC",
-    start: "2030-10-07T10:00:00Z",
-    end: "2030-10-07T11:00:00Z",
+    start: Temporal.Instant.from("2030-10-07T10:00:00Z"),
+    end: Temporal.Instant.from("2030-10-07T11:00:00Z"),
     privacy: "full",
     state: "CONFIRMED",
     canEdit: true,
@@ -79,7 +84,7 @@ export function inlineBookingSaveFixture(EditorComponent = InlineBookingEditor) 
         cancellationReason: null,
         version: 8,
         start: event.start,
-        end: "2030-10-07T11:15:00Z",
+        end: Temporal.Instant.from("2030-10-07T11:15:00Z"),
       });
     }),
   ];

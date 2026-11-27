@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
 
@@ -210,7 +211,12 @@ describe("bookingTime", () => {
   });
 
   test("writes booking notice dates in the app language", () => {
-    const values = bookingAddedNoticeValues("2026-11-02T13:00:00Z", "2026-11-02T15:00:00Z", "Europe/London", "H24");
+    const values = bookingAddedNoticeValues(
+      Temporal.Instant.from("2026-11-02T13:00:00Z"),
+      Temporal.Instant.from("2026-11-02T15:00:00Z"),
+      "Europe/London",
+      "H24",
+    );
     expect(values.date).toBe(
       new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "Europe/London" }).format(
         new Date("2026-11-02T13:00:00Z"),

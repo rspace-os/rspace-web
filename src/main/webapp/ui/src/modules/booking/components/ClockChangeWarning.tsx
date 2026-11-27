@@ -24,8 +24,8 @@ export function ClockChangeWarning({
   timezone,
   kind,
 }: {
-  start: string | undefined;
-  end: string | undefined;
+  start: Temporal.Instant | string | undefined;
+  end: Temporal.Instant | string | undefined;
   timezone: string | null | undefined;
   kind: "BOOKING" | "MAINTENANCE";
 }) {

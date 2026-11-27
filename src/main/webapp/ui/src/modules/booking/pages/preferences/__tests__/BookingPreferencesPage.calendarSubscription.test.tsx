@@ -1,17 +1,24 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingCalendarSubscriptionCreated } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionCreated";
-import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
+import type {
+  BookingCalendarSubscriptionCreatedSchema,
+  BookingCalendarSubscriptionStatusSchema,
+} from "@/modules/common/api/v2/generated/valibot/schemas";
 
 import {
   expectNoAlertMessage,
   renderPage,
   useDefaultBookingPreferencesHandlers,
 } from "./bookingPreferencesPageTestUtils";
+
+/** Subscription responses as JSON carries them, before the transport decodes `updatedAt`. */
+type BookingCalendarSubscriptionStatus = v.InferInput<typeof BookingCalendarSubscriptionStatusSchema>;
+type BookingCalendarSubscriptionCreated = v.InferInput<typeof BookingCalendarSubscriptionCreatedSchema>;
 
 describe("BookingPreferencesPage", () => {
   beforeEach(() => useDefaultBookingPreferencesHandlers());

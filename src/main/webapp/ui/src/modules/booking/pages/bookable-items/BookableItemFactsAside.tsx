@@ -46,7 +46,7 @@ export function BookableItemFactsAside({
       id: "createdAt",
       label: t("bookableItemDetails.fields.createdAt"),
       value: configuration.createdAt ? (
-        <time dateTime={configuration.createdAt}>
+        <time dateTime={configuration.createdAt.toString()}>
           {formatBookingDateTime(configuration.createdAt, displayTimeZone, undefined, timeFormat)}
         </time>
       ) : (

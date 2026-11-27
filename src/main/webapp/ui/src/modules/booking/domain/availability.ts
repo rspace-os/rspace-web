@@ -277,8 +277,8 @@ function clipInterval<T extends AvailabilityInterval>(candidate: T, interval: Ab
 function sourcedInterval(
   kind: AvailabilityInterval["kind"],
   id: string,
-  startsAt: string,
-  endsAt: string,
+  startsAt: Temporal.Instant | string,
+  endsAt: Temporal.Instant | string,
   booking?: Booking,
 ): SourcedAvailabilityInterval {
   const sourceStartsAt = Temporal.Instant.from(startsAt);

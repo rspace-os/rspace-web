@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import "@/__tests__/__mocks__/matchMedia";
 import {
   createMemoryHistory,
@@ -38,8 +39,8 @@ function booking(id: number, start: string, end: string, name = "Confocal micros
       },
     },
     location: null,
-    start,
-    end,
+    start: Temporal.Instant.from(start),
+    end: Temporal.Instant.from(end),
   };
 }
 

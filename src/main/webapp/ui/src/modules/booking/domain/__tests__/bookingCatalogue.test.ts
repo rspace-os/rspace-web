@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
@@ -14,13 +15,16 @@ describe("calendar catalogue", () => {
           return new HttpResponse(null, { status: 400 });
         }
         expect(params.has("totals")).toBe(false);
-        expect(params.get("start")).toBe("2026-10-30T00:00:00Z");
-        expect(params.get("end")).toBe("2026-10-31T00:00:00Z");
+        expect(params.get("start")).toBe("2026-10-30T00:00:00.000Z");
+        expect(params.get("end")).toBe("2026-10-31T00:00:00.000Z");
         return HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, facets: { types: [] } });
       }),
     );
     await expect(
-      fetchBookingCatalogue({ start: "2026-10-30T00:00:00Z", end: "2026-10-31T00:00:00Z" }),
+      fetchBookingCatalogue({
+        start: Temporal.Instant.from("2026-10-30T00:00:00Z"),
+        end: Temporal.Instant.from("2026-10-31T00:00:00Z"),
+      }),
     ).resolves.toMatchObject({ items: [] });
   });
 });

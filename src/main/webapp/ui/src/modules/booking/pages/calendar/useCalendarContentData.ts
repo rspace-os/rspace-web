@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { isNil } from "es-toolkit";
@@ -361,8 +362,8 @@ export function useCalendarContentData() {
       q: calendarSearch,
       totals: true,
       where: itemWhereParameter,
-      start,
-      end,
+      start: Temporal.Instant.from(start),
+      end: Temporal.Instant.from(end),
       eventWhere: eventWhereParameter,
       page: state.page.pageIndex + 1,
       pageSize: state.page.pageSize,

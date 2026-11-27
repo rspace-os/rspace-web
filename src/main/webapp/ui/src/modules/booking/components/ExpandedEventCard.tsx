@@ -49,7 +49,11 @@ export function ExpandedEventCard({
       ? t("dayTimeline.event.titleWithBooker", { title: event.title, booker: event.bookedBy })
       : event.title;
   const duration = Math.max(0, event.endMinute - event.startMinute);
-  const instrumentTime = (instant: string | undefined, children: ReactNode, end?: string) =>
+  const instrumentTime = (
+    instant: DayTimelineEvent["startInstant"],
+    children: ReactNode,
+    end?: DayTimelineEvent["endInstant"],
+  ) =>
     instant ? (
       <BookingInstrumentTimeTooltip
         start={instant}

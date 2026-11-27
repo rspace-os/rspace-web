@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { bookingQueryOptions } from "@/modules/booking/domain/booking";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
@@ -266,8 +267,8 @@ describe("BookingInlineEditForm", () => {
     const { router, queryClient } = renderEdit();
     const calendarKey = [
       ...getSearchCalendarEventsQueryKey({
-        start: document.start,
-        end: document.end,
+        start: Temporal.Instant.from(document.start),
+        end: Temporal.Instant.from(document.end),
         page: 1,
         limit: 100,
         mine: false,
@@ -553,8 +554,8 @@ describe("BookingInlineEditForm", () => {
       expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.outcomeUncertain");
       expect(queryClient.getQueryData(bookingQueryOptions(41).queryKey)).toMatchObject({
         version: 8,
-        start: updated.start,
-        end: updated.end,
+        start: Temporal.Instant.from(updated.start),
+        end: Temporal.Instant.from(updated.end),
       });
       expect(purpose).toHaveValue("Keep this draft");
       expect(start).toHaveValue(originalTime);

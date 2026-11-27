@@ -60,10 +60,14 @@ export function monthlyBookingWhere(requesterId: number, start: string, end: str
 }
 
 /** Keyset pagination: bookings after the last one read, in start then ID order. */
-function afterBooking(where: BookingsWhere, last: { start: string; id: number }): BookingsWhere {
+function afterBooking(where: BookingsWhere, last: { start: Temporal.Instant; id: number }): BookingsWhere {
   return {
     ...where,
-    or: [{ start: { greaterThan: last.start } }, { start: last.start, id: { greaterThan: last.id } }],
+    // Full precision: a cursor cut to the wire format's milliseconds would read sub-millisecond ties again.
+    or: [
+      { start: { greaterThan: last.start.toString() } },
+      { start: last.start.toString(), id: { greaterThan: last.id } },
+    ],
   };
 }
 
@@ -101,8 +105,8 @@ function timedBookings(bookings: readonly BookingListDocument[]): TimedBooking[]
   return bookings
     .map((booking) => ({
       booking,
-      start: epochMillisecondsOf(booking.start),
-      end: epochMillisecondsOf(booking.end),
+      start: booking.start.epochMilliseconds,
+      end: booking.end.epochMilliseconds,
     }))
     .sort((left, right) => left.start - right.start || left.booking.id - right.booking.id);
 }
@@ -135,7 +139,7 @@ export async function fetchMonthlyDashboardBookings({
 }: MonthlyDashboardBookingsRequest): Promise<BookingListDocument[]> {
   const where = monthlyBookingWhere(requesterId, start, end);
   const bookings: BookingListDocument[] = [];
-  let cursor: { start: string; id: number } | null = null;
+  let cursor: { start: Temporal.Instant; id: number } | null = null;
   let pagesFetched = 0;
 
   while (true) {
@@ -150,7 +154,7 @@ export async function fetchMonthlyDashboardBookings({
     const last = page.docs.at(-1);
     if (!last || page.docs.length > 100) throw new Error("Dashboard booking pagination did not advance");
     const nextCursor = { start: last.start, id: last.id };
-    if (nextCursor.start === cursor?.start && nextCursor.id === cursor.id)
+    if (cursor?.start.equals(nextCursor.start) && nextCursor.id === cursor.id)
       throw new Error("Dashboard booking pagination did not advance");
     cursor = nextCursor;
   }

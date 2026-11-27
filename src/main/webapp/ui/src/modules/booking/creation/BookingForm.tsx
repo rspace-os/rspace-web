@@ -200,7 +200,11 @@ function emptyDraft(date = ""): BookingWindowDraft {
   return { startDate: date, startTime: "", endDate: date, endTime: "" };
 }
 
-function draftFromInstants(start: string, end: string, timezones: EndpointTimezones): BookingWindowDraft {
+function draftFromInstants(
+  start: Temporal.Instant,
+  end: Temporal.Instant,
+  timezones: EndpointTimezones,
+): BookingWindowDraft {
   const zones = endpointTimezones(timezones);
   const startValue = wallClockEndpointFromInstant(start, zones.start);
   const endValue = wallClockEndpointFromInstant(end, zones.end);
@@ -345,9 +349,9 @@ export function BookingForm(props: BookingFormProps) {
     return (
       start <= now &&
       (props.mode === "add" ||
-        (epochMillisecondsOf(props.booking.start) > now &&
-          (start !== epochMillisecondsOf(props.booking.start) ||
-            epochMillisecondsOf(window.end) !== epochMillisecondsOf(props.booking.end))))
+        (props.booking.start.epochMilliseconds > now &&
+          (start !== props.booking.start.epochMilliseconds ||
+            epochMillisecondsOf(window.end) !== props.booking.end.epochMilliseconds)))
     );
   };
   const submit = async (input: PurposeInput) => {

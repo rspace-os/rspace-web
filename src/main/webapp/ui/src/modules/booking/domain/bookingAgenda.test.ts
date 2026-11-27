@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
 
@@ -19,7 +20,7 @@ import {
 } from "./bookingAgenda";
 import { bookingListDocument } from "./bookingAgendaFixtures";
 
-function booking(id: number, start: string, end: string) {
+function booking(id: number, start: Temporal.Instant, end: Temporal.Instant) {
   return bookingListDocument({
     id,
     target: null,
@@ -32,17 +33,23 @@ function booking(id: number, start: string, end: string) {
 
 describe("booking agenda date helpers", () => {
   it("pads morning hours for the 24-hour preference", () => {
-    expect(formatBookingAgendaTimeRange("2026-11-05T09:00:00Z", "2026-11-05T11:00:00Z", "UTC", "en-GB", "H24")).toBe(
-      "09:00–11:00",
-    );
+    expect(
+      formatBookingAgendaTimeRange(
+        Temporal.Instant.from("2026-11-05T09:00:00Z"),
+        Temporal.Instant.from("2026-11-05T11:00:00Z"),
+        "UTC",
+        "en-GB",
+        "H24",
+      ),
+    ).toBe("09:00–11:00");
   });
 
   it("sorts a copy by instant and ID, then groups each booking by its start date", () => {
     const rows = [
-      booking(12, "2026-09-25T09:00:00.000Z", "2026-09-25T10:00:00.000Z"),
-      booking(4, "2026-09-24T08:00:00.000Z", "2026-09-24T09:00:00.000Z"),
-      booking(3, "2026-09-24T08:00:00.000Z", "2026-09-24T09:00:00.000Z"),
-      booking(8, "2026-09-24T23:30:00.000Z", "2026-09-25T01:30:00.000Z"),
+      booking(12, Temporal.Instant.from("2026-09-25T09:00:00.000Z"), Temporal.Instant.from("2026-09-25T10:00:00.000Z")),
+      booking(4, Temporal.Instant.from("2026-09-24T08:00:00.000Z"), Temporal.Instant.from("2026-09-24T09:00:00.000Z")),
+      booking(3, Temporal.Instant.from("2026-09-24T08:00:00.000Z"), Temporal.Instant.from("2026-09-24T09:00:00.000Z")),
+      booking(8, Temporal.Instant.from("2026-09-24T23:30:00.000Z"), Temporal.Instant.from("2026-09-25T01:30:00.000Z")),
     ];
 
     const groups = groupBookingsByStartDate(rows, "UTC");
@@ -56,7 +63,9 @@ describe("booking agenda date helpers", () => {
   });
 
   it("groups in the selected timezone and labels calendar days across the spring DST change", () => {
-    const rows = [booking(9, "2026-03-28T23:30:00.000Z", "2026-03-29T01:30:00.000Z")];
+    const rows = [
+      booking(9, Temporal.Instant.from("2026-03-28T23:30:00.000Z"), Temporal.Instant.from("2026-03-29T01:30:00.000Z")),
+    ];
     const groups = groupBookingsByStartDate(rows, "Europe/Berlin");
     const todayDate = "2026-03-29";
 
@@ -66,8 +75,8 @@ describe("booking agenda date helpers", () => {
     expect(getBookingAgendaRelativeDay("2026-03-31", todayDate)).toBeNull();
 
     const springRange = formatBookingAgendaTimeRange(
-      "2026-03-29T00:30:00.000Z",
-      "2026-03-29T01:30:00.000Z",
+      Temporal.Instant.from("2026-03-29T00:30:00.000Z"),
+      Temporal.Instant.from("2026-03-29T01:30:00.000Z"),
       "Europe/Berlin",
       "en-US",
     );
@@ -77,14 +86,14 @@ describe("booking agenda date helpers", () => {
 
   it("formats overnight and repeated-hour ranges with enough date and offset detail", () => {
     const overnight = formatBookingAgendaTimeRange(
-      "2026-09-25T20:00:00.000Z",
-      "2026-09-26T00:00:00.000Z",
+      Temporal.Instant.from("2026-09-25T20:00:00.000Z"),
+      Temporal.Instant.from("2026-09-26T00:00:00.000Z"),
       "Europe/Berlin",
       "en-US",
     );
     const repeatedHour = formatBookingAgendaTimeRange(
-      "2026-10-25T00:30:00.000Z",
-      "2026-10-25T01:30:00.000Z",
+      Temporal.Instant.from("2026-10-25T00:30:00.000Z"),
+      Temporal.Instant.from("2026-10-25T01:30:00.000Z"),
       "Europe/Berlin",
       "en-US",
     );
@@ -93,8 +102,8 @@ describe("booking agenda date helpers", () => {
     expect(repeatedHour).toContain("GMT+2");
     expect(repeatedHour).toContain("GMT+1");
     const sameOffsetRange = formatBookingAgendaTimeRange(
-      "2026-10-25T00:05:00.000Z",
-      "2026-10-25T00:35:00.000Z",
+      Temporal.Instant.from("2026-10-25T00:05:00.000Z"),
+      Temporal.Instant.from("2026-10-25T00:35:00.000Z"),
       "Europe/Berlin",
       "en-US",
     );
@@ -102,33 +111,33 @@ describe("booking agenda date helpers", () => {
     // The 12- or 24-hour clock follows the browser region (en-US here), not the app language, to match native inputs.
     expect(
       formatBookingAgendaTimeRange(
-        "2026-09-24T12:00:00.000Z",
-        "2026-09-24T14:00:00.000Z",
+        Temporal.Instant.from("2026-09-24T12:00:00.000Z"),
+        Temporal.Instant.from("2026-09-24T14:00:00.000Z"),
         "Europe/Berlin",
         "de-DE",
       ).replace(/\s/g, ""),
     ).toEqual(
       formatBookingAgendaTimeRange(
-        "2026-09-24T12:00:00.000Z",
-        "2026-09-24T14:00:00.000Z",
+        Temporal.Instant.from("2026-09-24T12:00:00.000Z"),
+        Temporal.Instant.from("2026-09-24T14:00:00.000Z"),
         "Europe/Berlin",
         "en-US",
       ).replace(/\s/g, ""),
     );
     expect(
       formatBookingAgendaDateTime(
-        "2026-10-25T00:30:00.000Z",
-        "2026-10-25T00:30:00.000Z",
-        "2026-10-25T01:30:00.000Z",
+        Temporal.Instant.from("2026-10-25T00:30:00.000Z"),
+        Temporal.Instant.from("2026-10-25T00:30:00.000Z"),
+        Temporal.Instant.from("2026-10-25T01:30:00.000Z"),
         "Europe/Berlin",
         "en-US",
       ),
     ).toContain("GMT+2");
     expect(
       formatBookingAgendaDateTime(
-        "2026-10-25T01:30:00.000Z",
-        "2026-10-25T00:30:00.000Z",
-        "2026-10-25T01:30:00.000Z",
+        Temporal.Instant.from("2026-10-25T01:30:00.000Z"),
+        Temporal.Instant.from("2026-10-25T00:30:00.000Z"),
+        Temporal.Instant.from("2026-10-25T01:30:00.000Z"),
         "Europe/Berlin",
         "en-US",
       ),

@@ -375,7 +375,9 @@ describe("Calendar page", () => {
           .slice(requestsBeforeReset)
           .map((url) => url.searchParams.get("where")),
       )
-      .toEqual(["start=lt=2026-08-19T04:00:00Z;end=gt=2026-08-18T04:00:00Z;target=in=(IN123,IN124,IN125,IN126,IN127)"]);
+      .toEqual([
+        "start=lt=2026-08-19T04:00:00.000Z;end=gt=2026-08-18T04:00:00.000Z;target=in=(IN123,IN124,IN125,IN126,IN127)",
+      ]);
   });
 
   test.each([390, 1279, 1280, 1440])("keeps integrated Calendar controls reachable at %s px", async (width) => {

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { Link } from "@tanstack/react-router";
 import { EyeIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
@@ -136,8 +137,8 @@ export function CalendarResourceSchedule({
     for (const event of events) {
       if (!event.target) continue;
       const occurrence = editorPositions?.get(event.id) ?? event;
-      const eventStart = epochMillisecondsOf(occurrence.start);
-      const eventEnd = epochMillisecondsOf(occurrence.end);
+      const eventStart = occurrence.start.epochMilliseconds;
+      const eventEnd = occurrence.end.epochMilliseconds;
       for (const { day, start, end } of boundsByDate) {
         if (!(eventStart < end && eventEnd > start)) continue;
         const key = `${event.target.globalId}|${day}`;
@@ -146,7 +147,7 @@ export function CalendarResourceSchedule({
         index.set(key, rows);
       }
     }
-    for (const rows of index.values()) rows.sort((left, right) => left.start.localeCompare(right.start));
+    for (const rows of index.values()) rows.sort((left, right) => Temporal.Instant.compare(left.start, right.start));
     return index;
   }, [dates, events, timezone, editorPositions]);
   const calendarRef = useScrollToToday(date, view, today);

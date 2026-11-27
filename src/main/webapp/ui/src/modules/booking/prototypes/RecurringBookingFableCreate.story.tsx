@@ -57,8 +57,9 @@ export function useOccurrenceFormat() {
     timeZone: DISPLAY_TIMEZONE,
   });
   return {
-    date: (instant: string) => date.format(new Date(instant)),
-    period: (start: string, end: string) => time.formatRange(new Date(start), new Date(end)),
+    date: (instant: Temporal.Instant | string) => date.format(Temporal.Instant.from(instant).epochMilliseconds),
+    period: (start: Temporal.Instant | string, end: Temporal.Instant | string) =>
+      time.formatRange(Temporal.Instant.from(start).epochMilliseconds, Temporal.Instant.from(end).epochMilliseconds),
   };
 }
 

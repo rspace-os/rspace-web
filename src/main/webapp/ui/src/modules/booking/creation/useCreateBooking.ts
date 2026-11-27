@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { useRef } from "react";
@@ -21,6 +22,7 @@ import {
   invalidateCountBookings,
   invalidateListBookings,
 } from "@/modules/common/api/v2/generated/bookings/bookings";
+import type { BookingsCreate } from "@/modules/common/api/v2/generated/models/bookingsCreate";
 import { BookingEventKindSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import type { BookingFormSubmission } from "./BookingForm";
 import type { BookableItemOption } from "./bookableItemOption";
@@ -190,6 +192,16 @@ export function isBookingOutcomeUncertain(error: unknown): boolean {
   return !(error instanceof ApiV2ProblemError) || error.status < 400 || error.status >= 500;
 }
 
+function createInput(submission: BookingFormSubmission): BookingsCreate {
+  return {
+    target: { relationTo: "instruments", value: submission.target.targetId },
+    start: Temporal.Instant.from(submission.window.start),
+    end: Temporal.Instant.from(submission.window.end),
+    purpose: submission.purpose,
+    kind: submission.eventKind,
+  };
+}
+
 export function useCreateBooking() {
   const queryClient = useQueryClient();
   const generated = getCreateBookingMutationOptions(queryClient);
@@ -197,33 +209,14 @@ export function useCreateBooking() {
   return useMutation<BookingMutation, ErrorType<unknown>, BookingFormSubmission>({
     retry: false,
     mutationFn: (submission) => {
-      const input = {
-        target: { relationTo: "instruments" as const, value: submission.target.targetId },
-        start: submission.window.start,
-        end: submission.window.end,
-        purpose: submission.purpose,
-        kind: submission.eventKind,
-      };
+      const input = createInput(submission);
       const fingerprint = JSON.stringify(input);
       if (intent.current?.fingerprint !== fingerprint) intent.current = { fingerprint, key: crypto.randomUUID() };
       return createBooking(input, intent.current.key);
     },
     onSuccess: (data, submission, result, context) => {
       intent.current = null;
-      return generated.onSuccess?.(
-        data,
-        {
-          data: {
-            target: { relationTo: "instruments", value: submission.target.targetId },
-            start: submission.window.start,
-            end: submission.window.end,
-            purpose: submission.purpose,
-            kind: submission.eventKind,
-          },
-        },
-        result,
-        context,
-      );
+      return generated.onSuccess?.(data, { data: createInput(submission) }, result, context);
     },
     onError: (error, submission) => {
       if (

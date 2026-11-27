@@ -4,7 +4,7 @@ import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { apiV2Fields } from "@/modules/common/api/v2/apiV2Selected";
 import { fetchBookableItemEvents } from "../bookableItemEvents";
-import { bookableItemEventResponse, booking } from "./bookableItemEventFixtures";
+import { bookableItemEventResponse, booking, decodedBooking } from "./bookableItemEventFixtures";
 
 describe("bookable item events", () => {
   it.each([
@@ -27,7 +27,7 @@ describe("bookable item events", () => {
         page: 2,
         limit: 10,
       }),
-    ).resolves.toEqual(bookableItemEventResponse([booking], { page: 3 }));
+    ).resolves.toEqual(bookableItemEventResponse([decodedBooking(booking)], { page: 3 }));
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("where")).toBe(`target==IN12;state==CONFIRMED;${boundary}`);
@@ -58,7 +58,7 @@ describe("bookable item events", () => {
         page: 0,
         limit: 10,
       }),
-    ).resolves.toEqual(bookableItemEventResponse([booking, busy]));
+    ).resolves.toEqual(bookableItemEventResponse([decodedBooking(booking), decodedBooking(busy)]));
   });
 
   it("escapes the target global id", async () => {

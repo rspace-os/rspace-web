@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
 import {
   BOOKING_READ_FIELDS,
@@ -23,8 +24,8 @@ describe("booking response intervals", () => {
       version: 2,
       target: null,
       timezone: null,
-      start: "2026-08-17T10:00:00Z",
-      end: "2026-08-17T11:00:00Z",
+      start: Temporal.Instant.from("2026-08-17T10:00:00Z"),
+      end: Temporal.Instant.from("2026-08-17T11:00:00Z"),
       state: "CONFIRMED",
       kind: "BOOKING",
       canViewConfiguration: false,
@@ -35,8 +36,8 @@ describe("booking response intervals", () => {
       createdBy: "Grace Hopper (grace)",
       canEdit: false,
       canCancel: false,
-      createdAt: "2026-08-01T09:00:00Z",
-      updatedAt: "2026-08-02T10:00:00Z",
+      createdAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+      updatedAt: Temporal.Instant.from("2026-08-02T10:00:00Z"),
     } as const;
 
     const details = { ...redacted, cancellationReason: null };
@@ -71,8 +72,8 @@ describe("booking response intervals", () => {
       id: 17,
       target,
       timezone: "Europe/Berlin",
-      start: "2026-08-17T10:00:00Z",
-      end: "2026-08-17T11:00:00Z",
+      start: Temporal.Instant.from("2026-08-17T10:00:00Z"),
+      end: Temporal.Instant.from("2026-08-17T11:00:00Z"),
       state: "CONFIRMED" as const,
       kind: "BOOKING" as const,
     };
@@ -88,8 +89,8 @@ describe("booking response intervals", () => {
       privacy: "full",
       canEdit: true,
       canCancel: true,
-      createdAt: "2026-08-01T10:00:00Z",
-      updatedAt: "2026-08-01T10:00:00Z",
+      createdAt: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+      updatedAt: Temporal.Instant.from("2026-08-01T10:00:00Z"),
     };
     expect(mapBookingSummary(document)).toEqual({ ...summary, location: null });
 

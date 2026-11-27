@@ -12,7 +12,6 @@ import {
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import { epochMillisecondsOf } from "@/modules/common/time/instant";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { Panel, useBookingEvent } from "./BookingEventContext";
@@ -25,7 +24,7 @@ export function BookingDetailsView() {
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
   const durationMinutes = Math.max(
     0,
-    Math.round((epochMillisecondsOf(booking.end) - epochMillisecondsOf(booking.start)) / 60000),
+    Math.round((booking.end.epochMilliseconds - booking.start.epochMilliseconds) / 60000),
   );
   const facts: BookingFact[] = [
     [
@@ -48,8 +47,8 @@ export function BookingDetailsView() {
               />
             ),
             periodText: <span />,
-            startTime: <time dateTime={booking.start} />,
-            endTime: <time dateTime={booking.end} />,
+            startTime: <time dateTime={booking.start.toString()} />,
+            endTime: <time dateTime={booking.end.toString()} />,
             duration: <span className="text-muted-foreground" />,
           }}
         />

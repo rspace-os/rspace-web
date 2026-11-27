@@ -116,10 +116,10 @@ export function InlineBookingEditor({
     mutationFn: async ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
       // Only the fields changed from where the draft started, so saving over a newer version keeps that version's
       // other changes.
+      const start = Temporal.Instant.from(submission.window.start);
+      const end = Temporal.Instant.from(submission.window.end);
       const patch: BookingsUpdate = {
-        ...(staleEdit || submission.window.start !== base.start || submission.window.end !== base.end
-          ? { start: submission.window.start, end: submission.window.end }
-          : {}),
+        ...(staleEdit || !start.equals(base.start) || !end.equals(base.end) ? { start, end } : {}),
         ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
       };
       return Object.keys(patch).length === 0 ? null : updateBooking(event.id, version, patch);
@@ -239,7 +239,9 @@ export function InlineBookingEditor({
   // Checked as soon as both endpoints are entered, before the item's rules are met.
   const enteredWindow = formState?.enteredWindow;
   const intervalChanged = Boolean(
-    enteredWindow && (enteredWindow.start !== base.start || enteredWindow.end !== base.end),
+    enteredWindow &&
+      (Temporal.Instant.compare(enteredWindow.start, base.start) !== 0 ||
+        Temporal.Instant.compare(enteredWindow.end, base.end) !== 0),
   );
   const availabilityRow = configuration.data
     ? calendarAvailabilityRow({

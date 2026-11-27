@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 export const booking = {
   id: 41,
   version: 0,
@@ -43,6 +44,19 @@ export const maintenanceBooking = {
   createdBy: "Morgan Ellis (mellis)",
   canEdit: false,
 };
+
+/** A booking fixture as the transport returns it, with its date-times decoded. */
+export function decodedBooking<T extends { start: string; end: string; createdAt: string; updatedAt: string }>(
+  document: T,
+) {
+  return {
+    ...document,
+    start: Temporal.Instant.from(document.start),
+    end: Temporal.Instant.from(document.end),
+    createdAt: Temporal.Instant.from(document.createdAt),
+    updatedAt: Temporal.Instant.from(document.updatedAt),
+  };
+}
 
 export function bookableItemEventResponse(
   docs: readonly unknown[],

@@ -216,11 +216,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
     return draft.from === range.from && draft.to === range.to;
   });
   const resultDate = audit.data
-    ? Temporal.Instant.from(audit.data.endExclusive)
-        .toZonedDateTimeISO("UTC")
-        .subtract({ days: 1 })
-        .toPlainDate()
-        .toString()
+    ? audit.data.endExclusive.toZonedDateTimeISO("UTC").subtract({ days: 1 }).toPlainDate().toString()
     : undefined;
   const stableEmpty = resultDate !== undefined && applied.from > resultDate;
   // The daily snapshot ends before today, so a range reaching past it cannot show the newest changes yet.

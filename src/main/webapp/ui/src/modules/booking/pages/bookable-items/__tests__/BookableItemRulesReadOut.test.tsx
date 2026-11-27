@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { screen, within } from "@testing-library/react";
 import { expect, it } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
@@ -8,7 +9,14 @@ import { bookableItemFixtures } from "../mocks/bookableItemsMocks";
 it("names the gap without repeating the value's unit", async () => {
   await renderWithRealI18n(
     <BookableItemRulesReadOut
-      configuration={{ ...bookableItemFixtures[0], roleSources: [], bufferBeforeMinutes: 15, bufferAfterMinutes: 15 }}
+      configuration={{
+        ...bookableItemFixtures[0],
+        createdAt: Temporal.Instant.from(bookableItemFixtures[0].createdAt),
+        updatedAt: Temporal.Instant.from(bookableItemFixtures[0].updatedAt),
+        roleSources: [],
+        bufferBeforeMinutes: 15,
+        bufferAfterMinutes: 15,
+      }}
     />,
     { resources: { booking: bookingEnglish }, defaultNS: "booking" },
   );

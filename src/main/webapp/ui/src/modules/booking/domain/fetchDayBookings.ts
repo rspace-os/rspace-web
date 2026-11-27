@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import { uniq } from "es-toolkit";
 import { ApiV2ProblemError } from "@/modules/common/api/v2/ApiV2ProblemError";
@@ -20,7 +21,7 @@ const MAX_ENCODED_WHERE_BYTES = 32768;
 const MAX_BOOKINGS_PER_BATCH = 1000;
 
 /** Keyset position after the last booking read, in start then ID order. */
-type Cursor = { start: string; id: number } | null;
+type Cursor = { start: Temporal.Instant; id: number } | null;
 
 function bookingWhere(
   globalIds: readonly string[],
@@ -37,7 +38,11 @@ function bookingWhere(
   if (!cursor) return where;
   return {
     ...where,
-    or: [{ start: { greaterThan: cursor.start } }, { start: cursor.start, id: { greaterThan: cursor.id } }],
+    // Full precision: a cursor cut to the wire format's milliseconds would read sub-millisecond ties again.
+    or: [
+      { start: { greaterThan: cursor.start.toString() } },
+      { start: cursor.start.toString(), id: { greaterThan: cursor.id } },
+    ],
   };
 }
 
@@ -123,7 +128,7 @@ async function loadAvailabilityBatch(
     const last = result.docs.at(-1);
     if (!last) throw new Error("Calendar availability returned inconsistent pagination metadata");
     const nextCursor = { start: last.start, id: last.id };
-    if (cursor?.start === nextCursor.start && cursor.id === nextCursor.id)
+    if (cursor?.start.equals(nextCursor.start) && cursor.id === nextCursor.id)
       throw new Error("Booking schedule changed during pagination");
     cursor = nextCursor;
   }
@@ -160,10 +165,14 @@ async function loadAvailabilityBatchWithRetry(
   }
 }
 
-/** The longest cursor a batch can need, so that batches still fit once pagination starts. */
-function largestCursor(envelope: { start: string }): Cursor {
-  return { start: envelope.start, id: Number.MAX_SAFE_INTEGER };
-}
+/**
+ * The longest cursor a batch can need, so that batches still fit once pagination starts. For sizing only: cursors are
+ * written with full precision, so this one carries nine fractional digits whatever the envelope's start.
+ */
+const LARGEST_CURSOR: Cursor = {
+  start: Temporal.Instant.from("2000-01-01T00:00:00.123456789Z"),
+  id: Number.MAX_SAFE_INTEGER,
+};
 
 export async function fetchDayBookings(
   globalIds: readonly string[],
@@ -178,12 +187,12 @@ export async function fetchDayBookings(
     const nextBatch = [...currentBatch, globalId];
     if (
       currentBatch.length === MAX_TARGETS_PER_BATCH ||
-      !availabilityRequest(nextBatch, envelope, largestCursor(envelope)).fits
+      !availabilityRequest(nextBatch, envelope, LARGEST_CURSOR).fits
     ) {
       if (currentBatch.length === 0) throw new CalendarAvailabilityRequestTooLargeError();
       batches.push(currentBatch);
       currentBatch = [globalId];
-      if (!availabilityRequest(currentBatch, envelope, largestCursor(envelope)).fits) {
+      if (!availabilityRequest(currentBatch, envelope, LARGEST_CURSOR).fits) {
         throw new CalendarAvailabilityRequestTooLargeError();
       }
     } else {

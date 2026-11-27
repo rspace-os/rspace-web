@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http, type RequestHandler } from "msw";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { apiV2CollectionRequestProblem, badRequest } from "@/__tests__/mocks/apiV2CollectionMock";
@@ -30,8 +31,8 @@ export function dashboardBookingFixture(
   day: number,
   overrides: Partial<BookingListDocument> = {},
 ): BookingListDocument {
-  const start = overrides.start ?? timestamp(day, 8 + (id % 8), (id % 2) * 30);
-  const end = overrides.end ?? new Date(Date.parse(start) + 45 * 60 * 1000).toISOString();
+  const start = overrides.start ?? Temporal.Instant.from(timestamp(day, 8 + (id % 8), (id % 2) * 30));
+  const end = overrides.end ?? start.add({ minutes: 45 });
   return {
     id,
     version: 0,
@@ -102,10 +103,10 @@ export function bookingDashboardHandlers({
       const start = (page - 1) * limit;
       const cursor = url.searchParams.get("where")?.match(/;\(start=gt=([^,]+),\(start==[^;]+;id=gt=(\d+)\)\)$/);
       const matching = [...docs]
-        .sort((left, right) => Date.parse(left.start) - Date.parse(right.start) || left.id - right.id)
+        .sort((left, right) => Temporal.Instant.compare(left.start, right.start) || left.id - right.id)
         .filter((booking) => {
           if (!cursor) return true;
-          const afterStart = Date.parse(booking.start) - Date.parse(cursor[1]);
+          const afterStart = Temporal.Instant.compare(booking.start, cursor[1]);
           return afterStart > 0 || (afterStart === 0 && booking.id > Number(cursor[2]));
         });
       return HttpResponse.json<ListBookings200>(

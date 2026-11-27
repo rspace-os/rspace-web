@@ -33,6 +33,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { instantToWire } from "@/modules/common/time/instant";
 import type { BodyType, ErrorType } from "../../apiV2Fetch.ts";
 import { apiV2BlobFetch, apiV2Fetch } from "../../apiV2Fetch.ts";
 import { apiV2SerializeQuery } from "../../apiV2SerializeQuery.ts";
@@ -1754,9 +1755,22 @@ export const useUpdateBooking = <
   return useMutation(getUpdateBookingMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
 };
 export const getListBookingAuditEventsUrl = (id: number, params?: ListBookingAuditEventsParams) => {
+  const encodedParams = { ...params };
+  if (encodedParams.start != null) {
+    encodedParams.start =
+      typeof encodedParams.start === "string"
+        ? encodedParams.start
+        : (instantToWire(encodedParams.start) as unknown as typeof encodedParams.start);
+  }
+  if (encodedParams.end != null) {
+    encodedParams.end =
+      typeof encodedParams.end === "string"
+        ? encodedParams.end
+        : (instantToWire(encodedParams.end) as unknown as typeof encodedParams.end);
+  }
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+  Object.entries(encodedParams).forEach(([key, value]) => {
     const explodeParameters = ["actions"];
 
     if (Array.isArray(value) && explodeParameters.includes(key)) {

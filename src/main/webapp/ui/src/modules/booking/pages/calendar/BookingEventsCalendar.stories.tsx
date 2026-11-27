@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { setupWorker } from "msw/browser";
@@ -46,14 +47,22 @@ const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>
 
 const storyEvents: readonly BookingListDocument[] = [
   ownBooking,
-  { ...otherBooking, start: "2026-08-17T12:00:00Z", end: "2026-08-17T13:30:00Z" },
-  { ...busyBooking, start: "2026-08-19T09:00:00Z", end: "2026-08-19T11:00:00Z" },
+  {
+    ...otherBooking,
+    start: Temporal.Instant.from("2026-08-17T12:00:00Z"),
+    end: Temporal.Instant.from("2026-08-17T13:30:00Z"),
+  },
+  {
+    ...busyBooking,
+    start: Temporal.Instant.from("2026-08-19T09:00:00Z"),
+    end: Temporal.Instant.from("2026-08-19T11:00:00Z"),
+  },
   {
     ...ownBooking,
     id: 44,
     target: bookingTarget(125, "Flow cytometer"),
-    start: "2026-08-21T13:00:00Z",
-    end: "2026-08-21T15:00:00Z",
+    start: Temporal.Instant.from("2026-08-21T13:00:00Z"),
+    end: Temporal.Instant.from("2026-08-21T15:00:00Z"),
     purpose: "Cell sorting",
   },
 ];

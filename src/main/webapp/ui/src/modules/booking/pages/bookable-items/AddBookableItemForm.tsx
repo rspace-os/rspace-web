@@ -32,6 +32,7 @@ import {
   BookingConfigurationsCreateSchema,
   BookingConfigurationTargetSchema,
 } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { withoutDecoding } from "@/modules/common/api/v2/withDecoded";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -83,7 +84,7 @@ const bookingConfigurationTargetSource: RelationshipSource = {
     ),
   ownsValue: (value) => /^IN\d+$/i.test(value.trim()),
   toOption: (document, context) => {
-    const instrument = parseOrThrow(BookingConfigurationTargetSchema, document);
+    const instrument = parseOrThrow(withoutDecoding(BookingConfigurationTargetSchema), document);
     if (
       instrument.globalId === undefined ||
       instrument.name === undefined ||

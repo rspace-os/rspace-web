@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { browserTimeZone, mapBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import "@/modules/common/styles/index.css";
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
@@ -260,8 +261,8 @@ describe("Calendar page", () => {
     serverBooking = {
       ...serverBooking,
       purpose: "Changed elsewhere",
-      start: "2026-08-17T12:00:00Z",
-      end: "2026-08-17T13:00:00Z",
+      start: Temporal.Instant.from("2026-08-17T12:00:00Z"),
+      end: Temporal.Instant.from("2026-08-17T13:00:00Z"),
       version: 1,
     };
     await card.getByRole("button", { name: "Save changes" }).click();
@@ -289,7 +290,7 @@ describe("Calendar page", () => {
     await expect.poll(() => saves.length).toBe(2);
     expect(saves[1]).toEqual({
       ifMatch: '"1"',
-      payload: { start: ownBooking.start, end: ownBooking.end, purpose: "Updated cell imaging" },
+      payload: { start: ownBooking.start.toString(), end: ownBooking.end.toString(), purpose: "Updated cell imaging" },
     });
   });
 

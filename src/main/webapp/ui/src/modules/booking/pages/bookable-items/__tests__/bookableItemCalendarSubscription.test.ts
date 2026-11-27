@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
@@ -49,7 +50,12 @@ describe("bookable item calendar subscription client", () => {
       ),
     );
     const active = await fetchCalendarSubscriptionStatus(7);
-    expect(active).toEqual({ active: true, updatedAt: timestamp, subscriptionUrl, etag: '"current"' });
+    expect(active).toEqual({
+      active: true,
+      updatedAt: Temporal.Instant.from(timestamp),
+      subscriptionUrl,
+      etag: '"current"',
+    });
   });
 
   it("rejects status shapes that violate the active timestamp contract", async () => {

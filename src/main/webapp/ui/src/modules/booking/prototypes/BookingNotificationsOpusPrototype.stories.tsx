@@ -5,6 +5,7 @@
 /* biome-ignore-all lint/style/noJsxLiterals: throwaway prototype copy is intentionally not entering the translation catalog. */
 import { Tabs } from "@base-ui/react/tabs";
 import { Form, isDirty, reset, useForm } from "@formisch/react";
+import { Temporal } from "@js-temporal/polyfill";
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { BellIcon, CheckIcon, SaveIcon } from "lucide-react";
 import { useState } from "react";
@@ -40,21 +41,30 @@ type View = "preferences" | "item" | "profile";
 type Role = "owner" | "booker" | "viewer";
 type Events = { created: boolean; cancelled: boolean; email: boolean };
 
+/** A wire fixture with its date-times decoded, as the transport returns it. */
+const decoded = (index: 0 | 1 | 3 | 4) => {
+  const fixture = bookableItemFixtures[index];
+  return {
+    ...fixture,
+    createdAt: fixture.createdAt === null ? null : Temporal.Instant.from(fixture.createdAt),
+    updatedAt: Temporal.Instant.from(fixture.updatedAt),
+  };
+};
 // ponytail: fixture configs re-typed; `as const` roleSources is readonly and must be replaced.
 const owned = (index: 0 | 1): BookingConfiguration => ({
-  ...bookableItemFixtures[index],
+  ...decoded(index),
   roleSources: [],
   capabilities: { ...bookableItemFixtures[index].capabilities, canManageNotificationSubscription: true },
 });
 // Plan 008: every current reader gets the personal subscription capability, not only owners.
 const booked = (index: 4): BookingConfiguration => ({
-  ...bookableItemFixtures[index],
+  ...decoded(index),
   ...bookerBookingAccess,
   roleSources: [],
   capabilities: { ...bookerBookingAccess.capabilities, canManageNotificationSubscription: true },
 });
 const viewed = (index: 3): BookingConfiguration => ({
-  ...bookableItemFixtures[index],
+  ...decoded(index),
   ...bookerBookingAccess,
   effectiveRole: "VIEWER",
   roleSources: [],

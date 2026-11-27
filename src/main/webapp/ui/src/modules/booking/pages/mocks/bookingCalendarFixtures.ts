@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 
 export function bookingTarget(id: number, name: string, location?: { name: string; globalId: string } | null) {
@@ -35,8 +36,8 @@ export function bookingLocation(name: string, globalId: string) {
 const timestamps = {
   version: 0,
   kind: "BOOKING" as const,
-  createdAt: "2026-08-01T09:00:00Z",
-  updatedAt: "2026-08-01T09:00:00Z",
+  createdAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+  updatedAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
   canCancel: false,
   createdBy: null,
 };
@@ -48,8 +49,8 @@ export const ownBooking: BookingListDocument = {
   canViewConfiguration: true,
   requester: { relationTo: "users", value: { id: 1 } },
   timezone: "Europe/Berlin",
-  start: "2026-08-17T08:00:00Z",
-  end: "2026-08-17T10:00:00Z",
+  start: Temporal.Instant.from("2026-08-17T08:00:00Z"),
+  end: Temporal.Instant.from("2026-08-17T10:00:00Z"),
   state: "CONFIRMED",
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace",
@@ -64,8 +65,8 @@ export const otherBooking: BookingListDocument = {
   target: bookingTarget(124, "Electron microscope"),
   location: bookingLocation("Workbench", "BE124"),
   requester: { relationTo: "users", value: 2 },
-  start: "2026-08-19T12:00:00Z",
-  end: "2026-08-19T13:30:00Z",
+  start: Temporal.Instant.from("2026-08-19T12:00:00Z"),
+  end: Temporal.Instant.from("2026-08-19T13:30:00Z"),
   purpose: "Cryo-grid screening",
   bookedBy: "Grace Hopper (grace)",
   canEdit: false,
@@ -75,8 +76,8 @@ export const busyBooking: BookingListDocument = {
   ...otherBooking,
   id: 43,
   requester: null,
-  start: "2026-08-21T09:00:00Z",
-  end: "2026-08-21T11:00:00Z",
+  start: Temporal.Instant.from("2026-08-21T09:00:00Z"),
+  end: Temporal.Instant.from("2026-08-21T11:00:00Z"),
   purpose: null,
   bookedBy: null,
   privacy: "busy",

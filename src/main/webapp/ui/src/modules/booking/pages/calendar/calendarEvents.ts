@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { type BookingListDocument, mapBookingListDocument } from "@/modules/booking/domain/booking";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
@@ -9,6 +10,7 @@ import {
 import type { BookingsRead } from "@/modules/common/api/v2/generated/models/bookingsRead";
 import type { SearchCalendarEventsParams } from "@/modules/common/api/v2/generated/models/searchCalendarEventsParams";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
+import { instantToWire } from "@/modules/common/time/instant";
 
 export const CALENDAR_BOOKING_FIELDS = [
   "id",
@@ -43,7 +45,7 @@ function parameters(input: Omit<CalendarEventRequest, "signal">, page = 1) {
   return {
     start: input.start,
     end: input.end,
-    where: `start=lt=${input.end};end=gt=${input.start}${targetFilter}${input.scope?.where ? `;(${input.scope.where})` : ""}`,
+    where: `start=lt=${instantToWire(input.end)};end=gt=${instantToWire(input.start)}${targetFilter}${input.scope?.where ? `;(${input.scope.where})` : ""}`,
     q: input.scope?.q?.trim() || undefined,
     mine: input.scope?.mine ?? false,
     page,
@@ -102,8 +104,8 @@ export function useCalendarEvents({
   enabled?: boolean;
   scope?: CalendarEventFilterScope;
 }) {
-  const start = zonedDayBounds(firstDate, timezone).start;
-  const end = zonedDayBounds(lastDate, timezone).end;
+  const start = Temporal.Instant.from(zonedDayBounds(firstDate, timezone).start);
+  const end = Temporal.Instant.from(zonedDayBounds(lastDate, timezone).end);
   // Plain useQuery: the calendar keeps its grid and known rows mounted while events load.
   return useQuery({ ...calendarEventsQuery({ start, end, targetGlobalIds, scope }), enabled });
 }

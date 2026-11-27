@@ -20,10 +20,11 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ComponentType, type ReactNode, Suspense } from "react";
+import type * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import type { BookingDetails } from "@/modules/booking/domain/booking";
+import type { BookingsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { bookingEventFixture, createBookingEventTestRouter } from "./bookingEventTestHarness";
 
@@ -256,7 +257,7 @@ describe("BookingEventPage", () => {
   });
 
   it("cancels in place and keeps the same readable URL", async () => {
-    let current: BookingDetails = { ...bookingEventFixture };
+    let current: v.InferInput<typeof BookingsReadSchema> = { ...bookingEventFixture };
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(current)),
       http.patch("/api/v2/bookings/41", () => {

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { QueryClient } from "@tanstack/react-query";
 import { expect, it } from "vitest";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
@@ -10,7 +11,13 @@ import {
 import { getGetBookingQueryKey, getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import { invalidateBookingListOperation } from "../bookingInvalidation";
 
-const window = { start: "2026-08-17T00:00:00Z", end: "2026-08-18T00:00:00Z", mine: false, page: 1, limit: 20 };
+const window = {
+  start: Temporal.Instant.from("2026-08-17T00:00:00Z"),
+  end: Temporal.Instant.from("2026-08-18T00:00:00Z"),
+  mine: false,
+  page: 1,
+  limit: 20,
+};
 const keys = {
   catalogue: getSearchBookingCatalogueQueryKey({ mine: false, page: 1, limit: 20 }),
   locations: getSearchBookingCatalogueLocationsQueryKey({ page: 1, limit: 20 }),

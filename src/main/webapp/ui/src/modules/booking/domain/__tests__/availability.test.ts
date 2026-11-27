@@ -39,8 +39,8 @@ describe("the availability oracle", () => {
     version: 0,
     target: { relationTo: "instruments", value: { id: 1, name: "IN1", deleted: false }, globalId: "IN1" },
     timezone: "UTC",
-    start,
-    end,
+    start: Temporal.Instant.from(start),
+    end: Temporal.Instant.from(end),
     state: "CONFIRMED",
     cancellationReason: null,
     kind,
@@ -49,8 +49,8 @@ describe("the availability oracle", () => {
     bookedBy: null,
     canEdit: false,
     canCancel: false,
-    createdAt: start,
-    updatedAt: start,
+    createdAt: Temporal.Instant.from(start),
+    updatedAt: Temporal.Instant.from(start),
   });
   const classify = (candidate: CalendarAvailabilityRow, now: string, bookings: readonly Booking[] = []) => {
     const today = todayAvailabilityWindow(Temporal.Instant.from(now), "UTC", "00:00", "24:00");
@@ -80,8 +80,8 @@ describe("the availability oracle", () => {
           ? (requested === "BOOKING" ? 13 : 0) + (existing === "BOOKING" ? 7 : 0)
           : (existing === "BOOKING" ? 13 : 0) + (requested === "BOOKING" ? 7 : 0)) - (inside ? 1 : 0);
       const from = earlier
-        ? Date.parse(stored.start) - (separation + 60) * 60000
-        : Date.parse(stored.end) + separation * 60000;
+        ? stored.start.epochMilliseconds - (separation + 60) * 60000
+        : stored.end.epochMilliseconds + separation * 60000;
       const intervals = rowAvailabilityIntervals(
         row({
           eventKind: requested,

@@ -6,7 +6,7 @@ import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAva
 import type { BookingEventKind } from "@/modules/common/api/v2/generated/models/bookingEventKind";
 import { epochMillisecondsOf } from "@/modules/common/time/instant";
 
-function sameInstant(left: string, right: string): boolean {
+function sameInstant(left: string, right: Temporal.Instant): boolean {
   try {
     return Temporal.Instant.compare(left, right) === 0;
   } catch {
@@ -26,7 +26,7 @@ export function useBookingDraftAvailability({
   displayTimezone: string;
 
   eventKind: BookingEventKind;
-  originalWindow?: { start: string; end: string };
+  originalWindow?: { start: Temporal.Instant; end: Temporal.Instant };
   excludedBookingId?: number;
 }) {
   const target = formState?.target;

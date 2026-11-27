@@ -66,7 +66,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
                   displayTimeZone={timezone}
                   instrumentTimeZone={row.timezone}
                 >
-                  <time dateTime={row.start} className="whitespace-normal">
+                  <time dateTime={row.start.toString()} className="whitespace-normal">
                     {formatBookingPeriod(row.start, row.end, timezone, undefined, timeFormat)}
                   </time>
                 </BookingInstrumentTimeTooltip>

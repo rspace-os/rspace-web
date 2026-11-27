@@ -2,12 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { CalendarSubscriptionPopover } from "@/modules/booking/pages/bookable-items/CalendarSubscriptionPopover";
 import { getGetBookingCalendarSubscriptionQueryOptions } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
-import type { BookingCalendarSubscriptionStatus } from "@/modules/common/api/v2/generated/models/bookingCalendarSubscriptionStatus";
 import { getListMyBookableItemCalendarSubscriptionsQueryKey } from "@/modules/common/api/v2/generated/users/users";
+import type { BookingCalendarSubscriptionStatusSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
 
 // Exercise generated invalidation together with its real cache-owning popover.
 it.each(["create", "rotate", "revoke"] as const)(
@@ -21,7 +22,7 @@ it.each(["create", "rotate", "revoke"] as const)(
     let gets = 0;
     const url = () => `https://rspace.example/public/booking/calendars/feed.ics?token=${String(version).repeat(43)}`;
     const response = () =>
-      HttpResponse.json<BookingCalendarSubscriptionStatus>(
+      HttpResponse.json<v.InferInput<typeof BookingCalendarSubscriptionStatusSchema>>(
         { active, updatedAt: active ? "2026-08-27T12:00:00.000Z" : null, subscriptionUrl: active ? url() : null },
         { headers: { ETag: `"${version}"` } },
       );

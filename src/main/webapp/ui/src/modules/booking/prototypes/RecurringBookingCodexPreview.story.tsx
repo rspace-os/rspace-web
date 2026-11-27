@@ -1,6 +1,7 @@
 // PROTOTYPE ONLY. Three Storybook concepts for the proposed recurring-booking flow.
 /* biome-ignore-all lint/style/noJsxLiterals: throwaway Storybook copy is intentionally not entering the translation catalog. */
 
+import { Temporal } from "@js-temporal/polyfill";
 import { AlertTriangleIcon, CheckIcon, InfoIcon, Repeat2Icon } from "lucide-react";
 import { HttpResponse, http } from "msw";
 
@@ -54,8 +55,8 @@ function scheduleBookingFixture(
     version: 1,
     target: bookingTarget(item),
     timezone: item.timezone,
-    start,
-    end,
+    start: Temporal.Instant.from(start),
+    end: Temporal.Instant.from(end),
     state: "CONFIRMED",
     kind,
     privacy: "full",
@@ -65,8 +66,8 @@ function scheduleBookingFixture(
     createdBy: "Ada Lovelace",
     canEdit: false,
     canCancel: false,
-    createdAt: start,
-    updatedAt: start,
+    createdAt: Temporal.Instant.from(start),
+    updatedAt: Temporal.Instant.from(start),
   };
 }
 
@@ -84,8 +85,8 @@ function dayScheduleForRequest(request: Request): Booking[] {
   return dayScheduleFixtures.filter(
     (booking) =>
       globalIds.includes(booking.target.globalId) &&
-      (!before || Date.parse(booking.start) < Date.parse(before)) &&
-      (!after || Date.parse(booking.end) > Date.parse(after)),
+      (!before || Temporal.Instant.compare(booking.start, before) < 0) &&
+      (!after || Temporal.Instant.compare(booking.end, after) > 0),
   );
 }
 
@@ -413,8 +414,8 @@ function OccurrenceTable({
               >
                 <time dateTime={row.startInstant}>
                   {formatBookingAgendaTimeRange(
-                    row.startInstant,
-                    row.endInstant,
+                    Temporal.Instant.from(row.startInstant),
+                    Temporal.Instant.from(row.endInstant),
                     displayTimezone,
                     i18n.resolvedLanguage ?? i18n.language,
                     timeFormat,

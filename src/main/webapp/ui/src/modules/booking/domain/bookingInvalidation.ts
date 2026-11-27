@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { InvalidateOptions, QueryClient } from "@tanstack/react-query";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import {
@@ -8,7 +9,13 @@ import {
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
 import { getSearchBookingConfigurationTargetsQueryKey } from "@/modules/common/api/v2/generated/booking-configuration-targets/booking-configuration-targets";
 
-const window = { start: "1970-01-01T00:00:00Z", end: "1970-01-02T00:00:00Z", mine: false, page: 1, limit: 1 };
+const window = {
+  start: Temporal.Instant.from("1970-01-01T00:00:00Z"),
+  end: Temporal.Instant.from("1970-01-02T00:00:00Z"),
+  mine: false,
+  page: 1,
+  limit: 1,
+};
 const operationPaths = {
   targets: getSearchBookingConfigurationTargetsQueryKey({})[0],
   catalogue: getSearchBookingCatalogueQueryKey({ mine: false, page: 1, limit: 1 })[0],

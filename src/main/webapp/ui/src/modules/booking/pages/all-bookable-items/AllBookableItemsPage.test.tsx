@@ -2,9 +2,9 @@ import { getSearchBookingCatalogueQueryKey } from "@/modules/common/api/v2/gener
 import { getGetBookingCalendarSubscriptionQueryKey } from "@/modules/common/api/v2/generated/booking-configurations/booking-configurations";
 import { getListBookingsQueryKey } from "@/modules/common/api/v2/generated/bookings/bookings";
 import type { ApiV2Problem } from "@/modules/common/api/v2/generated/models/apiV2Problem";
-import type { BookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
+import type { BookingConfigurationsRead as DecodedBookingConfigurationsRead } from "@/modules/common/api/v2/generated/models/bookingConfigurationsRead";
 import type { BookingConfigurationTargetDirectoryDocument } from "@/modules/common/api/v2/generated/models/bookingConfigurationTargetDirectoryDocument";
-import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { ListBookingConfigurations200 as DecodedListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -22,6 +22,7 @@ import { HttpResponse, http } from "msw";
 import { type ComponentType, type ReactNode, Suspense, useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
@@ -46,6 +47,10 @@ import {
   ownerBookingAccess,
 } from "../bookable-items/mocks/bookableItemsMocks";
 import { mutateBookableItems } from "../bookable-items/mutateBookableItems";
+
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
+type BookingConfigurationsRead = ApiV2Wire<DecodedBookingConfigurationsRead>;
+type ListBookingConfigurations200 = ApiV2Wire<DecodedListBookingConfigurations200>;
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 

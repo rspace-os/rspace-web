@@ -129,8 +129,8 @@ export function shiftDate(date: string, view: CalendarView, delta: number): stri
 export function occursOn(event: BookingListDocument, date: string, timezone: string): boolean {
   const bounds = zonedDayBounds(date, timezone);
   return (
-    epochMillisecondsOf(event.start) < epochMillisecondsOf(bounds.end) &&
-    epochMillisecondsOf(event.end) > epochMillisecondsOf(bounds.start)
+    event.start.epochMilliseconds < epochMillisecondsOf(bounds.end) &&
+    event.end.epochMilliseconds > epochMillisecondsOf(bounds.start)
   );
 }
 
@@ -142,7 +142,7 @@ export function eventsOn(
 ) {
   return events
     .filter((event) => occursOn(editors?.get(event.id) ?? event, date, timezone))
-    .toSorted((left, right) => left.start.localeCompare(right.start));
+    .toSorted((left, right) => Temporal.Instant.compare(left.start, right.start));
 }
 
 export function timelineEditorPositions(

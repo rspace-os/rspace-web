@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import type { BookingAgendaProps } from "@/modules/booking/components/BookingAgenda";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -45,8 +46,8 @@ function booking(
           globalId: `IC${id + 200}`,
         }
       : null,
-    start,
-    end,
+    start: Temporal.Instant.from(start),
+    end: Temporal.Instant.from(end),
     privacy,
     purpose,
   });

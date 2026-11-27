@@ -1,5 +1,6 @@
 // PROTOTYPE ONLY. Explore a production booking form beside a calendar day view.
 /* biome-ignore-all lint/style/noJsxLiterals: throwaway prototype copy is intentionally not entering the translation catalog. */
+import { Temporal } from "@js-temporal/polyfill";
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { AlertTriangleIcon, InfoIcon } from "lucide-react";
 import * as React from "react";
@@ -112,8 +113,8 @@ const editBooking: EditableBooking = {
     value: { id: item.targetId, name: item.name, deleted: false },
   },
   timezone: TIMEZONE,
-  start: "2026-08-17T07:30:00Z",
-  end: "2026-08-17T08:30:00Z",
+  start: Temporal.Instant.from("2026-08-17T07:30:00Z"),
+  end: Temporal.Instant.from("2026-08-17T08:30:00Z"),
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
@@ -123,8 +124,8 @@ const editBooking: EditableBooking = {
   createdBy: "You",
   canEdit: true,
   canCancel: true,
-  createdAt: "2026-08-01T09:00:00Z",
-  updatedAt: "2026-08-01T09:00:00Z",
+  createdAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+  updatedAt: Temporal.Instant.from("2026-08-01T09:00:00Z"),
 };
 
 function minutesFromDraft(draft: BookingWindowDraft) {

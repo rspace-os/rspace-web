@@ -22,6 +22,7 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 import { queryOptions as queryOptionsBuilder, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { instantToWire } from "@/modules/common/time/instant";
 import type { ErrorType } from "../../apiV2Fetch.ts";
 
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
@@ -53,10 +54,23 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export const getSearchCalendarEventsUrl = (params: SearchCalendarEventsParams) => {
+  const encodedParams = { ...params };
+  if (encodedParams.start != null) {
+    encodedParams.start =
+      typeof encodedParams.start === "string"
+        ? encodedParams.start
+        : (instantToWire(encodedParams.start) as unknown as typeof encodedParams.start);
+  }
+  if (encodedParams.end != null) {
+    encodedParams.end =
+      typeof encodedParams.end === "string"
+        ? encodedParams.end
+        : (instantToWire(encodedParams.end) as unknown as typeof encodedParams.end);
+  }
   const normalizedParams = new URLSearchParams();
   const deepObjectEntries: string[] = [];
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+  Object.entries(encodedParams).forEach(([key, value]) => {
     const deepObjectParameters = ["fields", "exclude"];
 
     if (typeof value === "object" && value !== null && !Array.isArray(value) && deepObjectParameters.includes(key)) {

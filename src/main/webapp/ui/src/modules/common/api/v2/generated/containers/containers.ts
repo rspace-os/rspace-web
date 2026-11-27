@@ -22,6 +22,7 @@ import type {
   UseSuspenseQueryResult,
 } from "@tanstack/react-query";
 import { queryOptions as queryOptionsBuilder, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { instantToWire } from "@/modules/common/time/instant";
 import type { ErrorType } from "../../apiV2Fetch.ts";
 
 import { apiV2Fetch } from "../../apiV2Fetch.ts";
@@ -1110,9 +1111,22 @@ export function useGetContainerSuspense<
 }
 
 export const getListContainerAuditEventsUrl = (id: number, params?: ListContainerAuditEventsParams) => {
+  const encodedParams = { ...params };
+  if (encodedParams.start != null) {
+    encodedParams.start =
+      typeof encodedParams.start === "string"
+        ? encodedParams.start
+        : (instantToWire(encodedParams.start) as unknown as typeof encodedParams.start);
+  }
+  if (encodedParams.end != null) {
+    encodedParams.end =
+      typeof encodedParams.end === "string"
+        ? encodedParams.end
+        : (instantToWire(encodedParams.end) as unknown as typeof encodedParams.end);
+  }
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([key, value]) => {
+  Object.entries(encodedParams).forEach(([key, value]) => {
     const explodeParameters = ["actions"];
 
     if (Array.isArray(value) && explodeParameters.includes(key)) {

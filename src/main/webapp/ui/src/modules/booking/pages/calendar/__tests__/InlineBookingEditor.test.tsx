@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { getGetMyBookingPreferencesQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient } from "@tanstack/react-query";
@@ -22,8 +23,8 @@ function editableEvent(kind: "BOOKING" | "MAINTENANCE"): BookingListDocument & E
     id: 41,
     target: bookingTarget(123, "Confocal microscope"),
     kind,
-    start: "2030-10-07T10:00:00Z",
-    end: "2030-10-07T11:00:00Z",
+    start: Temporal.Instant.from("2030-10-07T10:00:00Z"),
+    end: Temporal.Instant.from("2030-10-07T11:00:00Z"),
     purpose: "Self event details",
     cancellationReason: null,
     privacy: "full",

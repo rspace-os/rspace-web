@@ -86,13 +86,13 @@ export function validateAuditDateRange(range: AuditDateRange): AuditDateValidati
   return { valid: true, range, dates: { from, to } };
 }
 
-export function auditRangeToQuery(range: AuditDateRange): { start: string; end: string } {
+export function auditRangeToQuery(range: AuditDateRange): { start: Temporal.Instant; end: Temporal.Instant } {
   const validation = validateAuditDateRange(range);
   if (!validation.valid) throw new RangeError("Invalid audit date range");
   const { from, to } = validation.dates;
   return {
-    start: instantToWire(from.toZonedDateTime("UTC").toInstant()),
-    end: instantToWire(to.add({ days: 1 }).toZonedDateTime("UTC").toInstant()),
+    start: from.toZonedDateTime("UTC").toInstant(),
+    end: to.add({ days: 1 }).toZonedDateTime("UTC").toInstant(),
   };
 }
 

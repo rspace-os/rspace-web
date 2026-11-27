@@ -96,7 +96,11 @@ function offsetLabel(epochNanoseconds: bigint, timezone: string): string {
  * transition exactly at the end counts because it changes the end's displayed local time; equal offsets at both
  * endpoints do not hide two changes in between.
  */
-export function clockChangeCrossing(start: string, end: string, timezone: string): ClockChangeCrossing | undefined {
+export function clockChangeCrossing(
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
+  timezone: string,
+): ClockChangeCrossing | undefined {
   try {
     const startInstant = Temporal.Instant.from(start);
     const endInstant = Temporal.Instant.from(end);

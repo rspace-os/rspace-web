@@ -146,14 +146,14 @@ export function currentWallClock(
   };
 }
 
-export function instantToWallClockMinute(instant: string, date: string, timezone: string): number {
+export function instantToWallClockMinute(instant: Temporal.Instant | string, date: string, timezone: string): number {
   const wallClock = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).toPlainDateTime();
   const midnight = parsePlainDate(date).toPlainDateTime("00:00");
   return Number(wallClock.since(midnight, { largestUnit: "day" }).total("minutes"));
 }
 
 /** Timeline coordinates are elapsed minutes, so both occurrences of a repeated hour have space. */
-export function instantToDayMinute(instant: string, date: string, timezone: string): number {
+export function instantToDayMinute(instant: Temporal.Instant | string, date: string, timezone: string): number {
   return Temporal.Instant.from(instant).since(zonedDayBounds(date, timezone).start).total("minutes");
 }
 
@@ -175,8 +175,8 @@ export function wallClockToDayMinute(date: string, timezone: string, minute: num
 }
 
 export function sliceAcrossZonedDay(
-  start: string,
-  end: string,
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
   date: string,
   timezone: string,
 ): { startMinute: number; endMinute: number } {
@@ -203,8 +203,12 @@ export function resolveWallClock(date: string, time: string, timezone: string): 
   };
 }
 
-export function wallClockDraftFromInstants(start: string, end: string, timezone: string): BookingWindowDraft {
-  const endpoint = (instant: string) => {
+export function wallClockDraftFromInstants(
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
+  timezone: string,
+): BookingWindowDraft {
+  const endpoint = (instant: Temporal.Instant | string) => {
     const zoned = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone);
     const date = zoned.toPlainDate().toString();
     const time = `${String(zoned.hour).padStart(2, "0")}:${String(zoned.minute).padStart(2, "0")}`;
@@ -230,7 +234,7 @@ export function wallClockDraftFromInstants(start: string, end: string, timezone:
 }
 
 /** One instant as its wall-clock date, time and repeated-hour occurrence in `timezone`. */
-export function wallClockEndpointFromInstant(instant: string, timezone: string) {
+export function wallClockEndpointFromInstant(instant: Temporal.Instant | string, timezone: string) {
   const draft = wallClockDraftFromInstants(instant, instant, timezone);
   return { date: draft.startDate, time: draft.startTime, occurrence: draft.startOccurrence };
 }
@@ -357,7 +361,7 @@ export function clockChangeOffsetLabel(time: Temporal.ZonedDateTime, day = time.
   return ` ${time.offset}`;
 }
 
-function zonedDateTime(value: string, timeZone: string): Temporal.ZonedDateTime {
+function zonedDateTime(value: Temporal.Instant | string, timeZone: string): Temporal.ZonedDateTime {
   return Temporal.Instant.from(value).toZonedDateTimeISO(timeZone);
 }
 
@@ -380,7 +384,7 @@ function dateTimeFormatter(
  * names follow the app language unless `locale` is given.
  */
 export function formatBookingDateTime(
-  value: string,
+  value: Temporal.Instant | string,
   timeZone: string,
   locale: string | undefined = undefined,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
@@ -404,8 +408,8 @@ export function formatBookingDateTime(
  * once for same-day ranges; clock-change offsets remain on both endpoints.
  */
 export function formatBookingPeriod(
-  start: string,
-  end: string,
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
   timezone: string,
   displayLocale: string | undefined = undefined,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
@@ -441,8 +445,8 @@ export function formatInstantRange(formatter: Intl.DateTimeFormat, start: number
 }
 
 export function formatAgendaPeriod(
-  start: string,
-  end: string,
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
   timezone: string,
   locale: string | undefined = undefined,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
@@ -482,13 +486,18 @@ export function formatAgendaPeriod(
   return formatInstantRange(withOffset, startMilliseconds, endMilliseconds);
 }
 
-export function bookingAddedNoticeValues(start: string, end: string, timeZone: string, timeFormat: BookingTimeFormat) {
+export function bookingAddedNoticeValues(
+  start: Temporal.Instant,
+  end: Temporal.Instant,
+  timeZone: string,
+  timeFormat: BookingTimeFormat,
+) {
   const locale = bookingDisplayLocale(timeFormat);
   const clock = bookingDateTimeFormatter(locale, { timeZone, hour: "numeric", minute: "2-digit" });
-  const startMilliseconds = Temporal.Instant.from(start).epochMilliseconds;
+  const startMilliseconds = start.epochMilliseconds;
   return {
     date: bookingDateTimeFormatter(locale, { timeZone, dateStyle: "medium" }).format(startMilliseconds),
     start: clock.format(startMilliseconds),
-    end: clock.format(Temporal.Instant.from(end).epochMilliseconds),
+    end: clock.format(end.epochMilliseconds),
   };
 }

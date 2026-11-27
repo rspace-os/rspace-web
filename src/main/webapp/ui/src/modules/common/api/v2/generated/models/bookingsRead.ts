@@ -6,6 +6,8 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.
  * OpenAPI spec version: 2.0.0
  */
+
+import type { Temporal } from "@js-temporal/polyfill";
 import type { BookingEventKind } from "./bookingEventKind.ts";
 import type { BookingState } from "./bookingState.ts";
 import type { BookingsReadTargetCustomFields } from "./bookingsReadTargetCustomFields.ts";
@@ -24,10 +26,10 @@ export interface BookingsRead {
    * @nullable
    */
   cancellationReason?: string | null;
-  readonly createdAt?: string;
+  readonly createdAt?: Temporal.Instant;
   /** @nullable */
   readonly createdBy?: string | null;
-  end?: string;
+  end?: Temporal.Instant;
   readonly id: number;
   kind?: BookingEventKind;
   /** The bookable item's immediate Inventory parent Container or workbench, rendered and matched only where the caller may read it; otherwise null. Address a workbench as IC plus its ID. */
@@ -40,7 +42,7 @@ export interface BookingsRead {
   purpose?: string | null;
   /** The user who requested this event, when the event is visible in full detail. */
   readonly requester?: UsersRelationship | null;
-  start?: string;
+  start?: Temporal.Instant;
   state?: BookingState;
   target?: InstrumentsRelationship | null;
   "target.customFields"?: BookingsReadTargetCustomFields;
@@ -49,6 +51,6 @@ export interface BookingsRead {
    * @nullable
    */
   readonly timezone?: string | null;
-  readonly updatedAt?: string;
+  readonly updatedAt?: Temporal.Instant;
   readonly version?: number;
 }

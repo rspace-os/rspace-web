@@ -6,10 +6,11 @@
  * Generated contract for RSpace REST API v2. Resource operations and schemas are derived from the same definitions used at runtime. A requested field may be omitted when the caller is not allowed to read it. Clients must ignore response fields they do not recognise. A field that becomes newly restricted is recorded in the API changelog.
  * OpenAPI spec version: 2.0.0
  */
+import type { Temporal } from "@js-temporal/polyfill";
 
 export interface MaintenancesUpdate {
   /** End of the maintenance window. */
-  endDate?: string;
+  endDate?: Temporal.Instant;
   /**
    * User-facing maintenance message.
    * @maxLength 255
@@ -17,10 +18,10 @@ export interface MaintenancesUpdate {
    */
   message?: string | null;
   /** Beginning of the maintenance window. */
-  startDate?: string;
+  startDate?: Temporal.Instant;
   /**
    * Time after which ordinary users can no longer log in. A value must be before the end, and at or before the start or, while the window has not ended, at or before the time of the change. Omitted on create, it defaults to ten minutes before the start; null makes the start the cutoff. A patch is validated against the whole resulting window.
    * @nullable
    */
-  stopUserLoginDate?: string | null;
+  stopUserLoginDate?: Temporal.Instant | null;
 }

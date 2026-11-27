@@ -80,8 +80,8 @@ const editBooking: EditableBooking = {
     value: { id: 54, name: tokyo.name, deleted: false },
   },
   timezone: tokyo.timezone,
-  start: editInterval.start,
-  end: editInterval.end,
+  start: Temporal.Instant.from(editInterval.start),
+  end: Temporal.Instant.from(editInterval.end),
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
@@ -91,8 +91,8 @@ const editBooking: EditableBooking = {
   createdBy: "You",
   canEdit: true,
   canCancel: true,
-  createdAt: "2026-09-01T09:00:00Z",
-  updatedAt: "2026-09-01T09:00:00Z",
+  createdAt: Temporal.Instant.from("2026-09-01T09:00:00Z"),
+  updatedAt: Temporal.Instant.from("2026-09-01T09:00:00Z"),
 };
 
 const formProps = { pending: false, onSubmit: () => Promise.resolve() };

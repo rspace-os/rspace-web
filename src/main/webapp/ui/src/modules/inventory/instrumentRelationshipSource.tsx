@@ -7,6 +7,7 @@ import type {
   listInstruments,
 } from "@/modules/common/api/v2/generated/instruments/instruments";
 import { InstrumentsReadSchema } from "@/modules/common/api/v2/generated/valibot/schemas";
+import { withoutDecoding } from "@/modules/common/api/v2/withDecoded";
 import {
   databaseIdFromGlobalId,
   type RelationshipOptionContext,
@@ -17,7 +18,7 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { isNonEmpty } from "@/util/ArrayUtils";
 
 function instrumentDocument(document: unknown) {
-  const instrument = v.parse(InstrumentsReadSchema, document);
+  const instrument = v.parse(withoutDecoding(InstrumentsReadSchema), document);
   if (instrument.name === undefined || instrument.globalId === undefined) {
     throw new Error("Relationship option response contains an incomplete instrument");
   }

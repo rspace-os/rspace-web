@@ -11,8 +11,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
-  start?: string;
-  end?: string;
+  start?: Temporal.Instant | string;
+  end?: Temporal.Instant | string;
   /** Already formatted instrument-local text, for values that are not instants, such as weekly opening hours. */
   time?: string;
   displayTimeZone: string;

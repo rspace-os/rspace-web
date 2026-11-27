@@ -26,33 +26,33 @@ describe("dashboard booking data", () => {
     const docs = [
       dashboardBookingFixture(5, 1, {
         ...testBookingOverrides,
-        start: "2026-08-01T12:00:00Z",
-        end: "2026-08-01T13:00:00Z",
+        start: Temporal.Instant.from("2026-08-01T12:00:00Z"),
+        end: Temporal.Instant.from("2026-08-01T13:00:00Z"),
       }),
       dashboardBookingFixture(2, 1, {
         ...testBookingOverrides,
-        start: "2026-08-01T09:00:00Z",
-        end: "2026-08-01T10:00:00Z",
+        start: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+        end: Temporal.Instant.from("2026-08-01T10:00:00Z"),
       }),
       dashboardBookingFixture(1, 1, {
         ...testBookingOverrides,
-        start: "2026-08-01T09:00:00Z",
-        end: "2026-08-01T10:00:00Z",
+        start: Temporal.Instant.from("2026-08-01T09:00:00Z"),
+        end: Temporal.Instant.from("2026-08-01T10:00:00Z"),
       }),
       dashboardBookingFixture(3, 1, {
         ...testBookingOverrides,
-        start: "2026-08-01T10:00:00Z",
-        end: "2026-08-01T11:00:00Z",
+        start: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+        end: Temporal.Instant.from("2026-08-01T11:00:00Z"),
       }),
       dashboardBookingFixture(4, 1, {
         ...testBookingOverrides,
-        start: "2026-08-01T11:00:00Z",
-        end: "2026-08-01T12:00:00Z",
+        start: Temporal.Instant.from("2026-08-01T11:00:00Z"),
+        end: Temporal.Instant.from("2026-08-01T12:00:00Z"),
       }),
       dashboardBookingFixture(6, 1, {
         ...testBookingOverrides,
-        start: "2026-08-01T13:00:00Z",
-        end: "2026-08-01T14:00:00Z",
+        start: Temporal.Instant.from("2026-08-01T13:00:00Z"),
+        end: Temporal.Instant.from("2026-08-01T14:00:00Z"),
       }),
     ];
     server.use(
@@ -69,7 +69,7 @@ describe("dashboard booking data", () => {
         asOf: "2026-08-01T08:00:00Z",
       }),
     ).resolves.toEqual(
-      docs.slice(0, 5).sort((left, right) => left.start.localeCompare(right.start) || left.id - right.id),
+      docs.slice(0, 5).sort((left, right) => Temporal.Instant.compare(left.start, right.start) || left.id - right.id),
     );
 
     expect(requests).toHaveLength(1);
@@ -85,18 +85,18 @@ describe("dashboard booking data", () => {
   it("loads monthly pages, deduplicates IDs, and sorts by start then ID", async () => {
     const first = dashboardBookingFixture(2, 2, {
       ...testBookingOverrides,
-      start: "2026-08-02T10:00:00Z",
-      end: "2026-08-02T11:00:00Z",
+      start: Temporal.Instant.from("2026-08-02T10:00:00Z"),
+      end: Temporal.Instant.from("2026-08-02T11:00:00Z"),
     });
     const duplicate = dashboardBookingFixture(2, 2, {
       ...testBookingOverrides,
-      start: "2026-08-02T10:00:00Z",
-      end: "2026-08-02T11:00:00Z",
+      start: Temporal.Instant.from("2026-08-02T10:00:00Z"),
+      end: Temporal.Instant.from("2026-08-02T11:00:00Z"),
     });
     const second = dashboardBookingFixture(1, 1, {
       ...testBookingOverrides,
-      start: "2026-08-01T10:00:00Z",
-      end: "2026-08-01T11:00:00Z",
+      start: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+      end: Temporal.Instant.from("2026-08-01T11:00:00Z"),
     });
     const requests: URL[] = [];
     server.use(
@@ -205,8 +205,8 @@ describe("dashboard booking data", () => {
             [
               dashboardBookingFixture(1, 1, {
                 ...testBookingOverrides,
-                start: "2026-08-01T10:00:00Z",
-                end: "2026-08-01T11:00:00Z",
+                start: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+                end: Temporal.Instant.from("2026-08-01T11:00:00Z"),
               }),
             ],
             { page: 0, hasNextPage: true },
@@ -231,8 +231,8 @@ describe("dashboard booking data", () => {
             [
               dashboardBookingFixture(1, 1, {
                 ...testBookingOverrides,
-                start: "2026-08-01T10:00:00Z",
-                end: "2026-08-01T11:00:00Z",
+                start: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+                end: Temporal.Instant.from("2026-08-01T11:00:00Z"),
               }),
             ],
             { page: 3, hasNextPage: true },
@@ -257,8 +257,8 @@ describe("dashboard booking data", () => {
                 [
                   dashboardBookingFixture(1, 1, {
                     ...testBookingOverrides,
-                    start: "2026-08-01T10:00:00Z",
-                    end: "2026-08-01T11:00:00Z",
+                    start: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+                    end: Temporal.Instant.from("2026-08-01T11:00:00Z"),
                   }),
                 ],
                 { page: 1, hasNextPage: true },
@@ -291,8 +291,8 @@ describe("dashboard booking data", () => {
         [
           dashboardBookingFixture(1, 1, {
             ...testBookingOverrides,
-            start: "2026-08-01T10:00:00Z",
-            end: "2026-08-01T11:00:00Z",
+            start: Temporal.Instant.from("2026-08-01T10:00:00Z"),
+            end: Temporal.Instant.from("2026-08-01T11:00:00Z"),
           }),
         ],
         1,
@@ -342,13 +342,13 @@ describe("dashboard booking data", () => {
 
     const overnight = dashboardBookingFixture(1, 28, {
       ...testBookingOverrides,
-      start: "2026-03-28T23:00:00Z",
-      end: "2026-03-30T23:00:00Z",
+      start: Temporal.Instant.from("2026-03-28T23:00:00Z"),
+      end: Temporal.Instant.from("2026-03-30T23:00:00Z"),
     });
     const endsAtMidnight = dashboardBookingFixture(2, 29, {
       ...testBookingOverrides,
-      start: "2026-03-29T08:00:00Z",
-      end: "2026-03-29T22:00:00Z",
+      start: Temporal.Instant.from("2026-03-29T08:00:00Z"),
+      end: Temporal.Instant.from("2026-03-29T22:00:00Z"),
     });
     const grouped = groupDashboardBookingsByDay(
       [overnight, endsAtMidnight],
@@ -362,8 +362,8 @@ describe("dashboard booking data", () => {
 
 it("continues after a removed row using the exact serialized start and id", async () => {
   const start = "2026-08-02T10:00:00.123456Z";
-  const first = dashboardBookingFixture(2, 2, { ...testBookingOverrides, start });
-  const remaining = dashboardBookingFixture(3, 2, { ...testBookingOverrides, start });
+  const first = dashboardBookingFixture(2, 2, { ...testBookingOverrides, start: Temporal.Instant.from(start) });
+  const remaining = dashboardBookingFixture(3, 2, { ...testBookingOverrides, start: Temporal.Instant.from(start) });
   let requests = 0;
   server.use(
     http.get("/api/v2/bookings", ({ request }) => {

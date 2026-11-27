@@ -1,11 +1,15 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
+import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import {
   getCountBookingCatalogueAvailabilityQueryKey,
   getSearchBookingCatalogueQueryKey,
 } from "@/modules/common/api/v2/generated/booking-catalogue/booking-catalogue";
-import type { ListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
+import type { ListBookingConfigurations200 as DecodedListBookingConfigurations200 } from "@/modules/common/api/v2/generated/models/listBookingConfigurations200";
 import { getListUsersQueryKey } from "@/modules/common/api/v2/generated/users/users";
 import appI18n from "@/modules/common/i18n";
+
+/** Response bodies as JSON carries them, before the transport decodes their date-times. */
+type ListBookingConfigurations200 = ApiV2Wire<DecodedListBookingConfigurations200>;
 
 beforeBookingCatalog(async () => {
   appI18n.addResourceBundle(

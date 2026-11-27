@@ -29,7 +29,7 @@ export function BookingMetadataAside({
         <div>
           <dt className="text-muted-foreground">{t("bookings.details.created")}</dt>
           <dd>
-            <time dateTime={booking.createdAt}>
+            <time dateTime={booking.createdAt.toString()}>
               {formatBookingDateTime(booking.createdAt, displayTimeZone, undefined, timeFormat)}
             </time>
           </dd>
@@ -37,7 +37,7 @@ export function BookingMetadataAside({
         <div>
           <dt className="text-muted-foreground">{t("bookings.details.lastUpdated")}</dt>
           <dd>
-            <time dateTime={booking.updatedAt}>
+            <time dateTime={booking.updatedAt.toString()}>
               {formatBookingDateTime(booking.updatedAt, displayTimeZone, undefined, timeFormat)}
             </time>
           </dd>

@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { getSearchCalendarEventsQueryKey } from "@/modules/common/api/v2/generated/booking-calendar/booking-calendar";
 import "@/__tests__/__mocks__/matchMedia";
 import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
@@ -245,8 +246,8 @@ describe("CalendarPage", () => {
     const multiDayBooking: BookingListDocument = {
       ...ownBooking,
       id: 72,
-      start: "2026-08-19T12:00:00Z",
-      end: "2026-08-21T12:00:00Z",
+      start: Temporal.Instant.from("2026-08-19T12:00:00Z"),
+      end: Temporal.Instant.from("2026-08-21T12:00:00Z"),
     };
     server.use(
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([multiDayBooking]))),
@@ -260,7 +261,7 @@ describe("CalendarPage", () => {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).formatToParts(new Date(multiDayBooking.start));
+    }).formatToParts(multiDayBooking.start.epochMilliseconds);
     const part = (type: "year" | "month" | "day") => dateParts.find((datePart) => datePart.type === type)?.value;
     const startDate = `${part("year")}-${part("month")}-${part("day")}`;
     const eventTriggers = await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ });
@@ -817,7 +818,7 @@ describe("CalendarPage", () => {
     };
     const showCalendarWith = async (booking: BookingListDocument) => {
       server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))));
-      await renderCalendar(`/booking/calendar?date=${booking.start.slice(0, 10)}`);
+      await renderCalendar(`/booking/calendar?date=${booking.start.toString().slice(0, 10)}`);
       await chooseView(userEvent.setup(), "Time grid");
       await userEvent.setup().click(await screen.findByRole("button", { name: /^Show details for/ }));
     };

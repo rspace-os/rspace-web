@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
 import { calendarEventFocusHref } from "../calendarEventFocus";
 
@@ -5,7 +6,7 @@ describe("calendarEventFocusHref", () => {
   it("uses the saved start date in the display timezone and clears calendar filters", () => {
     const href = calendarEventFocusHref({
       id: 41,
-      start: "2026-08-17T22:30:00Z",
+      start: Temporal.Instant.from("2026-08-17T22:30:00Z"),
       targetGlobalId: "IN123",
       timeZone: "Europe/Berlin",
       searchStr:
@@ -29,7 +30,7 @@ describe("calendarEventFocusHref", () => {
   it("creates a new marker for repeated focus requests", () => {
     const args = {
       id: 41,
-      start: "2026-08-17T22:30:00Z",
+      start: Temporal.Instant.from("2026-08-17T22:30:00Z"),
       targetGlobalId: "IN123",
       timeZone: "Europe/Berlin",
       searchStr: "layout=agenda&view=week",

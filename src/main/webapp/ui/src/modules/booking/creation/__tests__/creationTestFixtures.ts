@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { ALL_ISO_WEEKDAYS, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
@@ -147,8 +148,8 @@ export const editableBooking = {
     value: { id: 123, name: "Confocal microscope", deleted: false },
   },
   timezone: "Europe/Berlin",
-  start: "2026-10-25T01:30:00Z",
-  end: "2026-10-25T02:30:00Z",
+  start: Temporal.Instant.from("2026-10-25T01:30:00Z"),
+  end: Temporal.Instant.from("2026-10-25T02:30:00Z"),
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
@@ -157,8 +158,8 @@ export const editableBooking = {
   bookedBy: "Ada Lovelace",
   canEdit: true,
   canCancel: true,
-  createdAt: "2026-08-12T10:00:00Z",
-  updatedAt: "2026-08-12T10:00:00Z",
+  createdAt: Temporal.Instant.from("2026-08-12T10:00:00Z"),
+  updatedAt: Temporal.Instant.from("2026-08-12T10:00:00Z"),
 } satisfies EditableBooking;
 
 export function configuration(id: number, name: string): CreationTestOption {
