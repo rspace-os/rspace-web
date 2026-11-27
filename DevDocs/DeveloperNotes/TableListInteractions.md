@@ -60,9 +60,9 @@ new alerts. Focus rules:
 | 2. | Dismissing a focused alert focuses the next alert, or the table's Filters control (else its search) when none is left. A programmatic `dismiss` leaves focus where it is. |
 | 3. | Undo disables the alert's buttons while it runs. On success the alert goes and focus moves to the first control of `focusRowId`'s row once that row is shown again (after about five seconds, to Filters). On failure the alert stays, shows `describeError`'s text (or a generic message) without Undo, and takes focus. |
 
-Row-action cells carry `data-table-list-row-actions` with the row ID for this lookup. `getRowId`
-from `useTableList` is stable, and TableList reads a caller's `getRowId` through a ref: a new
-identity would rebuild the columns and re-mount every row's cells, closing open menus and dialogs.
+Row-action cells carry `data-table-list-row-actions` with the row ID for this lookup. A UI column's
+`renderCell` receives the row ID the table already computed, so a caller's inline `getRowId` does not
+rebuild the columns and re-mount every row's cells, which would close open menus and dialogs.
 
 An owner callback outside the `TableList` context can use its imperative alert ref:
 
@@ -228,9 +228,7 @@ assume it renders one table: the control panel IDs are unique per table, and und
 persisted table that shares either value with another mounted table logs a `console.error` naming
 both tables and the option to change.
 
-The table list and the relationship picker own no React effects (Biome rejects `useEffect`,
-`useLayoutEffect` and `useInsertionEffect` imports there): derive state during render, act in event
-handlers or ref callbacks, or use a library hook. Debounce with TanStack Pacer.
+Debounce with TanStack Pacer.
 
 ## Reorder and resize the view
 

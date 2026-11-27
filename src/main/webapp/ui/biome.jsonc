@@ -137,51 +137,6 @@
       }
     },
     {
-      // The table list and the relationship picker own no effects; libraries may. Repeats the override above.
-      // See DevDocs/DeveloperNotes/TableListInteractions.md.
-      "includes": ["src/modules/common/table-list/**", "src/modules/common/relationship-picker/**"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "paths": {
-                  "@/hooks/ui/useDebounce": "Debounce with TanStack Pacer (@tanstack/react-pacer).",
-                  "es-toolkit": {
-                    "importNames": ["debounce"],
-                    "message": "Debounce with TanStack Pacer (@tanstack/react-pacer)."
-                  },
-                  "es-toolkit/compat": {
-                    "importNames": ["debounce"],
-                    "message": "Debounce with TanStack Pacer (@tanstack/react-pacer)."
-                  },
-                  "es-toolkit/function": {
-                    "importNames": ["debounce"],
-                    "message": "Debounce with TanStack Pacer (@tanstack/react-pacer)."
-                  },
-                  "react": {
-                    "importNames": ["useEffect", "useLayoutEffect", "useInsertionEffect"],
-                    "message": "Derive during render, act in event handlers or ref callbacks, or use a library hook."
-                  }
-                },
-                "patterns": [
-                  {
-                    "group": ["@fortawesome/free-*", "!@fortawesome/free-*/*"],
-                    "message": "Import individual icons from a deep path, not the whole @fortawesome/free-* package (tree-shaking)."
-                  },
-                  {
-                    "group": ["@mui/material", "@mui/icons-material"],
-                    "message": "Import from the deep path (e.g. @mui/material/Button), not the @mui barrel package (tree-shaking)."
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    {
       // Bundle entries mount React at load; a component defined here breaks Fast Refresh and re-mounts on HMR.
       "includes": ["**/*Entrypoint.tsx"],
       "linter": {

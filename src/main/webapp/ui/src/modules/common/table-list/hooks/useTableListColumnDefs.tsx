@@ -115,7 +115,7 @@ export function useTableListColumnDefs<TDocument extends Record<string, unknown>
         columnHelper.display({
           id: column.id,
           header: () => column.label,
-          cell: ({ row }) => column.renderCell(row.original),
+          cell: ({ row }) => column.renderCell(row.original, row.id),
           size: column.width,
           minSize: column.minWidth,
           enableSorting: false,

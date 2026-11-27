@@ -2,10 +2,10 @@ import { Temporal } from "@js-temporal/polyfill";
 import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
+import type * as v from "valibot";
 import { expect, it, onTestFinished, vi } from "vitest";
-import type { ApiV2Wire } from "@/__tests__/helpers/apiV2Wire";
 import { server } from "@/__tests__/mswServer";
-import type { ListMaintenances200 } from "@/modules/common/api/v2/generated/models/listMaintenances200";
+import type { ListMaintenancesResponse } from "@/modules/common/api/v2/generated/valibot/native";
 import { useNextMaintenanceQuery } from "@/modules/common/app/queries/nextMaintenance";
 
 it("retains the maintenance notice during foreground polls and advances the cutoff", async () => {
@@ -29,7 +29,7 @@ it("retains the maintenance notice during foreground polls and advances the cuto
       filters.push(new URL(request.url).searchParams.get("where") ?? "");
       const startDate = filters.length === 1 ? firstStart : nextStart;
       if (filters.length > 1) await pendingPoll;
-      return HttpResponse.json<ApiV2Wire<ListMaintenances200>>({
+      return HttpResponse.json<v.InferInput<typeof ListMaintenancesResponse>>({
         docs: [{ id: 1, startDate }],
         page: 1,
         limit: 1,

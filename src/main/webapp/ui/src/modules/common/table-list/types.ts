@@ -167,7 +167,8 @@ export type TableListUiColumn<TDocument> = {
   /** Smallest user-selected column width in CSS pixels. */
   minWidth?: number;
   item?: TableListItemFieldLayout;
-  renderCell: (row: TDocument) => ReactNode;
+  /** `rowId` is the row's `getRowId` value. */
+  renderCell: (row: TDocument, rowId: string) => ReactNode;
 };
 
 export type TableListRowActions<TDocument> = Omit<TableListUiColumn<TDocument>, "renderCell"> & {

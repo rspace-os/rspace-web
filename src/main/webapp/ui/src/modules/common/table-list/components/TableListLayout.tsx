@@ -55,9 +55,6 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
   const [activeRowAction, setActiveRowAction] = useState<{ actionId: string; rowId: string } | null>(null);
   const rootRef = useRef<HTMLElement>(null);
   const controlPanelId = useId();
-  // Read through a ref so a caller's inline getRowId does not rebuild the columns (which re-mounts their cells).
-  const getRowIdRef = useRef(getRowId);
-  getRowIdRef.current = getRowId;
   const alerts = useTableListAlertsState({ root: rootRef });
   const { cancelWatchers } = alerts;
   useImperativeHandle(alertsRef, () => alerts.api, [alerts.api]);
@@ -93,12 +90,12 @@ export function TableListLayout<TDocument extends Record<string, unknown>>({
       {
         ...rowActions,
         item: { ...rowActions.item, placement: "footer" as const },
-        renderCell: (row: TDocument) => (
+        renderCell: (row: TDocument, rowId: string) => (
           // Lets an alert's undo return focus to the row it brings back.
-          <div data-table-list-row-actions={getRowIdRef.current(row)} className="contents">
+          <div data-table-list-row-actions={rowId} className="contents">
             {rowActions.renderCell({
               row,
-              activate: (actionId) => setActiveRowAction({ actionId, rowId: getRowIdRef.current(row) }),
+              activate: (actionId) => setActiveRowAction({ actionId, rowId }),
             })}
           </div>
         ),
