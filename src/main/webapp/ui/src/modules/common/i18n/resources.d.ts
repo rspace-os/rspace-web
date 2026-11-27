@@ -2115,6 +2115,7 @@ export default interface Resources {
     "pinnedVersion": {
       "invalid": "\"{version}\" is not a valid version number.",
       "notFound": "This item has no version {version}.",
+      "notInFolder": "This version could not be shown because the file is no longer in its folder.",
       "notice": "Displaying version {version} of this item - this is locked for editing.",
       "referencesAreItemLevel": "The linked documents and related inventory items below reference this item as a whole, not the version shown. RSpace does not record which version each reference was made against.",
       "viewLatest": "View the latest version"

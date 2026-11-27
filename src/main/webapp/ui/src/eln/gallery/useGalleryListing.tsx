@@ -968,6 +968,7 @@ export function useGalleryListing({
   sortOrder,
   orderBy,
   foldersOnly,
+  pageUntilIncluded,
 }: {
   /**
    * The location within the Gallery that this listing should show. A location
@@ -1004,6 +1005,13 @@ export function useGalleryListing({
    * move dialog where only folders are shown.
    */
   foldersOnly?: boolean;
+
+  /**
+   * The id of a file that the initial, unfiltered load keeps loading pages
+   * until it reaches, so that a link to a file beyond the first page can still
+   * show it in its place in the sorted folder.
+   */
+  pageUntilIncluded?: number;
 }): {
   galleryListing: FetchingData.Fetched<
     | { tag: "empty"; reason: string; refreshing: boolean }
@@ -1019,6 +1027,11 @@ export function useGalleryListing({
   path: FetchingData.Fetched<ReadonlyArray<GalleryFile>>;
   folderId: FetchingData.Fetched<Id>;
   selectedSection: FetchingData.Fetched<GallerySection>;
+
+  /**
+   * Whether every page was loaded without finding `pageUntilIncluded`.
+   */
+  targetNotListed: boolean;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -1079,6 +1092,12 @@ export function useGalleryListing({
   const [loading, setLoading] = React.useState(true);
   const [errorState, setErrorState] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [targetNotListed, setTargetNotListed] = React.useState(false);
+  /*
+   * Counts initial loads, so that one superseded by a newer load (another
+   * folder, search or sort) stops paging and leaves the listing to the newer.
+   */
+  const latestLoad = React.useRef(0);
   const [galleryListing, setGalleryListing] = React.useState<ReadonlyArray<GalleryFile>>([]);
   const [api] = React.useState(() =>
     getToken().then((token) =>
@@ -1615,6 +1634,8 @@ export function useGalleryListing({
   }
 
   async function getGalleryFiles(p: ReadonlyArray<GalleryFile>, s: GallerySection): Promise<void> {
+    const thisLoad = ++latestLoad.current;
+    const superseded = () => thisLoad !== latestLoad.current;
     setErrorState(false);
     if (s === "NetworkFiles" && p.length === 0) {
       return getFilestores();
@@ -1624,9 +1645,11 @@ export function useGalleryListing({
     }
     selection.clear();
     clearAndSetGalleryListing([]);
+    setTargetNotListed(false);
     setLoading(true);
     try {
       const token = await getToken();
+      if (superseded()) return;
 
       let currentFolderId = "0";
       if (p.length > 0) {
@@ -1635,17 +1658,61 @@ export function useGalleryListing({
         currentFolderId = `${listingOf.folderId}`;
       }
 
-      const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
-        params: new URLSearchParams({
-          mediatype: s,
-          currentFolderId,
-          name: searchTerm,
-          pageNumber: "0",
-          sortOrder,
-          orderBy,
-          foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
-        }),
-      });
+      const target = searchTerm === "" ? pageUntilIncluded : undefined;
+      const fetchPage = async (pageNumber: number) => {
+        const { data } = await axios.get<unknown>(`/gallery/getUploadedFiles`, {
+          params: new URLSearchParams({
+            mediatype: s,
+            currentFolderId,
+            name: searchTerm,
+            pageNumber: `${pageNumber}`,
+            sortOrder,
+            orderBy,
+            foldersOnly: foldersOnly !== null && foldersOnly ? "true" : "false",
+          }),
+        });
+        if (superseded()) return { data, files: [] };
+        /*
+         * When paging to a target, a page that is an error or cannot be parsed
+         * must fail the load, not read as a page without the target.
+         */
+        if (typeof target !== "undefined") {
+          Parsers.objectPath(["exceptionMessage"], data)
+            .flatMap(Parsers.isString)
+            .do((exceptionMessage) => {
+              throw new Error(exceptionMessage);
+            });
+        }
+        const files = parseGalleryFiles(data, token, p);
+        if (typeof target !== "undefined") {
+          const rows = Parsers.objectPath(["data", "items", "results"], data).flatMap(Parsers.isArray).orElse(null);
+          if (rows === null || rows.length !== files.length) throw new Error(t("listing.alerts.processFailed"));
+        }
+        return { data, files };
+      };
+
+      const { data, files: firstFiles } = await fetchPage(0);
+      if (superseded()) return;
+      const pageCount = Parsers.objectPath(["data", "items", "totalPages"], data).flatMap(Parsers.isNumber).orElse(1);
+      const files = [...firstFiles];
+      let lastPage = 0;
+
+      /*
+       * One sequential request per page, so a target deep in a large folder
+       * delays the first render; a request for the page containing an id
+       * would avoid that.
+       */
+      if (typeof target !== "undefined") {
+        let found = files.some(({ id }) => id === target);
+        while (!found && lastPage + 1 < pageCount) {
+          lastPage++;
+          const { files: nextFiles } = await fetchPage(lastPage);
+          if (superseded()) return;
+          found = nextFiles.some(({ id }) => id === target);
+          files.push(...nextFiles);
+        }
+        setTargetNotListed(!found);
+      }
 
       setParentId(
         Parsers.isObject(data)
@@ -1657,12 +1724,14 @@ export function useGalleryListing({
           .flatMap(Parsers.isNumber),
       );
 
-      setTotalPages(Parsers.objectPath(["data", "items", "totalPages"], data).flatMap(Parsers.isNumber).orElse(1));
+      setTotalPages(pageCount);
 
       setTotalHits(Parsers.objectPath(["data", "items", "totalHits"], data).flatMap(Parsers.isNumber).orElse(1));
 
-      clearAndSetGalleryListing(parseGalleryFiles(data, token, p));
+      setPage(lastPage);
+      clearAndSetGalleryListing(files);
     } catch (e) {
+      if (superseded()) return;
       console.error(e);
       setErrorState(true);
       if (e instanceof Error) {
@@ -1675,7 +1744,7 @@ export function useGalleryListing({
         );
       }
     } finally {
-      setLoading(false);
+      if (!superseded()) setLoading(false);
     }
   }
 
@@ -1709,6 +1778,9 @@ export function useGalleryListing({
       setTotalPages(0);
       void getGalleryFiles(p, s);
     })(FetchingData.getSuccessValue(path), FetchingData.getSuccessValue(section));
+    return () => {
+      latestLoad.current++;
+    };
   }, [searchTerm, sortOrder, orderBy, listingOf, directFolderPath]);
 
   if (loading)
@@ -1718,6 +1790,7 @@ export function useGalleryListing({
       folderId: { tag: "loading" },
       refreshListing: () => Promise.resolve(),
       selectedSection: section,
+      targetNotListed,
     };
 
   return {
@@ -1841,5 +1914,6 @@ export function useGalleryListing({
       }
     },
     selectedSection: section,
+    targetNotListed,
   };
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import "@/__tests__/__mocks__/useOauthToken";
@@ -9,6 +10,7 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { HttpResponse, http } from "msw/http";
 import { MemoryRouter } from "react-router";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
@@ -38,6 +40,35 @@ function GalleryStory({
 }
 
 const mockAxios = new MockAdapter(axios);
+
+/** Every alert the Gallery dispatches, including after it has unmounted. */
+const addAlert = vi.hoisted(() => vi.fn());
+vi.mock("@/components/Alerts/Alerts", async (importOriginal) => {
+  const { default: Alerts } = await importOriginal<typeof import("@/components/Alerts/Alerts")>();
+  const { useContext, useMemo } = await import("react");
+  const { default: AlertContext } = await import("@/stores/contexts/Alert");
+  function SpyOnAlerts({ children }: { children: ReactNode }) {
+    const alerts = useContext(AlertContext);
+    const value = useMemo(
+      () => ({
+        ...alerts,
+        addAlert: (alert: Parameters<typeof alerts.addAlert>[0]) => {
+          addAlert(alert);
+          alerts.addAlert(alert);
+        },
+      }),
+      [alerts],
+    );
+    return <AlertContext.Provider value={value}>{children}</AlertContext.Provider>;
+  }
+  return {
+    default: ({ children }: { children: ReactNode }) => (
+      <Alerts>
+        <SpyOnAlerts>{children}</SpyOnAlerts>
+      </Alerts>
+    ),
+  };
+});
 
 /**
  * The folder-details payload returned by `/api/v1/folders/*`. The Gallery
@@ -703,6 +734,226 @@ describe("Gallery", () => {
         expect(document.title).toBe("gallery:pageTitleWithContext");
       });
       expect(screen.queryByText("gallery:pinnedVersion.notice")).not.toBeInTheDocument();
+    });
+
+    describe("an item beyond the first page of its folder", () => {
+      function listedFile(id: number) {
+        return {
+          id,
+          oid: { idString: `GL${id}` },
+          name: id === PINNED_ITEM_ID ? "assay.png" : `other-${id}.png`,
+          ownerId: 1,
+          ownerFullName: "Test User",
+          ownerUsername: "testuser",
+          description: id === PINNED_ITEM_ID ? "A draft assay" : "",
+          creationDate: 1672531200,
+          modificationDate: 1672531200,
+          type: "Image",
+          systemFolder: false,
+          sharedFolder: false,
+          extension: "png",
+          thumbnailId: null,
+          size: 40721,
+          version: id === PINNED_ITEM_ID ? 3 : 1,
+          originalImageOid: null,
+        };
+      }
+
+      /** Serves the folder's listing by `pageNumber`, each page holding the given ids. */
+      function mockPagedListing(pages: ReadonlyArray<ReadonlyArray<number>>) {
+        mockAxios.onGet("/gallery/getUploadedFiles").reply((config) => {
+          const pageNumber = Number((config.params as URLSearchParams).get("pageNumber"));
+          return [
+            200,
+            {
+              data: {
+                parentId: 123,
+                items: {
+                  totalHits: pages.flat().length,
+                  totalPages: pages.length,
+                  results: (pages[pageNumber] ?? []).map(listedFile),
+                },
+              },
+              error: null,
+              success: true,
+              errorMsg: null,
+            },
+          ];
+        });
+      }
+
+      function requestedPages(): Array<string | null> {
+        return mockAxios.history.get
+          .filter(({ url }) => /getUploadedFiles/.test(url ?? ""))
+          .map(({ params }) => (params as URLSearchParams).get("pageNumber"));
+      }
+
+      const otherIds = (from: number) => Array.from({ length: 19 }, (_, i) => from + i);
+
+      /** One page of the folder's listing, of `totalPages`, holding the given ids. */
+      const folderPage = (totalPages: number, ids: ReadonlyArray<number>) => ({
+        data: { parentId: 123, items: { totalHits: totalPages * 19, totalPages, results: ids.map(listedFile) } },
+      });
+
+      test("a live link loads pages until the item is listed, then selects it", async () => {
+        const user = userEvent.setup();
+        mockLiveItem();
+        mockPagedListing([otherIds(100), [...otherIds(200).slice(1), PINNED_ITEM_ID], otherIds(300)]);
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+
+        expect(await screen.findByRole("gridcell", { name: /assay\.png/ })).toHaveAttribute("aria-selected", "true");
+        expect(requestedPages()).toEqual(["0", "1"]);
+
+        await user.click(screen.getByRole("button", { name: "gallery:loadMore" }));
+        expect(await screen.findByRole("gridcell", { name: /other-300\.png/ })).toBeInTheDocument();
+        expect(requestedPages()).toEqual(["0", "1", "2"]);
+        expect(screen.getAllByRole("gridcell", { name: /assay\.png/ })).toHaveLength(1);
+      });
+
+      test("a pinned link loads pages until the item is listed, then shows that version", async () => {
+        mockLiveItem();
+        mockVersionHistory();
+        mockPagedListing([otherIds(100), [PINNED_ITEM_ID]]);
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+        expect(await screen.findAllByText("gallery:pinnedVersion.notice")).not.toHaveLength(0);
+        expect(screen.getByRole("gridcell", { name: /first-draft\.png/ })).toHaveAttribute("aria-selected", "true");
+      });
+
+      test("a pinned link to an item in no page says so, instead of showing the folder", async () => {
+        mockLiveItem();
+        mockVersionHistory();
+        mockPagedListing([otherIds(100), otherIds(200)]);
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+        expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
+        expect(requestedPages()).toEqual(["0", "1"]);
+        expect(screen.queryByText("gallery:pinnedVersion.notice")).not.toBeInTheDocument();
+      });
+
+      test("a live link to an item in no page still shows the folder, without an error", async () => {
+        mockLiveItem();
+        mockPagedListing([otherIds(100), otherIds(200)]);
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+
+        expect(await screen.findByRole("gridcell", { name: /other-200\.png/ })).toBeInTheDocument();
+        expect(requestedPages()).toEqual(["0", "1"]);
+        expect(screen.queryByText("gallery:landingPage.error")).not.toBeInTheDocument();
+      });
+
+      test("a page that fails to load shows the listing error, not part of the folder", async () => {
+        mockLiveItem();
+        mockVersionHistory();
+        mockAxios.onGet("/gallery/getUploadedFiles").reply((config) =>
+          (config.params as URLSearchParams).get("pageNumber") === "0"
+            ? [
+                200,
+                {
+                  data: {
+                    parentId: 123,
+                    items: { totalHits: 38, totalPages: 2, results: otherIds(100).map(listedFile) },
+                  },
+                },
+              ]
+            : [500, {}],
+        );
+        const restoreConsole = silenceConsole(["error"], ["status code 500"]);
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+        expect(await screen.findByText("gallery:listing.empty.errorLoadingFiles")).toBeVisible();
+        expect(screen.queryByRole("gridcell", { name: /other-100\.png/ })).not.toBeInTheDocument();
+        expect(screen.queryByText("gallery:landingPage.error")).not.toBeInTheDocument();
+        restoreConsole();
+      });
+
+      test.each([
+        ["the first page", "0"],
+        ["a later page", "1"],
+      ])("an error reply on %s shows the listing error, not part of the folder", async (_, failingPage) => {
+        mockLiveItem();
+        mockVersionHistory();
+        mockAxios
+          .onGet("/gallery/getUploadedFiles")
+          .reply((config) =>
+            (config.params as URLSearchParams).get("pageNumber") === failingPage
+              ? [200, { exceptionMessage: "Folder not found" }]
+              : [200, folderPage(2, otherIds(100))],
+          );
+        const restoreConsole = silenceConsole(["error"], ["Folder not found"]);
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+        expect(await screen.findByText("gallery:listing.empty.errorLoadingFiles")).toBeVisible();
+        expect(screen.queryByRole("gridcell", { name: /other-100\.png/ })).not.toBeInTheDocument();
+        expect(screen.queryByText("gallery:landingPage.error")).not.toBeInTheDocument();
+        restoreConsole();
+      });
+
+      /** Holds every reply for page 1 of the item's folder, until `release` returns it. */
+      function holdPageOne(otherReplies: (params: URLSearchParams) => [number, unknown] | null = () => null) {
+        let resolve: (reply: [number, unknown]) => void = () => {};
+        const heldReply = new Promise<[number, unknown]>((r) => {
+          resolve = r;
+        });
+        mockAxios.onGet("/gallery/getUploadedFiles").reply((config) => {
+          const params = config.params as URLSearchParams;
+          return (
+            otherReplies(params) ?? (params.get("pageNumber") === "1" ? heldReply : [200, folderPage(3, otherIds(100))])
+          );
+        });
+        return async (reply: [number, unknown]) => {
+          resolve(reply);
+          await heldReply;
+          await new Promise((r) => setTimeout(r, 0));
+        };
+      }
+
+      const unparseablePage = { data: { items: { totalHits: 57, totalPages: 3, results: [{ id: "not a number" }] } } };
+
+      test.each<[string, [number, unknown]]>([
+        ["a page without the item", [200, folderPage(3, otherIds(200))]],
+        ["a page that cannot be parsed", [200, unparseablePage]],
+        ["a failure", [500, {}]],
+      ])("%s that arrives after leaving the page requests no more pages and raises no alert", async (_, reply) => {
+        mockLiveItem();
+        const release = holdPageOne();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        const { unmount } = render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+        await waitFor(() => expect(requestedPages()).toContain("1"));
+        unmount();
+        await release(reply);
+
+        expect(requestedPages()).not.toContain("2");
+        expect(addAlert).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
+        consoleError.mockRestore();
+      });
+
+      test("a page that cannot be parsed, arriving after moving to another section, raises no alert", async () => {
+        const user = userEvent.setup();
+        mockLiveItem();
+        const release = holdPageOne((params) =>
+          params.get("mediatype") === "Chemistry" ? [200, folderPage(1, otherIds(300))] : null,
+        );
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+        await waitFor(() => expect(requestedPages()).toContain("1"));
+        await user.click(await screen.findByRole("button", { name: "gallery:sections.chemistry" }));
+        expect(await screen.findByRole("gridcell", { name: /other-300\.png/ })).toBeInTheDocument();
+        await release([200, unparseablePage]);
+
+        expect(screen.getByRole("gridcell", { name: /other-300\.png/ })).toBeInTheDocument();
+        expect(addAlert).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
+        consoleError.mockRestore();
+      });
     });
   });
 
