@@ -1186,7 +1186,11 @@ export function useGalleryListing({
   const path = listingOf.tag === "section" ? { tag: "success" as const, value: listingOf.path } : directFolderPath;
 
   const [page, setPage] = React.useState<number>(0);
-  // Reloading clears the request so the effect drops any response for the old listing.
+  /*
+   * The next page asked for. Nothing beyond the first page is fetched while
+   * the listing (re)loads: starting a reload drops any page still on its way,
+   * and a request made around the reload waits for the new first page.
+   */
   const [requestedPage, setRequestedPage] = React.useState<number | null>(null);
   const [totalPages, setTotalPages] = React.useState<number>(0);
   const [totalHits, setTotalHits] = React.useState<number>(0);
@@ -1700,7 +1704,7 @@ export function useGalleryListing({
   }
 
   React.useEffect(() => {
-    if (requestedPage !== page + 1) return;
+    if (loading || requestedPage !== page + 1) return;
     let superseded = false;
     void (async () => {
       try {
@@ -1723,7 +1727,7 @@ export function useGalleryListing({
     return () => {
       superseded = true;
     };
-  }, [requestedPage, page]);
+  }, [requestedPage, page, loading]);
 
   React.useEffect(() => {
     Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {

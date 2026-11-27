@@ -71,6 +71,30 @@ function WrapperComponent() {
   });
 }
 
+/**
+ * Like the Gallery's automatic paging for a linked item: asks for the next
+ * page in the same commit as a search reloads the listing.
+ */
+function LoadMoreDuringReloadWrapper() {
+  const listingOf = React.useMemo(() => ({ tag: "section" as const, section: "Images" as const, path: [] }), []);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const { galleryListing } = useGalleryListing({
+    listingOf,
+    searchTerm,
+    sortOrder: "DESC",
+    orderBy: "modificationDate",
+  });
+  const listing = FetchingData.getSuccessValue(galleryListing).orElse(null);
+  React.useEffect(() => {
+    if (searchTerm !== "new" || listing === null || listing.tag === "empty") return;
+    listing.loadMore.do((loadMore) => void loadMore());
+  }, [searchTerm]);
+  return (
+    // biome-ignore lint/a11y/useButtonType: matches the wrappers above
+    <button onClick={() => setSearchTerm("new")}>{listing === null ? "loading" : "Search"}</button>
+  );
+}
+
 function OwnerFieldsWrapper() {
   const listingOf = React.useMemo(
     () => ({
@@ -170,6 +194,37 @@ describe("useGalleryListing", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(uploadedFilesCalls()).toHaveLength(4);
+  });
+
+  test("a next page asked for during a reload waits for the new first page", async () => {
+    const user = userEvent.setup();
+    const { promise: newFirstPage, resolve: releaseNewFirstPage } = Promise.withResolvers<void>();
+    mockAxios.onGet("/gallery/getUploadedFiles").reply(async ({ params }) => {
+      const search = params as URLSearchParams;
+      const isFirstPage = search.get("pageNumber") === "0";
+      if (isFirstPage && search.get("name") === "new") await newFirstPage;
+      return [200, isFirstPage ? page1 : page2];
+    });
+    const requestedPages = (name: string) =>
+      mockAxios.history.get
+        .map(({ params }) => params as URLSearchParams)
+        .filter((params) => params.get("name") === name)
+        .map((params) => params.get("pageNumber"));
+
+    render(<LoadMoreDuringReloadWrapper />);
+    await user.click(await screen.findByRole("button", { name: "Search" }));
+
+    await waitFor(() => {
+      expect(requestedPages("new")).toEqual(["0"]);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // fetched alongside page 0, page 1 could land first and then be replaced by it
+    expect(requestedPages("new")).toEqual(["0"]);
+
+    releaseNewFirstPage();
+    await waitFor(() => {
+      expect(requestedPages("new")).toEqual(["0", "1"]);
+    });
   });
 
   test("null and missing owner fields should fall back safely", async () => {
