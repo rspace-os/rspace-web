@@ -274,17 +274,17 @@ describe("filter selectors derived from published relationship targets", () => {
       sorting: { fields: [], default: [], maximumFields: 5 },
       filtering: {
         selectors: {
-          "createdBy.username": {
+          "createdBy.name": {
             operators: ["=="],
             wildcards: false,
             fieldType: "text",
           },
-          "updatedBy.username": {
+          "updatedBy.name": {
             operators: ["=="],
             wildcards: false,
             fieldType: "text",
           },
-          "reviewedBy.username": {
+          "reviewedBy.name": {
             operators: ["=="],
             wildcards: false,
             fieldType: "text",
@@ -307,13 +307,13 @@ describe("filter selectors derived from published relationship targets", () => {
           children: [
             {
               kind: "comparison" as const,
-              field: "createdBy.username" as never,
+              field: "createdBy.name" as never,
               operator: "equals" as const,
               value: "ada",
             },
             {
               kind: "comparison" as const,
-              field: "updatedBy.username" as never,
+              field: "updatedBy.name" as never,
               operator: "equals" as const,
               value: "grace",
             },
@@ -324,12 +324,12 @@ describe("filter selectors derived from published relationship targets", () => {
       page: { pageIndex: 0, pageSize: 10 },
       visibleFields: ["title" as const],
     };
-    const createdBy = adapter.config.fields.find((field) => String(field.name) === "createdBy.username");
-    const updatedBy = adapter.config.fields.find((field) => String(field.name) === "updatedBy.username");
-    const reviewedBy = adapter.config.fields.find((field) => String(field.name) === "reviewedBy.username");
+    const createdBy = adapter.config.fields.find((field) => String(field.name) === "createdBy.name");
+    const updatedBy = adapter.config.fields.find((field) => String(field.name) === "updatedBy.name");
+    const reviewedBy = adapter.config.fields.find((field) => String(field.name) === "reviewedBy.name");
 
     expect(createdBy).toMatchObject({
-      derivedLabel: { key: "common:tableList.targetFields.username" },
+      derivedLabel: { key: "common:tableList.targetFields.name" },
       origin: {
         via: { name: "createdBy", label: { key: "common:tableList.fields.createdBy" } },
       },
@@ -346,17 +346,17 @@ describe("filter selectors derived from published relationship targets", () => {
     expect(
       adapter.config.fields.some((field) => ["createdBy", "updatedBy", "reviewedBy"].includes(String(field.name))),
     ).toBe(false);
-    expect(adapter.toRequestParams(state).where).toBe("createdBy.username==ada;updatedBy.username==grace");
+    expect(adapter.toRequestParams(state).where).toBe("createdBy.name==ada;updatedBy.name==grace");
     expect(adapter.toRequestParams(state).fields?.["ownerless-records"]).toBe("id,title");
     expect(adapter.selectedFields(state)).toEqual(["id", "title"]);
     expect(adapter.requiredDepth(state)).toBe(0);
 
     const enriched = enrichApiV2FilterConfig({ config: ownerlessConfig, metadata: ownerlessMetadata });
-    expect(enriched.fields.find((field) => String(field.name) === "createdBy.username")?.derivedLabel).toEqual({
-      key: "common:tableList.targetFields.username",
+    expect(enriched.fields.find((field) => String(field.name) === "createdBy.name")?.derivedLabel).toEqual({
+      key: "common:tableList.targetFields.name",
     });
     expect(
-      enriched.fields.find((field) => String(field.name) === "updatedBy.username")?.capabilities.filterOperators,
+      enriched.fields.find((field) => String(field.name) === "updatedBy.name")?.capabilities.filterOperators,
     ).toEqual(["equals"]);
     expect(enriched.defaultColumns).toEqual(["title"]);
   });
@@ -377,9 +377,9 @@ describe("filter selectors derived from published relationship targets", () => {
             picker: { resource: "containers", identity: "globalId", globalIdPrefix: "IC" },
           },
           "createdBy.id": { ...untitled, fieldType: "number" },
-          "createdBy.firstName": untitled,
-          "updatedBy.email": untitled,
-          "updatedBy.createdAt": { ...untitled, fieldType: "dateTime" },
+          "createdBy.name": untitled,
+          "updatedBy.globalId": untitled,
+          "updatedBy.deleted": { ...untitled, fieldType: "boolean" },
           "createdBy.reviewedOn": { ...untitled },
         },
         limits: metadata.filtering.limits,
@@ -400,15 +400,11 @@ describe("filter selectors derived from published relationship targets", () => {
     const field = (name: string) => enriched.fields.find((candidate) => String(candidate.name) === name);
 
     expect(field("createdBy.id")?.derivedLabel).toEqual({ key: "common:tableList.targetFields.id" });
-    expect(field("createdBy.firstName")?.derivedLabel).toEqual({
-      key: "common:tableList.targetFields.firstName",
-    });
-    expect(field("updatedBy.email")?.derivedLabel).toEqual({ key: "common:tableList.targetFields.email" });
-    expect(field("updatedBy.createdAt")?.derivedLabel).toEqual({
-      key: "common:tableList.targetFields.createdAt",
-    });
+    expect(field("createdBy.name")?.derivedLabel).toEqual({ key: "common:tableList.targetFields.name" });
+    expect(field("updatedBy.globalId")?.derivedLabel).toEqual({ key: "common:tableList.targetFields.globalId" });
+    expect(field("updatedBy.deleted")?.derivedLabel).toEqual({ key: "common:tableList.targetFields.deleted" });
     expect(field("createdBy.reviewedOn")?.derivedLabel).toEqual({ text: "reviewedOn" });
-    expect(field("createdBy.firstName")?.origin?.via).toEqual({
+    expect(field("createdBy.name")?.origin?.via).toEqual({
       name: "createdBy",
       label: { key: "common:tableList.fields.createdBy" },
     });

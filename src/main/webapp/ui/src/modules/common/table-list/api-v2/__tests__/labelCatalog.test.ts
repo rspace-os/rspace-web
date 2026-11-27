@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import openApi from "@/modules/common/api/v2/openapi.generated.json";
-import { isRelationshipWireSelector, relationshipLabelKeys, targetFieldLabelKeys } from "../filterFields";
+import { isRelationshipWireSelector, relationshipLabelKeys } from "../filterFields";
 
 type PublishedFilters = Record<string, { selectors?: Record<string, { picker?: unknown }> }>;
 
@@ -14,11 +14,11 @@ function runtimeVias(node: unknown): string[] {
   );
 }
 
-it("labels every relationship and target field the OpenAPI document publishes from the catalog", () => {
+// Target fields are checked by `tsc` through `targetFieldLabelKeys`' `satisfies` clause.
+it("labels every relationship the OpenAPI document publishes from the catalog", () => {
   const filters: PublishedFilters =
     (openApi.components as { "x-rspace-filters"?: PublishedFilters })["x-rspace-filters"] ?? {};
   const relationships = new Set(runtimeVias(openApi));
-  const targetFields = new Set<string>();
   for (const { selectors = {} } of Object.values(filters)) {
     for (const [selector, published] of Object.entries(selectors)) {
       const dot = selector.indexOf(".");
@@ -26,11 +26,9 @@ it("labels every relationship and target field the OpenAPI document publishes fr
         if (published.picker) relationships.add(selector);
       } else if (!isRelationshipWireSelector(selector)) {
         relationships.add(selector.slice(0, dot));
-        targetFields.add(selector.slice(dot + 1));
       }
     }
   }
 
   expect([...relationships].filter((name) => !Object.hasOwn(relationshipLabelKeys, name))).toEqual([]);
-  expect([...targetFields].filter((name) => !Object.hasOwn(targetFieldLabelKeys, name))).toEqual([]);
 });
