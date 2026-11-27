@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
@@ -26,9 +27,27 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
   private static final int NONCE_BYTES = 16;
   private static final String REPORT_ONLY_HEADER = "Content-Security-Policy-Report-Only";
   private static final String ENFORCED_HEADER = "Content-Security-Policy";
+  private static final String REPORTING_ENDPOINTS_HEADER = "Reporting-Endpoints";
+  private static final String REPORTING_ENDPOINT_NAME = "csp";
   private static final String HELPDOCS_API_ORIGIN = "https://lighthouse.helpdocs.io";
   private static final String HELPDOCS_ASSET_ORIGIN = "https://cdn.helpdocs.io";
+  private static final String OFFICE_APPS_ORIGIN = "https://*.officeapps.live.com";
+  private static final String EGNYTE_ORIGIN = "https://*.egnyte.com";
+  private static final List<String> SUPPORTED_FRAME_ORIGINS =
+      List.of(
+          "https://accounts.google.com",
+          "https://www.google.com",
+          "https://recaptcha.google.com",
+          "https://www.recaptcha.net",
+          "https://www.youtube.com",
+          "https://www.youtube-nocookie.com",
+          "https://www.jove.com",
+          "https://av.tib.eu");
+  private static final List<String> TEAMS_FRAME_ANCESTORS =
+      List.of(
+          "https://teams.microsoft.com", "https://*.teams.microsoft.com", "https://*.skype.com");
   private static final String MATHJAX_PATH = "/scripts/externalTinymcePlugins/mathjax/dialog.html";
+  private static final String EGNYTE_PATH = "/scripts/externalTinymcePlugins/egnyte/dialog.html";
   private static final Set<String> LEGACY_EVAL_PATHS =
       Set.of(
           "/scripts/externalTinymcePlugins/handsontable/dialog.html",
@@ -36,14 +55,29 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
 
   private final String policyHeader;
   private final String reportUri;
+  private final String analyticsOrigin;
+  private final String collaboraOrigin;
+  private final String egnyteAdditionalOrigin;
   private final SecureRandom secureRandom = new SecureRandom();
 
   @Autowired
   public ContentSecurityPolicyFilter(
       @Value("${security.csp.mode:report-only}") String mode,
-      @Value("${security.csp.report-uri:}") String reportUri) {
+      @Value("${security.csp.report-uri:}") String reportUri,
+      @Value("${analytics.server.host:}") String analyticsServerHost,
+      @Value("${analytics.server.key:}") String analyticsServerKey,
+      @Value("${collabora.wopi.discovery.url:}") String collaboraDiscoveryUrl,
+      @Value("${security.csp.egnyte.additional-origin:}") String egnyteAdditionalOrigin) {
     this.policyHeader = policyHeaderForMode(mode);
     this.reportUri = validateReportUri(reportUri);
+    this.analyticsOrigin =
+        StringUtils.isBlank(analyticsServerKey)
+            ? ""
+            : originFromConfiguredUrl(analyticsServerHost, "analytics.server.host");
+    this.collaboraOrigin =
+        originFromConfiguredUrl(collaboraDiscoveryUrl, "collabora.wopi.discovery.url");
+    this.egnyteAdditionalOrigin =
+        originFromConfiguredUrl(egnyteAdditionalOrigin, "security.csp.egnyte.additional-origin");
   }
 
   @Override
@@ -53,6 +87,10 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
     String nonce = generateNonce();
     request.setAttribute(NONCE_REQUEST_ATTRIBUTE, nonce);
     response.setHeader(policyHeader, policyForNonce(nonce, request));
+    if (!reportUri.isEmpty()) {
+      response.setHeader(
+          REPORTING_ENDPOINTS_HEADER, REPORTING_ENDPOINT_NAME + "=\"" + reportUri + "\"");
+    }
     chain.doFilter(request, response);
   }
 
@@ -63,6 +101,7 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
   }
 
   private String policyForNonce(String nonce, HttpServletRequest request) {
+    String path = pathWithinApplication(request);
     String scriptDirective =
         "script-src 'self' 'nonce-"
             + nonce
@@ -73,9 +112,40 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
     if (requiresLegacyEval(request)) {
       scriptDirective += " 'unsafe-eval'";
     }
-    if (MATHJAX_PATH.equals(pathWithinApplication(request))) {
+    if (MATHJAX_PATH.equals(path)) {
       scriptDirective += " https://cdnjs.cloudflare.com";
     }
+
+    List<String> connectSources =
+        new ArrayList<>(List.of("'self'", HELPDOCS_API_ORIGIN, "https://www.protocols.io"));
+    addIfConfigured(connectSources, analyticsOrigin);
+
+    List<String> frameSources = new ArrayList<>();
+    frameSources.add("'self'");
+    frameSources.addAll(SUPPORTED_FRAME_ORIGINS);
+
+    List<String> formActionSources = new ArrayList<>(List.of("'self'"));
+    if (isOfficeOnlinePath(path)) {
+      frameSources.add(OFFICE_APPS_ORIGIN);
+      formActionSources.add(OFFICE_APPS_ORIGIN);
+    } else if (isCollaboraOnlinePath(path)) {
+      addIfConfigured(frameSources, collaboraOrigin);
+      addIfConfigured(formActionSources, collaboraOrigin);
+    }
+    if (EGNYTE_PATH.equals(path)) {
+      connectSources.add(EGNYTE_ORIGIN);
+      addIfConfigured(connectSources, egnyteAdditionalOrigin);
+    }
+    if (EGNYTE_PATH.equals(path) || isStructuredDocumentPath(path)) {
+      frameSources.add(EGNYTE_ORIGIN);
+      addIfConfigured(frameSources, egnyteAdditionalOrigin);
+    }
+
+    List<String> frameAncestorSources = new ArrayList<>(List.of("'self'"));
+    if (isTeamsEmbed(request, path)) {
+      frameAncestorSources.addAll(TEAMS_FRAME_ANCESTORS);
+    }
+
     List<String> directives =
         List.of(
             "default-src 'self'",
@@ -84,13 +154,40 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
             "style-src-attr 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self' data:",
-            "connect-src 'self' " + HELPDOCS_API_ORIGIN,
+            "connect-src " + String.join(" ", connectSources),
+            "frame-src " + String.join(" ", frameSources),
             "object-src 'none'",
             "base-uri 'none'",
-            "form-action 'self'",
-            "frame-ancestors 'self'");
+            "form-action " + String.join(" ", formActionSources),
+            "frame-ancestors " + String.join(" ", frameAncestorSources));
     String policy = String.join("; ", directives);
-    return reportUri.isEmpty() ? policy : policy + "; report-uri " + reportUri;
+    return reportUri.isEmpty()
+        ? policy
+        : policy + "; report-uri " + reportUri + "; report-to " + REPORTING_ENDPOINT_NAME;
+  }
+
+  private static void addIfConfigured(List<String> sources, String source) {
+    if (!source.isEmpty() && !sources.contains(source)) {
+      sources.add(source);
+    }
+  }
+
+  private static boolean isOfficeOnlinePath(String path) {
+    return path.startsWith("/officeOnline/");
+  }
+
+  private static boolean isCollaboraOnlinePath(String path) {
+    return path.startsWith("/collaboraOnline/");
+  }
+
+  private static boolean isStructuredDocumentPath(String path) {
+    return path.startsWith("/workspace/editor/structuredDocument/");
+  }
+
+  private static boolean isTeamsEmbed(HttpServletRequest request, String path) {
+    return path.startsWith("/msteams/")
+        || (path.startsWith("/workspace/editor/structuredDocument/")
+            && "true".equals(request.getParameter("msTeamsDocView")));
   }
 
   private static boolean requiresLegacyEval(HttpServletRequest request) {
@@ -161,5 +258,41 @@ public class ContentSecurityPolicyFilter extends OncePerRequestFilter {
           "security.csp.report-uri must be a same-origin absolute path or HTTPS URL");
     }
     return candidate;
+  }
+
+  private static String originFromConfiguredUrl(String configuredUrl, String propertyName) {
+    String candidate = StringUtils.trimToEmpty(configuredUrl);
+    if (candidate.isEmpty()) {
+      return "";
+    }
+
+    URI uri;
+    try {
+      uri = URI.create(candidate);
+    } catch (IllegalArgumentException invalidUri) {
+      throw new IllegalArgumentException(propertyName + " must be a valid URL", invalidUri);
+    }
+
+    String scheme = uri.getScheme();
+    String host = uri.getHost();
+    if (scheme == null
+        || host == null
+        || uri.getUserInfo() != null
+        || !("https".equalsIgnoreCase(scheme) || isLoopbackHttp(scheme, host))) {
+      throw new IllegalArgumentException(
+          propertyName + " must be an HTTPS URL or an HTTP loopback URL");
+    }
+
+    String normalizedScheme = scheme.toLowerCase(Locale.ROOT);
+    String normalizedHost = host.toLowerCase(Locale.ROOT);
+    return normalizedScheme
+        + "://"
+        + (normalizedHost.indexOf(':') >= 0 ? "[" + normalizedHost + "]" : normalizedHost)
+        + (uri.getPort() >= 0 ? ":" + uri.getPort() : "");
+  }
+
+  private static boolean isLoopbackHttp(String scheme, String host) {
+    return "http".equalsIgnoreCase(scheme)
+        && ("localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host) || "::1".equals(host));
   }
 }

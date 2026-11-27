@@ -19,6 +19,7 @@ class ContentSecurityPolicyTemplateScanTest {
   private static final Path WEBAPP = Path.of("src", "main", "webapp");
   private static final Path TINYMCE_DOCUMENTS =
       WEBAPP.resolve(Path.of("scripts", "externalTinymcePlugins"));
+  private static final Path EGNYTE_DIRECTORY = TINYMCE_DOCUMENTS.resolve("egnyte");
   private static final Pattern COMMENTS =
       Pattern.compile("<!--.*?-->|<%--.*?--%>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
   private static final Pattern SCRIPT_START =
@@ -118,6 +119,21 @@ class ContentSecurityPolicyTemplateScanTest {
     assertThat(offenders)
         .as("Templates missing the JavaScript escaper taglib: " + offenders)
         .isEmpty();
+  }
+
+  @Test
+  void egnytePickerLoadsItsBundleAndGeneratedStylesWithoutDynamicExecution() {
+    String dialog = read(EGNYTE_DIRECTORY.resolve("dialog.html"));
+    String dialogScript = read(EGNYTE_DIRECTORY.resolve("script.js"));
+    String pickerScript = read(EGNYTE_DIRECTORY.resolve("egnyte.js"));
+    String pickerStyles = read(EGNYTE_DIRECTORY.resolve("egnyte-picker.css"));
+
+    assertThat(dialog)
+        .contains("/scripts/externalTinymcePlugins/egnyte/egnyte.js")
+        .contains("/scripts/externalTinymcePlugins/egnyte/egnyte-picker.css");
+    assertThat(dialogScript).doesNotContain("$.getScript(");
+    assertThat(pickerScript).doesNotContain("document.createElement('style')");
+    assertThat(pickerStyles).contains(".eg-picker-back", ".eg-picker-item");
   }
 
   private static boolean isRenderedJspOrTag(Path file) {

@@ -1,0 +1,14 @@
+diff --git a/dist/index.cjs.js b/dist/index.cjs.js
+--- a/dist/index.cjs.js
++++ b/dist/index.cjs.js
+@@ -2386,2 +2386,2 @@
+ var styles = {"wrapper":"transform-component-module_wrapper__SPB86","content":"transform-component-module_content__FBWxo","infiniteGrid":"transform-component-module_infiniteGrid__Z-aP3"};
+-styleInject(css_248z);
++// RSpace serves these version-pinned rules as a same-origin stylesheet for CSP.
+diff --git a/dist/index.esm.js b/dist/index.esm.js
+--- a/dist/index.esm.js
++++ b/dist/index.esm.js
+@@ -2386,2 +2386,2 @@
+ var styles = {"wrapper":"transform-component-module_wrapper__SPB86","content":"transform-component-module_content__FBWxo","infiniteGrid":"transform-component-module_infiniteGrid__Z-aP3"};
+-styleInject(css_248z);
++// RSpace serves these version-pinned rules as a same-origin stylesheet for CSP.

@@ -1,4 +1,5 @@
 import { createRoot, type Root } from "react-dom/client";
+import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import Analytics from "../../Inventory/Analytics";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import { FAB_SIZE, MaterialsListing, NewMaterialsListing } from "./MaterialsListing";
@@ -43,11 +44,13 @@ function initListOfMaterials({
 
     const root = getMaterialsListingRoot(listingWrapper);
     root.render(
-      <I18nRoot namespaces={["inventory", "common"]}>
-        <Analytics>
-          <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
-        </Analytics>
-      </I18nRoot>,
+      <MuiCssLayerProvider container={listingWrapper.ownerDocument}>
+        <I18nRoot namespaces={["inventory", "common"]}>
+          <Analytics>
+            <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
+          </Analytics>
+        </I18nRoot>
+      </MuiCssLayerProvider>,
     );
     if (makeWrapperRelative) listingWrapper.style.position = "relative";
 
@@ -58,11 +61,13 @@ function initListOfMaterials({
     );
     if (newButtonWrapper) {
       getMaterialsListingRoot(newButtonWrapper).render(
-        <I18nRoot namespaces={["inventory", "common"]}>
-          <Analytics>
-            <NewMaterialsListing elnFieldId={fieldId} />
-          </Analytics>
-        </I18nRoot>,
+        <MuiCssLayerProvider container={newButtonWrapper.ownerDocument}>
+          <I18nRoot namespaces={["inventory", "common"]}>
+            <Analytics>
+              <NewMaterialsListing elnFieldId={fieldId} />
+            </Analytics>
+          </I18nRoot>
+        </MuiCssLayerProvider>,
       );
     }
   });

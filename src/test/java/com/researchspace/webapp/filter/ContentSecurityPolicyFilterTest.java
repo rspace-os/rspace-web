@@ -31,11 +31,12 @@ class ContentSecurityPolicyFilterTest {
 
   private static final String REPORT_ONLY_HEADER = "Content-Security-Policy-Report-Only";
   private static final String ENFORCED_HEADER = "Content-Security-Policy";
+  private static final String REPORTING_ENDPOINTS_HEADER = "Reporting-Endpoints";
   private static final Path WEB_XML = Path.of("src", "main", "webapp", "WEB-INF", "web.xml");
 
   @Test
   void setsReportOnlyPolicyAndRequestNonceBeforeTheChain() throws Exception {
-    ContentSecurityPolicyFilter filter = new ContentSecurityPolicyFilter("report-only", "");
+    ContentSecurityPolicyFilter filter = filter("report-only", "");
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/workspace");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -61,7 +62,7 @@ class ContentSecurityPolicyFilterTest {
 
   @Test
   void generatesANewNonceForEachResponse() throws Exception {
-    ContentSecurityPolicyFilter filter = new ContentSecurityPolicyFilter("report-only", "");
+    ContentSecurityPolicyFilter filter = filter("report-only", "");
 
     String firstNonce = runAndCaptureNonce(filter);
     String secondNonce = runAndCaptureNonce(filter);
@@ -71,8 +72,7 @@ class ContentSecurityPolicyFilterTest {
 
   @Test
   void selectsEnforcedHeaderAndAddsValidatedReportUri() throws Exception {
-    ContentSecurityPolicyFilter filter =
-        new ContentSecurityPolicyFilter("enforce", "https://reports.example.org/csp");
+    ContentSecurityPolicyFilter filter = filter("enforce", "https://reports.example.org/csp");
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/workspace");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -82,13 +82,15 @@ class ContentSecurityPolicyFilterTest {
         (String) request.getAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE);
     assertNull(response.getHeader(REPORT_ONLY_HEADER));
     assertThat(response.getHeader(ENFORCED_HEADER))
-        .isEqualTo(expectedPolicy(nonce) + "; report-uri https://reports.example.org/csp");
+        .isEqualTo(
+            expectedPolicy(nonce) + "; report-uri https://reports.example.org/csp; report-to csp");
+    assertEquals(
+        "csp=\"https://reports.example.org/csp\"", response.getHeader(REPORTING_ENDPOINTS_HEADER));
   }
 
   @Test
   void acceptsSameOriginAbsolutePathReportUri() throws Exception {
-    ContentSecurityPolicyFilter filter =
-        new ContentSecurityPolicyFilter("report-only", "/csp/report");
+    ContentSecurityPolicyFilter filter = filter("report-only", "/csp/report");
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/workspace");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -97,12 +99,13 @@ class ContentSecurityPolicyFilterTest {
     String nonce =
         (String) request.getAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE);
     assertThat(response.getHeader(REPORT_ONLY_HEADER))
-        .isEqualTo(expectedPolicy(nonce) + "; report-uri /csp/report");
+        .isEqualTo(expectedPolicy(nonce) + "; report-uri /csp/report; report-to csp");
+    assertEquals("csp=\"/csp/report\"", response.getHeader(REPORTING_ENDPOINTS_HEADER));
   }
 
   @Test
   void allowsUnsafeEvalOnlyOnTheTwoConfiguredTinyMcePaths() throws Exception {
-    ContentSecurityPolicyFilter filter = new ContentSecurityPolicyFilter("report-only", "");
+    ContentSecurityPolicyFilter filter = filter("report-only", "");
 
     assertThat(
             policyFor(
@@ -128,7 +131,7 @@ class ContentSecurityPolicyFilterTest {
 
   @Test
   void allowsThePinnedMathJaxCdnOnlyOnItsStaticPluginDocument() throws Exception {
-    ContentSecurityPolicyFilter filter = new ContentSecurityPolicyFilter("report-only", "");
+    ContentSecurityPolicyFilter filter = filter("report-only", "");
 
     assertThat(
             policyFor(
@@ -140,25 +143,113 @@ class ContentSecurityPolicyFilterTest {
 
   @Test
   void rejectsInvalidModesAndUnsafeReportUris() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new ContentSecurityPolicyFilter("disabled", ""));
+    assertThrows(IllegalArgumentException.class, () -> filter("disabled", ""));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new ContentSecurityPolicyFilter("report-only", "http://reports.example.org/csp"));
+        () -> filter("report-only", "http://reports.example.org/csp"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> filter("report-only", "https://user:pass@reports.example.org/csp"));
+    assertThrows(
+        IllegalArgumentException.class, () -> filter("report-only", "//reports.example.org/csp"));
+    assertThrows(IllegalArgumentException.class, () -> filter("report-only", "/csp; object-src *"));
+    assertThrows(
+        IllegalArgumentException.class, () -> filter("report-only", "/csp\r\nX-Injected: value"));
+  }
+
+  @Test
+  void addsSupportedAndConfiguredIntegrationOriginsWithoutBroadSchemes() throws Exception {
+    ContentSecurityPolicyFilter filter =
+        new ContentSecurityPolicyFilter(
+            "report-only",
+            "",
+            "https://analytics.example.org/api/project",
+            "analytics-key",
+            "https://collabora.example.org:9980/hosting/discovery",
+            "http://localhost:9242/egnyte-picker");
+
+    String workspacePolicy = policyFor(filter, "/workspace", "");
+    assertThat(workspacePolicy)
+        .contains(
+            "connect-src 'self' https://lighthouse.helpdocs.io https://www.protocols.io"
+                + " https://analytics.example.org")
+        .contains(
+            "frame-src 'self' https://accounts.google.com https://www.google.com "
+                + "https://recaptcha.google.com https://www.recaptcha.net "
+                + "https://www.youtube.com https://www.youtube-nocookie.com "
+                + "https://www.jove.com https://av.tib.eu")
+        .doesNotContain("connect-src https:", "frame-src https:");
+
+    assertThat(policyFor(filter, "/officeOnline/GL123/edit", ""))
+        .contains("frame-src ")
+        .contains(" https://*.officeapps.live.com")
+        .contains("form-action 'self' https://*.officeapps.live.com");
+    assertThat(policyFor(filter, "/collaboraOnline/GL123/edit", ""))
+        .contains(" https://collabora.example.org:9980")
+        .contains("form-action 'self' https://collabora.example.org:9980");
+    assertThat(policyFor(filter, "/scripts/externalTinymcePlugins/egnyte/dialog.html", ""))
+        .contains("connect-src ")
+        .contains("frame-src ")
+        .contains(" https://*.egnyte.com")
+        .contains(" http://localhost:9242");
+    assertThat(policyFor(filter, "/workspace/editor/structuredDocument/GL123", ""))
+        .contains("frame-src ")
+        .contains(" https://*.egnyte.com")
+        .contains(" http://localhost:9242")
+        .doesNotContain(
+            "connect-src 'self' https://lighthouse.helpdocs.io https://www.protocols.io"
+                + " https://analytics.example.org https://*.egnyte.com");
+    assertThat(workspacePolicy)
+        .doesNotContain("https://*.officeapps.live.com")
+        .doesNotContain("https://collabora.example.org:9980")
+        .doesNotContain("https://*.egnyte.com")
+        .doesNotContain("http://localhost:9242");
+  }
+
+  @Test
+  void allowsTeamsAncestorsOnlyForTeamsEmbeddingRoutes() throws Exception {
+    ContentSecurityPolicyFilter filter = filter("report-only", "");
+
+    assertThat(policyFor(filter, "/msteams/tabConfig", ""))
+        .contains(
+            "frame-ancestors 'self' https://teams.microsoft.com "
+                + "https://*.teams.microsoft.com https://*.skype.com");
+
+    MockHttpServletRequest teamsDocument =
+        new MockHttpServletRequest("GET", "/workspace/editor/structuredDocument/123");
+    teamsDocument.setParameter("msTeamsDocView", "true");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    filter.doFilter(teamsDocument, response, (servletRequest, servletResponse) -> {});
+    assertThat(response.getHeader(REPORT_ONLY_HEADER))
+        .contains("frame-ancestors 'self' https://teams.microsoft.com");
+
+    assertThat(policyFor(filter, "/workspace/editor/structuredDocument/123", ""))
+        .contains("frame-ancestors 'self'")
+        .doesNotContain("https://teams.microsoft.com");
+  }
+
+  @Test
+  void rejectsUnsafeConfiguredIntegrationUrls() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
             new ContentSecurityPolicyFilter(
-                "report-only", "https://user:pass@reports.example.org/csp"));
+                "report-only", "", "http://analytics.example.org", "analytics-key", "", ""));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new ContentSecurityPolicyFilter("report-only", "//reports.example.org/csp"));
+        () ->
+            new ContentSecurityPolicyFilter(
+                "report-only",
+                "",
+                "",
+                "",
+                "https://user:pass@collabora.example.org/discovery",
+                ""));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new ContentSecurityPolicyFilter("report-only", "/csp; object-src *"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new ContentSecurityPolicyFilter("report-only", "/csp\r\nX-Injected: value"));
+        () ->
+            new ContentSecurityPolicyFilter(
+                "report-only", "", "", "", "", "http://egnyte.example.org"));
   }
 
   @Test
@@ -208,6 +299,10 @@ class ContentSecurityPolicyFilterTest {
     return (String) request.getAttribute(ContentSecurityPolicyFilter.NONCE_REQUEST_ATTRIBUTE);
   }
 
+  private static ContentSecurityPolicyFilter filter(String mode, String reportUri) {
+    return new ContentSecurityPolicyFilter(mode, reportUri, "", "", "", "");
+  }
+
   private static String policyFor(
       ContentSecurityPolicyFilter filter, String requestUri, String contextPath) throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
@@ -228,7 +323,10 @@ class ContentSecurityPolicyFilterTest {
         + "style-src-attr 'unsafe-inline'; "
         + "img-src 'self' data: blob:; "
         + "font-src 'self' data:; "
-        + "connect-src 'self' https://lighthouse.helpdocs.io; "
+        + "connect-src 'self' https://lighthouse.helpdocs.io https://www.protocols.io; "
+        + "frame-src 'self' https://accounts.google.com https://www.google.com "
+        + "https://recaptcha.google.com https://www.recaptcha.net https://www.youtube.com "
+        + "https://www.youtube-nocookie.com https://www.jove.com https://av.tib.eu; "
         + "object-src 'none'; "
         + "base-uri 'none'; "
         + "form-action 'self'; "

@@ -1,0 +1,43 @@
+/* Pinned to react-zoom-pan-pinch 4.0.4; its bundle's runtime style injection is disabled by patches/. */
+.transform-component-module_wrapper__SPB86 {
+  position: relative;
+  width: -moz-fit-content;
+  width: fit-content;
+  height: -moz-fit-content;
+  height: fit-content;
+  overflow: hidden;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  margin: 0;
+  padding: 0;
+  transform: translate3d(0, 0, 0);
+}
+
+.transform-component-module_content__FBWxo {
+  display: flex;
+  flex-wrap: wrap;
+  width: -moz-fit-content;
+  width: fit-content;
+  height: -moz-fit-content;
+  height: fit-content;
+  margin: 0;
+  padding: 0;
+  transform-origin: 0% 0%;
+}
+
+.transform-component-module_content__FBWxo img {
+  pointer-events: none;
+}
+
+.transform-component-module_infiniteGrid__Z-aP3 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgb(0 0 0 / 12%) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
