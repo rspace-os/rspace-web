@@ -85,6 +85,14 @@ public class NfsConverterTest extends AbstractParserTest {
     assertEquals(FILE_PATH, fieldElement.get().getPath());
   }
 
+  @Test
+  public void jsoup2NfsLinkableElementKeepsColonsInThePath() {
+    String nfsLink = rtu.generateURLStringForNfs((long) NFS_ID, "/runs/run:01.dat", false);
+    Optional<NfsElement> fieldElement =
+        nfsConverter.jsoup2LinkableElement(new FieldContents(), createJSoupNfsLink(nfsLink));
+    assertEquals("/runs/run:01.dat", fieldElement.get().getPath());
+  }
+
   private void assertNoElement(FieldContents fieldContents, Optional<NfsElement> fieldElement) {
     assertThat(fieldElement).isNotPresent();
     assertEquals(0, fieldContents.getElements(NfsElement.class).size());

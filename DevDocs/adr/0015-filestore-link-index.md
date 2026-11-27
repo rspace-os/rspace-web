@@ -26,6 +26,10 @@ nothing in the schema says which documents link a Filestore item, unlike Gallery
    columns' binary collation ignores them, so every lookup by path compares the matched path again
    after its indexed query. A lookup by filesystem and paths also asserts the caller's read access
    to the filesystem itself, whichever entry point calls it.
+   Where a link also carries the file's own id on the filestore (iRODS links do), the row stores it
+   too: the link opens the file by that id, so the id still names the file after it has moved away
+   from the stored path. Lookups still match by path. Storing the id from the start lets the one
+   backfill fill it for existing links, instead of a second scan of every text field later.
 3. Rows follow autosaved content, as `FieldAttachment` does: a link counts as soon as it is in the
    editor, and cancelling an edit re-reads the saved content.
 4. A link whose filestore id does not exist in this instance is skipped, not failed: archive imports

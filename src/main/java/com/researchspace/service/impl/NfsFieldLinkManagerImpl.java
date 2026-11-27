@@ -28,7 +28,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Service;
 
 @Service("nfsFieldLinkManager")
@@ -46,19 +46,19 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
 
   @Override
   public void reindex(Field field, String content) {
-    Set<Pair<Long, String>> wanted = linksIn(content);
+    Set<Triple<Long, String, Long>> wanted = linksIn(content);
     for (NfsFieldLink row : nfsDao.getFieldLinks(field.getId())) {
-      if (!wanted.remove(Pair.of(row.getFileStore().getId(), row.getRelPath()))) {
+      if (!wanted.remove(Triple.of(row.getFileStore().getId(), row.getRelPath(), row.getNfsId()))) {
         nfsDao.deleteFieldLink(row);
       }
     }
-    for (Pair<Long, String> link : wanted) {
+    for (Triple<Long, String, Long> link : wanted) {
       NfsFileStore store = nfsDao.getNfsFileStore(link.getLeft());
       if (store == null) {
         log.debug("Not indexing link to unknown filestore {} in field {}", link, field.getId());
         continue;
       }
-      NfsFieldLink row = new NfsFieldLink(field, store, link.getRight());
+      NfsFieldLink row = new NfsFieldLink(field, store, link.getMiddle(), link.getRight());
       if (row.getRelPath().length() > NfsFieldLink.MAX_PATH_LENGTH
           || row.getAbsolutePath().length() > NfsFieldLink.MAX_PATH_LENGTH) {
         log.warn("Not indexing link {} in field {}: path too long", link, field.getId());
@@ -68,8 +68,8 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
     }
   }
 
-  private Set<Pair<Long, String>> linksIn(String content) {
-    Set<Pair<Long, String>> links = new HashSet<>();
+  private Set<Triple<Long, String, Long>> linksIn(String content) {
+    Set<Triple<Long, String, Long>> links = new HashSet<>();
     if (StringUtils.isBlank(content)) {
       return links;
     }
@@ -77,7 +77,7 @@ public class NfsFieldLinkManagerImpl implements NfsFieldLinkManager {
         fieldParser.findFieldElementsInContentForCssClass(
             new FieldContents(), content, FieldParserConstants.NET_FS_CLASSNAME);
     for (NfsElement element : contents.getElements(NfsElement.class).getElements()) {
-      links.add(Pair.of(element.getFileStoreId(), element.getPath()));
+      links.add(Triple.of(element.getFileStoreId(), element.getPath(), element.getNfsId()));
     }
     return links;
   }

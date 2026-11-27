@@ -15,5 +15,6 @@
     <include relativeToChangelogFile="true" file="rsdev-894-wrap-password-hashes.xml"/>
     <include relativeToChangelogFile="true"
       file="rsdev-894-prefix-bcrypt-verification-passwords.xml"/>
+    <include relativeToChangelogFile="true" file="rsdev-1664-index-filestore-links.xml"/>
 
 </databaseChangeLog>

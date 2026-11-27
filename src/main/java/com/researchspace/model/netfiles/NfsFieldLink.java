@@ -51,12 +51,23 @@ public class NfsFieldLink implements Serializable {
   @Column(nullable = false, length = MAX_PATH_LENGTH)
   private String absolutePath;
 
+  /**
+   * The file's own id on the filestore, where the link carries one (iRODS): the link opens the file
+   * by this id, so it still names the file after the file has moved away from the path.
+   */
+  private Long nfsId;
+
   public NfsFieldLink(Field field, NfsFileStore fileStore, String relPath) {
+    this(field, fileStore, relPath, null);
+  }
+
+  public NfsFieldLink(Field field, NfsFileStore fileStore, String relPath, Long nfsId) {
     this.field = field;
     this.fileStore = fileStore;
     this.relPath = relPath;
     this.fileSystem = fileStore.getFileSystem();
     this.absolutePath = normalisePath(fileStore.getAbsolutePath(relPath));
+    this.nfsId = nfsId;
   }
 
   /**

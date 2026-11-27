@@ -21,7 +21,8 @@ public class NfsConverter extends AbstractFieldElementConverter implements Field
     if (!StringUtils.isBlank(link)) {
       Matcher m = NfsElement.ExpectedLinkFormat.matcher(link);
       if (m.matches()) {
-        String[] parts = link.split(":");
+        // the path itself may hold colons
+        String[] parts = link.split(":", 2);
         long fileStoreId = NumberUtils.stringToInt(parts[0], -1);
         String relPath = parts[1];
         if (fileStoreId > 0) {
