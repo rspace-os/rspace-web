@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.argos;
 
-import com.researchspace.argos.model.ArgosDMPListing;
-import com.researchspace.argos.model.DataTableData;
+import com.researchspace.model.dmps.argos.ArgosDMPListing;
+import com.researchspace.model.dmps.argos.DataTableData;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.BaseController;

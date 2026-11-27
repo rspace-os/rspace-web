@@ -1751,11 +1751,6 @@
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
-      <artifactId>argos-java-client</artifactId>
-      <version>1.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.rspace-os</groupId>
       <artifactId>dmptool-java-client</artifactId>
       <version>1.0.0</version>
       <exclusions>

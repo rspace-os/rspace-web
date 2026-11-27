@@ -3,9 +3,9 @@ package com.researchspace.webapp.integrations.argos;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.researchspace.argos.model.ArgosDMP;
-import com.researchspace.argos.model.ArgosDMPListing;
-import com.researchspace.argos.model.DataTableData;
+import com.researchspace.model.dmps.argos.ArgosDMP;
+import com.researchspace.model.dmps.argos.ArgosDMPListing;
+import com.researchspace.model.dmps.argos.DataTableData;
 import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

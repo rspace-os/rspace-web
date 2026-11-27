@@ -11,9 +11,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.argos.model.ArgosDMP;
-import com.researchspace.argos.model.ArgosDMPListing;
-import com.researchspace.argos.model.DataTableData;
+import com.researchspace.model.dmps.argos.ArgosDMP;
+import com.researchspace.model.dmps.argos.ArgosDMPListing;
+import com.researchspace.model.dmps.argos.DataTableData;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;

@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.argos.model.ArgosDMPListing;
-import com.researchspace.argos.model.DataTableData;
+import com.researchspace.model.dmps.argos.ArgosDMPListing;
+import com.researchspace.model.dmps.argos.DataTableData;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
