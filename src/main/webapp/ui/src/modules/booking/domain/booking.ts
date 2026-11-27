@@ -167,6 +167,14 @@ export function mapBookingMutation(input: SelectedBooking) {
 }
 
 export type Booking = ReturnType<typeof mapBooking>;
+
+/** Asserts each document of a `BOOKING_READ_FIELDS` list read at the fetch boundary, then maps it. */
+export function mapSelectedBookings(documents: readonly BookingsRead[]): Booking[] {
+  return documents.map((document) => {
+    assertApiV2Selected("bookings", document, BOOKING_READ_FIELDS);
+    return mapBooking(document);
+  });
+}
 export type BookingSummary = ReturnType<typeof mapBookingSummary>;
 export type BookingDetails = ReturnType<typeof mapBookingDetails>;
 export type BookingListDocument = ReturnType<typeof mapBookingListDocument>;

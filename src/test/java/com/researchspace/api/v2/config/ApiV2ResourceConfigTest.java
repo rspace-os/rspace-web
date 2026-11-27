@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.controller.ApiV2CrudController;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
+import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
@@ -32,6 +33,7 @@ import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
+import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
@@ -62,8 +64,21 @@ import org.springframework.web.method.HandlerMethod;
 class ApiV2ResourceConfigTest {
 
   @Test
+  void endpointCatalogCollectsContributedSpecs() throws Exception {
+    try (AnnotationConfigApplicationContext context = newContext()) {
+      context.registerBean(
+          ApiV2EndpointSpec.class,
+          () -> new ApiV2EndpointSpec(Object.class, AccessFunction.anyone()));
+      context.register(ApiV2ResourceConfig.class);
+      context.refresh();
+      var endpoint = new HandlerMethod(new Object(), Object.class.getMethod("toString"));
+      assertTrue(context.getBean(ApiV2EndpointCatalog.class).isPublic(endpoint));
+    }
+  }
+
+  @Test
   void genericMutationsRequireAuthenticationBeforeRequestBodyBinding() {
-    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog();
+    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog(List.of());
     ApiV2CrudController controller = new ApiV2CrudController(mock(ApiV2ResourceCatalog.class));
     HandlerMethod create = handler(controller, "createWithKey");
     HandlerMethod list = handler(controller, "list");

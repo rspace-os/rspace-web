@@ -146,7 +146,7 @@ export function instantToWallClockMinute(instant: string, date: string, timezone
 }
 
 /** Timeline coordinates are elapsed minutes, so both occurrences of a repeated hour have space. */
-export function instantToDayMinute(instant: string, date: string, timezone: string): number {
+export function instantToDayMinute(instant: Temporal.Instant | string, date: string, timezone: string): number {
   return Temporal.Instant.from(instant).since(zonedDayBounds(date, timezone).start).total("minutes");
 }
 
@@ -168,8 +168,8 @@ export function wallClockToDayMinute(date: string, timezone: string, minute: num
 }
 
 export function sliceAcrossZonedDay(
-  start: string,
-  end: string,
+  start: Temporal.Instant | string,
+  end: Temporal.Instant | string,
   date: string,
   timezone: string,
 ): { startMinute: number; endMinute: number } {

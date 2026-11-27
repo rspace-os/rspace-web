@@ -1,5 +1,5 @@
 import { Link, linkOptions } from "@tanstack/react-router";
-import { ChevronRightIcon, LayoutDashboardIcon, SettingsIcon, SlidersHorizontalIcon } from "lucide-react";
+import { CalendarIcon, ChevronRightIcon, LayoutDashboardIcon, SettingsIcon, SlidersHorizontalIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
@@ -24,6 +24,7 @@ const items = () =>
         <Link {...linkOptions({ to: "/booking", search: {}, activeOptions: { exact: true, includeSearch: false } })} />
       ),
     },
+    { key: "calendar", icon: CalendarIcon, link: <Link {...linkOptions({ to: "/booking/calendar" })} /> },
     {
       key: "preferences",
       icon: SlidersHorizontalIcon,
@@ -46,6 +47,7 @@ export function BookingSidebar() {
   const sidebarItems = items();
   const labels = {
     dashboard: t("sidebar.dashboard"),
+    calendar: t("sidebar.calendar"),
     preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
