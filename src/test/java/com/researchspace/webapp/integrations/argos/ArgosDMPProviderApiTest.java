@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -41,9 +42,9 @@ import org.springframework.web.client.RestClientException;
 class ArgosDMPProviderApiTest {
 
   private static final String PLAN_ID = "11111111-1111-4111-8111-111111111111";
-  private static final String NO_CONTENT_ID = "no-content";
-  private static final String EMPTY_OBJECT_ID = "empty-object";
-  private static final String NO_LABEL_ID = "no-label";
+  private static final String NO_CONTENT_ID = "22222222-2222-4222-8222-222222222222";
+  private static final String EMPTY_OBJECT_ID = "33333333-3333-4333-8333-333333333333";
+  private static final String NO_LABEL_ID = "44444444-4444-4444-8444-444444444444";
   private static final Path FIXTURES = Path.of("src/test/resources/TestResources/argos");
 
   private record Request(String method, String uri, String tenant, String body) {}
@@ -91,7 +92,7 @@ class ArgosDMPProviderApiTest {
       response = "{}".getBytes(StandardCharsets.UTF_8);
       status = 200;
     } else if (path.equals("/api/plan/public/" + NO_LABEL_ID)) {
-      response = "{\"id\":\"no-label\"}".getBytes(StandardCharsets.UTF_8);
+      response = ("{\"id\":\"" + NO_LABEL_ID + "\"}").getBytes(StandardCharsets.UTF_8);
       status = 200;
     } else if (path.equals("/api/plan/public/" + NO_CONTENT_ID)) {
       exchange.sendResponseHeaders(204, -1);
@@ -177,5 +178,12 @@ class ArgosDMPProviderApiTest {
 
     assertThrows(RestClientException.class, () -> provider.importDmp(id));
     verifyNoInteractions(mediaManager, dmpManager);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"..", "../../reference/query", "plan-1", ""})
+  void getPlanByIdRejectsAnIdThatIsNotAUuidWithoutARequest(String id) {
+    assertThrows(IllegalArgumentException.class, () -> provider.getPlanById(id));
+    assertTrue(requests.isEmpty());
   }
 }

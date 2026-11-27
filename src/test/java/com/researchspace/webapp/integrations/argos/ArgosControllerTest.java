@@ -51,4 +51,14 @@ class ArgosControllerTest {
     assertNull(result.getData());
     assertEquals(List.of("Couldn't import DMP"), result.getError().getErrorMessages());
   }
+
+  @Test
+  void idThatIsNotAUuidReturnsImportError() throws Exception {
+    when(provider.importDmp("..")).thenThrow(new IllegalArgumentException("Invalid UUID string"));
+
+    AjaxReturnObject<Boolean> result = controller.importDmp("..");
+
+    assertNull(result.getData());
+    assertEquals(List.of("Couldn't import DMP"), result.getError().getErrorMessages());
+  }
 }

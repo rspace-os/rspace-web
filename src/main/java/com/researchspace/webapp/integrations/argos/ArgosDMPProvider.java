@@ -28,6 +28,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -92,8 +93,13 @@ public class ArgosDMPProvider {
   @Autowired UserManager userManager;
   @Autowired DMPManager dmpManager;
 
+  /**
+   * @param id an Argos plan id (a UUID)
+   * @throws IllegalArgumentException if {@code id} is not a UUID; nothing is requested
+   */
   public ArgosDMP getPlanById(String id) {
-    UriComponentsBuilder builder = apiUri().pathSegment("plan", "public", id);
+    UUID planId = UUID.fromString(id);
+    UriComponentsBuilder builder = apiUri().pathSegment("plan", "public", planId.toString());
     PLAN_FIELDS.forEach(field -> builder.queryParam("f", field));
     URI uri = builder.encode().build().toUri();
     JsonNode plan =

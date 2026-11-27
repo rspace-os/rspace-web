@@ -31,6 +31,9 @@ public class ArgosController extends BaseController {
     } catch (RestClientException e) {
       logUpstreamFailure("importing DMP", e);
       return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
+    } catch (IllegalArgumentException e) {
+      log.warn("Rejected DMP import with an id that is not a UUID");
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
     } catch (IOException e) {
       log.error("Failure on importing DMP", e);
       return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
