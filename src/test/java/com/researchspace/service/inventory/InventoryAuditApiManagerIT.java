@@ -19,6 +19,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -34,6 +35,7 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
+  private @Autowired DataCiteConnector realDataCiteConnector;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -155,7 +157,11 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
     newSample.getBarcodes().add(new ApiBarcode("revision-barcode"));
     ApiSampleWithFullSubSamples sample = sampleApiMgr.createNewApiSample(newSample, anyUser);
     inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());
-    inventoryIdentifierApiMgr.registerNewIdentifier(sample.getOid(), anyUser);
+    try {
+      inventoryIdentifierApiMgr.registerNewIdentifier(sample.getOid(), anyUser);
+    } finally {
+      inventoryIdentifierApiMgr.setDataCiteConnector(realDataCiteConnector);
+    }
     addFileAttachmentToInventoryItem(sample.getOid(), anyUser);
     ApiSample nameUpdate = new ApiSample();
     nameUpdate.setId(sample.getId());

@@ -72,8 +72,37 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
 
     assertThat(result.getRecords()).hasSize(RECORD_COUNT);
     assertThat(result.getRecords()).allSatisfy(r -> assertThat(r.getBarcodes()).hasSize(1));
-    // the workbench loads before its contents, so it takes a batch of its own
-    assertListCollectionsBatched(Container.class, 3);
+    // the workbench loads before its contents, so its identifiers and files take a batch of their
+    // own; container barcodes load only when the page is converted, so the workbench's join a batch
+    assertCollectionFetches(
+        Container.class, Map.of("barcodes", 2L, "identifiers", 3L, "files", 3L));
+  }
+
+  @Test
+  void containerContentShortPageLeavesOffPageBarcodesUnloaded() {
+    int containerCount = 45;
+    for (int i = 0; i < containerCount; i++) {
+      ApiContainer container = new ApiContainer("c" + i, Container.ContainerType.LIST);
+      container.getBarcodes().add(new ApiBarcode("container-barcode-" + i));
+      containerApiMgr.createNewApiContainer(container, testUser);
+    }
+    Long workbenchId = containerApiMgr.getWorkbenchIdForUser(testUser);
+    PaginationCriteria<InventoryRecord> shortPage =
+        PaginationCriteria.createDefaultForClass(InventoryRecord.class);
+    shortPage.setResultsPerPage(5);
+
+    ApiInventorySearchResult result =
+        countingCollectionLoads(
+            () ->
+                containerApiMgr.searchForContentOfContainer(
+                    workbenchId, null, null, shortPage, testUser));
+
+    assertThat(result.getRecords()).hasSize(5);
+    assertThat(result.getRecords()).allSatisfy(r -> assertThat(r.getBarcodes()).hasSize(1));
+    // a batch may load off-page barcodes along with the page's, but not every container's
+    assertThat(
+            stats.getCollectionStatistics(Container.class.getName() + ".barcodes").getLoadCount())
+        .isLessThan(containerCount);
   }
 
   @Test
@@ -173,12 +202,18 @@ class InventoryListCollectionBatchFetchTest extends SpringTransactionalTest {
 
   private void assertListCollectionsBatched(Class<?> owner, long expectedFetchesPerRole) {
     Map<String, Long> expected = new TreeMap<>();
-    Map<String, Long> fetchesByRole = new TreeMap<>();
+    for (String collection : LIST_COLLECTIONS) {
+      expected.put(collection, expectedFetchesPerRole);
+    }
+    assertCollectionFetches(owner, expected);
+  }
+
+  private void assertCollectionFetches(Class<?> owner, Map<String, Long> expectedByCollection) {
+    Map<String, Long> fetchesByCollection = new TreeMap<>();
     for (String collection : LIST_COLLECTIONS) {
       String role = owner.getName() + "." + collection;
-      expected.put(role, expectedFetchesPerRole);
-      fetchesByRole.put(role, stats.getCollectionStatistics(role).getFetchCount());
+      fetchesByCollection.put(collection, stats.getCollectionStatistics(role).getFetchCount());
     }
-    assertEquals(expected, fetchesByRole);
+    assertEquals(new TreeMap<>(expectedByCollection), fetchesByCollection);
   }
 }

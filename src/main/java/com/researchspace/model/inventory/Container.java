@@ -221,6 +221,15 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return barcodes;
   }
 
+  /**
+   * Container contents and Inventory search load every candidate container before slicing the page,
+   * so container barcodes stay lazy until the page's records are converted.
+   */
+  @Override
+  protected boolean buildsActiveBarcodesOnLoad() {
+    return false;
+  }
+
   protected void setBarcodes(List<Barcode> barcodes) {
     this.barcodes = barcodes;
   }

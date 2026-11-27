@@ -525,8 +525,19 @@ public abstract class InventoryRecord {
   @PostLoad
   private void initializeActiveListsAfterLoad() {
     getAttachedFiles();
-    getActiveBarcodes();
+    if (buildsActiveBarcodesOnLoad()) {
+      getActiveBarcodes();
+    }
     getActiveIdentifiers();
+  }
+
+  /**
+   * Whether {@link #initializeActiveListsAfterLoad()} builds the active barcodes. Records whose
+   * barcodes are only read once a listing converts its page return false, so loading every
+   * candidate for sorting or paging leaves the barcodes of off-page records unloaded.
+   */
+  protected boolean buildsActiveBarcodesOnLoad() {
+    return true;
   }
 
   public void increaseVersion() {
