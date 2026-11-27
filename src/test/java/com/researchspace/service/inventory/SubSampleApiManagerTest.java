@@ -38,26 +38,43 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.Community;
+import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
 import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
+import com.researchspace.model.inventory.ContainerLocation;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.InventoryAttachmentField;
+import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
+import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -139,6 +156,161 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(0, allSubSamplesResult.getPageNumber().intValue());
     assertEquals("mySample 1.01", allSubSamplesResult.getSubSamples().get(0).getName());
     assertEquals("mySample 2.06", allSubSamplesResult.getSubSamples().get(11).getName());
+  }
+
+  @Test
+  public void subSampleListLoadsParentSampleFieldsInFixedStatements() throws IOException {
+    ListingCounts fiveSamples = listSubSamplesAfterAddingComplexSamples(5, 5);
+    ListingCounts tenSamples = listSubSamplesAfterAddingComplexSamples(5, 10);
+
+    for (ListingCounts counts : List.of(fiveSamples, tenSamples)) {
+      assertEquals(0, counts.fetches(SampleEntity.class, "fields"));
+      assertEquals(0, counts.fetches(SampleEntity.class, "extraFields"));
+      assertEquals(0, counts.fetches(InventoryAttachmentField.class, "files"));
+      // the fields' eager to-ones come in with the field queries, not one select each
+      assertEquals(0, counts.fetches(InventoryEntityField.class));
+      assertEquals(0, counts.fetches(InventoryLink.class));
+      assertEquals(0, counts.fetches(InventoryChoiceFieldDef.class));
+      assertEquals(0, counts.fetches(InventoryRadioFieldDef.class));
+      assertEquals(0, counts.fetchesOfSubtypes(EcatMediaFile.class));
+    }
+    // Other per-sample loads are left to RSDEV-1754 and RSDEV-1752, so only they may grow.
+    assertThat(tenSamples.statements() - fiveSamples.statements())
+        .isLessThanOrEqualTo(tenSamples.outOfScopeFetches() - fiveSamples.outOfScopeFetches());
+  }
+
+  /**
+   * Adds complex samples (one subsample each, with a link field, a link extra field and a Gallery
+   * file in the attachment field) until the user has {@code totalSamples}, then lists the
+   * subsamples with Hibernate statistics on.
+   */
+  private ListingCounts listSubSamplesAfterAddingComplexSamples(int toAdd, int totalSamples)
+      throws IOException {
+    int fieldCount = findComplexSampleTemplate(testUser).getActiveFields().size() + 1;
+    for (int i = 0; i < toAdd; i++) {
+      Long sampleId = createComplexSampleForUser(testUser).getId();
+      addLinkFields(sampleId);
+      attachGalleryFile(sampleId);
+    }
+    sessionFactory.getCurrentSession().flush();
+    clearSessionAndEvictAll();
+
+    Statistics stats = sessionFactory.getStatistics();
+    boolean statsWereEnabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    try {
+      ApiSubSampleSearchResult result =
+          subSampleApiMgr.getSubSamplesForUser(null, null, null, testUser);
+
+      assertThat(result.getSubSamples()).hasSize(totalSamples);
+      assertThat(result.getSubSamples())
+          .extracting(ss -> ss.getSampleInfo().getId())
+          .doesNotHaveDuplicates();
+      assertThat(result.getSubSamples())
+          .allSatisfy(
+              ss -> {
+                ApiSampleWithoutSubSamples sample = ss.getSampleInfo();
+                assertThat(sample.getFields())
+                    .hasSize(fieldCount)
+                    .anySatisfy(f -> assertNotNull(f.getLink()))
+                    .anySatisfy(f -> assertNotNull(f.getDefinition()))
+                    .anySatisfy(
+                        f -> {
+                          assertNotNull(f.getAttachment());
+                          assertNotNull(f.getAttachment().getMediaFileGlobalId());
+                        });
+                assertThat(sample.getExtraFields())
+                    .hasSize(2)
+                    .anySatisfy(f -> assertNotNull(f.getLink()));
+              });
+      return new ListingCounts(stats);
+    } finally {
+      stats.setStatisticsEnabled(statsWereEnabled);
+    }
+  }
+
+  private void addLinkFields(Long sampleId) {
+    Sample sample = sessionFactory.getCurrentSession().get(Sample.class, sampleId);
+    InventoryLinkField linkField = new InventoryLinkField("linkField");
+    linkField.setLink(newLink());
+    sample.addSampleField(linkField);
+    ExtraLinkField extraLinkField = new ExtraLinkField();
+    extraLinkField.setCreatedBy(testUser.getUsername());
+    extraLinkField.setModifiedBy(testUser.getUsername());
+    extraLinkField.setLink(newLink());
+    sample.addExtraField(extraLinkField);
+  }
+
+  private void attachGalleryFile(Long sampleId) throws IOException {
+    Sample sample = sessionFactory.getCurrentSession().get(Sample.class, sampleId);
+    InventoryEntityField attachmentField =
+        sample.getActiveFields().stream()
+            .filter(InventoryAttachmentField.class::isInstance)
+            .findFirst()
+            .orElseThrow();
+    addGalleryFileToInventoryItem(attachmentField.getOid(), testUser);
+  }
+
+  private InventoryLink newLink() {
+    InventoryLink link = new InventoryLink();
+    link.setGlobalIdTarget(new GlobalIdentifier("SA1"));
+    link.setRelationType("References");
+    return link;
+  }
+
+  /** A snapshot of the statement count and the non-zero lazy collection and entity fetches. */
+  private record ListingCounts(
+      long statements, Map<String, Long> collectionFetches, Map<String, Long> entityFetches) {
+    ListingCounts(Statistics stats) {
+      this(
+          stats.getPrepareStatementCount(),
+          nonZero(
+              stats.getCollectionRoleNames(),
+              role -> stats.getCollectionStatistics(role).getFetchCount()),
+          nonZero(stats.getEntityNames(), e -> stats.getEntityStatistics(e).getFetchCount()));
+    }
+
+    private static Map<String, Long> nonZero(String[] names, ToLongFunction<String> count) {
+      return Arrays.stream(names)
+          .filter(name -> count.applyAsLong(name) > 0)
+          .collect(Collectors.toMap(name -> name, count::applyAsLong));
+    }
+
+    /** Per-sample loads that RSDEV-1754 (files, barcodes, identifiers) and RSDEV-1752 cover. */
+    long outOfScopeFetches() {
+      long collections =
+          Stream.of("files", "barcodes", "identifiers", "subSamples")
+                  .mapToLong(role -> fetches(SampleEntity.class, role))
+                  .sum()
+              + Stream.of("files", "barcodes", "identifiers", "extraFields")
+                  .mapToLong(role -> fetches(SubSample.class, role))
+                  .sum();
+      return collections + fetches(ContainerLocation.class);
+    }
+
+    long fetches(Class<?> owner, String collection) {
+      return collectionFetches.getOrDefault(owner.getName() + "." + collection, 0L);
+    }
+
+    long fetches(Class<?> entity) {
+      return entityFetches.getOrDefault(entity.getName(), 0L);
+    }
+
+    long fetchesOfSubtypes(Class<?> type) {
+      return entityFetches.entrySet().stream()
+          .filter(e -> isSubtype(e.getKey(), type))
+          .mapToLong(Map.Entry::getValue)
+          .sum();
+    }
+
+    private static boolean isSubtype(String entityName, Class<?> type) {
+      try {
+        return type.isAssignableFrom(Class.forName(entityName));
+      } catch (ClassNotFoundException e) {
+        return false;
+      }
+    }
   }
 
   @Test
