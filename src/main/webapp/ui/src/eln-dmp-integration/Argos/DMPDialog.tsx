@@ -146,16 +146,10 @@ const SearchControls = ({
   const { t } = useTranslation(["apps", "common"]);
   const [searchParameters, setSearchParameters]: UseState<Omit<SearchParameters, "page" | "pageSize">> = useState({
     like: null as string | null,
-    grantsLike: null as string | null,
-    fundersLike: null as string | null,
-    collaboratorsLike: null as string | null,
   });
   const [appliedSearchParameters, setAppliedSearchParameters]: UseState<Omit<SearchParameters, "page" | "pageSize">> =
     useState({
       like: null as string | null,
-      grantsLike: null as string | null,
-      fundersLike: null as string | null,
-      collaboratorsLike: null as string | null,
     });
   const modifySearchParameters = (newSearchParameters: Omit<SearchParameters, "page" | "pageSize">) => {
     setSearchParameters(newSearchParameters);
@@ -205,42 +199,6 @@ const SearchControls = ({
             void getDMPs(newSearchParametes);
           }}
         />
-        <CustomChip
-          name={t("dmpIntegrations.dialog.columns.grant")}
-          value={appliedSearchParameters.grantsLike}
-          onDelete={() => {
-            const newSearchParametes = {
-              ...appliedSearchParameters,
-              grantsLike: null,
-            };
-            modifySearchParameters(newSearchParametes);
-            void getDMPs(newSearchParametes);
-          }}
-        />
-        <CustomChip
-          name={t("dmpIntegrations.dialog.search.funder")}
-          value={appliedSearchParameters.fundersLike}
-          onDelete={() => {
-            const newSearchParametes = {
-              ...appliedSearchParameters,
-              fundersLike: null,
-            };
-            modifySearchParameters(newSearchParametes);
-            void getDMPs(newSearchParametes);
-          }}
-        />
-        <CustomChip
-          name={t("dmpIntegrations.dialog.search.collaborators")}
-          value={appliedSearchParameters.collaboratorsLike}
-          onDelete={() => {
-            const newSearchParametes = {
-              ...appliedSearchParameters,
-              collaboratorsLike: null,
-            };
-            modifySearchParameters(newSearchParametes);
-            void getDMPs(newSearchParametes);
-          }}
-        />
       </Stack>
       <Stack
         direction="row"
@@ -256,48 +214,6 @@ const SearchControls = ({
             setSearchParameters({
               ...searchParameters,
               like,
-            })
-          }
-          onSubmit={() => {
-            setPage(0);
-            void getDMPs(searchParameters);
-          }}
-        />
-        <Search
-          name={t("dmpIntegrations.dialog.columns.grant")}
-          value={searchParameters.grantsLike}
-          onChange={(grantsLike) =>
-            modifySearchParameters({
-              ...searchParameters,
-              grantsLike,
-            })
-          }
-          onSubmit={() => {
-            setPage(0);
-            void getDMPs(searchParameters);
-          }}
-        />
-        <Search
-          name={t("dmpIntegrations.dialog.search.funder")}
-          value={searchParameters.fundersLike}
-          onChange={(fundersLike) =>
-            modifySearchParameters({
-              ...searchParameters,
-              fundersLike,
-            })
-          }
-          onSubmit={() => {
-            setPage(0);
-            void getDMPs(searchParameters);
-          }}
-        />
-        <Search
-          name={t("dmpIntegrations.dialog.search.collaborators")}
-          value={searchParameters.collaboratorsLike}
-          onChange={(collaboratorsLike) =>
-            setSearchParameters({
-              ...searchParameters,
-              collaboratorsLike,
             })
           }
           onSubmit={() => {
